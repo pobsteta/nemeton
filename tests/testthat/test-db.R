@@ -155,11 +155,8 @@ test_that("db_migrate applies all bundled migrations on a fresh DB (PG)", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     applied <- db_migrate(con)
-    expect_true("0001_init"    %in% applied)
-    expect_true("0002_fordead" %in% applied)
-    expect_true("0004_drop_obs_pixel" %in% applied)
-    # The core tables exist; obs_pixel was dropped by migration 0004.
-    for (tbl in c("monitoring_zone", "plot", "alert")) {
+    expect_identical(applied, "0001_initial_v1")
+    for (tbl in c("monitoring_zone", "plot", "alert", "project_lock")) {
       expect_true(DBI::dbExistsTable(con, tbl), info = tbl)
     }
     expect_false(DBI::dbExistsTable(con, "obs_pixel"))
@@ -192,28 +189,46 @@ test_that("alert carries the validation columns + indexes after migration (PG)",
     # passant plus par la placette.
     expect_true("alert_zone_date_type_idx"    %in% idx$indexname)
 
-    # Re-applying 0002 manually is a no-op (IF NOT EXISTS guard).
-    # File lives under `pg/` (per-backend migration dirs).
+    # Re-applying the initial migration manually is a no-op (IF NOT EXISTS
+    # guards, conditional TimescaleDB block).
     sql <- paste(readLines(
-      system.file("db/migrations/pg/0002_fordead.sql", package = "nemeton"),
+      system.file("db/migrations/pg/0001_initial_v1.sql", package = "nemeton"),
       warn = FALSE), collapse = "\n")
     expect_no_error(DBI::dbExecute(con, sql, immediate = TRUE))
   })
 })
 
-test_that("0004 drops obs_pixel and is safe to re-run (PG)", {
-  skip_if_no_timescaledb()
-  with_clean_db(function(con) {
-    db_migrate(con)
-    expect_false(DBI::dbExistsTable(con, "obs_pixel"))
-    # Re-applying 0004 manually is a no-op (DROP TABLE IF EXISTS).
-    sql <- paste(readLines(
-      system.file("db/migrations/pg/0004_drop_obs_pixel.sql",
-                  package = "nemeton"),
-      warn = FALSE), collapse = "\n")
-    expect_no_error(DBI::dbExecute(con, sql, immediate = TRUE))
-    expect_false(DBI::dbExistsTable(con, "obs_pixel"))
-  })
+# ---- Schéma 1.0.0 : fichiers de migration (sans base) ---------------
+
+test_that("each backend ships a single initial migration (1.0.0)", {
+  for (drv in c("pg", "sqlite")) {
+    dir <- system.file("db/migrations", drv, package = "nemeton")
+    files <- basename(list.files(dir, pattern = "\\.sql$"))
+    expect_identical(files, "0001_initial_v1.sql", info = drv)
+  }
+})
+
+test_that("PG initial migration makes TimescaleDB optional (1.0.0)", {
+  sql <- paste(readLines(
+    system.file("db/migrations/pg/0001_initial_v1.sql", package = "nemeton"),
+    warn = FALSE), collapse = "\n")
+  code <- gsub("--[^\n]*", "", sql)
+  # Aucune activation inconditionnelle, aucune hypertable.
+  # (au niveau racine du script ; la seule activation est dans le bloc DO)
+  expect_false(grepl("(?m)^CREATE EXTENSION IF NOT EXISTS timescaledb",
+                     code, perl = TRUE))
+  expect_match(code, "pg_available_extensions WHERE name = 'timescaledb'",
+               fixed = TRUE)
+  expect_match(code, "EXCEPTION WHEN OTHERS", fixed = TRUE)
+  expect_false(grepl("create_hypertable", code, fixed = TRUE))
+  # alert.validation_status NOT NULL des deux côtés.
+  for (drv in c("pg", "sqlite")) {
+    s <- paste(readLines(system.file("db/migrations", drv, "0001_initial_v1.sql",
+                                     package = "nemeton"), warn = FALSE),
+               collapse = "\n")
+    expect_match(s, "validation_status\\s+TEXT\\s+NOT NULL DEFAULT 'pending'",
+                 info = drv)
+  }
 })
 
 
@@ -318,17 +333,12 @@ test_that("db_migrate applies the SQLite migrations on a fresh file", {
     on.exit(db_disconnect(con), add = TRUE)
 
     applied <- db_migrate(con)
-    expect_true("0001_init"         %in% applied)
-    expect_true("0002_fordead"      %in% applied)
-    expect_true("0003_project_uuid" %in% applied)
-    expect_true("0004_drop_obs_pixel" %in% applied)
-    expect_true("0005_multi_zone_per_project" %in% applied)
+    expect_identical(applied, "0001_initial_v1")
 
-    for (tbl in c("monitoring_zone", "plot", "alert",
+    for (tbl in c("monitoring_zone", "plot", "alert", "project_lock",
                   "schema_migration")) {
       expect_true(DBI::dbExistsTable(con, tbl), info = tbl)
     }
-    # obs_pixel was dropped by migration 0004 (SQLite variant).
     expect_false(DBI::dbExistsTable(con, "obs_pixel"))
     # FORDEAD columns + project_uuid present.
     acols <- DBI::dbListFields(con, "alert")
@@ -343,44 +353,104 @@ test_that("db_migrate applies the SQLite migrations on a fresh file", {
   })
 })
 
-test_that("db_migrate refuses 0007 (DROP TABLE alert) on a non-empty alert table (SQLite)", {
-  # Audit 1.0 : 0007 recrée `alert` par DROP + CREATE en supposant la
-  # table vide ; des lignes présentes doivent bloquer la migration.
+test_that("SQLite schema 1.0.0 : alert.validation_status NOT NULL DEFAULT 'pending'", {
   skip_if_not_installed("RSQLite")
-  src <- system.file("db/migrations/sqlite", package = "nemeton")
-  withr::with_tempdir({
-    pre <- file.path(getwd(), "pre"); dir.create(pre)
-    all_sql <- sort(list.files(src, pattern = "\\.sql$", full.names = TRUE))
-    file.copy(all_sql[basename(all_sql) < "0007"], pre)
-
-    con <- db_connect(sprintf("sqlite:///%s", file.path(getwd(), "m.sqlite")))
+  withr::with_tempfile("dbf", fileext = ".sqlite", {
+    con <- db_connect(paste0("sqlite:///", dbf))
     on.exit(db_disconnect(con), add = TRUE)
-    db_migrate(con, migrations_dir = pre)
-    DBI::dbExecute(con, paste0(
-      "INSERT INTO monitoring_zone (id, name, zone_wkt) VALUES (1, 'z', 'POINT(0 0)')"))
-    DBI::dbExecute(con, paste0(
-      "INSERT INTO plot (id, zone_id, plot_id, geom_wkt) VALUES (1, 1, 'p1', 'POINT(0 0)')"))
-    DBI::dbExecute(con, paste0(
-      "INSERT INTO alert (plot_id, alert_type, trigger_date, validation_status) ",
-      "VALUES (1, 'fordead', '2024-06-01', 'confirmed')"))
-
-    expect_error(db_migrate(con, migrations_dir = src), "Refusing to apply")
-    # Rien n'est perdu ni enregistré comme appliqué.
-    expect_equal(DBI::dbGetQuery(con, "SELECT COUNT(*) n FROM alert")$n, 1L)
-    expect_false("0007_alert_pixel_geometry" %in%
-                   DBI::dbGetQuery(con, "SELECT version FROM schema_migration")$version)
-
-    # Table vidée : la migration passe.
-    DBI::dbExecute(con, "DELETE FROM alert")
-    applied <- db_migrate(con, migrations_dir = src)
-    expect_true("0007_alert_pixel_geometry" %in% applied)
-    expect_true("geom_wkt" %in% DBI::dbListFields(con, "alert"))
-
-    # Base déjà migrée : des alertes présentes ne gênent plus rien.
+    suppressMessages(db_migrate(con))
+    info <- DBI::dbGetQuery(con, "PRAGMA table_info(alert)")
+    vs <- info[info$name == "validation_status", ]
+    expect_equal(vs$notnull, 1L)
+    expect_match(vs$dflt_value, "pending")
+    DBI::dbExecute(con,
+      "INSERT INTO monitoring_zone (id, name, zone_wkt) VALUES (1, 'z', 'POINT(0 0)')")
+    # Défaut appliqué quand la colonne est omise...
     DBI::dbExecute(con, paste0(
       "INSERT INTO alert (zone_id, alert_type, trigger_date) ",
-      "VALUES (1, 'fordead', '2024-06-01')"))
-    expect_length(db_migrate(con, migrations_dir = src), 0)
+      "VALUES (1, 'fordead_dieback', '2024-06-01')"))
+    expect_identical(
+      DBI::dbGetQuery(con, "SELECT validation_status FROM alert")$validation_status,
+      "pending")
+    # ... et NULL explicite refusé, comme sous PostgreSQL.
+    expect_error(DBI::dbExecute(con, paste0(
+      "INSERT INTO alert (zone_id, alert_type, trigger_date, validation_status) ",
+      "VALUES (1, 'fordead_dieback', '2024-06-02', NULL)")), "NOT NULL")
+
+    # Schéma final identique à celui des anciennes migrations 0001-0008.
+    expect_setequal(DBI::dbListFields(con, "alert"), c(
+      "id", "zone_id", "plot_id", "alert_type", "trigger_date", "geom_wkt",
+      "n_pixels", "area_m2", "cluster_id", "confidence_class", "stress_index",
+      "validation_status", "validation_cause", "validated_by", "validated_at",
+      "value_before", "value_after", "delta", "created_at"))
+    expect_setequal(DBI::dbListFields(con, "monitoring_zone"), c(
+      "id", "name", "zone_wkt", "crs_epsg", "created_at", "created_by",
+      "project_uuid"))
+    expect_setequal(DBI::dbListFields(con, "project_lock"), c(
+      "project_id", "holder_id", "holder_label", "acquired_at", "heartbeat_at"))
+    idx <- DBI::dbGetQuery(con,
+      "SELECT name FROM sqlite_master WHERE type = 'index' AND sql IS NOT NULL")$name
+    expect_setequal(idx, c(
+      "monitoring_zone_project_name_uq", "plot_zone_idx", "alert_zone_idx",
+      "alert_trigger_idx", "alert_type_idx", "alert_validation_status_idx",
+      "alert_zone_date_type_idx"))
+  })
+})
+
+test_that("db_migrate refuse une base antérieure à 1.0.0 (versions héritées)", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempfile("dbf", fileext = ".sqlite", {
+    con <- db_connect(paste0("sqlite:///", dbf))
+    on.exit(db_disconnect(con), add = TRUE)
+    # Base créée par une version antérieure : schema_migration porte les
+    # anciennes versions 0001_init … 0008_project_lock.
+    DBI::dbExecute(con, paste0(
+      "CREATE TABLE schema_migration (version TEXT PRIMARY KEY, ",
+      "applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"))
+    DBI::dbExecute(con, paste0(
+      "INSERT INTO schema_migration (version) VALUES ",
+      "('0001_init'), ('0002_fordead'), ('0008_project_lock')"))
+    DBI::dbExecute(con, "CREATE TABLE monitoring_zone (id INTEGER PRIMARY KEY)")
+
+    err <- expect_error(db_migrate(con), class = "nemeton_legacy_schema")
+    expect_match(conditionMessage(err), "predates nemeton 1.0.0: recreate it")
+    expect_match(conditionMessage(err), "0001_init")
+    # Rien n'est appliqué ni modifié.
+    expect_false("0001_initial_v1" %in%
+      DBI::dbGetQuery(con, "SELECT version FROM schema_migration")$version)
+    expect_false(DBI::dbExistsTable(con, "alert"))
+    # enable_rag() passe par db_migrate() : même refus.
+    expect_error(enable_rag(con), class = "nemeton_legacy_schema")
+  })
+})
+
+test_that("db_migrate refuse des tables de suivi sans schema_migration", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempfile("dbf", fileext = ".sqlite", {
+    con <- db_connect(paste0("sqlite:///", dbf))
+    on.exit(db_disconnect(con), add = TRUE)
+    DBI::dbExecute(con, "CREATE TABLE alert (id INTEGER PRIMARY KEY)")
+    expect_error(db_migrate(con), class = "nemeton_legacy_schema")
+    expect_false(DBI::dbExistsTable(con, "schema_migration"))
+  })
+})
+
+test_that("une base 1.0.0 accepte les migrations ultérieures (mécanisme conservé)", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    mig <- file.path(getwd(), "mig"); dir.create(mig)
+    file.copy(system.file("db/migrations/sqlite/0001_initial_v1.sql",
+                          package = "nemeton"), mig)
+    con <- db_connect(sprintf("sqlite:///%s", file.path(getwd(), "m.sqlite")))
+    on.exit(db_disconnect(con), add = TRUE)
+    expect_identical(suppressMessages(db_migrate(con, migrations_dir = mig)),
+                     "0001_initial_v1")
+    writeLines("ALTER TABLE alert ADD COLUMN note TEXT;",
+               file.path(mig, "0002_future.sql"))
+    expect_identical(suppressMessages(db_migrate(con, migrations_dir = mig)),
+                     "0002_future")
+    expect_true("note" %in% DBI::dbListFields(con, "alert"))
+    expect_length(suppressMessages(db_migrate(con, migrations_dir = mig)), 0L)
   })
 })
 
