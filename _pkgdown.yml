@@ -11,7 +11,8 @@ home:
   title: "nemeton - Analyse Systemique Forestiere"
   description: >
     Package R coeur pour l'analyse multi-famille des services ecosystemiques
-    forestiers. 31 indicateurs, 12 familles, systeme NDP (Fibonacci),
+    forestiers. 41 indicateurs (31 de base + 10 conditionnels), 12 familles,
+    systeme NDP (Fibonacci),
     11 essences par region. Methode Nemeton.
   links:
   - text: Voir sur GitHub

@@ -2,7 +2,7 @@
 
 ## Description
 
-Ce tutoriel enseigne l'acquisition des données géographiques nécessaires au calcul des **31 indicateurs nemeton** répartis sur les 12 familles.
+Ce tutoriel enseigne l'acquisition des données géographiques nécessaires au calcul des **32 indicateurs des tutoriels**, répartis sur les 12 familles (le paquet en calcule 41 : 31 de base + 10 conditionnels).
 
 **Aucun indicateur n'est calculé dans ce tutoriel** - il constitue le prérequis data pour tous les tutoriels suivants.
 
