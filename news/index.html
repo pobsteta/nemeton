@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,11 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.0.1" id="nemeton-101-2026-10-07">nemeton 1.0.1 (2026-10-07)<a class="anchor" aria-label="anchor" href="#nemeton-101-2026-10-07"></a></h2>
+<p>Correctif de documentation, sans changement de code ni d’API.</p>
+<ul><li>Le nombre d’indicateurs est aligné partout sur <code><a href="../reference/list_indicators.html">list_indicators()</a></code> : <strong>41 indicateurs</strong> (31 de base + 10 conditionnels). La page d’accueil du site (<code>_pkgdown.yml</code>) en annonçait encore 31, la vignette des familles 29 (elle en simule 31) et le README du tutoriel 01 renvoyait aux 31 du paquet au lieu des 32 propres aux tutoriels. Commentaires du test de <code><a href="../reference/nemeton_compute.html">nemeton_compute()</a></code> corrigés (41, pas 31).</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.0" id="nemeton-100-2026-10-06">nemeton 1.0.0 (2026-10-06)<a class="anchor" aria-label="anchor" href="#nemeton-100-2026-10-06"></a></h2>
 <p>Première version stable. Elle clôt l’audit de pré-version 1.0 (rapport <code>specs/audit-1.0/rapport-audit.md</code> : plus aucun constat sans suite) et fixe un <strong>contrat d’API</strong>. <strong>Elle casse tous les projets antérieurs, sans migration</strong> : projets, caches de projet et bases de suivi sont à recréer (décision de Pascal, 2026-10-06 ; tous les projets existants étaient les siens).</p>

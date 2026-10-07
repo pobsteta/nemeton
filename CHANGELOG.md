@@ -12,6 +12,15 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[1.0.1\] - 2026-10-07
+
+### Fixed
+
+- Documentation : nombre d’indicateurs aligné sur
+  [`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
+  (41 = 31 de base + 10 conditionnels) dans `_pkgdown.yml`, la vignette
+  des familles, le README du tutoriel 01 et les commentaires de test.
+
 ## \[1.0.0\] - 2026-10-06
 
 ### Changed (BREAKING)
