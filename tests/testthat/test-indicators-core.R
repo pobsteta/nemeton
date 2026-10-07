@@ -398,14 +398,14 @@ test_that("nemeton_compute expands 'all' to full indicator list", {
     )
   )
 
-  # indicators = "all" should attempt all 31 indicators
+  # indicators = "all" should attempt all 41 indicators of list_indicators()
   # Many will fail with mock data, producing expected "Indicator X calculation failed" warnings
   result <- suppressWarnings(
     nemeton_compute(units, layers, indicators = "all", preprocess = FALSE)
   )
 
   expect_s3_class(result, "sf")
-  # All 31 indicator columns should exist (even if NA from failures)
+  # All 41 indicator columns should exist (even if NA from failures)
   all_indicator_names <- list_indicators()
   for (ind in all_indicator_names) {
     expect_true(ind %in% names(result), info = paste("Missing indicator column:", ind))
