@@ -1,3 +1,14 @@
+# nemeton 1.0.1 (2026-10-07)
+
+Correctif de documentation, sans changement de code ni d'API.
+
+- Le nombre d'indicateurs est aligné partout sur `list_indicators()` :
+  **41 indicateurs** (31 de base + 10 conditionnels). La page d'accueil du site
+  (`_pkgdown.yml`) en annonçait encore 31, la vignette des familles 29 (elle en
+  simule 31) et le README du tutoriel 01 renvoyait aux 31 du paquet au lieu des
+  32 propres aux tutoriels. Commentaires du test de `nemeton_compute()` corrigés
+  (41, pas 31).
+
 # nemeton 1.0.0 (2026-10-06)
 
 Première version stable. Elle clôt l'audit de pré-version 1.0 (rapport
