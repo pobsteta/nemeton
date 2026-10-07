@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v1.0.0** (release du 2026-10-06), relevée le 2026-10-06.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v1.0.1** (release du 2026-10-07), relevée le 2026-10-07.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -344,6 +344,14 @@ Pascal : **aucune migration des projets 0.x** — marqueur `format_projet`,
 projets antérieurs signalés et refusés, `projet_migrer()` retiré,
 `schema.sql` consolidé (migrations SQL de l'app retirées).
 
+**Journal** — *2026-10-07* (**v1.0.1**) : correctif de documentation. Le
+nombre d'indicateurs est aligné partout sur `list_indicators()` : 41 (31 de base
++ 10 conditionnels). Restaient fausses la page d'accueil pkgdown (31), la
+vignette des familles (29) et le README du tutoriel 01 (PR #527). Aucun
+changement de code ni d'API, rien à faire côté app. Le job `tests` du run sur
+`main` avait échoué une fois sur un HTTP 401 ponctuel de forge.inrae.fr
+(`lidaRtRee`), puis était repassé à la relance.
+
 **Chantier « Pré-version 1.0 » clos** (2026-10-06) : cœur **et** app en 1.0.0.
 Après la 1.0, côté cœur : vrai taux de changement pour T2, `urban_areas` dans
 A2, épinglage des actions GitHub de premier rang (Dependabot), fixture de démo
@@ -354,7 +362,7 @@ projets entre utilisateurs ; factorisation de `mod_monitoring.R`.
 **Prochaine étape** : semver strict depuis la 1.0.0 (une rupture d'API
 **stable** exige un bump majeur ; les pages **experimental** peuvent changer en
 mineur). L'app consomme les exports listés dans
-`specs/audit-1.0/exports-consommes-app.md` (dont les 43 indicateurs, appelés
+`specs/audit-1.0/exports-consommes-app.md` (dont les 41 indicateurs, appelés
 par leur nom) : ne rien retirer ni changer de signature parmi eux sans brief
 app.
 
