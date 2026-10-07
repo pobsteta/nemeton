@@ -106,8 +106,8 @@ demo_data$N1 <- runif(n, 100, 3000)   # Distance infrastructure (m)
 demo_data$N2 <- runif(n, 5, 100)      # Continuité forestière (ha)
 demo_data$N3 <- runif(n, 20, 95)      # Score naturalité composite
 
-cat("Dataset avec", n, "parcelles et 29 indicateurs\n")
-#> Dataset avec 20 parcelles et 29 indicateurs
+cat("Dataset avec", n, "parcelles et 31 indicateurs de base (les 10 conditionnels ne sont pas simulés)\n")
+#> Dataset avec 20 parcelles et 31 indicateurs de base (les 10 conditionnels ne sont pas simulés)
 ```
 
 ## Indicateurs par famille
