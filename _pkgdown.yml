@@ -480,7 +480,6 @@ reference:
     - bdforet_v2_mapping
     - map_tfv_to_species_class
     - units_add_species_from_raster
-    - croiser_parcelles_onf
     - build_foret_ancienne_mask
 
   - subtitle: "Sols"
@@ -511,7 +510,6 @@ reference:
     - create_qfield_project
     - qgis_import
     - import_qgis_gpkg
-    - import_qfield_gpkg
     - validate_field_data
     - tag_field_data_sources
     - attach_field_data_to_units

@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v1.0.1** (release du 2026-10-07), relevée le 2026-10-07.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v1.3.0** (release du 2026-10-08), relevée le 2026-10-08.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -112,7 +112,7 @@ un raccourci.
 | Cœur | correctif : `croiser_parcelles_onf()` reprojette avant de valider | **v1.1.1** | ✅ livré |
 | Cœur | chemin unique : `croiser_parcelles_onf()` dépréciée, `construire_ugf_onf()` multi-communes, parcelles « hors ONF » listées | **v1.2.0** | ✅ livré |
 | App | stockage du n° ONF dans les UGF, intégration, API d'écriture des UGF ; ne plus appeler `croiser_parcelles_onf()` | **nemetonshiny v1.3.0** | ✅ livré (chemin B, colonnes ONF, API MCP) ; chemin A ouvert |
-| Cœur | retrait de `croiser_parcelles_onf()` et de ses helpers propres | 2.0 | ⬜ plus aucun appelant au 2026-10-08 (`nemetonshiny` v1.3.0, test `test-mod_ug.R` ; `nemetonclaude`) |
+| Cœur | retrait de `croiser_parcelles_onf()` et de ses helpers propres | **v2.0.0** | ✅ livré (plus aucun appelant : `nemetonshiny` v1.3.0, `nemetonclaude`) |
 
 **Décisions** — *2026-10-08* : nom `construire_ugf_onf()` ; fichier DGFiP national
 gardé une fois en cache, URL résolue par l'API data.gouv.fr, extrait par
@@ -171,9 +171,21 @@ en lecture seule côté cœur : plus aucun appel à `croiser_parcelles_onf()` ni
 dans `nemetonshiny/R` ni dans `nemetonclaude`. Dernière version nemetonshiny
 publiée (GitHub) : **v1.3.0**.
 
+**Journal** — *2026-10-08* (**v2.0.0**) : version majeure demandée par Pascal
+(« retire ce qui ne sert plus »). Retirés : `croiser_parcelles_onf()` et ses
+13 helpers, `import_qfield_gpkg()`, l'argument `by_family` de
+`normalize_indicators()`, et `.nemeton_deprecier()` devenu orphelin. Avant
+chaque retrait, recherche en lecture seule dans `nemetonshiny`,
+`nemetonclaude` et `sommieR` : aucun appel. Gardés, car encore référencés par
+l'app : `create_qfield_project()` (appelée dans `mod_sampling.R`) et
+`theia_configure_s3()` (mockée par nom dans `test-sufosat-t3.R`). Le
+commentaire sur le piège `st_cast("POLYGON")` est passé dans
+`.ugf_polygones()`. Plancher app inchangé : `nemeton (>= 1.2.0)` reste
+compatible tant qu'elle n'appelle rien de retiré.
+
 **Prochaine étape** : côté app, chemin A (création d'un projet depuis la forêt
-ONF, brief `vers-nemetonshiny/2026-10-08-reste-ugf-onf-chemin-a.md`) ; côté
-cœur, retrait de `croiser_parcelles_onf()` en 2.0 — plus rien ne l'appelle.
+ONF, brief `vers-nemetonshiny/2026-10-08-reste-ugf-onf-chemin-a.md`). Chantier
+spec 058 clos côté cœur.
 
 ---
 

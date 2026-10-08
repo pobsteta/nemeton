@@ -56,20 +56,6 @@ import_qgis_gpkg <- function(path) {
 }
 
 
-#' @rdname import_qgis_gpkg
-#' @description
-#' `import_qfield_gpkg()` is a deprecated alias kept for backwards
-#' compatibility. It forwards to [import_qgis_gpkg()] and emits a
-#' one-shot deprecation warning. New code should call
-#' [import_qgis_gpkg()] directly.
-#'
-#' @export
-import_qfield_gpkg <- function(path) {
-  .Deprecated("import_qgis_gpkg", package = "nemeton")
-  import_qgis_gpkg(path)
-}
-
-
 # ---- Validation ------------------------------------------------------
 
 .mk_issue <- function(plot_id = NA_character_, tree_id = NA_character_,

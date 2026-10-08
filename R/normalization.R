@@ -18,9 +18,6 @@
 #'   the whole normalized column is NA.
 #' @param reference_data Optional data.frame with reference values for normalization.
 #'   Useful for normalizing new data using parameters from a reference dataset.
-#' @param by_family Deprecated, ignored with a warning since 0.208.0. It was
-#'   documented as family-wide normalisation but only normalised in place, which
-#'   made [create_family_index()] normalise the values a second time.
 #'
 #' @return The input data with added normalized columns
 #'
@@ -80,20 +77,9 @@ normalize_indicators <- function(data,
                                  suffix = "_norm",
                                  keep_original = TRUE,
                                  na.rm = TRUE,
-                                 reference_data = NULL,
-                                 by_family = FALSE) {
+                                 reference_data = NULL) {
   # Match method argument
   method <- match.arg(method)
-
-  # `by_family` n'a jamais été implémenté : il ne faisait que normaliser EN
-  # PLACE (suffixe vide), si bien que create_family_index() renormalisait
-  # ensuite des valeurs déjà ramenées à 0-100 (P1 = 200/400 m3/ha -> 0/12,5 au
-  # lieu de 25/50). Ignoré depuis 0.208.0 (audit 1.0).
-  if (isTRUE(by_family)) {
-    cli::cli_warn(c(
-      "{.arg by_family} is not implemented and is ignored.",
-      "i" = "Columns are normalized one by one with the {.val {suffix}} suffix; raw columns are kept."))
-  }
 
   # Auto-detect indicators if not specified
   if (is.null(indicators)) {

@@ -2,12 +2,9 @@
 % Please edit documentation in R/qgis_import.R
 \name{import_qgis_gpkg}
 \alias{import_qgis_gpkg}
-\alias{import_qfield_gpkg}
 \title{Read placettes + arbres layers from a field-returned GPKG}
 \usage{
 import_qgis_gpkg(path)
-
-import_qfield_gpkg(path)
 }
 \arguments{
 \item{path}{Character. Path to the GeoPackage.}
@@ -20,11 +17,6 @@ A list with \code{placettes} (an sf POINT) and \code{arbres}
 Reads a GeoPackage written by either QGIS Desktop or QField (or
 any other client speaking the same GPKG schema) into a list of
 two `sf` objects.
-
-`import_qfield_gpkg()` is a deprecated alias kept for backwards
-compatibility. It forwards to [import_qgis_gpkg()] and emits a
-one-shot deprecation warning. New code should call
-[import_qgis_gpkg()] directly.
 }
 \section{Lifecycle}{
 

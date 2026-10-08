@@ -35,8 +35,11 @@
   if (isTRUE(sf::st_is_longlat(crs))) sf::st_crs(2154) else sf::st_crs(crs)
 }
 
-# Parties simples d'un sf, en deux temps (cf. `.croiser_parties`) ; ne garde
-# que les polygones non vides.
+# Parties simples d'un sf ; ne garde que les polygones non vides. En DEUX
+# temps, et ce n'est pas un détail : sur un mélange POLYGON/MULTIPOLYGON,
+# `st_cast("POLYGON")` ne garde que le PREMIER polygone de chaque
+# multipartie, sans erreur ni avertissement (Couchey, v0.189.0 : 13,74 ha des
+# 50,34 évaporés). Passer par MULTIPOLYGON d'abord force l'éclatement.
 .ugf_polygones <- function(x) {
   if (!nrow(x)) return(x)
   x <- x[!sf::st_is_empty(sf::st_geometry(x)), , drop = FALSE]
@@ -187,7 +190,7 @@
 #'   control point, `onf` is returned unwarped with a warning.
 #' @section Lifecycle:
 #' Experimental (spec 058): may change in a minor release.
-#' @seealso [construire_ugf_onf()], [croiser_parcelles_onf()]
+#' @seealso [construire_ugf_onf()]
 #' @export
 caler_onf_sur_cadastre <- function(onf, cadastre, pas = 5, dmax = 80,
                                    rayon = 200, k = 12, simplification = 1) {
@@ -783,8 +786,7 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
 #' obtained by grouping and cutting **cadastral** parcels, the cadastre is
 #' never warped, and it is the ONF layer, which overflows, that is adjusted.
 #'
-#' Unlike [croiser_parcelles_onf()], which crosses the user's own selection of
-#' parcels, this function starts from the forest and **finds** the cadastral
+#' By default this function starts from the forest and **finds** the cadastral
 #' parcels that belong to it (spec 058):
 #' 1. **Candidates**: cadastral parcels (PCI, IGN) touching the union of the
 #'    ONF parcels, restricted to the commune `insee`.
@@ -861,8 +863,8 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
 #' @param crs CRS of the result. Default `2154`.
 #' @param selection `"foret"` (default) selects the cadastral parcels of the
 #'   forest as described above. `"toutes"` keeps **every** parcel of
-#'   `cadastre` that touches the ONF layer — the caller's own selection, as in
-#'   [croiser_parcelles_onf()] — and applies the same calage, cutting and
+#'   `cadastre` that touches the ONF layer — the caller's own selection — and
+#'   applies the same calage, cutting and
 #'   attachments; DGFiP owners are then not read unless `proprietaires` is
 #'   given. A kept parcel that is not under the *régime forestier* becomes its
 #'   own `cad~<idu>` unit when its uncovered part is at least `larg_hors` wide
@@ -888,7 +890,7 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
 #'   warning when a source cannot be fetched.
 #' @section Lifecycle:
 #' Experimental (spec 058): may change in a minor release.
-#' @seealso [croiser_parcelles_onf()], [caler_onf_sur_cadastre()],
+#' @seealso [caler_onf_sur_cadastre()],
 #'   [load_parcelles_personnes_morales()], [load_onf_parcelles_source()]
 #' @export
 construire_ugf_onf <- function(aoi = NULL, insee = NULL, parcelles_onf = NULL,

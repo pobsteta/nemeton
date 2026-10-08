@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-10-08
+
+### Removed
+- `croiser_parcelles_onf()` (dépréciée en 1.2.0) et ses helpers internes ; remplacement : `construire_ugf_onf(selection = "toutes")`.
+- `import_qfield_gpkg()` (alias déprécié) ; remplacement : `import_qgis_gpkg()`.
+- Argument `by_family` de `normalize_indicators()` (ignoré depuis 0.208.0).
+- Helper interne `.nemeton_deprecier()` et option `nemeton.deprecation_verbosity`, sans usage.
+
 ## [1.2.0] - 2026-10-08
 
 ### Deprecated

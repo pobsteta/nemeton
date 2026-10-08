@@ -421,32 +421,6 @@ test_that("a whole UGF under seuil is shared out to its longest-boundary neighbo
 })
 
 # ---------------------------------------------------------------------------
-# Option dans croiser_parcelles_onf()
-# ---------------------------------------------------------------------------
-
-test_that("croiser_parcelles_onf() keeps its default and offers the elastic calage", {
-  withr::local_options(nemeton.deprecation_verbosity = "quiet")
-  cad <- sf::st_sf(id = c("A", "B"),
-                   geometry = .ug_sfc(list(c(0, 200, 0, 100), c(200, 400, 0, 100))))
-  onf <- .ug_onf(list(c(6, 206, 4, 104), c(206, 406, 4, 104)))
-
-  defaut <- croiser_parcelles_onf(onf, cad)
-  expect_identical(defaut, croiser_parcelles_onf(onf, cad, calage_elastique = FALSE))
-
-  # Le décalage de (6, 4) m laisse hors ONF un liseré de 6 x 100 + 4 x 400 m²
-  # le long des limites cadastrales ; calée, l'ONF le recouvre presque.
-  hors <- function(x) sum(x$surface_ha[x$hors_ugf]) * 1e4
-  brut <- croiser_parcelles_onf(onf, cad, inclure_reste = TRUE, min_surface_ha = 0)
-  cale <- croiser_parcelles_onf(onf, cad, inclure_reste = TRUE, min_surface_ha = 0,
-                                calage_elastique = TRUE)
-  expect_gt(hors(brut), 2000)
-  expect_lt(hors(cale), 0.2 * hors(brut))
-  # Le cadastre ne bouge pas : chaque parcelle reste pavée.
-  pav <- tapply(cale$surface_ha, cale$parcelle_cadastrale, sum)
-  expect_equal(as.numeric(pav), c(2, 2), tolerance = 1e-6)
-})
-
-# ---------------------------------------------------------------------------
 # Non-régression réseau : Couchey (21200), brief du 2026-10-08
 # ---------------------------------------------------------------------------
 

@@ -574,7 +574,7 @@
     "field_qfield": {
       "type": "vector_local",
       "format": "GeoPackage",
-      "description": "Field inventory collected on QField (placettes + arbres layers), produced by create_qfield_project() and re-ingested via import_qfield_gpkg().",
+      "description": "Field inventory collected on QField (placettes + arbres layers), produced by create_qgis_project() and re-ingested via import_qgis_gpkg().",
       "required_crs": "EPSG:2154",
       "layers": [
         "placettes",

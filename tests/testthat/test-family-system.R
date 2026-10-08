@@ -198,26 +198,6 @@ test_that("normalize_indicators recognizes family prefixes", {
   expect_true(all(result$W1 >= 0 & result$W1 <= 100))
 })
 
-test_that("normalize_indicators can normalize by family", {
-  skip_if_not_installed("terra")
-  data(massif_demo_units)
-
-  units <- massif_demo_units[1:3, ]
-  units$C1 <- c(50, 60, 55) # Range: 50-60
-  units$C2 <- c(700, 750, 725) # Range: 700-750 (different scale)
-
-  # Normalize within each family separately
-  # (some demo columns may have identical values on 3 rows)
-  result <- suppressWarnings(
-    normalize_indicators(units, method = "minmax", by_family = TRUE)
-  )
-
-  # by_family est ignoré (0.208.0) : normalisation par colonne, suffixe _norm.
-  expect_equal(min(result$C1_norm), 0, tolerance = 0.01)
-  expect_equal(max(result$C1_norm), 100, tolerance = 0.01)
-  expect_equal(result$C1, units$C1)
-})
-
 test_that("normaliser puis agréger ne ré-inverse pas les risques ni ne renormalise (audit 1.0)", {
   units <- create_test_units(n_features = 3)
   units$R1 <- c(10, 50, 90)
