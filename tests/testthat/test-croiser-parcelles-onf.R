@@ -496,3 +496,28 @@ test_that(".croiser_longueur_euclidienne agrees with sf::st_length", {
 
   expect_equal(.croiser_longueur_euclidienne(sf::st_sfc(crs = 2154)), 0)
 })
+
+test_that("a cadastre in lon/lat is reprojected before validation, not warped", {
+  # Parcelle A 12 de Couchey (21200), telle que la livre le PCI : EPSG:4326.
+  # Validee AVANT reprojection, elle passait par s2, qui deplace ses sommets de
+  # quelques millimetres : 1,37 m2 d'ecart de pavage sur cette seule parcelle,
+  # jusqu'a 14 m2 sur A 36. Un rectangle synthetique ne declenche pas l'effet.
+  xy <- rbind(c(4.952747340, 47.264291980), c(4.951267800, 47.261471660),
+              c(4.950015980, 47.261784400), c(4.951637310, 47.264740210),
+              c(4.952172900, 47.264545780), c(4.952564740, 47.264378080),
+              c(4.952747340, 47.264291980))
+  cad <- sf::st_sf(id = "212000000A0012",
+                   geometry = sf::st_sfc(sf::st_polygon(list(xy)), crs = 4326))
+  ref <- sf::st_geometry(sf::st_transform(cad, 2154))
+  onf <- .cx_onf(list(c(0, 1, 0, 1)))
+  sf::st_geometry(onf) <- sf::st_buffer(ref, 50)
+
+  out <- croiser_parcelles_onf(onf, cad, min_surface_ha = 0)
+  ecart <- sum(as.numeric(sf::st_area(sf::st_sym_difference(sf::st_union(out), ref))))
+  expect_lt(ecart, 1e-4)
+  # Les sommets de la parcelle sont ceux de l'entree reprojetee, au micron.
+  vo <- sf::st_coordinates(out)[, 1:2]
+  vr <- sf::st_coordinates(ref)[, 1:2]
+  d <- apply(vr, 1, function(p) min(sqrt((vo[, 1] - p[1])^2 + (vo[, 2] - p[2])^2)))
+  expect_lt(max(d), 1e-6)
+})
