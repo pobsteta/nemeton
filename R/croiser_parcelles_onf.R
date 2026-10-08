@@ -55,7 +55,7 @@
   x
 }
 
-#' Tenements met by each ONF forest parcel (UGF)
+#' Tenements met by each ONF forest parcel (UGF) — deprecated
 #'
 #' @description
 #' Start from the **forest parcels** returned by [load_onf_parcelles_source()]
@@ -164,7 +164,16 @@
 #'   the forest layer, out of how many were given. It saves the caller an
 #'   `st_intersects()` just to report "N parcels out of M".
 #' @section Lifecycle:
-#' Stable: covered by the 1.0 API contract (spec 057).
+#' **Deprecated since 1.2.0** (decision of 2026-10-08): use
+#' [construire_ugf_onf()] with `selection = "toutes"`, which keeps the caller's
+#' own parcels and applies the only maintained chain — elastic calage, snapping
+#' within `tol`, attachments of small pieces and units, exact re-tiling. The
+#' options of this function (`caler_sur_cadastre`, `seuil_calage`,
+#' `rattacher_reste`, `calage_elastique`) will not evolve any more. Covered by
+#' the 1.0 API contract (spec 057), it is kept and still works until the next
+#' major release (2.0); it warns once per session (class `deprecatedWarning`).
+#' Set `options(nemeton.deprecation_verbosity = "quiet")` to silence it, or
+#' `"warning"` to warn at every call.
 #'
 #' @seealso [load_onf_parcelles_source()], [construire_ugf_onf()],
 #'   [caler_onf_sur_cadastre()]
@@ -177,6 +186,8 @@ croiser_parcelles_onf <- function(parcelles_onf, parcelles,
                                   rattacher_reste = FALSE,
                                   id_col = NULL,
                                   calage_elastique = FALSE) {
+  .nemeton_deprecier("croiser_parcelles_onf",
+                     "construire_ugf_onf(selection = \"toutes\")")
   if (!inherits(parcelles_onf, "sf")) {
     cli::cli_abort("{.arg parcelles_onf} must be an sf of ONF forest parcels.")
   }

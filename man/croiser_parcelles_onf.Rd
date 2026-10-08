@@ -2,7 +2,7 @@
 % Please edit documentation in R/croiser_parcelles_onf.R
 \name{croiser_parcelles_onf}
 \alias{croiser_parcelles_onf}
-\title{Tenements met by each ONF forest parcel (UGF)}
+\title{Tenements met by each ONF forest parcel (UGF) — deprecated}
 \usage{
 croiser_parcelles_onf(
   parcelles_onf,
@@ -141,7 +141,17 @@ never take a parcel — dropping forest is not a correction.
 }
 \section{Lifecycle}{
 
-Stable: covered by the 1.0 API contract (spec 057).
+\strong{Deprecated since 1.2.0} (decision of 2026-10-08): use
+\code{\link{construire_ugf_onf}} with \code{selection = "toutes"}, which keeps
+the caller's own parcels and applies the only maintained chain — elastic
+calage, snapping within \code{tol}, attachments of small pieces and units,
+exact re-tiling. The options of this function (\code{caler_sur_cadastre},
+\code{seuil_calage}, \code{rattacher_reste}, \code{calage_elastique}) will not
+evolve any more. Covered by the 1.0 API contract (spec 057), it is kept and
+still works until the next major release (2.0); it warns once per session
+(class \code{deprecatedWarning}). Set
+\code{options(nemeton.deprecation_verbosity = "quiet")} to silence it, or
+\code{"warning"} to warn at every call.
 }
 
 \seealso{

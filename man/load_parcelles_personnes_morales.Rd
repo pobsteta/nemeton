@@ -2,12 +2,13 @@
 % Please edit documentation in R/ugf_onf.R
 \name{load_parcelles_personnes_morales}
 \alias{load_parcelles_personnes_morales}
-\title{Parcels owned by legal entities (DGFiP), for one commune}
+\title{Parcels owned by legal entities (DGFiP), for one or more communes}
 \usage{
 load_parcelles_personnes_morales(insee, fichier = NULL, cache_dir = NULL)
 }
 \arguments{
-\item{insee}{Commune INSEE code (5 characters).}
+\item{insee}{One or more commune INSEE codes (5 characters). Communes may lie
+in several départements (one extract is read per département).}
 
 \item{fichier}{Optional path to a DGFiP parcel Parquet file (national file or
 extract) to read instead of the cache. Nothing is downloaded.}
@@ -21,11 +22,11 @@ identifier), \code{code_insee}, \code{publique} (logical), \code{groupe} (owner
 group label), \code{proprietaire} (owner names, \code{" | "}-separated),
 \code{natures} (distinct land-use labels of its fiscal subdivisions,
 \code{", "}-separated) and \code{contenance_m2}. A 0-row \code{data.frame} when
-the commune holds no legal-entity parcel; \code{NULL} on failure (missing
+the communes hold no legal-entity parcel; \code{NULL} on failure (missing
 \pkg{arrow}, no network and no cache), with a warning.
 }
 \description{
-Read, for the commune \code{insee}, the DGFiP file of \strong{parcels owned by
+Read, for the communes \code{insee}, the DGFiP file of \strong{parcels owned by
 legal entities} (\emph{Fichiers des locaux et des parcelles des personnes
 morales}, data.gouv.fr, Licence Ouverte) and return one row per cadastral
 parcel with its owner and whether that owner is a \strong{public person}
