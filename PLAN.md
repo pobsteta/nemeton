@@ -129,8 +129,8 @@ opposer au prochain fork qui se présentera comme un raccourci.
 | Cœur | [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md), [`caler_onf_sur_cadastre()`](https://pobsteta.github.io/nemeton/reference/caler_onf_sur_cadastre.md), [`load_parcelles_personnes_morales()`](https://pobsteta.github.io/nemeton/reference/load_parcelles_personnes_morales.md), option `calage_elastique` de [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) | **v1.1.0** | ✅ livré |
 | Cœur | correctif : [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) reprojette avant de valider | **v1.1.1** | ✅ livré |
 | Cœur | chemin unique : [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) dépréciée, [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md) multi-communes, parcelles « hors ONF » listées | **v1.2.0** | ✅ livré |
-| App | stockage du n° ONF dans les UGF, intégration, API d’écriture des UGF ; ne plus appeler [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) | `nemetonshiny` | ⬜ briefs émis par `nemetonclaude`, plancher `nemeton (>= 1.2.0)` |
-| Cœur | retrait de [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) et de ses helpers propres | 2.0 | ⬜ quand plus aucun appelant (vérifier nemetonshiny et nemetonclaude) |
+| App | stockage du n° ONF dans les UGF, intégration, API d’écriture des UGF ; ne plus appeler [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) | **nemetonshiny v1.3.0** | ✅ livré (chemin B, colonnes ONF, API MCP) ; chemin A ouvert |
+| Cœur | retrait de [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) et de ses helpers propres | 2.0 | ⬜ plus aucun appelant au 2026-10-08 (`nemetonshiny` v1.3.0, test `test-mod_ug.R` ; `nemetonclaude`) |
 
 **Décisions** — *2026-10-08* : nom
 [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
@@ -183,10 +183,32 @@ version mineure. Ses helpers restent avec elle jusqu’au retrait.
 l’attribut. Couchey inchangé (19 / 63, et 67 dont 4 `cad~` en « toutes
 »). Note app avec le plancher 1.2.0 dans `briefs/vers-nemetonshiny/`.
 
-**Prochaine étape** : intégration côté app (briefs `nemetonclaude`),
-puis retrait de
+**Journal** — *2026-10-08* (**nemetonshiny v1.3.0**,
+`nemetonshiny@618cd2ef`, merge PR \#231 ; cycle dev `1.2.2.9001`, commit
+`cb0e2aeb`). Le bouton « Croiser avec l’ONF » et l’import CSV passent
+par un seul appel à
+[`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
+: multi-communes, en `ExtendedTask`, avec l’ONF brute, l’import CSV
+toujours en `"toutes"`. L’ancienne chaîne est retirée, plancher
+`nemeton (>= 1.2.0)`. Les paramètres `seuil_couverture`, `tol`,
+`larg_hors`, `seuil` et `seuil_hors` sont persistés par projet. Les UGF
+portent `onf_foret_id`, `onf_foret_nom`, `onf_parcelle`, `onf_domaniale`
+et `onf_part`. Outils MCP `appliquer_ugf` et `croiser_onf` ajoutés.
+Couchey réel (projet de 23 parcelles) : `"foret"` 17 parcelles et 63 UGF
+(A 9, A 283, A 286, AO 212 écartées pour couverture, A 291 et AO 220
+hors ONF) ; `"toutes"` 67 UGF dont 4 `cad~`. Calage : écart médian 9,1 m
+(p90 39,8 m, 7 679 points de contrôle), ~35 s par appel. Vérifié en
+lecture seule côté cœur : plus aucun appel à
 [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-en 2.0.
+ni dans `nemetonshiny/R` ni dans `nemetonclaude`. Dernière version
+nemetonshiny publiée (GitHub) : **v1.3.0**.
+
+**Prochaine étape** : côté app, chemin A (création d’un projet depuis la
+forêt ONF, brief
+`vers-nemetonshiny/2026-10-08-reste-ugf-onf-chemin-a.md`) ; côté cœur,
+retrait de
+[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+en 2.0 — plus rien ne l’appelle.
 
 ------------------------------------------------------------------------
 
