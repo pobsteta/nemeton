@@ -59,7 +59,7 @@ s once the sources are loaded.
 ``` r
 construire_ugf_onf(
   aoi = NULL,
-  insee,
+  insee = NULL,
   parcelles_onf = NULL,
   cadastre = NULL,
   proprietaires = NULL,
@@ -88,7 +88,13 @@ construire_ugf_onf(
 
 - insee:
 
-  INSEE code of the commune whose cadastral parcels are kept. Required.
+  INSEE code(s) of the communes whose cadastral parcels are fetched and
+  whose DGFiP owners are read. Several communes, even in several
+  départements, are processed **together**: calage, cutting and
+  attachments run once over all of them, so limits between communes are
+  handled on both sides. Optional when `cadastre` is given: then deduced
+  from its `code_insee` column, or from the first five characters of
+  `idu`.
 
 - parcelles_onf:
 
@@ -100,8 +106,9 @@ construire_ugf_onf(
 
   Optional sf of candidate cadastral parcels with an `idu` column;
   fetched from the IGN WFS (PCI,
-  `CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle`) when `NULL`.
-  Restricted to `insee` when it has a `code_insee` column.
+  `CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle`) for `insee` when
+  `NULL`. A given `cadastre` is taken as is, whatever its communes
+  (since 1.2.0; 1.1.x kept only the rows of `insee`).
 
 - proprietaires:
 
@@ -176,7 +183,8 @@ of the tenement covered by its warped ONF parcel, a confidence measure;
 original vertices.
 
 Attributes: `parcelles`, a `data.frame` of every candidate with `idu`,
-`retenue`, `raison` (`NA` when kept, `"privee"` or
+`retenue`, `raison` (`NA` when kept, `"hors ONF"` for a parcel of
+`cadastre` that does not touch the ONF layer, `"privee"` or
 `"couverture < 50 %"`), `publique`, `proprietaire`, `groupe`, `natures`,
 `couverture_onf` and `surface_ha`; `calage`, as in
 [`caler_onf_sur_cadastre`](https://pobsteta.github.io/nemeton/reference/caler_onf_sur_cadastre.md).

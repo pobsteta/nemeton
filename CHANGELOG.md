@@ -12,6 +12,31 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[1.2.0\] - 2026-10-08
+
+### Deprecated
+
+- [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+  : remplacée par `construire_ugf_onf(selection = "toutes")` ; reste
+  jusqu’en 2.0, avertit une fois par session (`deprecatedWarning`,
+  option `nemeton.deprecation_verbosity`).
+
+### Added
+
+- [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
+  : `insee` vectoriel (plusieurs communes, plusieurs départements,
+  traitées ensemble) ; facultatif quand `cadastre` est fourni.
+- [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
+  : les parcelles hors ONF figurent dans `attr(x, "parcelles")`
+  (`raison = "hors ONF"`).
+- [`load_parcelles_personnes_morales()`](https://pobsteta.github.io/nemeton/reference/load_parcelles_personnes_morales.md)
+  : plusieurs communes.
+
+### Changed
+
+- [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
+  : un `cadastre` fourni n’est plus filtré sur `insee`.
+
 ## \[1.1.1\] - 2026-10-08
 
 ### Fixed

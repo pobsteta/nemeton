@@ -1,5 +1,50 @@
 # Changelog
 
+## nemeton 1.2.0 (2026-10-08)
+
+Brief `2026-10-08-onf-retrait-ancien-calage`. Décision de Pascal : pour
+le croisement ONF, seule la chaîne de
+[`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
+(spec 058) est conservée.
+
+### Dépréciation
+
+- **[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+  est dépréciée.** Elle renvoie à
+  `construire_ugf_onf(selection = "toutes")`, qui garde la sélection de
+  l’appelant et applique la seule chaîne maintenue : calage élastique,
+  accrochage, rattachements et re-pavage exact. Ses options
+  (`caler_sur_cadastre`, `seuil_calage`, `rattacher_reste`,
+  `calage_elastique`) n’évolueront plus. Comme elle est couverte par le
+  contrat d’API 1.0, elle reste et fonctionne jusqu’à la 2.0. Elle
+  avertit une fois par session (classe `deprecatedWarning`), sans
+  nouvelle dépendance.
+  `options(nemeton.deprecation_verbosity = "quiet")` la fait taire,
+  `"warning"` la fait avertir à chaque appel.
+
+### `construire_ugf_onf()` (experimental)
+
+- **Plusieurs communes à la fois.** `insee` accepte un vecteur, y
+  compris de plusieurs départements. Le calage, le découpage et les
+  rattachements tournent une seule fois sur l’ensemble, si bien que les
+  limites intercommunales sont traitées des deux côtés.
+- **`insee` facultatif quand `cadastre` est fourni.** Il est alors
+  déduit de `code_insee`, ou des cinq premiers caractères de `idu`.
+- **Changement** : un `cadastre` fourni est pris tel quel, toutes
+  communes confondues. La 1.1.x n’en gardait que les lignes de `insee`.
+- **Parcelles hors ONF listées.** En mode `"foret"`, une parcelle de
+  `cadastre` qui ne touche pas l’ONF figure dans `attr(x, "parcelles")`
+  avec `raison = "hors ONF"` et `couverture_onf = 0`. Elle en était
+  absente. Sur les 23 parcelles du projet Couchey : 17 retenues, 4 trop
+  peu couvertes, 2 hors ONF.
+
+[`load_parcelles_personnes_morales()`](https://pobsteta.github.io/nemeton/reference/load_parcelles_personnes_morales.md)
+accepte elle aussi plusieurs communes, et lit un extrait par
+département.
+
+Couchey est inchangé : 19 parcelles, 63 UGF, plus petite UGF 2,11 ha ;
+en mode `"toutes"` sur le projet de 23 parcelles, 67 UGF dont 4 `cad~`.
+
 ## nemeton 1.1.1 (2026-10-08)
 
 ### Correctif

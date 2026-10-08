@@ -87,7 +87,7 @@ the sources are loaded."><meta property="og:image" content="https://pobsteta.git
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -235,7 +235,7 @@ the sources are loaded.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">construire_ugf_onf</span><span class="op">(</span></span>
 <span>  aoi <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  <span class="va">insee</span>,</span>
+<span>  insee <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  parcelles_onf <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cadastre <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  proprietaires <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -265,8 +265,12 @@ the sources are loaded.</p>
 
 
 <dt id="arg-insee">insee<a class="anchor" aria-label="anchor" href="#arg-insee"></a></dt>
-<dd><p>INSEE code of the commune whose cadastral parcels are kept.
-Required.</p></dd>
+<dd><p>INSEE code(s) of the communes whose cadastral parcels are
+fetched and whose DGFiP owners are read. Several communes, even in several
+départements, are processed <strong>together</strong>: calage, cutting and attachments
+run once over all of them, so limits between communes are handled on both
+sides. Optional when <code>cadastre</code> is given: then deduced from its
+<code>code_insee</code> column, or from the first five characters of <code>idu</code>.</p></dd>
 
 
 <dt id="arg-parcelles-onf">parcelles_onf<a class="anchor" aria-label="anchor" href="#arg-parcelles-onf"></a></dt>
@@ -278,8 +282,9 @@ Required.</p></dd>
 <dt id="arg-cadastre">cadastre<a class="anchor" aria-label="anchor" href="#arg-cadastre"></a></dt>
 <dd><p>Optional <span class="pkg">sf</span> of candidate cadastral parcels with an
 <code>idu</code> column; fetched from the IGN WFS (PCI,
-<code>CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle</code>) when <code>NULL</code>.
-Restricted to <code>insee</code> when it has a <code>code_insee</code> column.</p></dd>
+<code>CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle</code>) for <code>insee</code> when
+<code>NULL</code>. A given <code>cadastre</code> is taken as is, whatever its communes
+(since 1.2.0; 1.1.x kept only the rows of <code>insee</code>).</p></dd>
 
 
 <dt id="arg-proprietaires">proprietaires<a class="anchor" aria-label="anchor" href="#arg-proprietaires"></a></dt>
@@ -359,7 +364,8 @@ covered by its warped ONF parcel, a confidence measure; <code>NA</code> for
 vertices.</p>
 <p>Attributes: <code>parcelles</code>, a <code>data.frame</code> of every candidate with
 <code>idu</code>, <code>retenue</code>, <code>raison</code> (<code>NA</code> when kept,
-<code>"privee"</code> or <code>"couverture &lt; 50 %"</code>), <code>publique</code>,
+<code>"hors ONF"</code> for a parcel of <code>cadastre</code> that does not touch the ONF
+layer, <code>"privee"</code> or <code>"couverture &lt; 50 %"</code>), <code>publique</code>,
 <code>proprietaire</code>, <code>groupe</code>, <code>natures</code>, <code>couverture_onf</code> and
 <code>surface_ha</code>; <code>calage</code>, as in <code><a href="caler_onf_sur_cadastre.html">caler_onf_sur_cadastre</a></code>.
 <code>NULL</code> with a warning when a source cannot be fetched.</p>

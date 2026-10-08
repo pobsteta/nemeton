@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,29 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.2.0" id="nemeton-120-2026-10-08">nemeton 1.2.0 (2026-10-08)<a class="anchor" aria-label="anchor" href="#nemeton-120-2026-10-08"></a></h2>
+<p>Brief <code>2026-10-08-onf-retrait-ancien-calage</code>. Décision de Pascal : pour le croisement ONF, seule la chaîne de <code><a href="../reference/construire_ugf_onf.html">construire_ugf_onf()</a></code> (spec 058) est conservée.</p>
+<div class="section level3">
+<h3 id="dépréciation-1-2-0">Dépréciation<a class="anchor" aria-label="anchor" href="#d%C3%A9pr%C3%A9ciation-1-2-0"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/croiser_parcelles_onf.html">croiser_parcelles_onf()</a></code> est dépréciée.</strong> Elle renvoie à <code>construire_ugf_onf(selection = "toutes")</code>, qui garde la sélection de l’appelant et applique la seule chaîne maintenue : calage élastique, accrochage, rattachements et re-pavage exact. Ses options (<code>caler_sur_cadastre</code>, <code>seuil_calage</code>, <code>rattacher_reste</code>, <code>calage_elastique</code>) n’évolueront plus. Comme elle est couverte par le contrat d’API 1.0, elle reste et fonctionne jusqu’à la 2.0. Elle avertit une fois par session (classe <code>deprecatedWarning</code>), sans nouvelle dépendance. <code>options(nemeton.deprecation_verbosity = "quiet")</code> la fait taire, <code>"warning"</code> la fait avertir à chaque appel.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="construire_ugf_onf-experimental-1-2-0">
+<code>construire_ugf_onf()</code> (experimental)<a class="anchor" aria-label="anchor" href="#construire_ugf_onf-experimental-1-2-0"></a></h3>
+<ul><li>
+<strong>Plusieurs communes à la fois.</strong> <code>insee</code> accepte un vecteur, y compris de plusieurs départements. Le calage, le découpage et les rattachements tournent une seule fois sur l’ensemble, si bien que les limites intercommunales sont traitées des deux côtés.</li>
+<li>
+<strong><code>insee</code> facultatif quand <code>cadastre</code> est fourni.</strong> Il est alors déduit de <code>code_insee</code>, ou des cinq premiers caractères de <code>idu</code>.</li>
+<li>
+<strong>Changement</strong> : un <code>cadastre</code> fourni est pris tel quel, toutes communes confondues. La 1.1.x n’en gardait que les lignes de <code>insee</code>.</li>
+<li>
+<strong>Parcelles hors ONF listées.</strong> En mode <code>"foret"</code>, une parcelle de <code>cadastre</code> qui ne touche pas l’ONF figure dans <code>attr(x, "parcelles")</code> avec <code>raison = "hors ONF"</code> et <code>couverture_onf = 0</code>. Elle en était absente. Sur les 23 parcelles du projet Couchey : 17 retenues, 4 trop peu couvertes, 2 hors ONF.</li>
+</ul><p><code><a href="../reference/load_parcelles_personnes_morales.html">load_parcelles_personnes_morales()</a></code> accepte elle aussi plusieurs communes, et lit un extrait par département.</p>
+<p>Couchey est inchangé : 19 parcelles, 63 UGF, plus petite UGF 2,11 ha ; en mode <code>"toutes"</code> sur le projet de 23 parcelles, 67 UGF dont 4 <code>cad~</code>.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.1.1" id="nemeton-111-2026-10-08">nemeton 1.1.1 (2026-10-08)<a class="anchor" aria-label="anchor" href="#nemeton-111-2026-10-08"></a></h2>
 <div class="section level3">

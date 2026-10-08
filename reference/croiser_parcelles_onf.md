@@ -1,4 +1,4 @@
-# Tenements met by each ONF forest parcel (UGF)
+# Tenements met by each ONF forest parcel (UGF) — deprecated
 
 Start from the **forest parcels** returned by
 [`load_onf_parcelles_source`](https://pobsteta.github.io/nemeton/reference/load_onf_parcelles_source.md)
@@ -164,7 +164,18 @@ the sliver of the cadastral parcel it did not cover.
 
 ## Lifecycle
 
-Stable: covered by the 1.0 API contract (spec 057).
+**Deprecated since 1.2.0** (decision of 2026-10-08): use
+[`construire_ugf_onf`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
+with `selection = "toutes"`, which keeps the caller's own parcels and
+applies the only maintained chain — elastic calage, snapping within
+`tol`, attachments of small pieces and units, exact re-tiling. The
+options of this function (`caler_sur_cadastre`, `seuil_calage`,
+`rattacher_reste`, `calage_elastique`) will not evolve any more. Covered
+by the 1.0 API contract (spec 057), it is kept and still works until the
+next major release (2.0); it warns once per session (class
+`deprecatedWarning`). Set
+`options(nemeton.deprecation_verbosity = "quiet")` to silence it, or
+`"warning"` to warn at every call.
 
 ## See also
 

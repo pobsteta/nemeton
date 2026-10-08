@@ -127,7 +127,10 @@ opposer au prochain fork qui se présentera comme un raccourci.
 | Étape | Contenu | Release | État |
 |----|----|----|----|
 | Cœur | [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md), [`caler_onf_sur_cadastre()`](https://pobsteta.github.io/nemeton/reference/caler_onf_sur_cadastre.md), [`load_parcelles_personnes_morales()`](https://pobsteta.github.io/nemeton/reference/load_parcelles_personnes_morales.md), option `calage_elastique` de [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) | **v1.1.0** | ✅ livré |
-| App | stockage du n° ONF dans les UGF, intégration, API d’écriture des UGF | `nemetonshiny` | ⬜ brief émis par `nemetonclaude` |
+| Cœur | correctif : [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) reprojette avant de valider | **v1.1.1** | ✅ livré |
+| Cœur | chemin unique : [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) dépréciée, [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md) multi-communes, parcelles « hors ONF » listées | **v1.2.0** | ✅ livré |
+| App | stockage du n° ONF dans les UGF, intégration, API d’écriture des UGF ; ne plus appeler [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) | `nemetonshiny` | ⬜ briefs émis par `nemetonclaude`, plancher `nemeton (>= 1.2.0)` |
+| Cœur | retrait de [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) et de ses helpers propres | 2.0 | ⬜ quand plus aucun appelant (vérifier nemetonshiny et nemetonclaude) |
 
 **Décisions** — *2026-10-08* : nom
 [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
@@ -164,7 +167,26 @@ déclenche pas l’effet (écart 10⁻⁶ m²). Rien à faire côté app. Correc
 d’une note de la v1.1.0 : les 14 m² d’A 36 que j’avais attribués à
 l’arrondi au centimètre venaient en fait de s2.
 
-**Prochaine étape** : intégration côté app (brief `nemetonclaude`).
+**Journal** — *2026-10-08* (**v1.2.0**) : brief
+`2026-10-08-onf-retrait-ancien-calage` (décision de Pascal : ne garder
+que la nouvelle façon).
+[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+dépréciée sans dépendance nouvelle : avertissement `deprecatedWarning`
+une fois par session, comme
+[`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md),
+réglable par `nemeton.deprecation_verbosity` ; elle reste jusqu’à la
+2.0, le contrat 057 interdisant de retirer une fonction stable en
+version mineure. Ses helpers restent avec elle jusqu’au retrait.
+[`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
+: `insee` vectoriel ou déduit du cadastre, cadastre fourni pris tel quel
+(changement sur une API experimental), parcelles hors ONF listées dans
+l’attribut. Couchey inchangé (19 / 63, et 67 dont 4 `cad~` en « toutes
+»). Note app avec le plancher 1.2.0 dans `briefs/vers-nemetonshiny/`.
+
+**Prochaine étape** : intégration côté app (briefs `nemetonclaude`),
+puis retrait de
+[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+en 2.0.
 
 ------------------------------------------------------------------------
 

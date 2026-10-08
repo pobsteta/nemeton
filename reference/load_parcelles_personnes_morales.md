@@ -1,6 +1,6 @@
-# Parcels owned by legal entities (DGFiP), for one commune
+# Parcels owned by legal entities (DGFiP), for one or more communes
 
-Read, for the commune `insee`, the DGFiP file of **parcels owned by
+Read, for the communes `insee`, the DGFiP file of **parcels owned by
 legal entities** (*Fichiers des locaux et des parcelles des personnes
 morales*, data.gouv.fr, Licence Ouverte) and return one row per
 cadastral parcel with its owner and whether that owner is a **public
@@ -25,7 +25,8 @@ load_parcelles_personnes_morales(insee, fichier = NULL, cache_dir = NULL)
 
 - insee:
 
-  Commune INSEE code (5 characters).
+  One or more commune INSEE codes (5 characters). Communes may lie in
+  several départements (one extract is read per département).
 
 - fichier:
 
@@ -43,7 +44,7 @@ A `data.frame` with columns `idu` (14-character cadastral identifier),
 `code_insee`, `publique` (logical), `groupe` (owner group label),
 `proprietaire` (owner names, `" | "`-separated), `natures` (distinct
 land-use labels of its fiscal subdivisions, `", "`-separated) and
-`contenance_m2`. A 0-row `data.frame` when the commune holds no
+`contenance_m2`. A 0-row `data.frame` when the communes hold no
 legal-entity parcel; `NULL` on failure (missing arrow, no network and no
 cache), with a warning.
 
