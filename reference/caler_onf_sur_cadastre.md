@@ -90,5 +90,4 @@ Experimental (spec 058): may change in a minor release.
 
 ## See also
 
-[`construire_ugf_onf`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md),
-[`croiser_parcelles_onf`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+[`construire_ugf_onf`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)

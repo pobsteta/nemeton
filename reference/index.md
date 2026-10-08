@@ -533,8 +533,6 @@ Inventaire derive du CHM, densite maximale, derive de croissance
   : Map BD Forêt v2 TFV codes to NMT species classes
 - [`units_add_species_from_raster()`](https://pobsteta.github.io/nemeton/reference/units_add_species_from_raster.md)
   : Add a dominant-species column from a classification raster
-- [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-  : Tenements met by each ONF forest parcel (UGF) — deprecated
 - [`build_foret_ancienne_mask()`](https://pobsteta.github.io/nemeton/reference/build_foret_ancienne_mask.md)
   : Build an ancient-forest polygon layer for N2 continuity
 
@@ -593,7 +591,6 @@ Inventaire derive du CHM, densite maximale, derive de croissance
 - [`qgis_import`](https://pobsteta.github.io/nemeton/reference/qgis_import.md)
   : QGIS Project Import and Aggregation
 - [`import_qgis_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)
-  [`import_qfield_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)
   : Read placettes + arbres layers from a field-returned GPKG
 - [`validate_field_data()`](https://pobsteta.github.io/nemeton/reference/validate_field_data.md)
   : Validate field data against placette + arbre schemas

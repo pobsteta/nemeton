@@ -7,8 +7,8 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v1.0.1**
-> (release du 2026-10-07), relevée le 2026-10-07.
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v1.3.0**
+> (release du 2026-10-08), relevée le 2026-10-08.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
@@ -126,11 +126,11 @@ opposer au prochain fork qui se présentera comme un raccourci.
 
 | Étape | Contenu | Release | État |
 |----|----|----|----|
-| Cœur | [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md), [`caler_onf_sur_cadastre()`](https://pobsteta.github.io/nemeton/reference/caler_onf_sur_cadastre.md), [`load_parcelles_personnes_morales()`](https://pobsteta.github.io/nemeton/reference/load_parcelles_personnes_morales.md), option `calage_elastique` de [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) | **v1.1.0** | ✅ livré |
-| Cœur | correctif : [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) reprojette avant de valider | **v1.1.1** | ✅ livré |
-| Cœur | chemin unique : [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) dépréciée, [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md) multi-communes, parcelles « hors ONF » listées | **v1.2.0** | ✅ livré |
-| App | stockage du n° ONF dans les UGF, intégration, API d’écriture des UGF ; ne plus appeler [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) | **nemetonshiny v1.3.0** | ✅ livré (chemin B, colonnes ONF, API MCP) ; chemin A ouvert |
-| Cœur | retrait de [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) et de ses helpers propres | 2.0 | ⬜ plus aucun appelant au 2026-10-08 (`nemetonshiny` v1.3.0, test `test-mod_ug.R` ; `nemetonclaude`) |
+| Cœur | [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md), [`caler_onf_sur_cadastre()`](https://pobsteta.github.io/nemeton/reference/caler_onf_sur_cadastre.md), [`load_parcelles_personnes_morales()`](https://pobsteta.github.io/nemeton/reference/load_parcelles_personnes_morales.md), option `calage_elastique` de `croiser_parcelles_onf()` | **v1.1.0** | ✅ livré |
+| Cœur | correctif : `croiser_parcelles_onf()` reprojette avant de valider | **v1.1.1** | ✅ livré |
+| Cœur | chemin unique : `croiser_parcelles_onf()` dépréciée, [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md) multi-communes, parcelles « hors ONF » listées | **v1.2.0** | ✅ livré |
+| App | stockage du n° ONF dans les UGF, intégration, API d’écriture des UGF ; ne plus appeler `croiser_parcelles_onf()` | **nemetonshiny v1.3.0** | ✅ livré (chemin B, colonnes ONF, API MCP) ; chemin A ouvert |
+| Cœur | retrait de `croiser_parcelles_onf()` et de ses helpers propres | **v2.0.0** | ✅ livré (plus aucun appelant : `nemetonshiny` v1.3.0, `nemetonclaude`) |
 
 **Décisions** — *2026-10-08* : nom
 [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
@@ -151,12 +151,10 @@ quelques millimètres (jusqu’à 14 m² d’écart sur A 36) : on reprojette
 d’abord. (2) L’arrondi au centimètre, nécessaire au découpage, laissait
 des chevauchements internes (15 m² sur A 36) et des éclats : re-pavage
 final sur la géométrie d’origine, éclats \< 1 m² raccrochés. Constaté au
-passage :
-[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-valide aussi ses entrées *avant* de les reprojeter — corrigé en v1.1.1.
+passage : `croiser_parcelles_onf()` valide aussi ses entrées *avant* de
+les reprojeter — corrigé en v1.1.1.
 
-**Journal** — *2026-10-08* (**v1.1.1**) :
-[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+**Journal** — *2026-10-08* (**v1.1.1**) : `croiser_parcelles_onf()`
 reprojette avant de valider. Mesuré sur le PCI de Couchey en 4326 : s2
 déplaçait les sommets de 7 mm au plus, soit 1,2 m² d’écart de pavage
 médian par parcelle et 14 m² au plus (A 36). Le résultat du croisement
@@ -169,10 +167,9 @@ l’arrondi au centimètre venaient en fait de s2.
 
 **Journal** — *2026-10-08* (**v1.2.0**) : brief
 `2026-10-08-onf-retrait-ancien-calage` (décision de Pascal : ne garder
-que la nouvelle façon).
-[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-dépréciée sans dépendance nouvelle : avertissement `deprecatedWarning`
-une fois par session, comme
+que la nouvelle façon). `croiser_parcelles_onf()` dépréciée sans
+dépendance nouvelle : avertissement `deprecatedWarning` une fois par
+session, comme
 [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md),
 réglable par `nemeton.deprecation_verbosity` ; elle reste jusqu’à la
 2.0, le contrat 057 interdisant de retirer une fonction stable en
@@ -198,17 +195,30 @@ Couchey réel (projet de 23 parcelles) : `"foret"` 17 parcelles et 63 UGF
 (A 9, A 283, A 286, AO 212 écartées pour couverture, A 291 et AO 220
 hors ONF) ; `"toutes"` 67 UGF dont 4 `cad~`. Calage : écart médian 9,1 m
 (p90 39,8 m, 7 679 points de contrôle), ~35 s par appel. Vérifié en
-lecture seule côté cœur : plus aucun appel à
-[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+lecture seule côté cœur : plus aucun appel à `croiser_parcelles_onf()`
 ni dans `nemetonshiny/R` ni dans `nemetonclaude`. Dernière version
 nemetonshiny publiée (GitHub) : **v1.3.0**.
 
+**Journal** — *2026-10-08* (**v2.0.0**) : version majeure demandée par
+Pascal (« retire ce qui ne sert plus »). Retirés :
+`croiser_parcelles_onf()` et ses 13 helpers, `import_qfield_gpkg()`,
+l’argument `by_family` de
+[`normalize_indicators()`](https://pobsteta.github.io/nemeton/reference/normalize_indicators.md),
+et `.nemeton_deprecier()` devenu orphelin. Avant chaque retrait,
+recherche en lecture seule dans `nemetonshiny`, `nemetonclaude` et
+`sommieR` : aucun appel. Gardés, car encore référencés par l’app :
+[`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
+(appelée dans `mod_sampling.R`) et
+[`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
+(mockée par nom dans `test-sufosat-t3.R`). Le commentaire sur le piège
+`st_cast("POLYGON")` est passé dans `.ugf_polygones()`. Plancher app
+inchangé : `nemeton (>= 1.2.0)` reste compatible tant qu’elle n’appelle
+rien de retiré.
+
 **Prochaine étape** : côté app, chemin A (création d’un projet depuis la
 forêt ONF, brief
-`vers-nemetonshiny/2026-10-08-reste-ugf-onf-chemin-a.md`) ; côté cœur,
-retrait de
-[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-en 2.0 — plus rien ne l’appelle.
+`vers-nemetonshiny/2026-10-08-reste-ugf-onf-chemin-a.md`). Chantier spec
+058 clos côté cœur.
 
 ------------------------------------------------------------------------
 
@@ -1705,7 +1715,7 @@ inspirer un épaississement.
 | État | Livrable | Repo | Référence |
 |----|----|----|----|
 | ✅ | [`load_onf_parcelles_source()`](https://pobsteta.github.io/nemeton/reference/load_onf_parcelles_source.md) — WFS ONF, métropole + 5 territoires ultramarins | `nemeton` | **v0.177.0** |
-| ✅ | [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) — un tènement par (UGF × parcelle cadastrale) | `nemeton` | **v0.178.0**, réorientée UGF-first en **v0.179.0** |
+| ✅ | `croiser_parcelles_onf()` — un tènement par (UGF × parcelle cadastrale) | `nemeton` | **v0.178.0**, réorientée UGF-first en **v0.179.0** |
 | ✅ | `caler_sur_cadastre` — colle le bord d’UGF au bord cadastral | `nemeton` | **v0.179.0** |
 | ✅ | Une action dans Carte UGF (**Créer les UGF avec le parcellaire ONF**), sélecteur de domanialité, **calage systématique**, surcouche, mention du producteur | `nemetonshiny` | **v0.129.0** (`01873e72`), simplifié en **v0.130.2** (`b3e8f44b`) |
 | ✅ | **Recette §6 passée sur le service réel**, calage validé sur cadastre réel | `nemetonshiny` | **v0.130.0** (`e3de17a5`) |
@@ -1729,22 +1739,20 @@ pavée en silence.
 **Reliquat identifié, non demandé** : côté cœur, ne croiser que les
 parcelles cadastrales intersectant réellement le parcellaire forestier
 (181 sur 1 271 à La-Vieille-Loye) ferait passer
-[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-de 24,9 s à 11,5 s. À ce niveau le gain ne justifie probablement pas le
-changement. — **Fait finalement en v0.180.0**, sur demande de l’app, qui
-avait implémenté le pré-filtrage de son côté (v0.130.3) et payait un
-aller-retour de projection pour réinjecter les parcelles écartées.
-Mesuré ici : 19,1 s → 7,3 s, contrat inchangé (1 388 géométries égales
-une à une).
+`croiser_parcelles_onf()` de 24,9 s à 11,5 s. À ce niveau le gain ne
+justifie probablement pas le changement. — **Fait finalement en
+v0.180.0**, sur demande de l’app, qui avait implémenté le pré-filtrage
+de son côté (v0.130.3) et payait un aller-retour de projection pour
+réinjecter les parcelles écartées. Mesuré ici : 19,1 s → 7,3 s, contrat
+inchangé (1 388 géométries égales une à une).
 
 **Clos pour de bon le 2026-08-21** (v0.132.0 côté app). Le chantier a
 produit une **sortie devenue publique de fait** : l’attribut
 `parcelles_concernees` (`c(concernees =, total =)`) est lu par l’app
 pour afficher « N parcelles sur M » et n’est plus recalculé en aval. Le
 retirer, ou en changer la forme, casserait l’affichage — à traiter comme
-une sortie stable de
-[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md),
-pas comme un attribut de commodité.
+une sortie stable de `croiser_parcelles_onf()`, pas comme un attribut de
+commodité.
 
 # Chantier LIVRÉ — Houppiers par LSMS, borné par un budget de calcul (spec 051)
 
@@ -2663,11 +2671,10 @@ zéro* pour argument.
 
 *Spec 046, versant app de
 [`load_onf_parcelles_source()`](https://pobsteta.github.io/nemeton/reference/load_onf_parcelles_source.md)
-(cœur v0.177.0) et
-[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-(v0.178.0-v0.180.0). Les quatre premières releases (v0.129.0, v0.130.0,
-v0.130.1, v0.130.2) sont déjà journalisées plus bas ; ce qui suit
-complète la queue de recette et la clôture.*
+(cœur v0.177.0) et `croiser_parcelles_onf()` (v0.178.0-v0.180.0). Les
+quatre premières releases (v0.129.0, v0.130.0, v0.130.1, v0.130.2) sont
+déjà journalisées plus bas ; ce qui suit complète la queue de recette et
+la clôture.*
 
 En forêt publique, la parcelle **cadastrale** n’est pas l’unité de
 gestion : la parcelle **forestière** l’est. L’onglet Carte UGF offre
@@ -2705,8 +2712,7 @@ parcelles, 535,6 ha. Livré `nemetonshiny@01873e72` (v0.129.0) →
 `ca363953`) ; cycles dev `0.129.0.9000` → `0.132.0.9000`.
 
 **Conséquence côté cœur, à acter** : `parcelles_concernees`
-(`c(concernees =, total =)`, attribut posé par
-[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+(`c(concernees =, total =)`, attribut posé par `croiser_parcelles_onf()`
 en v0.180.0) est désormais **lu** par l’app et non recalculé. Son
 contrat est devenu public de fait : le retirer ou en changer la forme
 casserait l’affichage « N parcelles sur M ». À traiter comme une sortie
@@ -2983,8 +2989,7 @@ les valeurs du raster comme des jours depuis 1970 (ce qui donnait une
 date en 2039) alors que l’encodage est `YYDDD` — 18020 = 2018 jour 20 —
 exactement ce que la fonction décode.
 
-**Journal** — *2026-08-20* (**v0.180.0**) :
-**[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+**Journal** — *2026-08-20* (**v0.180.0**) : **`croiser_parcelles_onf()`
 écarte d’elle-même les parcelles sans forêt**. Demande de l’app, motivée
 par une mesure : sur La-Vieille-Loye, 181 parcelles cadastrales sur 1
 271 — **14 %** — rencontrent la forêt publique. Les 1 090 autres ne
@@ -3067,9 +3072,8 @@ tènements, 13 → 41 bords cadastraux).
 
 `tenement_import_replace()` est accélérée **95×** (628,9 s → 6,6 s) à
 résultat strictement identique ; le croisement complet passe de 654 s à
-31,5 s, dont **24,9 s de cœur** —
-[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-est désormais le poste dominant.
+31,5 s, dont **24,9 s de cœur** — `croiser_parcelles_onf()` est
+désormais le poste dominant.
 
 **Trois corrections rapportées au brief cœur** (spec 046, faites ce
 jour) : le [`modifyList()`](https://rdrr.io/r/utils/modifyList.html) du
@@ -3167,8 +3171,7 @@ cœur consommée `nemeton 0.176.0` via `Remotes: @*release`. Aucune case
 de sous-chantier cochée : livraison UX transverse, pas la clôture d’un
 épaississement.
 
-**Journal** — *2026-08-19* (**v0.179.0**) :
-**[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+**Journal** — *2026-08-19* (**v0.179.0**) : **`croiser_parcelles_onf()`
 réorienté — on part des UGF**. Correction de cadrage de Pascal, un jour
 après l’introduction de la fonction et avant tout câblage app :
 l’orientation était à l’envers. La parcelle **forestière** est l’unité
@@ -3215,11 +3218,10 @@ garde-fous), 60 assertions.
 × parcelles cadastrales**. Suite directe de v0.177.0 : Pascal demande
 comment brancher un bouton d’app qui croise le retour ONF avec la
 sélection cadastrale. Le croisement n’est pas de l’affichage →
-[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-(`R/croiser_parcelles_onf.R`, exportée) rend les fragments qui
-deviendront des tenements : une ligne par (parcelle cadastrale ×
-parcelle forestière), plus un `reste` par parcelle cadastrale non
-couverte, avec `part_cadastrale` et `part_onf`.
+`croiser_parcelles_onf()` (`R/croiser_parcelles_onf.R`, exportée) rend
+les fragments qui deviendront des tenements : une ligne par (parcelle
+cadastrale × parcelle forestière), plus un `reste` par parcelle
+cadastrale non couverte, avec `part_cadastrale` et `part_onf`.
 
 **Le fait qui a changé la conception, et qu’aucune lecture n’aurait
 donné** : au niveau de la *parcelle forestière*, cadastre et parcellaire

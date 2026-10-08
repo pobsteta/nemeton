@@ -7,11 +7,8 @@ UGF are always obtained by grouping and cutting **cadastral** parcels,
 the cadastre is never warped, and it is the ONF layer, which overflows,
 that is adjusted.
 
-Unlike
-[`croiser_parcelles_onf`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md),
-which crosses the user's own selection of parcels, this function starts
-from the forest and **finds** the cadastral parcels that belong to it
-(spec 058):
+By default this function starts from the forest and **finds** the
+cadastral parcels that belong to it (spec 058):
 
 1.  **Candidates**: cadastral parcels (PCI, IGN) touching the union of
     the ONF parcels, restricted to the commune `insee`.
@@ -161,16 +158,15 @@ construire_ugf_onf(
 
   `"foret"` (default) selects the cadastral parcels of the forest as
   described above. `"toutes"` keeps **every** parcel of `cadastre` that
-  touches the ONF layer — the caller's own selection, as in
-  [`croiser_parcelles_onf`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-  — and applies the same calage, cutting and attachments; DGFiP owners
-  are then not read unless `proprietaires` is given. A kept parcel that
-  is not under the *régime forestier* becomes its own `cad~<idu>` unit
-  when its uncovered part is at least `larg_hors` wide and `seuil_hors`
-  ha, and is attached to its neighbours otherwise; a parcel that does
-  not touch the ONF layer at all is kept the same way. Measured on the
-  23 parcels of the Couchey project: 67 UGF, of which four `cad~` (A
-  283, A 9, A 286, AO 212: communal, outside the *régime forestier*).
+  touches the ONF layer — the caller's own selection — and applies the
+  same calage, cutting and attachments; DGFiP owners are then not read
+  unless `proprietaires` is given. A kept parcel that is not under the
+  *régime forestier* becomes its own `cad~<idu>` unit when its uncovered
+  part is at least `larg_hors` wide and `seuil_hors` ha, and is attached
+  to its neighbours otherwise; a parcel that does not touch the ONF
+  layer at all is kept the same way. Measured on the 23 parcels of the
+  Couchey project: 67 UGF, of which four `cad~` (A 283, A 9, A 286, AO
+  212: communal, outside the *régime forestier*).
 
 ## Value
 
@@ -204,7 +200,6 @@ Experimental (spec 058): may change in a minor release.
 
 ## See also
 
-[`croiser_parcelles_onf`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md),
 [`caler_onf_sur_cadastre`](https://pobsteta.github.io/nemeton/reference/caler_onf_sur_cadastre.md),
 [`load_parcelles_personnes_morales`](https://pobsteta.github.io/nemeton/reference/load_parcelles_personnes_morales.md),
 [`load_onf_parcelles_source`](https://pobsteta.github.io/nemeton/reference/load_onf_parcelles_source.md)

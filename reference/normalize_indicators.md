@@ -13,8 +13,7 @@ normalize_indicators(
   suffix = "_norm",
   keep_original = TRUE,
   na.rm = TRUE,
-  reference_data = NULL,
-  by_family = FALSE
+  reference_data = NULL
 )
 ```
 
@@ -57,13 +56,6 @@ normalize_indicators(
 
   Optional data.frame with reference values for normalization. Useful
   for normalizing new data using parameters from a reference dataset.
-
-- by_family:
-
-  Deprecated, ignored with a warning since 0.208.0. It was documented as
-  family-wide normalisation but only normalised in place, which made
-  [`create_family_index()`](https://pobsteta.github.io/nemeton/reference/create_family_index.md)
-  normalise the values a second time.
 
 ## Value
 

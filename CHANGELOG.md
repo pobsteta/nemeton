@@ -12,14 +12,28 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2.0.0\] - 2026-10-08
+
+### Removed
+
+- `croiser_parcelles_onf()` (dépréciée en 1.2.0) et ses helpers internes
+  ; remplacement : `construire_ugf_onf(selection = "toutes")`.
+- `import_qfield_gpkg()` (alias déprécié) ; remplacement :
+  [`import_qgis_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md).
+- Argument `by_family` de
+  [`normalize_indicators()`](https://pobsteta.github.io/nemeton/reference/normalize_indicators.md)
+  (ignoré depuis 0.208.0).
+- Helper interne `.nemeton_deprecier()` et option
+  `nemeton.deprecation_verbosity`, sans usage.
+
 ## \[1.2.0\] - 2026-10-08
 
 ### Deprecated
 
-- [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-  : remplacée par `construire_ugf_onf(selection = "toutes")` ; reste
-  jusqu’en 2.0, avertit une fois par session (`deprecatedWarning`,
-  option `nemeton.deprecation_verbosity`).
+- `croiser_parcelles_onf()` : remplacée par
+  `construire_ugf_onf(selection = "toutes")` ; reste jusqu’en 2.0,
+  avertit une fois par session (`deprecatedWarning`, option
+  `nemeton.deprecation_verbosity`).
 
 ### Added
 
@@ -41,10 +55,9 @@ concise, categorised trail.
 
 ### Fixed
 
-- [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-  : reprojection avant `st_make_valid()` ; sur une entrée en 4326, s2
-  déplaçait les sommets du cadastre de quelques mm (jusqu’à 14 m²
-  d’écart de pavage par parcelle).
+- `croiser_parcelles_onf()` : reprojection avant `st_make_valid()` ; sur
+  une entrée en 4326, s2 déplaçait les sommets du cadastre de quelques
+  mm (jusqu’à 14 m² d’écart de pavage par parcelle).
 
 ## \[1.1.0\] - 2026-10-08
 
@@ -3618,8 +3631,7 @@ préexistants » documented in v0.43.2.
   [`create_sampling_plan()`](https://pobsteta.github.io/nemeton/reference/create_sampling_plan.md)
   — GRTS stratified when CHM/DEM/BD Forêt layers are available, with
   LPM2 (spatially-balanced) and random fallbacks.
-- QField re-ingestion layer (`R/qgis_import.R`):
-  [`import_qfield_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md),
+- QField re-ingestion layer (`R/qgis_import.R`): `import_qfield_gpkg()`,
   [`validate_field_data()`](https://pobsteta.github.io/nemeton/reference/validate_field_data.md),
   [`aggregate_plot_metrics()`](https://pobsteta.github.io/nemeton/reference/aggregate_plot_metrics.md),
   [`attach_field_data_to_units()`](https://pobsteta.github.io/nemeton/reference/attach_field_data_to_units.md),

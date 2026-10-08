@@ -4,8 +4,7 @@ carrying the number of its ONF forest parcel. Rule (Pascal, 2026-10-08): forest
 parcels are only a partition of cadastral parcels; UGF are always obtained by
 grouping and cutting cadastral parcels, the cadastre is never warped,
 and it is the ONF layer, which overflows, that is adjusted.
-Unlike croiser_parcelles_onf, which crosses the user's own
-selection of parcels, this function starts from the forest and finds
+By default this function starts from the forest and finds
 the cadastral parcels that belong to it (spec 058):
 Candidates: cadastral parcels (PCI, IGN) touching the union of
 the ONF parcels, restricted to the commune insee.
@@ -44,8 +43,7 @@ carrying the number of its ONF forest parcel. Rule (Pascal, 2026-10-08): forest
 parcels are only a partition of cadastral parcels; UGF are always obtained by
 grouping and cutting cadastral parcels, the cadastre is never warped,
 and it is the ONF layer, which overflows, that is adjusted.
-Unlike croiser_parcelles_onf, which crosses the user's own
-selection of parcels, this function starts from the forest and finds
+By default this function starts from the forest and finds
 the cadastral parcels that belong to it (spec 058):
 Candidates: cadastral parcels (PCI, IGN) touching the union of
 the ONF parcels, restricted to the commune insee.
@@ -87,7 +85,7 @@ the sources are loaded."><meta property="og:image" content="https://pobsteta.git
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -196,8 +194,7 @@ carrying the number of its ONF forest parcel. Rule (Pascal, 2026-10-08): forest
 parcels are only a partition of cadastral parcels; UGF are always obtained by
 grouping and cutting <strong>cadastral</strong> parcels, the cadastre is never warped,
 and it is the ONF layer, which overflows, that is adjusted.</p>
-<p>Unlike <code><a href="croiser_parcelles_onf.html">croiser_parcelles_onf</a></code>, which crosses the user's own
-selection of parcels, this function starts from the forest and <strong>finds</strong>
+<p>By default this function starts from the forest and <strong>finds</strong>
 the cadastral parcels that belong to it (spec 058):</p><ol><li><p><strong>Candidates</strong>: cadastral parcels (PCI, IGN) touching the union of
 the ONF parcels, restricted to the commune <code>insee</code>.</p></li>
 <li><p><strong>Calage</strong>: the ONF layer is rubber-sheeted onto the candidates'
@@ -340,9 +337,8 @@ metres. Default <code>500</code>.</p></dd>
 <dt id="arg-selection">selection<a class="anchor" aria-label="anchor" href="#arg-selection"></a></dt>
 <dd><p><code>"foret"</code> (default) selects the cadastral parcels of the
 forest as described above. <code>"toutes"</code> keeps <strong>every</strong> parcel of
-<code>cadastre</code> that touches the ONF layer — the caller's own selection, as in
-<code><a href="croiser_parcelles_onf.html">croiser_parcelles_onf</a></code> — and applies the same calage, cutting
-and attachments; DGFiP owners are then not read unless <code>proprietaires</code>
+<code>cadastre</code> that touches the ONF layer — the caller's own selection — and
+applies the same calage, cutting and attachments; DGFiP owners are then not read unless <code>proprietaires</code>
 is given. A kept parcel that is not under the <em>régime forestier</em> becomes
 its own <code>cad~&lt;idu&gt;</code> unit when its uncovered part is at least
 <code>larg_hors</code> wide and <code>seuil_hors</code> ha, and is attached to its
@@ -388,7 +384,7 @@ management plan.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="croiser_parcelles_onf.html">croiser_parcelles_onf</a></code>, <code><a href="caler_onf_sur_cadastre.html">caler_onf_sur_cadastre</a></code>,
+    <div class="dont-index"><p><code><a href="caler_onf_sur_cadastre.html">caler_onf_sur_cadastre</a></code>,
 <code><a href="load_parcelles_personnes_morales.html">load_parcelles_personnes_morales</a></code>,
 <code><a href="load_onf_parcelles_source.html">load_onf_parcelles_source</a></code></p></div>
     </div>

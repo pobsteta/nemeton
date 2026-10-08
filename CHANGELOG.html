@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.2.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,11 +118,23 @@
 <h2 id="unreleased"><a href="https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD" class="external-link">Unreleased</a><a class="anchor" aria-label="anchor" href="#unreleased"></a></h2>
 </div>
 <div class="section level2">
+<h2 id="id_200---2026-10-08">[2.0.0] - 2026-10-08<a class="anchor" aria-label="anchor" href="#id_200---2026-10-08"></a></h2>
+<div class="section level3">
+<h3 id="removed">Removed<a class="anchor" aria-label="anchor" href="#removed"></a></h3>
+<ul><li>
+<code>croiser_parcelles_onf()</code> (dépréciée en 1.2.0) et ses helpers internes ; remplacement : <code>construire_ugf_onf(selection = "toutes")</code>.</li>
+<li>
+<code>import_qfield_gpkg()</code> (alias déprécié) ; remplacement : <code><a href="reference/import_qgis_gpkg.html">import_qgis_gpkg()</a></code>.</li>
+<li>Argument <code>by_family</code> de <code><a href="reference/normalize_indicators.html">normalize_indicators()</a></code> (ignoré depuis 0.208.0).</li>
+<li>Helper interne <code>.nemeton_deprecier()</code> et option <code>nemeton.deprecation_verbosity</code>, sans usage.</li>
+</ul></div>
+</div>
+<div class="section level2">
 <h2 id="id_120---2026-10-08">[1.2.0] - 2026-10-08<a class="anchor" aria-label="anchor" href="#id_120---2026-10-08"></a></h2>
 <div class="section level3">
 <h3 id="deprecated">Deprecated<a class="anchor" aria-label="anchor" href="#deprecated"></a></h3>
 <ul><li>
-<code><a href="reference/croiser_parcelles_onf.html">croiser_parcelles_onf()</a></code> : remplacée par <code>construire_ugf_onf(selection = "toutes")</code> ; reste jusqu’en 2.0, avertit une fois par session (<code>deprecatedWarning</code>, option <code>nemeton.deprecation_verbosity</code>).</li>
+<code>croiser_parcelles_onf()</code> : remplacée par <code>construire_ugf_onf(selection = "toutes")</code> ; reste jusqu’en 2.0, avertit une fois par session (<code>deprecatedWarning</code>, option <code>nemeton.deprecation_verbosity</code>).</li>
 </ul></div>
 <div class="section level3">
 <h3 id="added">Added<a class="anchor" aria-label="anchor" href="#added"></a></h3>
@@ -144,7 +156,7 @@
 <div class="section level3">
 <h3 id="fixed">Fixed<a class="anchor" aria-label="anchor" href="#fixed"></a></h3>
 <ul><li>
-<code><a href="reference/croiser_parcelles_onf.html">croiser_parcelles_onf()</a></code> : reprojection avant <code>st_make_valid()</code> ; sur une entrée en 4326, s2 déplaçait les sommets du cadastre de quelques mm (jusqu’à 14 m² d’écart de pavage par parcelle).</li>
+<code>croiser_parcelles_onf()</code> : reprojection avant <code>st_make_valid()</code> ; sur une entrée en 4326, s2 déplaçait les sommets du cadastre de quelques mm (jusqu’à 14 m² d’écart de pavage par parcelle).</li>
 </ul></div>
 </div>
 <div class="section level2">
@@ -183,7 +195,7 @@
 <ul><li>TWI calculé en degrés sur MNT lon/lat ; essences BD Forêt non reconnues.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="removed">Removed<a class="anchor" aria-label="anchor" href="#removed"></a></h3>
+<h3 id="removed-1">Removed<a class="anchor" aria-label="anchor" href="#removed-1"></a></h3>
 <ul><li>Guide de l’application (vignette), repris par nemetonshiny.</li>
 </ul></div>
 </div>
@@ -1701,7 +1713,7 @@
 <div class="section level2">
 <h2 id="id_0600---2026-06-02">[0.60.0] - 2026-06-02<a class="anchor" aria-label="anchor" href="#id_0600---2026-06-02"></a></h2>
 <div class="section level3">
-<h3 id="removed-1">Removed<a class="anchor" aria-label="anchor" href="#removed-1"></a></h3>
+<h3 id="removed-2">Removed<a class="anchor" aria-label="anchor" href="#removed-2"></a></h3>
 <ul><li>
 <code>read_obs_pixel()</code>, <code>list_fast_alerts_for_zone()</code> and <code>detect_alerts()</code> (deprecated in v0.58.0) are removed. Use <code><a href="reference/build_index_stack.html">build_index_stack()</a></code> / <code><a href="reference/extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code> and <code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> / <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> instead. Files <code>R/read_obs_pixel.R</code>, <code>R/fast_alerts.R</code>, <code>R/alerts.R</code> and their <code>man/</code> pages deleted; exports removed from <code>NAMESPACE</code>.</li>
 <li>
@@ -1711,7 +1723,7 @@
 <div class="section level2">
 <h2 id="id_0580---2026-06-02">[0.58.0] - 2026-06-02<a class="anchor" aria-label="anchor" href="#id_0580---2026-06-02"></a></h2>
 <div class="section level3">
-<h3 id="removed-2">Removed<a class="anchor" aria-label="anchor" href="#removed-2"></a></h3>
+<h3 id="removed-3">Removed<a class="anchor" aria-label="anchor" href="#removed-3"></a></h3>
 <ul><li>
 <code><a href="reference/ingest_sentinel2_timeseries.html">ingest_sentinel2_timeseries()</a></code> no longer extracts per-plot means nor inserts into <code>obs_pixel</code>; it only primes the COG band cache (B04/B08/B12). STAC resolution, the on-disk band cache and the <code>s2:*</code> heartbeats are unchanged. The <code>n_obs_inserted</code> summary field is gone; <code>skip_cached</code> now operates on the COG cache (a scene is skipped when all its required band COGs already exist on disk).</li>
 <li>Internal helpers <code>.insert_obs_pixel()</code> and <code>.find_cached_obs_dates()</code> removed; <code>.extract_scene_obs()</code> replaced by <code>.cache_scene_bands()</code>.</li>
@@ -2318,7 +2330,7 @@
 <li>
 <code><a href="reference/create_sampling_plan.html">create_sampling_plan()</a></code> now accepts <code>target_error</code>, <code>cv</code>, <code>alpha</code> and <code>over_ratio</code>: <code>n_base</code> is computed via <code><a href="reference/compute_sample_size.html">compute_sample_size()</a></code> when these are provided, with the result attached to the plan as <code>attr(plan, "sample_size")</code>.</li>
 <li>Library-level sampling pipeline <code><a href="reference/create_sampling_plan.html">create_sampling_plan()</a></code> — GRTS stratified when CHM/DEM/BD Forêt layers are available, with LPM2 (spatially-balanced) and random fallbacks.</li>
-<li>QField re-ingestion layer (<code>R/qgis_import.R</code>): <code><a href="reference/import_qgis_gpkg.html">import_qfield_gpkg()</a></code>, <code><a href="reference/validate_field_data.html">validate_field_data()</a></code>, <code><a href="reference/aggregate_plot_metrics.html">aggregate_plot_metrics()</a></code>, <code><a href="reference/attach_field_data_to_units.html">attach_field_data_to_units()</a></code>, <code><a href="reference/tag_field_data_sources.html">tag_field_data_sources()</a></code>.</li>
+<li>QField re-ingestion layer (<code>R/qgis_import.R</code>): <code>import_qfield_gpkg()</code>, <code><a href="reference/validate_field_data.html">validate_field_data()</a></code>, <code><a href="reference/aggregate_plot_metrics.html">aggregate_plot_metrics()</a></code>, <code><a href="reference/attach_field_data_to_units.html">attach_field_data_to_units()</a></code>, <code><a href="reference/tag_field_data_sources.html">tag_field_data_sources()</a></code>.</li>
 <li>QField project export <code><a href="reference/create_qgis_project.html">create_qfield_project()</a></code> producing a ready-to-use <code>.qgz</code> (ZIP of <code>.qgs</code> XML + GPKG) with zero new hard dependency.</li>
 <li>Placette / arbre schema module (<code>R/field_schema.R</code>) used on both export and re-ingestion sides.</li>
 <li>

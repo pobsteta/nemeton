@@ -1,5 +1,38 @@
 # Changelog
 
+## nemeton 2.0.0 (2026-10-08)
+
+Version majeure, demandée par Pascal le 2026-10-08 (« retire ce qui ne
+sert plus »). Elle ne fait que retirer ce qui était déprécié et que plus
+rien n’appelle : ni `nemetonshiny` (v1.3.0), ni `nemetonclaude`, ni
+`sommieR`.
+
+### Retraits (changements cassants)
+
+- **`croiser_parcelles_onf()`**, avec ses options (`caler_sur_cadastre`,
+  `seuil_calage`, `rattacher_reste`, `calage_elastique`) et ses helpers
+  internes. Elle était dépréciée depuis la 1.2.0. On utilise à la place
+  `construire_ugf_onf(selection = "toutes")`. Le mécanisme
+  d’avertissement ajouté en 1.2.0 part avec elle : l’option
+  `nemeton.deprecation_verbosity` n’a plus d’effet.
+- **`import_qfield_gpkg()`**, alias déprécié de
+  [`import_qgis_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md).
+- **Argument `by_family` de
+  [`normalize_indicators()`](https://pobsteta.github.io/nemeton/reference/normalize_indicators.md)**,
+  ignoré avec un avertissement depuis la 0.208.0.
+
+### Conservés
+
+- [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
+  reste dépréciée mais présente : `nemetonshiny` l’appelle encore dans
+  le module d’échantillonnage.
+- [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
+  reste dépréciée et sans effet : un test de `nemetonshiny` la mocke
+  encore par son nom, et ce mock casserait si elle disparaissait.
+
+Rien d’autre ne change : les autres fonctions exportées et leurs sorties
+sont identiques à la 1.2.0.
+
 ## nemeton 1.2.0 (2026-10-08)
 
 Brief `2026-10-08-onf-retrait-ancien-calage`. Décision de Pascal : pour
@@ -9,8 +42,7 @@ le croisement ONF, seule la chaîne de
 
 ### Dépréciation
 
-- **[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-  est dépréciée.** Elle renvoie à
+- **`croiser_parcelles_onf()` est dépréciée.** Elle renvoie à
   `construire_ugf_onf(selection = "toutes")`, qui garde la sélection de
   l’appelant et applique la seule chaîne maintenue : calage élastique,
   accrochage, rattachements et re-pavage exact. Ses options
@@ -49,9 +81,8 @@ en mode `"toutes"` sur le projet de 23 parcelles, 67 UGF dont 4 `cad~`.
 
 ### Correctif
 
-- **[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-  reprojette ses entrées avant de les valider.** Sur des coordonnées en
-  degrés (le PCI arrive en EPSG:4326),
+- **`croiser_parcelles_onf()` reprojette ses entrées avant de les
+  valider.** Sur des coordonnées en degrés (le PCI arrive en EPSG:4326),
   [`st_make_valid()`](https://r-spatial.github.io/sf/reference/valid.html)
   passe par s2, qui déplaçait les sommets du cadastre de quelques
   millimètres (7 mm au plus à Couchey). Les tènements ne pavaient donc
@@ -325,9 +356,8 @@ l’app ne change.
   correction nulle).
 - **CHM lasR** : points de bruit (classes 7 et 18) exclus (pics
   supprimés ; caches reconstruits seulement avec `overwrite`).
-- **[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)**
-  : échardes d’UGF conservées, identifiants cadastraux en double
-  fusionnés.
+- **`croiser_parcelles_onf()`** : échardes d’UGF conservées,
+  identifiants cadastraux en double fusionnés.
 - **[`create_sampling_plan()`](https://pobsteta.github.io/nemeton/reference/create_sampling_plan.md)**
   : `n_base` atteint exactement, zone en EPSG:4326 acceptée (travail en
   UTM).
@@ -13282,8 +13312,7 @@ the output, so the previous names were misleading.
 - [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
   →
   **[`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)**
-- [`import_qfield_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)
-  →
+- `import_qfield_gpkg()` →
   **[`import_qgis_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)**
 
 The roxygen group names (and therefore the `man/*.Rd` page names)
@@ -13298,11 +13327,9 @@ unchanged — this is a pure rename.
 #### Deprecated
 
 [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
-and
-[`import_qfield_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)
-are kept as deprecated aliases for backwards compatibility with
-`nemetonshiny` and any external caller. They forward to the new names
-and emit a one-shot
+and `import_qfield_gpkg()` are kept as deprecated aliases for backwards
+compatibility with `nemetonshiny` and any external caller. They forward
+to the new names and emit a one-shot
 [`.Deprecated()`](https://rdrr.io/r/base/Deprecated.html) warning.
 **They will be removed in a future release** — please migrate.
 
