@@ -1721,25 +1721,3 @@ scratch_dir <- function(subdir = NULL) {
       length(terra::values(r[[1]], row = n, nrows = 1)) > 0L
   }, error = function(e) FALSE))
 }
-
-
-# Dépréciation d'une fonction exportée (contrat d'API 1.0, spec 057) : elle
-# reste et fonctionne jusqu'à la version majeure suivante, et le dit une fois
-# par session (comme `create_qfield_project()`), sans dépendre de lifecycle.
-# `options(nemeton.deprecation_verbosity = "quiet" | "warning")` : jamais, ou à
-# chaque appel ; défaut, une fois par session.
-.nemeton_deprecations <- new.env(parent = emptyenv())
-
-.nemeton_deprecier <- function(fn, remplacement) {
-  mode <- getOption("nemeton.deprecation_verbosity", "default")
-  if (identical(mode, "quiet")) return(invisible(FALSE))
-  if (!identical(mode, "warning") && isTRUE(.nemeton_deprecations[[fn]])) {
-    return(invisible(FALSE))
-  }
-  .nemeton_deprecations[[fn]] <- TRUE
-  warning(warningCondition(
-    paste0("'", fn, "' is deprecated since nemeton 1.2.0 and will be removed ",
-           "in 2.0.\nUse ", remplacement, " instead."),
-    class = c("deprecatedWarning", "nemeton_deprecated"), call = NULL))
-  invisible(TRUE)
-}

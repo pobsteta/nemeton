@@ -79,14 +79,6 @@ test_that("import_qgis_gpkg returns placettes + arbres sf objects", {
   expect_gt(nrow(res$arbres), 0)
 })
 
-test_that("import_qfield_gpkg still works as a deprecated alias", {
-  skip_if_not_installed("sf")
-  gpkg <- write_demo_gpkg(withr::local_tempdir())
-  expect_warning(res <- import_qfield_gpkg(gpkg), "deprecated")
-  expect_true(inherits(res$placettes, "sf"))
-  expect_equal(nrow(res$placettes), 3)
-})
-
 test_that("import_qgis_gpkg errors when the file is missing or malformed", {
   expect_error(import_qgis_gpkg("/no/such/file.gpkg"), "File not found")
 

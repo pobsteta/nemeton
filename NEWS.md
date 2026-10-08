@@ -1,3 +1,32 @@
+# nemeton 2.0.0 (2026-10-08)
+
+Version majeure, demandée par Pascal le 2026-10-08 (« retire ce qui ne sert
+plus »). Elle ne fait que retirer ce qui était déprécié et que plus rien
+n'appelle : ni `nemetonshiny` (v1.3.0), ni `nemetonclaude`, ni `sommieR`.
+
+## Retraits (changements cassants)
+
+- **`croiser_parcelles_onf()`**, avec ses options (`caler_sur_cadastre`,
+  `seuil_calage`, `rattacher_reste`, `calage_elastique`) et ses helpers
+  internes. Elle était dépréciée depuis la 1.2.0. On utilise à la place
+  `construire_ugf_onf(selection = "toutes")`. Le mécanisme d'avertissement
+  ajouté en 1.2.0 part avec elle : l'option `nemeton.deprecation_verbosity`
+  n'a plus d'effet.
+- **`import_qfield_gpkg()`**, alias déprécié de `import_qgis_gpkg()`.
+- **Argument `by_family` de `normalize_indicators()`**, ignoré avec un
+  avertissement depuis la 0.208.0.
+
+## Conservés
+
+- `create_qfield_project()` reste dépréciée mais présente : `nemetonshiny`
+  l'appelle encore dans le module d'échantillonnage.
+- `theia_configure_s3()` reste dépréciée et sans effet : un test de
+  `nemetonshiny` la mocke encore par son nom, et ce mock casserait si elle
+  disparaissait.
+
+Rien d'autre ne change : les autres fonctions exportées et leurs sorties sont
+identiques à la 1.2.0.
+
 # nemeton 1.2.0 (2026-10-08)
 
 Brief `2026-10-08-onf-retrait-ancien-calage`. Décision de Pascal : pour le

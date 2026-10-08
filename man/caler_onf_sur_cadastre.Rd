@@ -72,5 +72,5 @@ Experimental (spec 058): may change in a minor release.
 }
 
 \seealso{
-\code{\link{construire_ugf_onf}}, \code{\link{croiser_parcelles_onf}}
+\code{\link{construire_ugf_onf}}
 }

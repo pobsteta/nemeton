@@ -78,9 +78,8 @@ metres. Default \code{500}.}
 
 \item{selection}{\code{"foret"} (default) selects the cadastral parcels of the
 forest as described above. \code{"toutes"} keeps \strong{every} parcel of
-\code{cadastre} that touches the ONF layer — the caller's own selection, as in
-\code{\link{croiser_parcelles_onf}} — and applies the same calage, cutting
-and attachments; DGFiP owners are then not read unless \code{proprietaires}
+\code{cadastre} that touches the ONF layer — the caller's own selection — and
+applies the same calage, cutting and attachments; DGFiP owners are then not read unless \code{proprietaires}
 is given. A kept parcel that is not under the \emph{régime forestier} becomes
 its own \code{cad~<idu>} unit when its uncovered part is at least
 \code{larg_hors} wide and \code{seuil_hors} ha, and is attached to its
@@ -114,8 +113,7 @@ parcels are only a partition of cadastral parcels; UGF are always obtained by
 grouping and cutting \strong{cadastral} parcels, the cadastre is never warped,
 and it is the ONF layer, which overflows, that is adjusted.
 
-Unlike \code{\link{croiser_parcelles_onf}}, which crosses the user's own
-selection of parcels, this function starts from the forest and \strong{finds}
+By default this function starts from the forest and \strong{finds}
 the cadastral parcels that belong to it (spec 058):
 \enumerate{
 \item \strong{Candidates}: cadastral parcels (PCI, IGN) touching the union of
@@ -168,7 +166,7 @@ Experimental (spec 058): may change in a minor release.
 }
 
 \seealso{
-\code{\link{croiser_parcelles_onf}}, \code{\link{caler_onf_sur_cadastre}},
+\code{\link{caler_onf_sur_cadastre}},
 \code{\link{load_parcelles_personnes_morales}},
 \code{\link{load_onf_parcelles_source}}
 }

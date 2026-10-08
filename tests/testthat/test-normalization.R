@@ -693,18 +693,6 @@ test_that("normalize_vector zscore with zero sd returns zeros", {
   expect_true(all(result == 0))
 })
 
-# --- normalize_indicators: by_family=TRUE path ---
-
-test_that("by_family est ignoré avec un avertissement et ne normalise plus en place (audit 1.0)", {
-  test_data <- data.frame(id = 1:5, C1 = c(10, 20, 30, 40, 50))
-  expect_warning(
-    normalized <- normalize_indicators(test_data, indicators = "C1",
-                                       method = "minmax", by_family = TRUE),
-    "by_family")
-  expect_equal(normalized$C1, test_data$C1)          # brut conservé
-  expect_equal(range(normalized$C1_norm), c(0, 100))
-})
-
 # --- normalize_indicators: reference_data with missing indicator ---
 
 test_that("normalize_indicators warns when reference_data missing an indicator", {
@@ -1537,17 +1525,6 @@ test_that("normalize_indicators errors on missing indicator", {
     normalize_indicators(units, indicators = c("C1", "NONEXISTENT")),
     regexp = NULL
   )
-})
-
-test_that("normalize_indicators by_family mode", {
-  units <- create_test_units(n_features = 5)
-  units$C1 <- c(10, 20, 30, 40, 50)
-  units$C2 <- c(5, 15, 25, 35, 45)
-  result <- normalize_indicators(units, indicators = c("C1", "C2"),
-                                 method = "minmax", by_family = TRUE)
-  # by_family sets suffix="" and keep_original=FALSE, so C1 is normalized in-place
-  expect_true("C1" %in% names(result))
-  expect_true("C2" %in% names(result))
 })
 
 # --- create_composite_index() ---
