@@ -658,9 +658,8 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
 #
 # Le découpage travaille au centimètre (`.ugf_prec`) : sans grille commune, les
 # morceaux voisins ne partagent pas leurs sommets. Mais l'arrondi déplace chaque
-# sommet cadastral de quelques millimètres, ce qui, sur un périmètre de
-# plusieurs kilomètres, faisait jusqu'à 7 m² d'écart et 15 m² de chevauchement
-# interne sur A 36 à Couchey. Le cadastre ne doit pas bouger, même d'un
+# sommet cadastral de quelques millimètres, et laissait jusqu'à 15 m² de
+# chevauchement interne sur A 36 à Couchey. Le cadastre ne doit pas bouger, même d'un
 # millimètre : chaque tènement est redécoupé dans la parcelle exacte, sans
 # grille de précision, du plus grand au plus petit ; ce qui reste (interstices
 # de l'arrondi) rejoint le tènement de plus longue limite commune.

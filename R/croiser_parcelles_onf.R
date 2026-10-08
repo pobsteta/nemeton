@@ -204,8 +204,13 @@ croiser_parcelles_onf <- function(parcelles_onf, parcelles,
 
   crs_sortie <- sf::st_crs(parcelles_onf)
   crs_travail <- .croiser_crs_travail(crs_sortie)
-  onf <- sf::st_transform(sf::st_make_valid(parcelles_onf), crs_travail)
-  cad <- sf::st_transform(sf::st_make_valid(parcelles), crs_travail)
+  # Reprojeter AVANT de valider : sur des coordonnees en degres,
+  # `st_make_valid()` passe par s2, qui deplace les sommets de quelques
+  # millimetres (1,37 m2 d'ecart de pavage sur la parcelle A 12 de Couchey,
+  # 14 m2 sur A 36). En metres, la validation est plane (GEOS) et laisse les
+  # sommets en place. Sans effet sur une entree deja projetee (v1.1.1).
+  onf <- sf::st_make_valid(sf::st_transform(parcelles_onf, crs_travail))
+  cad <- sf::st_make_valid(sf::st_transform(parcelles, crs_travail))
   # Calage élastique (spec 058) : c'est l'ONF qui se déforme vers le
   # cadastre, jamais l'inverse.
   if (isTRUE(calage_elastique) && nrow(onf) > 0L && nrow(cad) > 0L) {

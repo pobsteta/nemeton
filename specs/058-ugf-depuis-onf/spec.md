@@ -65,12 +65,13 @@ Deux écarts au prototype, l'un et l'autre pour tenir « le cadastre n'est jamai
 déformé » :
 
 1. **Reprojection avant validation.** `st_make_valid()` sur des coordonnées en
-   degrés passe par s2 et redessine les sommets. Le PCI arrive en EPSG:4326 : on
+   degrés passe par s2, qui déplace les sommets de quelques millimètres (jusqu'à 14 m² d'écart sur A 36). Le PCI arrive en EPSG:4326 : on
    reprojette en Lambert 93 d'abord.
 2. **Re-pavage final.** Le découpage travaille au centimètre (`st_set_precision`)
    pour que les morceaux voisins partagent leurs sommets. Mais l'arrondi
-   déplace chaque sommet cadastral de quelques millimètres, jusqu'à 14 m²
-   d'écart et 15 m² de chevauchement interne sur A 36. Chaque tènement est
+   déplace chaque sommet cadastral de quelques millimètres et laissait des
+   chevauchements internes (15 m² sur A 36). Les 14 m² d'écart de pavage
+   d'abord mesurés sur A 36 venaient, eux, de s2 (point 1). Chaque tènement est
    redécoupé dans la parcelle d'origine ; les interstices et les éclats < 1 m²
    (des triangles de 2 mm de large) rejoignent le tènement de plus longue
    limite commune, après un `st_snap` de 1 mm du tènement sur l'éclat.
