@@ -10,6 +10,15 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-08
+
+### Added
+- `construire_ugf_onf()` : UGF d'une forêt publique construites depuis le cadastre (candidates PCI, calage ONF, sélection DGFiP × couverture ≥ 50 %, découpage par accrochage, rattachements, re-pavage exact) ; `selection = "toutes"` pour garder la sélection de l'appelant — spec 058, experimental.
+- `caler_onf_sur_cadastre()` : calage élastique de l'ONF sur les limites cadastrales — experimental.
+- `load_parcelles_personnes_morales()` : propriétaires DGFiP par parcelle, cache national + extrait départemental — experimental.
+- `croiser_parcelles_onf(calage_elastique = FALSE)` : calage élastique en option, défaut inchangé.
+- `FNN` en Suggests.
+
 ## [1.0.1] - 2026-10-07
 
 ### Fixed

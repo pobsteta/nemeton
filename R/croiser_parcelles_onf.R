@@ -135,6 +135,13 @@
 #'   `tenement_split_by_import()` recreates that remainder itself.
 #' @param id_col Name of the identifier column of `parcelles`. Default `NULL`
 #'   (auto-detect).
+#' @param calage_elastique When `TRUE`, the forest parcels are first
+#'   rubber-sheeted onto the boundaries of `parcelles` by
+#'   [caler_onf_sur_cadastre()] (default settings), so that the ONF overflow
+#'   along cadastral limits no longer cuts thin strips. The cadastre is never
+#'   moved. Default `FALSE` (since v1.1.0, spec 058): the crossing is unchanged
+#'   unless the caller opts in. For a whole public forest built from the
+#'   cadastre, see [construire_ugf_onf()].
 #'
 #' Cadastral parcels that meet **no** forest parcel are detected up front and
 #' never crossed: they can only produce one row — themselves, whole, outside any
@@ -159,7 +166,8 @@
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
 #'
-#' @seealso [load_onf_parcelles_source()]
+#' @seealso [load_onf_parcelles_source()], [construire_ugf_onf()],
+#'   [caler_onf_sur_cadastre()]
 #' @export
 croiser_parcelles_onf <- function(parcelles_onf, parcelles,
                                   min_surface_ha = 0.05,
@@ -167,7 +175,8 @@ croiser_parcelles_onf <- function(parcelles_onf, parcelles,
                                   seuil_calage = 0.9,
                                   inclure_reste = FALSE,
                                   rattacher_reste = FALSE,
-                                  id_col = NULL) {
+                                  id_col = NULL,
+                                  calage_elastique = FALSE) {
   if (!inherits(parcelles_onf, "sf")) {
     cli::cli_abort("{.arg parcelles_onf} must be an sf of ONF forest parcels.")
   }
@@ -197,6 +206,11 @@ croiser_parcelles_onf <- function(parcelles_onf, parcelles,
   crs_travail <- .croiser_crs_travail(crs_sortie)
   onf <- sf::st_transform(sf::st_make_valid(parcelles_onf), crs_travail)
   cad <- sf::st_transform(sf::st_make_valid(parcelles), crs_travail)
+  # Calage élastique (spec 058) : c'est l'ONF qui se déforme vers le
+  # cadastre, jamais l'inverse.
+  if (isTRUE(calage_elastique) && nrow(onf) > 0L && nrow(cad) > 0L) {
+    onf <- caler_onf_sur_cadastre(onf, cad)
+  }
   if (nrow(onf) == 0L || nrow(cad) == 0L) {
     return(.croiser_vide(crs_sortie, 0L, nrow(cad)))
   }
