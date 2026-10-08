@@ -12,6 +12,25 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[1.1.0\] - 2026-10-08
+
+### Added
+
+- [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
+  : UGF d’une forêt publique construites depuis le cadastre (candidates
+  PCI, calage ONF, sélection DGFiP × couverture ≥ 50 %, découpage par
+  accrochage, rattachements, re-pavage exact) ; `selection = "toutes"`
+  pour garder la sélection de l’appelant — spec 058, experimental.
+- [`caler_onf_sur_cadastre()`](https://pobsteta.github.io/nemeton/reference/caler_onf_sur_cadastre.md)
+  : calage élastique de l’ONF sur les limites cadastrales —
+  experimental.
+- [`load_parcelles_personnes_morales()`](https://pobsteta.github.io/nemeton/reference/load_parcelles_personnes_morales.md)
+  : propriétaires DGFiP par parcelle, cache national + extrait
+  départemental — experimental.
+- `croiser_parcelles_onf(calage_elastique = FALSE)` : calage élastique
+  en option, défaut inchangé.
+- `FNN` en Suggests.
+
 ## \[1.0.1\] - 2026-10-07
 
 ### Fixed

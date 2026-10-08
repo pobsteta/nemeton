@@ -47,7 +47,8 @@ croiser_parcelles_onf(
   seuil_calage = 0.9,
   inclure_reste = FALSE,
   rattacher_reste = FALSE,
-  id_col = NULL
+  id_col = NULL,
+  calage_elastique = FALSE
 )
 ```
 
@@ -128,6 +129,17 @@ croiser_parcelles_onf(
   Name of the identifier column of `parcelles`. Default `NULL`
   (auto-detect).
 
+- calage_elastique:
+
+  When `TRUE`, the forest parcels are first rubber-sheeted onto the
+  boundaries of `parcelles` by
+  [`caler_onf_sur_cadastre`](https://pobsteta.github.io/nemeton/reference/caler_onf_sur_cadastre.md)
+  (default settings), so that the ONF overflow along cadastral limits no
+  longer cuts thin strips. The cadastre is never moved. Default `FALSE`
+  (since v1.1.0, spec 058): the crossing is unchanged unless the caller
+  opts in. For a whole public forest built from the cadastre, see
+  [`construire_ugf_onf`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md).
+
 ## Value
 
 An sf of tenements in the CRS of `parcelles_onf`, ordered by UGF then by
@@ -156,4 +168,6 @@ Stable: covered by the 1.0 API contract (spec 057).
 
 ## See also
 
-[`load_onf_parcelles_source`](https://pobsteta.github.io/nemeton/reference/load_onf_parcelles_source.md)
+[`load_onf_parcelles_source`](https://pobsteta.github.io/nemeton/reference/load_onf_parcelles_source.md),
+[`construire_ugf_onf`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md),
+[`caler_onf_sur_cadastre`](https://pobsteta.github.io/nemeton/reference/caler_onf_sur_cadastre.md)

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,24 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.1.0" id="nemeton-110-2026-10-08">nemeton 1.1.0 (2026-10-08)<a class="anchor" aria-label="anchor" href="#nemeton-110-2026-10-08"></a></h2>
+<div class="section level3">
+<h3 id="ugf-dune-forêt-publique-construites-depuis-le-cadastre-spec-1-1-0">UGF d’une forêt publique construites depuis le cadastre (spec 058)<a class="anchor" aria-label="anchor" href="#ugf-dune-for%C3%AAt-publique-construites-depuis-le-cadastre-spec-1-1-0"></a></h3>
+<p>Brief <code>2026-10-08-ugf-depuis-onf</code> (règle de Pascal) : les parcelles forestières ne sont qu’une partition des parcelles cadastrales. On part toujours du cadastre, qu’on agrège et qu’on coupe ; le cadastre n’est jamais déformé, c’est la couche ONF, qui déborde, qu’on ajuste.</p>
+<ul><li>
+<strong><code><a href="../reference/construire_ugf_onf.html">construire_ugf_onf()</a></code></strong> (experimental) part de la forêt et trouve elle-même les parcelles cadastrales qui en relèvent. Elle prend les candidates PCI touchant l’union ONF dans la commune, cale l’ONF sur leurs limites, puis retient une parcelle si son propriétaire est une personne publique (DGFiP) <strong>et</strong> si l’ONF calée la couvre à 50 % au moins. Elle découpe ensuite par accrochage (ouverture morphologique, tolérance 15 m) et applique les rattachements finaux. Elle rend les tènements (<code>idu</code>, <code>ugf_id</code>, <code>foret_id</code>, <code>parcelle</code>, <code>surface_m2</code>, <code>part_onf</code>…) ; les parcelles retenues et écartées sont dans l’attribut <code>parcelles</code>, avec leur raison. Avec <code>selection = "toutes"</code>, elle garde la sélection de l’appelant (chemin « croiser avec l’ONF » d’un projet existant) et ne lit pas la DGFiP : sur les 23 parcelles du projet Couchey, 67 UGF dont 4 <code>cad~</code> (A 283, A 9, A 286, AO 212, communales hors régime forestier).</li>
+<li>
+<strong><code><a href="../reference/caler_onf_sur_cadastre.html">caler_onf_sur_cadastre()</a></code></strong> (experimental) : calage élastique (<em>rubber-sheeting</em>) de l’ONF sur toutes les limites cadastrales. Les points de contrôle sont pris tous les 5 m (<code>dmax</code> 80 m). Le déplacement est une moyenne pondérée en 1/d² des 12 vecteurs les plus proches, amortie au-delà de 200 m. Tous les sommets bougent, simplification à 1 m, chevauchements résolus.</li>
+<li>
+<strong><code><a href="../reference/load_parcelles_personnes_morales.html">load_parcelles_personnes_morales()</a></code></strong> (experimental) lit le fichier DGFiP des parcelles des personnes morales (data.gouv.fr). Le fichier national (376 Mo) est téléchargé une seule fois, puis un extrait par département est gardé en cache (5,6 Mo pour la Côte-d’Or). Elle rend une ligne par parcelle (IDU), avec <code>publique</code> (groupes 1, 2, 3, 4, 9). Une parcelle absente du fichier est privée.</li>
+<li>
+<strong><code>croiser_parcelles_onf(calage_elastique = FALSE)</code></strong> : nouvel argument. À <code>TRUE</code>, l’ONF est calée sur les parcelles de l’utilisateur avant le croisement. Le défaut ne change rien.</li>
+</ul><p>Mesuré sur Couchey (21200) : 63 candidates, <strong>19 parcelles retenues (493,79 ha), 63 UGF, aucune hors ONF, 85 tènements, 9 parcelles coupées, plus petite UGF 2,11 ha</strong>, comme le prototype. Le calcul prend 15 s une fois les sources chargées, au lieu de ~10 min pour le prototype. Le pavage est exact (écart &lt; 10⁻⁵ m² par parcelle) et les 1 047 sommets du cadastre se retrouvent tous dans la sortie.</p>
+<p>Le croisement « propriétaire public × couverture ONF » est une <strong>approximation</strong> du régime forestier : l’arrêté préfectoral d’application, seule source officielle, n’est pas ouvert parcelle par parcelle.</p>
+<p><code>FNN</code> entre dans <code>Suggests</code> : il accélère le champ de déplacement (25 s → &lt; 1 s à Couchey). Sans lui, un repli en R pur donne le même résultat.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.0.1" id="nemeton-101-2026-10-07">nemeton 1.0.1 (2026-10-07)<a class="anchor" aria-label="anchor" href="#nemeton-101-2026-10-07"></a></h2>
 <p>Correctif de documentation, sans changement de code ni d’API.</p>

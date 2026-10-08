@@ -663,6 +663,19 @@ Peut changer a toute version, sans depreciation (spec 057 §4.3) : RAG,
 biophysique Sentinel-2, suivi sanitaire FORDEAD / RECONFORT et sa
 validation terrain, regeneration.
 
+### UGF depuis le parcellaire ONF (spec 058)
+
+Parcelles cadastrales de la foret publique, calage elastique de l’ONF,
+proprietaires DGFiP
+
+- [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
+  : Build the management units (UGF) of a public forest from the
+  cadastre
+- [`caler_onf_sur_cadastre()`](https://pobsteta.github.io/nemeton/reference/caler_onf_sur_cadastre.md)
+  : Rubber-sheet the ONF forest parcels onto cadastral boundaries
+- [`load_parcelles_personnes_morales()`](https://pobsteta.github.io/nemeton/reference/load_parcelles_personnes_morales.md)
+  : Parcels owned by legal entities (DGFiP), for one commune
+
 ### Corpus de connaissances et RAG
 
 - [`rag`](https://pobsteta.github.io/nemeton/reference/rag.md) : RAG

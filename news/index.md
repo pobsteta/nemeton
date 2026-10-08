@@ -1,5 +1,61 @@
 # Changelog
 
+## nemeton 1.1.0 (2026-10-08)
+
+### UGF d’une forêt publique construites depuis le cadastre (spec 058)
+
+Brief `2026-10-08-ugf-depuis-onf` (règle de Pascal) : les parcelles
+forestières ne sont qu’une partition des parcelles cadastrales. On part
+toujours du cadastre, qu’on agrège et qu’on coupe ; le cadastre n’est
+jamais déformé, c’est la couche ONF, qui déborde, qu’on ajuste.
+
+- **[`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)**
+  (experimental) part de la forêt et trouve elle-même les parcelles
+  cadastrales qui en relèvent. Elle prend les candidates PCI touchant
+  l’union ONF dans la commune, cale l’ONF sur leurs limites, puis
+  retient une parcelle si son propriétaire est une personne publique
+  (DGFiP) **et** si l’ONF calée la couvre à 50 % au moins. Elle découpe
+  ensuite par accrochage (ouverture morphologique, tolérance 15 m) et
+  applique les rattachements finaux. Elle rend les tènements (`idu`,
+  `ugf_id`, `foret_id`, `parcelle`, `surface_m2`, `part_onf`…) ; les
+  parcelles retenues et écartées sont dans l’attribut `parcelles`, avec
+  leur raison. Avec `selection = "toutes"`, elle garde la sélection de
+  l’appelant (chemin « croiser avec l’ONF » d’un projet existant) et ne
+  lit pas la DGFiP : sur les 23 parcelles du projet Couchey, 67 UGF dont
+  4 `cad~` (A 283, A 9, A 286, AO 212, communales hors régime
+  forestier).
+- **[`caler_onf_sur_cadastre()`](https://pobsteta.github.io/nemeton/reference/caler_onf_sur_cadastre.md)**
+  (experimental) : calage élastique (*rubber-sheeting*) de l’ONF sur
+  toutes les limites cadastrales. Les points de contrôle sont pris tous
+  les 5 m (`dmax` 80 m). Le déplacement est une moyenne pondérée en 1/d²
+  des 12 vecteurs les plus proches, amortie au-delà de 200 m. Tous les
+  sommets bougent, simplification à 1 m, chevauchements résolus.
+- **[`load_parcelles_personnes_morales()`](https://pobsteta.github.io/nemeton/reference/load_parcelles_personnes_morales.md)**
+  (experimental) lit le fichier DGFiP des parcelles des personnes
+  morales (data.gouv.fr). Le fichier national (376 Mo) est téléchargé
+  une seule fois, puis un extrait par département est gardé en cache
+  (5,6 Mo pour la Côte-d’Or). Elle rend une ligne par parcelle (IDU),
+  avec `publique` (groupes 1, 2, 3, 4, 9). Une parcelle absente du
+  fichier est privée.
+- **`croiser_parcelles_onf(calage_elastique = FALSE)`** : nouvel
+  argument. À `TRUE`, l’ONF est calée sur les parcelles de l’utilisateur
+  avant le croisement. Le défaut ne change rien.
+
+Mesuré sur Couchey (21200) : 63 candidates, **19 parcelles retenues
+(493,79 ha), 63 UGF, aucune hors ONF, 85 tènements, 9 parcelles coupées,
+plus petite UGF 2,11 ha**, comme le prototype. Le calcul prend 15 s une
+fois les sources chargées, au lieu de ~10 min pour le prototype. Le
+pavage est exact (écart \< 10⁻⁵ m² par parcelle) et les 1 047 sommets du
+cadastre se retrouvent tous dans la sortie.
+
+Le croisement « propriétaire public × couverture ONF » est une
+**approximation** du régime forestier : l’arrêté préfectoral
+d’application, seule source officielle, n’est pas ouvert parcelle par
+parcelle.
+
+`FNN` entre dans `Suggests` : il accélère le champ de déplacement (25 s
+→ \< 1 s à Couchey). Sans lui, un repli en R pur donne le même résultat.
+
 ## nemeton 1.0.1 (2026-10-07)
 
 Correctif de documentation, sans changement de code ni d’API.

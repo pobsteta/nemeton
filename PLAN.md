@@ -117,6 +117,45 @@ opposer au prochain fork qui se présentera comme un raccourci.
 
 ------------------------------------------------------------------------
 
+# Chantier — UGF d’une forêt publique depuis le parcellaire ONF (spec 058)
+
+> Brief `briefs/vers-nemeton/2026-10-08-ugf-depuis-onf.md` (session
+> `nemetonclaude`, règles de Pascal du 2026-10-07/08), copié dans
+> `specs/058-ugf-depuis-onf/`. Brief lié côté app :
+> `briefs/vers-nemetonshiny/2026-10-08-ugf-depuis-onf.md`.
+
+| Étape | Contenu | Release | État |
+|----|----|----|----|
+| Cœur | [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md), [`caler_onf_sur_cadastre()`](https://pobsteta.github.io/nemeton/reference/caler_onf_sur_cadastre.md), [`load_parcelles_personnes_morales()`](https://pobsteta.github.io/nemeton/reference/load_parcelles_personnes_morales.md), option `calage_elastique` de [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md) | **v1.1.0** | ✅ livré |
+| App | stockage du n° ONF dans les UGF, intégration, API d’écriture des UGF | `nemetonshiny` | ⬜ brief émis par `nemetonclaude` |
+
+**Décisions** — *2026-10-08* : nom
+[`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
+; fichier DGFiP national gardé une fois en cache, URL résolue par l’API
+data.gouv.fr, extrait par département (le filtre sur le national prend
+de 1 à 45 s selon le cache disque, l’extrait est immédiat) ; personnes
+publiques = groupes DGFiP 1, 2, 3, 4, 9 (HLM et SEM exclus) ; les trois
+fonctions sont experimental.
+
+**Journal** — *2026-10-08* (**v1.1.0**) : livré. Couchey, de bout en
+bout par le réseau : 19 parcelles (493,79 ha), 63 UGF, 0 `cad~`, 85
+tènements, plus petite UGF 2,11 ha, identiques au prototype (écart total
+0,6 ha sur 494). 15 s au lieu de ~10 min : `FNN` pour les k voisins (25
+s → \< 1 s), longueurs de limite commune en une intersection vectorisée.
+Deux défauts du prototype corrigés en route. (1) `st_make_valid()` sur
+des coordonnées en degrés passe par s2 et redessine les parcelles : on
+reprojette d’abord. (2) L’arrondi au centimètre, nécessaire au
+découpage, déplaçait les sommets cadastraux (jusqu’à 14 m² d’écart par
+parcelle) : re-pavage final sur la géométrie d’origine, éclats \< 1 m²
+raccrochés. Constaté au passage :
+[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+valide aussi ses entrées *avant* de les reprojeter (même effet s2 sur
+une entrée en 4326) — non modifié, à traiter à part.
+
+**Prochaine étape** : intégration côté app (brief `nemetonclaude`).
+
+------------------------------------------------------------------------
+
 # Chantier EN COURS — Pré-version 1.0 (audit du 2026-10-02)
 
 > Audit complet du dépôt (8 revues en lecture seule, constats critiques

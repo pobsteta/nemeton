@@ -67,7 +67,7 @@ never take a parcel — dropping forest is not a correction.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -211,7 +211,8 @@ never take a parcel — dropping forest is not a correction.</p></li>
 <span>  seuil_calage <span class="op">=</span> <span class="fl">0.9</span>,</span>
 <span>  inclure_reste <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  rattacher_reste <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  id_col <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  id_col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  calage_elastique <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -289,6 +290,16 @@ itself.</p></dd>
 <dd><p>Name of the identifier column of <code>parcelles</code>. Default
 <code>NULL</code> (auto-detect).</p></dd>
 
+
+<dt id="arg-calage-elastique">calage_elastique<a class="anchor" aria-label="anchor" href="#arg-calage-elastique"></a></dt>
+<dd><p>When <code>TRUE</code>, the forest parcels are first
+rubber-sheeted onto the boundaries of <code>parcelles</code> by
+<code><a href="caler_onf_sur_cadastre.html">caler_onf_sur_cadastre</a></code> (default settings), so that the ONF
+overflow along cadastral limits no longer cuts thin strips. The cadastre is
+never moved. Default <code>FALSE</code> (since v1.1.0, spec 058): the crossing is
+unchanged unless the caller opts in. For a whole public forest built from the
+cadastre, see <code><a href="construire_ugf_onf.html">construire_ugf_onf</a></code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -317,7 +328,8 @@ sliver of the cadastral parcel it did not cover.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="load_onf_parcelles_source.html">load_onf_parcelles_source</a></code></p></div>
+    <div class="dont-index"><p><code><a href="load_onf_parcelles_source.html">load_onf_parcelles_source</a></code>, <code><a href="construire_ugf_onf.html">construire_ugf_onf</a></code>,
+<code><a href="caler_onf_sur_cadastre.html">caler_onf_sur_cadastre</a></code></p></div>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.0.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -299,6 +299,30 @@
 <td>
 <code>service_project.R:601-603</code> — <code>.indicator_status_col(cc)</code> puis <code>normalize_indicator(cc, v, statut = st)</code>. <strong>En plus du brief</strong> : <code>service_compute.R:4286-4287</code> retire le statut d’un calcul précédent (sinon un P2 repassé CHM → IFN gardait <code>indice_station_m</code> et ses m³/ha/an étaient notés sur 40)</td>
 </tr></tbody></table><p><strong>Ce que l’écart n° 1 aura coûté et rapporté.</strong> Ouvert le 2026-08-15 comme « non consommé, et désormais bloquant », il l’était : la copie de la table dans <code>app_config.R</code> déclarait 40 indicateurs contre 41, A5 était calculé puis filtré à l’affichage, et une troisième copie des libellés (les clés i18n <code>indicator_&lt;CODE&gt;</code>) avait F1 et F2 inversés — la carte d’érosion sortait « F1 - Fertilité des sols ». Le dé-fork a retiré la <strong>classe</strong> de bug : quatre jours plus tard, la correction du sens de la famille R (v0.181.0) puis le décroisement de F (v0.182.0) ont traversé l’app <strong>sans une ligne de table à toucher</strong>. C’est l’argument à opposer au prochain fork qui se présentera comme un raccourci.</p>
+<hr></div>
+<div class="section level1">
+<h1 id="chantier--ugf-dune-forêt-publique-depuis-le-parcellaire-onf-spec-058">Chantier — UGF d’une forêt publique depuis le parcellaire ONF (spec 058)<a class="anchor" aria-label="anchor" href="#chantier--ugf-dune-for%C3%AAt-publique-depuis-le-parcellaire-onf-spec-058"></a></h1>
+<blockquote>
+<p>Brief <code>briefs/vers-nemeton/2026-10-08-ugf-depuis-onf.md</code> (session <code>nemetonclaude</code>, règles de Pascal du 2026-10-07/08), copié dans <code>specs/058-ugf-depuis-onf/</code>. Brief lié côté app : <code>briefs/vers-nemetonshiny/2026-10-08-ugf-depuis-onf.md</code>.</p>
+</blockquote>
+<table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>Étape</th>
+<th>Contenu</th>
+<th>Release</th>
+<th>État</th>
+</tr></thead><tbody><tr><td>Cœur</td>
+<td>
+<code><a href="reference/construire_ugf_onf.html">construire_ugf_onf()</a></code>, <code><a href="reference/caler_onf_sur_cadastre.html">caler_onf_sur_cadastre()</a></code>, <code><a href="reference/load_parcelles_personnes_morales.html">load_parcelles_personnes_morales()</a></code>, option <code>calage_elastique</code> de <code><a href="reference/croiser_parcelles_onf.html">croiser_parcelles_onf()</a></code>
+</td>
+<td><strong>v1.1.0</strong></td>
+<td>✅ livré</td>
+</tr><tr><td>App</td>
+<td>stockage du n° ONF dans les UGF, intégration, API d’écriture des UGF</td>
+<td><code>nemetonshiny</code></td>
+<td>⬜ brief émis par <code>nemetonclaude</code>
+</td>
+</tr></tbody></table><p><strong>Décisions</strong> — <em>2026-10-08</em> : nom <code><a href="reference/construire_ugf_onf.html">construire_ugf_onf()</a></code> ; fichier DGFiP national gardé une fois en cache, URL résolue par l’API data.gouv.fr, extrait par département (le filtre sur le national prend de 1 à 45 s selon le cache disque, l’extrait est immédiat) ; personnes publiques = groupes DGFiP 1, 2, 3, 4, 9 (HLM et SEM exclus) ; les trois fonctions sont experimental.</p>
+<p><strong>Journal</strong> — <em>2026-10-08</em> (<strong>v1.1.0</strong>) : livré. Couchey, de bout en bout par le réseau : 19 parcelles (493,79 ha), 63 UGF, 0 <code>cad~</code>, 85 tènements, plus petite UGF 2,11 ha, identiques au prototype (écart total 0,6 ha sur 494). 15 s au lieu de ~10 min : <code>FNN</code> pour les k voisins (25 s → &lt; 1 s), longueurs de limite commune en une intersection vectorisée. Deux défauts du prototype corrigés en route. (1) <code>st_make_valid()</code> sur des coordonnées en degrés passe par s2 et redessine les parcelles : on reprojette d’abord. (2) L’arrondi au centimètre, nécessaire au découpage, déplaçait les sommets cadastraux (jusqu’à 14 m² d’écart par parcelle) : re-pavage final sur la géométrie d’origine, éclats &lt; 1 m² raccrochés. Constaté au passage : <code><a href="reference/croiser_parcelles_onf.html">croiser_parcelles_onf()</a></code> valide aussi ses entrées <em>avant</em> de les reprojeter (même effet s2 sur une entrée en 4326) — non modifié, à traiter à part.</p>
+<p><strong>Prochaine étape</strong> : intégration côté app (brief <code>nemetonclaude</code>).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier-en-cours--pré-version-10-audit-du-2026-10-02">Chantier EN COURS — Pré-version 1.0 (audit du 2026-10-02)<a class="anchor" aria-label="anchor" href="#chantier-en-cours--pr%C3%A9-version-10-audit-du-2026-10-02"></a></h1>
