@@ -12,7 +12,8 @@ croiser_parcelles_onf(
   seuil_calage = 0.9,
   inclure_reste = FALSE,
   rattacher_reste = FALSE,
-  id_col = NULL
+  id_col = NULL,
+  calage_elastique = FALSE
 )
 }
 \arguments{
@@ -73,6 +74,14 @@ itself.}
 
 \item{id_col}{Name of the identifier column of \code{parcelles}. Default
 \code{NULL} (auto-detect).}
+
+\item{calage_elastique}{When \code{TRUE}, the forest parcels are first
+rubber-sheeted onto the boundaries of \code{parcelles} by
+\code{\link{caler_onf_sur_cadastre}} (default settings), so that the ONF
+overflow along cadastral limits no longer cuts thin strips. The cadastre is
+never moved. Default \code{FALSE} (since v1.1.0, spec 058): the crossing is
+unchanged unless the caller opts in. For a whole public forest built from the
+cadastre, see \code{\link{construire_ugf_onf}}.}
 }
 \value{
 An \pkg{sf} of tenements in the CRS of \code{parcelles_onf}, ordered by UGF
@@ -136,5 +145,6 @@ Stable: covered by the 1.0 API contract (spec 057).
 }
 
 \seealso{
-\code{\link{load_onf_parcelles_source}}
+\code{\link{load_onf_parcelles_source}}, \code{\link{construire_ugf_onf}},
+\code{\link{caler_onf_sur_cadastre}}
 }

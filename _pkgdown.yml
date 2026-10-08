@@ -552,6 +552,13 @@ reference:
       biophysique Sentinel-2, suivi sanitaire FORDEAD / RECONFORT et sa
       validation terrain, regeneration.
 
+  - subtitle: "UGF depuis le parcellaire ONF (spec 058)"
+    desc: "Parcelles cadastrales de la foret publique, calage elastique de l'ONF, proprietaires DGFiP"
+    contents:
+    - construire_ugf_onf
+    - caler_onf_sur_cadastre
+    - load_parcelles_personnes_morales
+
   - subtitle: "Corpus de connaissances et RAG"
     contents:
     - rag
