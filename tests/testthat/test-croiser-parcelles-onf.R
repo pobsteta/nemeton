@@ -1,6 +1,10 @@
 # test-croiser-parcelles-onf.R — pour chaque UGF, ses tènements (spec 046 §7)
 #
 # Géométries synthétiques en Lambert-93, en mètres.
+#
+# La fonction est dépréciée depuis 1.2.0 ; son avertissement est testé une
+# fois, à part, et réduit au silence ailleurs.
+withr::local_options(nemeton.deprecation_verbosity = "quiet")
 
 .cx_rect <- function(x0, x1, y0, y1) {
   sf::st_polygon(list(rbind(c(x0, y0), c(x1, y0), c(x1, y1),
@@ -520,4 +524,24 @@ test_that("a cadastre in lon/lat is reprojected before validation, not warped", 
   vr <- sf::st_coordinates(ref)[, 1:2]
   d <- apply(vr, 1, function(p) min(sqrt((vo[, 1] - p[1])^2 + (vo[, 2] - p[2])^2)))
   expect_lt(max(d), 1e-6)
+})
+
+test_that("croiser_parcelles_onf() is deprecated and points to construire_ugf_onf()", {
+  onf <- .cx_onf(list(c(0, 100, 0, 100)))
+  cad <- .cx_cad("A", list(c(0, 100, 0, 100)))
+  withr::local_options(nemeton.deprecation_verbosity = "warning")
+  expect_warning(out <- croiser_parcelles_onf(onf, cad),
+                 class = "deprecatedWarning")
+  expect_warning(croiser_parcelles_onf(onf, cad), "construire_ugf_onf")
+  expect_equal(nrow(out), 1L)            # elle fonctionne toujours
+
+  withr::local_options(nemeton.deprecation_verbosity = "quiet")
+  expect_no_warning(croiser_parcelles_onf(onf, cad))
+
+  # Par défaut : une seule fois par session.
+  withr::local_options(nemeton.deprecation_verbosity = NULL)
+  rm(list = ls(nemeton:::.nemeton_deprecations),
+     envir = nemeton:::.nemeton_deprecations)
+  expect_warning(croiser_parcelles_onf(onf, cad), class = "deprecatedWarning")
+  expect_no_warning(croiser_parcelles_onf(onf, cad))
 })

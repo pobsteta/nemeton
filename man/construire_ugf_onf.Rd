@@ -6,7 +6,7 @@
 \usage{
 construire_ugf_onf(
   aoi = NULL,
-  insee,
+  insee = NULL,
   parcelles_onf = NULL,
   cadastre = NULL,
   proprietaires = NULL,
@@ -29,8 +29,12 @@ construire_ugf_onf(
 \item{aoi}{An \pkg{sf}/\pkg{sfc} extent used to fetch the ONF parcels when
 \code{parcelles_onf} is \code{NULL}.}
 
-\item{insee}{INSEE code of the commune whose cadastral parcels are kept.
-Required.}
+\item{insee}{INSEE code(s) of the communes whose cadastral parcels are
+fetched and whose DGFiP owners are read. Several communes, even in several
+départements, are processed \strong{together}: calage, cutting and attachments
+run once over all of them, so limits between communes are handled on both
+sides. Optional when \code{cadastre} is given: then deduced from its
+\code{code_insee} column, or from the first five characters of \code{idu}.}
 
 \item{parcelles_onf}{Optional \pkg{sf} of ONF parcels, as returned by
 \code{\link{load_onf_parcelles_source}}; fetched over \code{aoi} when
@@ -38,8 +42,9 @@ Required.}
 
 \item{cadastre}{Optional \pkg{sf} of candidate cadastral parcels with an
 \code{idu} column; fetched from the IGN WFS (PCI,
-\code{CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle}) when \code{NULL}.
-Restricted to \code{insee} when it has a \code{code_insee} column.}
+\code{CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle}) for \code{insee} when
+\code{NULL}. A given \code{cadastre} is taken as is, whatever its communes
+(since 1.2.0; 1.1.x kept only the rows of \code{insee}).}
 
 \item{proprietaires}{Optional \code{data.frame} as returned by
 \code{\link{load_parcelles_personnes_morales}}; read for \code{insee} when
@@ -96,7 +101,8 @@ vertices.
 
 Attributes: \code{parcelles}, a \code{data.frame} of every candidate with
 \code{idu}, \code{retenue}, \code{raison} (\code{NA} when kept,
-\code{"privee"} or \code{"couverture < 50 \%"}), \code{publique},
+\code{"hors ONF"} for a parcel of \code{cadastre} that does not touch the ONF
+layer, \code{"privee"} or \code{"couverture < 50 \%"}), \code{publique},
 \code{proprietaire}, \code{groupe}, \code{natures}, \code{couverture_onf} and
 \code{surface_ha}; \code{calage}, as in \code{\link{caler_onf_sur_cadastre}}.
 \code{NULL} with a warning when a source cannot be fetched.

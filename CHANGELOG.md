@@ -10,6 +10,19 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-08
+
+### Deprecated
+- `croiser_parcelles_onf()` : remplacée par `construire_ugf_onf(selection = "toutes")` ; reste jusqu'en 2.0, avertit une fois par session (`deprecatedWarning`, option `nemeton.deprecation_verbosity`).
+
+### Added
+- `construire_ugf_onf()` : `insee` vectoriel (plusieurs communes, plusieurs départements, traitées ensemble) ; facultatif quand `cadastre` est fourni.
+- `construire_ugf_onf()` : les parcelles hors ONF figurent dans `attr(x, "parcelles")` (`raison = "hors ONF"`).
+- `load_parcelles_personnes_morales()` : plusieurs communes.
+
+### Changed
+- `construire_ugf_onf()` : un `cadastre` fourni n'est plus filtré sur `insee`.
+
 ## [1.1.1] - 2026-10-08
 
 ### Fixed

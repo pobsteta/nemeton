@@ -367,10 +367,10 @@ caler_onf_sur_cadastre <- function(onf, cadastre, pas = 5, dmax = 80,
   as.data.frame(sc$ToTable())
 }
 
-#' Parcels owned by legal entities (DGFiP), for one commune
+#' Parcels owned by legal entities (DGFiP), for one or more communes
 #'
 #' @description
-#' Read, for the commune `insee`, the DGFiP file of **parcels owned by legal
+#' Read, for the communes `insee`, the DGFiP file of **parcels owned by legal
 #' entities** (*Fichiers des locaux et des parcelles des personnes morales*,
 #' data.gouv.fr, Licence Ouverte) and return one row per cadastral parcel with
 #' its owner and whether that owner is a **public person** (State, region,
@@ -384,7 +384,8 @@ caler_onf_sur_cadastre <- function(onf, cadastre, pas = 5, dmax = 80,
 #' release is fetched alongside and the old one removed. Each département read
 #' is then kept as a small extract next to it.
 #'
-#' @param insee Commune INSEE code (5 characters).
+#' @param insee One or more commune INSEE codes (5 characters). Communes may
+#'   lie in several départements (one extract is read per département).
 #' @param fichier Optional path to a DGFiP parcel Parquet file (national file or
 #'   extract) to read instead of the cache. Nothing is downloaded.
 #' @param cache_dir Cache directory. Default
@@ -393,7 +394,7 @@ caler_onf_sur_cadastre <- function(onf, cadastre, pas = 5, dmax = 80,
 #'   identifier), `code_insee`, `publique` (logical), `groupe` (owner group
 #'   label), `proprietaire` (owner names, `" | "`-separated), `natures`
 #'   (distinct land-use labels of its fiscal subdivisions, `", "`-separated) and
-#'   `contenance_m2`. A 0-row `data.frame` when the commune holds no
+#'   `contenance_m2`. A 0-row `data.frame` when the communes hold no
 #'   legal-entity parcel; `NULL` on failure (missing `arrow`, no network and no
 #'   cache), with a warning.
 #' @section Lifecycle:
@@ -402,19 +403,20 @@ caler_onf_sur_cadastre <- function(onf, cadastre, pas = 5, dmax = 80,
 #' @export
 load_parcelles_personnes_morales <- function(insee, fichier = NULL,
                                              cache_dir = NULL) {
-  insee <- as.character(insee)
-  if (length(insee) != 1L || !grepl("^[0-9][0-9AB][0-9]{3}$", insee)) {
-    cli::cli_abort("{.arg insee} must be one 5-character INSEE commune code.")
+  insee <- unique(as.character(insee))
+  if (!length(insee) || anyNA(insee) ||
+      !all(grepl("^[0-9][0-9AB][0-9]{3}$", insee))) {
+    cli::cli_abort("{.arg insee} must hold 5-character INSEE commune codes.")
   }
   if (!requireNamespace("arrow", quietly = TRUE)) {
     cli::cli_warn("load_parcelles_personnes_morales() needs the {.pkg arrow} package; returning NULL.")
     return(NULL)
   }
-  dep <- .dgfip_departement(insee)
+  deps <- unique(.dgfip_departement(insee))
 
   if (!is.null(fichier)) {
     if (!file.exists(fichier)) cli::cli_abort("File {.file {fichier}} not found.")
-    brut <- .dgfip_lire(fichier, dep)
+    lire_dep <- function(dep) .dgfip_lire(fichier, dep)
   } else {
     if (is.null(cache_dir)) {
       cache_dir <- file.path(tools::R_user_dir("nemeton", "cache"),
@@ -423,14 +425,17 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
     national <- .dgfip_fichier_national(cache_dir)
     if (is.null(national)) return(NULL)
     stamp <- sub("^parcelles-pm-([0-9-]+)\\.parquet$", "\\1", basename(national))
-    extrait <- file.path(cache_dir, paste0("dep-", dep, "-", stamp, ".parquet"))
-    if (file.exists(extrait)) {
-      brut <- .dgfip_lire(extrait)
-    } else {
+    lire_dep <- function(dep) {
+      extrait <- file.path(cache_dir, paste0("dep-", dep, "-", stamp, ".parquet"))
+      if (file.exists(extrait)) return(.dgfip_lire(extrait))
       brut <- .dgfip_lire(national, dep)
       tryCatch(arrow::write_parquet(brut, extrait), error = function(e) NULL)
+      brut
     }
   }
+  # Un projet peut s'étendre sur plusieurs communes, voire plusieurs
+  # départements : un extrait par département, filtré ensuite par commune.
+  brut <- do.call(rbind, lapply(deps, lire_dep))
   .dgfip_par_parcelle(brut, insee)
 }
 
@@ -443,9 +448,12 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
   if (is.null(brut) || !nrow(brut)) return(vide)
   ci <- if ("code_insee" %in% names(brut)) brut$code_insee else
     paste0(brut$departement, brut$code_commune)
-  brut <- brut[!is.na(ci) & ci == insee, , drop = FALSE]
+  garde <- !is.na(ci) & ci %in% insee
+  brut <- brut[garde, , drop = FALSE]
+  ci <- ci[garde]
   if (!nrow(brut)) return(vide)
-  brut$idu <- .dgfip_idu(insee, brut$prefixe, brut$section, brut$numero_parcelle)
+  brut$code_insee <- ci
+  brut$idu <- .dgfip_idu(ci, brut$prefixe, brut$section, brut$numero_parcelle)
   groupes <- split(seq_len(nrow(brut)), brut$idu)
   colle <- function(v, sep) {
     v <- unique(v[!is.na(v) & nzchar(v)])
@@ -456,7 +464,7 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
     codes <- as.character(brut$groupe_personne_code[i])
     pub <- codes %in% .DGFIP_GROUPES_PUBLICS
     data.frame(
-      idu = id, code_insee = insee, publique = any(pub),
+      idu = id, code_insee = brut$code_insee[i[1L]], publique = any(pub),
       groupe = colle(brut$groupe_personne_libelle[i][order(!pub)], ", "),
       proprietaire = colle(brut$denomination[i], " | "),
       natures = colle(brut$nature_culture_libelle[i], ", "),
@@ -467,6 +475,16 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
   out$contenance_m2[!is.finite(out$contenance_m2)] <- NA_real_
   row.names(out) <- NULL
   out
+}
+
+# Codes INSEE de commune : uniques, au format à 5 caractères.
+.ugf_valider_insee <- function(insee) {
+  insee <- unique(as.character(insee))
+  if (!length(insee) || anyNA(insee) ||
+      !all(grepl("^[0-9][0-9AB][0-9]{3}$", insee))) {
+    cli::cli_abort("{.arg insee} must hold 5-character INSEE commune codes.")
+  }
+  insee
 }
 
 # ---------------------------------------------------------------------------
@@ -490,7 +508,7 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
     cli::cli_warn("Cadastral WFS returned an unexpected schema.")
     return(NULL)
   }
-  pci[pci$code_insee == insee, c("idu", "code_insee"), drop = FALSE]
+  pci[pci$code_insee %in% insee, c("idu", "code_insee"), drop = FALSE]
 }
 
 # ---------------------------------------------------------------------------
@@ -811,14 +829,19 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
 #'
 #' @param aoi An `sf`/`sfc` extent used to fetch the ONF parcels when
 #'   `parcelles_onf` is `NULL`.
-#' @param insee INSEE code of the commune whose cadastral parcels are kept.
-#'   Required.
+#' @param insee INSEE code(s) of the communes whose cadastral parcels are
+#'   fetched and whose DGFiP owners are read. Several communes, even in several
+#'   départements, are processed **together**: calage, cutting and attachments
+#'   run once over all of them, so limits between communes are handled on both
+#'   sides. Optional when `cadastre` is given: then deduced from its
+#'   `code_insee` column, or from the first five characters of `idu`.
 #' @param parcelles_onf Optional `sf` of ONF parcels, as returned by
 #'   [load_onf_parcelles_source()]; fetched over `aoi` when `NULL`.
 #' @param cadastre Optional `sf` of candidate cadastral parcels with an `idu`
 #'   column; fetched from the IGN WFS (PCI,
-#'   `CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle`) when `NULL`. Restricted to `insee` when
-#'   it has a `code_insee` column.
+#'   `CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle`) for `insee` when `NULL`.
+#'   A given `cadastre` is taken as is, whatever its communes (since 1.2.0;
+#'   1.1.x kept only the rows of `insee`).
 #' @param proprietaires Optional `data.frame` as returned by
 #'   [load_parcelles_personnes_morales()]; read for `insee` when `NULL`.
 #' @param pas,dmax,rayon,k Calage parameters, see [caler_onf_sur_cadastre()].
@@ -857,7 +880,9 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
 #'   exactly, on its original vertices.
 #'
 #'   Attributes: `parcelles`, a `data.frame` of every candidate with `idu`,
-#'   `retenue`, `raison` (`NA` when kept, `"privee"` or `"couverture < 50 %"`),
+#'   `retenue`, `raison` (`NA` when kept, `"hors ONF"` for a parcel of
+#'   `cadastre` that does not touch the ONF layer, `"privee"` or
+#'   `"couverture < 50 %"`),
 #'   `publique`, `proprietaire`, `groupe`, `natures`, `couverture_onf` and
 #'   `surface_ha`; `calage`, as in [caler_onf_sur_cadastre()]. `NULL` with a
 #'   warning when a source cannot be fetched.
@@ -866,7 +891,7 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
 #' @seealso [croiser_parcelles_onf()], [caler_onf_sur_cadastre()],
 #'   [load_parcelles_personnes_morales()], [load_onf_parcelles_source()]
 #' @export
-construire_ugf_onf <- function(aoi = NULL, insee, parcelles_onf = NULL,
+construire_ugf_onf <- function(aoi = NULL, insee = NULL, parcelles_onf = NULL,
                                cadastre = NULL, proprietaires = NULL,
                                pas = 5, dmax = 80, rayon = 200, k = 12,
                                seuil_couverture = 0.5, tol = 15,
@@ -875,10 +900,10 @@ construire_ugf_onf <- function(aoi = NULL, insee, parcelles_onf = NULL,
                                crs = 2154,
                                selection = c("foret", "toutes")) {
   selection <- match.arg(selection)
-  if (missing(insee) || length(insee) != 1L || is.na(insee)) {
-    cli::cli_abort("{.arg insee} (INSEE code of the commune) is required.")
+  if (is.null(insee) && is.null(cadastre)) {
+    cli::cli_abort("{.arg insee} (INSEE code(s) of the communes) is required when {.arg cadastre} is not given.")
   }
-  insee <- as.character(insee)
+  if (!is.null(insee)) insee <- .ugf_valider_insee(insee)
   if (!is.numeric(seuil_couverture) || seuil_couverture <= 0 ||
       seuil_couverture > 1) {
     cli::cli_abort("{.arg seuil_couverture} must be a share in (0, 1].")
@@ -915,20 +940,36 @@ construire_ugf_onf <- function(aoi = NULL, insee, parcelles_onf = NULL,
   if (!inherits(cadastre, "sf") || !"idu" %in% names(cadastre)) {
     cli::cli_abort("{.arg cadastre} must be an sf with an {.field idu} column.")
   }
-  if ("code_insee" %in% names(cadastre)) {
-    cadastre <- cadastre[cadastre$code_insee == insee, , drop = FALSE]
+  # Un cadastre fourni est pris tel quel, toutes communes confondues : c'est la
+  # sélection de l'appelant (un projet peut chevaucher deux communes). Les
+  # communes, si on ne les donne pas, s'en déduisent.
+  if (is.null(insee)) {
+    insee <- if ("code_insee" %in% names(cadastre)) cadastre$code_insee else
+      substr(as.character(cadastre$idu), 1L, 5L)
+    insee <- .ugf_valider_insee(insee[!is.na(insee)])
   }
   cad <- sf::st_make_valid(sf::st_transform(cadastre, crs_travail))
   cad <- .ugf_fondre(sf::st_sf(idu = as.character(cad$idu),
                                geometry = sf::st_geometry(cad)), "idu")
-  # En mode « toutes », une parcelle de l'appelant qui ne touche pas l'ONF
-  # reste : elle devient sa propre unité `cad~<idu>`.
+  # En mode « foret », une parcelle qui ne touche pas l'ONF n'entre ni dans le
+  # calage ni dans la sélection, mais elle est rendue dans l'attribut
+  # `parcelles` (raison « hors ONF ») : l'app la liste parmi les écartées. En
+  # mode « toutes », elle reste et devient sa propre unité `cad~<idu>`.
+  hors_onf <- NULL
   if (selection == "foret") {
-    cad <- cad[lengths(sf::st_intersects(cad, sf::st_union(sf::st_geometry(onf)))) > 0L,
-               , drop = FALSE]
+    touche <- lengths(sf::st_intersects(cad, sf::st_union(sf::st_geometry(onf)))) > 0L
+    if (any(!touche)) {
+      hors_onf <- data.frame(
+        idu = cad$idu[!touche], retenue = FALSE, raison = "hors ONF",
+        publique = NA, proprietaire = NA_character_, groupe = NA_character_,
+        natures = NA_character_, couverture_onf = 0,
+        surface_ha = as.numeric(sf::st_area(cad[!touche, ])) / 1e4,
+        stringsAsFactors = FALSE)
+    }
+    cad <- cad[touche, , drop = FALSE]
   }
   if (!nrow(cad)) {
-    cli::cli_warn("No cadastral parcel of {insee} touches the ONF parcels; returning NULL.")
+    cli::cli_warn("No cadastral parcel of {.val {insee}} touches the ONF parcels; returning NULL.")
     return(NULL)
   }
 
@@ -979,12 +1020,21 @@ construire_ugf_onf <- function(aoi = NULL, insee, parcelles_onf = NULL,
     proprietaire = champ("proprietaire"), groupe = champ("groupe"),
     natures = champ("natures"), couverture_onf = round(couv, 4),
     surface_ha = aire / 1e4, stringsAsFactors = FALSE)
+  if (!is.null(hors_onf)) {
+    # Propriétaire DGFiP connu pour les parcelles hors ONF aussi.
+    mh <- match(hors_onf$idu, proprietaires$idu)
+    hors_onf$publique <- !is.na(mh) & proprietaires$publique[mh] %in% TRUE
+    for (col in c("proprietaire", "groupe", "natures")) {
+      if (col %in% names(proprietaires)) hors_onf[[col]] <- as.character(proprietaires[[col]][mh])
+    }
+    parcelles <- rbind(parcelles, hors_onf)
+  }
   parcelles <- parcelles[order(!parcelles$retenue, -parcelles$couverture_onf), ,
                          drop = FALSE]
   row.names(parcelles) <- NULL
 
   if (!any(retenue)) {
-    cli::cli_warn("No cadastral parcel of {insee} qualifies as public forest.")
+    cli::cli_warn("No cadastral parcel of {.val {insee}} qualifies as public forest.")
     out <- .ugf_sortie_vide(sf::st_crs(crs))
     attr(out, "parcelles") <- parcelles
     attr(out, "calage") <- calage

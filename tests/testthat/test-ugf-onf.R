@@ -239,6 +239,84 @@ test_that("construire_ugf_onf() tiles each kept parcel exactly, without moving i
   expect_lt(max(d), 1e-3)
 })
 
+test_that("in 'foret' mode, parcels off the ONF layer are listed as 'hors ONF'", {
+  s <- .ug_scene()
+  cad <- rbind(s$cad, .ug_cad("F", list(c(1000, 1200, 0, 100))))
+  out <- construire_ugf_onf(insee = "21200", parcelles_onf = s$onf,
+                            cadastre = cad,
+                            proprietaires = .ug_proprio(c("A", "B", "D", "E", "F")))
+  pa <- attr(out, "parcelles")
+  expect_setequal(pa$idu, c("A", "B", "C", "D", "E", "F"))
+  f <- pa[pa$idu == "F", ]
+  expect_false(f$retenue)
+  expect_equal(f$raison, "hors ONF")
+  expect_equal(f$couverture_onf, 0)
+  expect_true(f$publique)
+  expect_equal(f$surface_ha, 2)
+  expect_false("F" %in% out$idu)
+  # Le reste est inchangé par l'ajout de F.
+  ref <- construire_ugf_onf(insee = "21200", parcelles_onf = s$onf,
+                            cadastre = s$cad, proprietaires = s$proprio)
+  expect_equal(sort(out$tenement_id), sort(ref$tenement_id))
+  expect_equal(sum(out$surface_m2), sum(ref$surface_m2), tolerance = 1e-9)
+})
+
+test_that("several communes are processed together", {
+  s <- .ug_scene()
+  # B et E passent dans une commune voisine, jointive de la première.
+  cad <- s$cad
+  cad$code_insee[cad$idu %in% c("B", "E")] <- "21201"
+  cad$idu <- ifelse(cad$code_insee == "21201", paste0("21201", cad$idu),
+                    paste0("21200", cad$idu))
+  proprio <- .ug_proprio(c("21200A", "21201B", "21200D", "21201E"))
+  onf <- s$onf
+
+  # insee déduit du cadastre, deux communes à la fois.
+  out <- construire_ugf_onf(parcelles_onf = onf, cadastre = cad,
+                            proprietaires = proprio)
+  ref <- construire_ugf_onf(insee = "21200", parcelles_onf = s$onf,
+                            cadastre = s$cad, proprietaires = s$proprio)
+  expect_setequal(unique(out$idu), c("21200A", "21201B", "21201E"))
+  # Même découpage que sur une seule commune : seuls les identifiants changent.
+  expect_equal(sort(out$surface_m2), sort(ref$surface_m2), tolerance = 1e-6)
+  expect_equal(sort(gsub("2120[01]", "", out$tenement_id)),
+               sort(ref$tenement_id))
+  for (id in unique(out$idu)) {
+    t <- sf::st_union(sf::st_geometry(out)[out$idu == id])
+    g <- sf::st_geometry(cad)[cad$idu == id]
+    expect_lt(sum(as.numeric(sf::st_area(sf::st_sym_difference(t, g)))), 1)
+  }
+  # Un insee explicite à deux communes donne le même résultat.
+  out2 <- construire_ugf_onf(insee = c("21200", "21201"), parcelles_onf = onf,
+                             cadastre = cad, proprietaires = proprio)
+  expect_equal(out2$tenement_id, out$tenement_id)
+  # Le cadastre fourni n'est plus filtré sur `insee`.
+  out3 <- construire_ugf_onf(insee = "21200", parcelles_onf = onf,
+                             cadastre = cad, proprietaires = proprio)
+  expect_setequal(unique(out3$idu), unique(out$idu))
+})
+
+test_that("load_parcelles_personnes_morales() reads several communes and départements", {
+  skip_if_not_installed("arrow")
+  withr::with_tempdir({
+    brut <- data.frame(
+      millesime = 2025L, departement = c("21", "21", "39", "39"),
+      code_commune = c("200", "201", "200", "300"),
+      code_insee = c("21200", "21201", "39200", "39300"),
+      section = "A", numero_parcelle = c(1L, 2L, 3L, 4L),
+      prefixe = NA_character_, groupe_personne_code = "4",
+      groupe_personne_libelle = "commune", denomination = "COMMUNE",
+      nature_culture_libelle = "Bois", contenance_parcelle_centiare = 100L)
+    arrow::write_parquet(brut, "pm.parquet")
+    out <- load_parcelles_personnes_morales(c("21200", "39200", "21201"),
+                                            fichier = "pm.parquet")
+    expect_setequal(out$idu, c("212000000A0001", "212010000A0002",
+                               "392000000A0003"))
+    expect_equal(out$code_insee[out$idu == "392000000A0003"], "39200")
+    expect_error(load_parcelles_personnes_morales(c("21200", NA)), "INSEE")
+  })
+})
+
 test_that("selection = 'toutes' keeps the caller's parcels without DGFiP", {
   s <- .ug_scene()
   # Sans `proprietaires` : en mode « toutes », la DGFiP n'est pas lue.
@@ -265,8 +343,8 @@ test_that("selection = 'toutes' keeps the caller's parcels without DGFiP", {
 
 test_that("construire_ugf_onf() validates its inputs and reports empty results", {
   s <- .ug_scene()
-  expect_error(construire_ugf_onf(parcelles_onf = s$onf, cadastre = s$cad,
-                                  proprietaires = s$proprio), "insee")
+  expect_error(construire_ugf_onf(parcelles_onf = s$onf), "insee")
+  expect_error(construire_ugf_onf(insee = "2120", parcelles_onf = s$onf), "INSEE")
   expect_error(construire_ugf_onf(insee = "21200"), "aoi")
   expect_error(construire_ugf_onf(insee = "21200", parcelles_onf = s$onf,
                                   cadastre = s$cad, proprietaires = s$proprio,
@@ -284,10 +362,11 @@ test_that("construire_ugf_onf() validates its inputs and reports empty results",
   expect_equal(nrow(vide), 0L)
   expect_true(all(attr(vide, "parcelles")$raison == "privee"))
 
-  # Autre commune : aucune candidate.
+  # Aucune parcelle fournie ne touche l'ONF.
+  loin <- .ug_cad("Z", list(c(5000, 5100, 0, 100)))
   expect_warning(
-    res <- construire_ugf_onf(insee = "39200", parcelles_onf = s$onf,
-                              cadastre = s$cad, proprietaires = s$proprio),
+    res <- construire_ugf_onf(insee = "21200", parcelles_onf = s$onf,
+                              cadastre = loin, proprietaires = s$proprio),
     "No cadastral parcel")
   expect_null(res)
 })
@@ -346,6 +425,7 @@ test_that("a whole UGF under seuil is shared out to its longest-boundary neighbo
 # ---------------------------------------------------------------------------
 
 test_that("croiser_parcelles_onf() keeps its default and offers the elastic calage", {
+  withr::local_options(nemeton.deprecation_verbosity = "quiet")
   cad <- sf::st_sf(id = c("A", "B"),
                    geometry = .ug_sfc(list(c(0, 200, 0, 100), c(200, 400, 0, 100))))
   onf <- .ug_onf(list(c(6, 206, 4, 104), c(206, 406, 4, 104)))

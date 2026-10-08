@@ -79,3 +79,16 @@ déformé » :
 ## 6. Critères d'acceptation
 
 Ceux du brief, § 7.
+
+## 7. Suite : chemin unique (v1.2.0, 2026-10-08)
+
+Brief `2026-10-08-onf-retrait-ancien-calage` (copié dans
+`brief-retrait-ancien-calage.md`). Pascal : *« je ne veux conserver que cette
+nouvelle façon de faire »*.
+
+| Point du brief | Décision |
+|---|---|
+| Retrait de `croiser_parcelles_onf()` | Dépréciation en 1.2.0. Retrait en 2.0, puisque le contrat 057 interdit de retirer une fonction stable en version mineure. Pas de `lifecycle` : l'idiome du paquet (`deprecatedWarning` une fois par session) suffit, avec l'option `nemeton.deprecation_verbosity`. Les helpers `.croiser_*` partent avec elle ; `construire_ugf_onf()` n'en utilise aucun. |
+| Multi-communes | `insee` vectoriel, éventuellement sur plusieurs départements ; un seul passage de calage, découpage et rattachement. Déduit de `code_insee` ou de `substr(idu, 1, 5)` quand `cadastre` est fourni. |
+| Filtre `code_insee` | Supprimé sur un `cadastre` fourni : c'est la sélection de l'appelant. |
+| Parcelles hors ONF | En mode `"foret"`, elles sont rendues dans `attr(x, "parcelles")` avec `raison = "hors ONF"`, `couverture_onf = 0` et leur propriétaire DGFiP. Elles restent hors du calage, si bien que Couchey ne change pas. |
