@@ -143,14 +143,26 @@ tènements, plus petite UGF 2,11 ha, identiques au prototype (écart total
 0,6 ha sur 494). 15 s au lieu de ~10 min : `FNN` pour les k voisins (25
 s → \< 1 s), longueurs de limite commune en une intersection vectorisée.
 Deux défauts du prototype corrigés en route. (1) `st_make_valid()` sur
-des coordonnées en degrés passe par s2 et redessine les parcelles : on
-reprojette d’abord. (2) L’arrondi au centimètre, nécessaire au
-découpage, déplaçait les sommets cadastraux (jusqu’à 14 m² d’écart par
-parcelle) : re-pavage final sur la géométrie d’origine, éclats \< 1 m²
-raccrochés. Constaté au passage :
+des coordonnées en degrés passe par s2, qui déplace les sommets de
+quelques millimètres (jusqu’à 14 m² d’écart sur A 36) : on reprojette
+d’abord. (2) L’arrondi au centimètre, nécessaire au découpage, laissait
+des chevauchements internes (15 m² sur A 36) et des éclats : re-pavage
+final sur la géométrie d’origine, éclats \< 1 m² raccrochés. Constaté au
+passage :
 [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
-valide aussi ses entrées *avant* de les reprojeter (même effet s2 sur
-une entrée en 4326) — non modifié, à traiter à part.
+valide aussi ses entrées *avant* de les reprojeter — corrigé en v1.1.1.
+
+**Journal** — *2026-10-08* (**v1.1.1**) :
+[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+reprojette avant de valider. Mesuré sur le PCI de Couchey en 4326 : s2
+déplaçait les sommets de 7 mm au plus, soit 1,2 m² d’écart de pavage
+médian par parcelle et 14 m² au plus (A 36). Le résultat du croisement
+changeait à peine (même nombre de tènements, 0,001 ha au total), mais
+les tènements ne pavaient plus exactement la parcelle d’origine. Le test
+s’appuie sur la vraie parcelle A 12 : un rectangle synthétique ne
+déclenche pas l’effet (écart 10⁻⁶ m²). Rien à faire côté app. Correction
+d’une note de la v1.1.0 : les 14 m² d’A 36 que j’avais attribués à
+l’arrondi au centimètre venaient en fait de s2.
 
 **Prochaine étape** : intégration côté app (brief `nemetonclaude`).
 

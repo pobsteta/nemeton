@@ -12,6 +12,15 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[1.1.1\] - 2026-10-08
+
+### Fixed
+
+- [`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+  : reprojection avant `st_make_valid()` ; sur une entrée en 4326, s2
+  déplaçait les sommets du cadastre de quelques mm (jusqu’à 14 m²
+  d’écart de pavage par parcelle).
+
 ## \[1.1.0\] - 2026-10-08
 
 ### Added

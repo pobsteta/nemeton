@@ -1,5 +1,20 @@
 # Changelog
 
+## nemeton 1.1.1 (2026-10-08)
+
+### Correctif
+
+- **[`croiser_parcelles_onf()`](https://pobsteta.github.io/nemeton/reference/croiser_parcelles_onf.md)
+  reprojette ses entrées avant de les valider.** Sur des coordonnées en
+  degrés (le PCI arrive en EPSG:4326),
+  [`st_make_valid()`](https://r-spatial.github.io/sf/reference/valid.html)
+  passe par s2, qui déplaçait les sommets du cadastre de quelques
+  millimètres (7 mm au plus à Couchey). Les tènements ne pavaient donc
+  plus exactement la parcelle d’origine : 1,2 m² d’écart médian par
+  parcelle, 14 m² au plus (A 36). La validation se fait maintenant en
+  mètres (GEOS, plan) et laisse les sommets en place. Aucun effet sur
+  une entrée déjà projetée.
+
 ## nemeton 1.1.0 (2026-10-08)
 
 ### UGF d’une forêt publique construites depuis le cadastre (spec 058)
