@@ -43,7 +43,10 @@ Définitions :
   ne fait donc rien sur l'IGN : si une dalle contient des artefacts, ils
   entrent dans le MNH. La liste des classes de bruit IGN est à fixer d'après
   le descriptif LiDAR HD (65 et 66 attendues, absentes de cette dalle). À
-  corriger en patch, indépendamment de cette spec (§ 8).
+  corriger en patch, indépendamment de cette spec (§ 8). **Corrigé en
+  v2.1.1** : 66 = points virtuels sous les ponts, « pour les retirer dans les
+  MNx » ; 65 = artefacts (dalles antérieures à mars 2025). Les deux sont
+  exclues des MNx, et supprimées avant reclassification.
 - **`inst/datasources/FR.json`** déclare `lidar_mns` (IGN, raster 1 m) et
   `lidar_copc` (nuage), mais aucune source drone.
 - **NDP** : le niveau 2 liste `drone_rgb` et `lidar_drone` comme sources

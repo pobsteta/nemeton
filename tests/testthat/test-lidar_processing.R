@@ -185,7 +185,7 @@ test_that("probe_ign_lidar_tile returns a connection-failure result on bad host"
   expect_true(nzchar(res$message))
 })
 
-test_that("le CHM lasR exclut les classes de bruit (7 et 18)", {
+test_that("le CHM lasR exclut le bruit (7, 18) et les classes IGN 65 et 66", {
   # Audit 1.0 : le rasterize « max » du CHM prenait tous les points, bruit
   # bas (7) et haut (18) compris, d'ou des pics aberrants.
   skip_if_not_installed("lasR")
@@ -210,6 +210,17 @@ test_that("le CHM lasR exclut les classes de bruit (7 et 18)", {
   expect_match(chm[[1]]$filter, "drop")
   expect_match(chm[[1]]$filter, "7")
   expect_match(chm[[1]]$filter, "18")
+  # v2.1.1 : artefacts (65) et points virtuels sous les ponts (66) de l'IGN.
+  expect_match(chm[[1]]$filter, "65")
+  expect_match(chm[[1]]$filter, "66")
+})
+
+test_that("la clé de cache lasR change avec la version du traitement", {
+  f <- withr::local_tempfile(fileext = ".laz")
+  writeLines("x", f)
+  k <- nemeton:::.lasr_cache_key(f, 1)
+  local_mocked_bindings(.LASR_VERSION_TRAITEMENT = 999L)
+  expect_false(identical(k, nemeton:::.lasr_cache_key(f, 1)))
 })
 
 test_that("probe_ign_lidar_tiles returns an empty data.frame for length-0 input", {

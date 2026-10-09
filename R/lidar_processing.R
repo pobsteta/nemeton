@@ -219,6 +219,16 @@ compute_dtm_chm_from_laz <- function(laz_dir,
 
 # ---- internal helpers: lasR pipeline & cache keys -------------------
 
+# Classes exclues des MNx : bruit ASPRS bas (7) et haut (18), et deux classes
+# propres à l'IGN LiDAR HD : 65 (artefacts, dalles antérieures à mars 2025) et
+# 66 (points virtuels posés sous les ponts « pour les retirer dans les MNx »).
+# Les dalles IGN ne portent ni 7 ni 18 (dalle 0633_6767 : classes 1, 2, 3, 4,
+# 5, 6, 9, 67) : filtrer 7 et 18 seuls ne retirait rien sur l'IGN.
+.LAS_CLASSES_EXCLUES <- c(7L, 18L, 65L, 66L)
+# Version du traitement, dans la clé de cache : la changer invalide les
+# rasters calculés avec l'ancien filtre (v2.1.1 : ajout de 65 et 66).
+.LASR_VERSION_TRAITEMENT <- 2L
+
 # Pipeline lasR (substituable dans les tests). Atomes (lasR >= 0.10) :
 #   reader_las()      : lecture de toutes les dalles
 #   triangulate()     : TIN du sol (classe LAS 2)
@@ -230,9 +240,9 @@ compute_dtm_chm_from_laz <- function(laz_dir,
   tri   <- lasR::triangulate(filter = lasR::keep_class(2L))
   dtm_s <- lasR::rasterize(res, tri,   ofile = dtm_file)
   norm  <- lasR::transform_with(tri)
-  # Bruit bas (7) et haut (18, ASPRS) hors du CHM : un seul point aberrant
-  # suffisait a creer un pic dans un rasterize « max » (audit 1.0).
-  chm_s <- lasR::rasterize(res, "max", filter = lasR::drop_class(c(7L, 18L)),
+  # Bruit et classes IGN 65/66 hors du CHM : un seul point aberrant
+  # suffisait a creer un pic dans un rasterize « max » (audit 1.0, v2.1.1).
+  chm_s <- lasR::rasterize(res, "max", filter = lasR::drop_class(.LAS_CLASSES_EXCLUES),
                            ofile = chm_file)
   pipeline <- read + tri + dtm_s + norm + chm_s
   lasR::exec(pipeline, on = laz_files,
@@ -242,7 +252,8 @@ compute_dtm_chm_from_laz <- function(laz_dir,
 # Clé du cache complet : jeu de dalles (noms + tailles) et résolution.
 .lasr_cache_key <- function(laz_files, res) {
   f <- sort(laz_files)
-  rlang::hash(list(basename(f), unname(file.size(f)), as.numeric(res)))
+  rlang::hash(list(basename(f), unname(file.size(f)), as.numeric(res),
+                   .LASR_VERSION_TRAITEMENT))
 }
 
 .lasr_cache_valide <- function(dtm_path, chm_path, key) {
