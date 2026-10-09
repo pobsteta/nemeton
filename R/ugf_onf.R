@@ -189,7 +189,7 @@
 #'   median and 90th-percentile gap (`ecart_median_m`, `ecart_p90_m`). With no
 #'   control point, `onf` is returned unwarped with a warning.
 #' @section Lifecycle:
-#' Experimental (spec 058): may change in a minor release.
+#' Experimental (spec 058): may change in any release.
 #' @seealso [construire_ugf_onf()]
 #' @export
 caler_onf_sur_cadastre <- function(onf, cadastre, pas = 5, dmax = 80,
@@ -401,7 +401,7 @@ caler_onf_sur_cadastre <- function(onf, cadastre, pas = 5, dmax = 80,
 #'   legal-entity parcel; `NULL` on failure (missing `arrow`, no network and no
 #'   cache), with a warning.
 #' @section Lifecycle:
-#' Experimental (spec 058): may change in a minor release.
+#' Experimental (spec 058): may change in any release.
 #' @seealso [construire_ugf_onf()]
 #' @export
 load_parcelles_personnes_morales <- function(insee, fichier = NULL,
@@ -889,7 +889,7 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
 #'   `surface_ha`; `calage`, as in [caler_onf_sur_cadastre()]. `NULL` with a
 #'   warning when a source cannot be fetched.
 #' @section Lifecycle:
-#' Experimental (spec 058): may change in a minor release.
+#' Experimental (spec 058): may change in any release.
 #' @seealso [caler_onf_sur_cadastre()],
 #'   [load_parcelles_personnes_morales()], [load_onf_parcelles_source()]
 #' @export

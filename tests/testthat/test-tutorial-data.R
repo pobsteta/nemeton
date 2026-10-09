@@ -4,6 +4,9 @@
 test_that(".tutorial_data_ref : tag pour une version stable, main en cycle dev", {
   expect_identical(nemeton:::.tutorial_data_ref("1.0.0"), "v1.0.0")
   expect_identical(nemeton:::.tutorial_data_ref("0.216.0.9000"), "main")
+  # Versionnage calendaire (spec 057 § 8).
+  expect_identical(nemeton:::.tutorial_data_ref("2026.10.1"), "v2026.10.1")
+  expect_identical(nemeton:::.tutorial_data_ref("2026.10.1.9000"), "main")
   expect_identical(
     nemeton:::.tutorial_data_url("coregistration/plotsCoregistration.rda", "v1.0.0"),
     paste0("https://raw.githubusercontent.com/pobsteta/nemeton/v1.0.0/",

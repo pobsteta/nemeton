@@ -125,7 +125,7 @@
 #' 0.5 m) for the vertical shift to be trusted.
 #'
 #' @section Lifecycle:
-#' Experimental (spec 059): may change in a minor release.
+#' Experimental (spec 059): may change in any release.
 #'
 #' @seealso [compute_dtm_chm_from_laz()], [resolve_project_dem()],
 #'   [resolve_project_chm()]

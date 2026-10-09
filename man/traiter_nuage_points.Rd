@@ -140,7 +140,7 @@ tiles, the resolution or the classification settings change.
 }
 \section{Lifecycle}{
 
-Experimental (spec 059): may change in a minor release.
+Experimental (spec 059): may change in any release.
 }
 
 \examples{
