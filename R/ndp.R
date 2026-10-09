@@ -584,15 +584,22 @@ detect_ndp_from_cache <- function(project_path) {
   cache_dir <- file.path(project_path, "cache", "layers")
   if (!dir.exists(cache_dir)) return(0L)
 
+  # NDP 2 : produits drone de traiter_nuage_points() (spec 059). Ils portent
+  # leur propre MNT (LiDAR drone, ou MNT externe pour la photogrammétrie).
+  a_tif <- function(d) length(list.files(file.path(cache_dir, d), pattern = "\\.tif$",
+                                         ignore.case = TRUE)) > 0L
+  if (a_tif("drone_mnh") || a_tif("drone_mns")) return(2L)
+
   # NDP 1 : LiDAR HD present (repertoires ou fichiers lidar_mnh / lidar_mnt / lidar_nuage)
   has_lidar_hd <- dir.exists(file.path(cache_dir, "lidar_mnh")) ||
                   dir.exists(file.path(cache_dir, "lidar_mnt")) ||
                   dir.exists(file.path(cache_dir, "lidar_nuage")) ||
+                  a_tif("ign_mnh") || a_tif("ign_mnt") ||
                   any(grepl("lidar_mn[ht]", list.files(cache_dir), ignore.case = TRUE))
 
   if (!has_lidar_hd) return(0L)
 
-  # NDP 2+ : pas encore dans le pipeline
+  # NDP 3+ : pas encore dans le pipeline
   1L
 }
 

@@ -461,6 +461,7 @@ reference:
     - resolve_project_dem
     - resolve_project_chm
     - compute_dtm_chm_from_laz
+    - traiter_nuage_points
     - get_ndp_augmented
     - run_memory_capped
     - format_duration

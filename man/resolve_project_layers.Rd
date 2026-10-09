@@ -81,7 +81,9 @@ calls transparently cover the full footprint.
 \section{Search order (DEM)}{
 
 \enumerate{
+  \item `<project>/cache/layers/drone_mnt/mnt.tif` — drone, \code{\link{traiter_nuage_points}} (spec 059)
   \item `<project>/cache/layers/lidar_mnt/*.tif`  — LiDAR HD (1 m)
+  \item `<project>/cache/layers/ign_mnt/mnt.tif`  — LiDAR HD point cloud, \code{\link{traiter_nuage_points}}
   \item `<project>/cache/layers/dem/*.tif`        — generic DEM cache
   \item `<project>/cache/layers/bd_alti/*.tif`    — IGN BD ALTI (25 m)
   \item `<project>/cache/layers/rge_alti/*.tif`   — IGN RGE ALTI (5 m)
@@ -102,7 +104,9 @@ calls transparently cover the full footprint.
 \section{Search order (CHM)}{
 
 \enumerate{
+  \item `<project>/cache/layers/drone_mnh/mnh.tif` — drone, \code{\link{traiter_nuage_points}} (spec 059)
   \item `<project>/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH
+  \item `<project>/cache/layers/ign_mnh/mnh.tif`  — LiDAR HD point cloud, \code{\link{traiter_nuage_points}}
   \item `<project>/cache/layers/mnh/*.tif`        — generic MNH cache
   \item `<project>/cache/layers/opencanopy/chm_predicted_0_2m.tif`
         — Open-Canopy CHM 0.2 m (v0.192.2)
