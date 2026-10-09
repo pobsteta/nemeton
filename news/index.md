@@ -1,5 +1,28 @@
 # Changelog
 
+## nemeton 2.1.1 (2026-10-09)
+
+### Correctif : bruit des dalles IGN LiDAR HD
+
+- **Le MNH de
+  [`compute_dtm_chm_from_laz()`](https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.md)
+  écarte enfin le bruit des dalles IGN.** Le filtre ne retirait que les
+  classes ASPRS 7 et 18, que l’IGN n’emploie pas : sur une dalle IGN, il
+  ne retirait rien. Il exclut désormais aussi les classes IGN 65
+  (artefacts, dalles antérieures à mars 2025) et 66 (points virtuels
+  posés sous les ponts, que le descriptif IGN demande de retirer des
+  MNx). Le repli de
+  [`resolve_project_chm()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)
+  en profite aussi.
+- **[`traiter_nuage_points()`](https://pobsteta.github.io/nemeton/reference/traiter_nuage_points.md)**
+  supprime les points 65 et 66 avant la reclassification. Sinon, remis à
+  zéro puis reclassés, ils redevenaient du sol ou du sursol. Ils ne
+  figurent plus dans les effectifs par classe.
+- **Les rasters déjà en cache sont recalculés une fois**, car la version
+  du traitement entre désormais dans la clé de cache.
+- Dalle IGN `LHD_FXX_0633_6767` (sans classe 65 ni 66) : résultats
+  inchangés, MNT à 1,1 cm du MNT IGN publié.
+
 ## nemeton 2.1.0 (2026-10-09)
 
 Spec 059 : MNT, MNS et MNH depuis un nuage de points, que le nuage

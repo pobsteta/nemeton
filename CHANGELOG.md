@@ -12,6 +12,18 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2.1.1\] - 2026-10-09
+
+### Fixed
+
+- [`compute_dtm_chm_from_laz()`](https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.md)
+  : le MNH exclut les classes IGN 65 (artefacts) et 66 (points virtuels
+  sous les ponts) en plus de 7 et 18, absentes des dalles IGN ; caches
+  recalculés (version du traitement dans la clé).
+- [`traiter_nuage_points()`](https://pobsteta.github.io/nemeton/reference/traiter_nuage_points.md)
+  : points 65 et 66 supprimés avant la reclassification, exclus du MNS
+  et du MNH.
+
 ## \[2.1.0\] - 2026-10-09
 
 ### Added

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,19 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2.1.1" id="nemeton-211-2026-10-09">nemeton 2.1.1 (2026-10-09)<a class="anchor" aria-label="anchor" href="#nemeton-211-2026-10-09"></a></h2>
+<div class="section level3">
+<h3 id="correctif--bruit-des-dalles-ign-lidar-hd-2-1-1">Correctif : bruit des dalles IGN LiDAR HD<a class="anchor" aria-label="anchor" href="#correctif--bruit-des-dalles-ign-lidar-hd-2-1-1"></a></h3>
+<ul><li>
+<strong>Le MNH de <code><a href="../reference/compute_dtm_chm_from_laz.html">compute_dtm_chm_from_laz()</a></code> écarte enfin le bruit des dalles IGN.</strong> Le filtre ne retirait que les classes ASPRS 7 et 18, que l’IGN n’emploie pas : sur une dalle IGN, il ne retirait rien. Il exclut désormais aussi les classes IGN 65 (artefacts, dalles antérieures à mars 2025) et 66 (points virtuels posés sous les ponts, que le descriptif IGN demande de retirer des MNx). Le repli de <code><a href="../reference/resolve_project_layers.html">resolve_project_chm()</a></code> en profite aussi.</li>
+<li>
+<strong><code><a href="../reference/traiter_nuage_points.html">traiter_nuage_points()</a></code></strong> supprime les points 65 et 66 avant la reclassification. Sinon, remis à zéro puis reclassés, ils redevenaient du sol ou du sursol. Ils ne figurent plus dans les effectifs par classe.</li>
+<li>
+<strong>Les rasters déjà en cache sont recalculés une fois</strong>, car la version du traitement entre désormais dans la clé de cache.</li>
+<li>Dalle IGN <code>LHD_FXX_0633_6767</code> (sans classe 65 ni 66) : résultats inchangés, MNT à 1,1 cm du MNT IGN publié.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2.1.0" id="nemeton-210-2026-10-09">nemeton 2.1.0 (2026-10-09)<a class="anchor" aria-label="anchor" href="#nemeton-210-2026-10-09"></a></h2>
 <p>Spec 059 : MNT, MNS et MNH depuis un nuage de points, que le nuage vienne de l’IGN sans ses rasters dérivés, d’un LiDAR drone ou d’une photogrammétrie drone. Décisions de Pascal du 2026-10-09.</p>

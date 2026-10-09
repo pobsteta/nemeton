@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -316,15 +316,16 @@
 <td>✅ livré</td>
 </tr><tr><td>Cœur</td>
 <td>correctif : classes de bruit IGN dans le filtre du MNH de <code><a href="reference/compute_dtm_chm_from_laz.html">compute_dtm_chm_from_laz()</a></code> (7 et 18 absentes des dalles IGN)</td>
-<td>patch</td>
-<td>⬜ après lecture du descriptif LiDAR HD</td>
+<td><strong>v2.1.1</strong></td>
+<td>✅ livré (65 et 66 exclues)</td>
 </tr><tr><td>App</td>
 <td>import d’un nuage de drone, appel du cœur, affichage MNS/MNH, NDP 2</td>
 <td><code>nemetonshiny</code></td>
 <td>⬜ note émise</td>
 </tr></tbody></table><p><strong>Décisions</strong> — <em>2026-10-09</em> (Pascal) : nom <code><a href="reference/traiter_nuage_points.html">traiter_nuage_points()</a></code> ; 0,5 m pour l’IGN et 0,25 m pour le drone ; reclassification par défaut, IGN compris ; eau comptée comme sol ; sol nu du recalage photogrammétrique = MNH IGN &lt; 0,5 m ; produits drone → NDP 2 et prioritaires dans <code>resolve_project_*()</code>.</p>
 <p><strong>Journal</strong> — <em>2026-10-09</em> (<strong>v2.1.0</strong>) : livré sans nouvelle dépendance (<code>lasR</code> 0.21 fournit CSF, PTD, IVF et SOR). Dalle IGN <code>LHD_FXX_0633_6767</code> (20,7 M points) : MNT reclassé à 1,1 cm du MNT IGN publié (médiane, p95 7,7 cm), MNH à 0 m (médiane, p95 1,12 m), 2 min 15 s sur 4 cœurs. Recalage photogrammétrique simulé : 2,30 m retrouvés à 3 mm. Constat en route : le filtre de bruit de <code><a href="reference/compute_dtm_chm_from_laz.html">compute_dtm_chm_from_laz()</a></code> écarte les classes 7 et 18, absentes des dalles IGN (classes vues : 1, 2, 3, 4, 5, 6, 9, 67), donc sans effet sur l’IGN. Version <code>nemetonshiny</code> publiée : v2.0.0.</p>
-<p><strong>Prochaine étape</strong> : correctif du filtre de bruit IGN ; intégration app.</p>
+<p><strong>Journal</strong> — <em>2026-10-09</em> (<strong>v2.1.1</strong>) : correctif du filtre de bruit. D’après le descriptif IGN (table des classes, atelier LiDAR HD 2025), les classes IGN à écarter des MNx sont 66 (points virtuels sous les ponts, « pour les retirer dans les MNx ») et 65 (artefacts, retirée des spécifications en mars 2025 mais présente dans les dalles plus anciennes). <code>.LAS_CLASSES_EXCLUES</code> vaut désormais 7, 18, 65 et 66, pour <code><a href="reference/compute_dtm_chm_from_laz.html">compute_dtm_chm_from_laz()</a></code> comme pour <code><a href="reference/traiter_nuage_points.html">traiter_nuage_points()</a></code>, qui supprime en plus les points 65 et 66 avant de reclasser. La version du traitement entre dans la clé de cache, si bien que les rasters déjà calculés sont refaits une fois. Le test synthétique est discriminant : sans le correctif, un amas de points 65/66 placé 40 m au-dessus du sol monte le MNS à 140,5 m.</p>
+<p><strong>Prochaine étape</strong> : intégration app.</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier--ugf-dune-forêt-publique-depuis-le-parcellaire-onf-spec-058">Chantier — UGF d’une forêt publique depuis le parcellaire ONF (spec 058)<a class="anchor" aria-label="anchor" href="#chantier--ugf-dune-for%C3%AAt-publique-depuis-le-parcellaire-onf-spec-058"></a></h1>
