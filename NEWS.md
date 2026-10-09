@@ -1,3 +1,43 @@
+# nemeton 2.1.0 (2026-10-09)
+
+Spec 059 : MNT, MNS et MNH depuis un nuage de points, que le nuage vienne de
+l'IGN sans ses rasters dérivés, d'un LiDAR drone ou d'une photogrammétrie
+drone. Décisions de Pascal du 2026-10-09.
+
+## Nouveau : `traiter_nuage_points()` (experimental)
+
+- **Un seul appel, trois sources** : `type = "lidar_ign"`, `"lidar_drone"`
+  ou `"photogrammetrie"`. La fonction rend les chemins de `mnt.tif`,
+  `mns.tif` et `mnh.tif`, les effectifs par classe et des contrôles de
+  qualité.
+- **LiDAR (IGN ou drone)** : un passage `lasR`. Les classes sont remises à
+  zéro puis reclassées (bruit par `classify_with_ivf()`, sol par CSF ou PTD),
+  IGN compris. Le MNT est le TIN du sol et de l'eau, le MNS le point le plus
+  haut hors bruit, le MNH le point normalisé le plus haut, écrêté à 0.
+  `classifier = FALSE` garde les classes du fichier.
+- **Photogrammétrie** : le nuage ne voit pas le sol sous couvert. Le MNT vient
+  de `mnt_externe` (le MNT LiDAR HD, par exemple). Le décalage vertical du
+  MNS est estimé sur le sol nu (MNH IGN < 0,5 m, via `mnh_reference`) et
+  retiré.
+- **Mesuré sur la dalle IGN `LHD_FXX_0633_6767`** (20,7 M points) : MNT
+  reclassé à 1,1 cm du MNT IGN publié (médiane, p95 7,7 cm), MNH à 0 m
+  (médiane), 2 min 15 s sur 4 cœurs. Un décalage de 2,30 m ajouté au MNS est
+  retrouvé à 3 mm près.
+- Résolution par défaut : 0,5 m pour l'IGN, 0,25 m pour le drone. Le passage
+  `lasR` est mis en cache et n'est refait que si les fichiers, la résolution
+  ou les réglages de classification changent.
+
+## Projet : produits drone d'abord, NDP 2
+
+- **`resolve_project_dem()` / `resolve_project_chm()`** cherchent d'abord
+  `cache/layers/drone_mnt/mnt.tif` / `drone_mnh/mnh.tif`, puis les rasters
+  LiDAR HD publiés, puis les `ign_mnt/` / `ign_mnh/` recalculés depuis le
+  nuage IGN. Sans produit drone ni `ign_*`, l'ordre ne change pas. Un vol
+  de drone ne couvre souvent qu'une partie du projet : un appelant qui veut
+  la couverture complète passe un `validate`.
+- **`detect_ndp_from_cache()`** rend le NDP 2 quand le projet contient des
+  produits drone, et compte les `ign_*` comme du LiDAR HD (NDP 1).
+
 # nemeton 2.0.0 (2026-10-08)
 
 Version majeure, demandée par Pascal le 2026-10-08 (« retire ce qui ne sert

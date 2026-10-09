@@ -17,7 +17,9 @@
 #'
 #' @section Search order (DEM):
 #' \enumerate{
+#'   \item `<project>/cache/layers/drone_mnt/mnt.tif` — drone, [traiter_nuage_points()] (spec 059)
 #'   \item `<project>/cache/layers/lidar_mnt/*.tif`  — LiDAR HD (1 m)
+#'   \item `<project>/cache/layers/ign_mnt/mnt.tif`  — LiDAR HD point cloud, [traiter_nuage_points()]
 #'   \item `<project>/cache/layers/dem/*.tif`        — generic DEM cache
 #'   \item `<project>/cache/layers/bd_alti/*.tif`    — IGN BD ALTI (25 m)
 #'   \item `<project>/cache/layers/rge_alti/*.tif`   — IGN RGE ALTI (5 m)
@@ -36,7 +38,9 @@
 #'
 #' @section Search order (CHM):
 #' \enumerate{
+#'   \item `<project>/cache/layers/drone_mnh/mnh.tif` — drone, [traiter_nuage_points()] (spec 059)
 #'   \item `<project>/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH
+#'   \item `<project>/cache/layers/ign_mnh/mnh.tif`  — LiDAR HD point cloud, [traiter_nuage_points()]
 #'   \item `<project>/cache/layers/mnh/*.tif`        — generic MNH cache
 #'   \item `<project>/cache/layers/opencanopy/chm_predicted_0_2m.tif`
 #'         — Open-Canopy CHM 0.2 m (v0.192.2)
@@ -242,9 +246,17 @@ resolve_project_dem <- function(project_path,
   .validate_project_path(project_path)
   .check_validate_arg(validate)
 
+  # Produits drone d'abord (spec 059, décision de Pascal), puis LiDAR HD
+  # publié, puis MNT recalculé depuis le nuage IGN (traiter_nuage_points()).
   candidates <- list(
+    list(label = "drone MNT",
+         dir   = file.path(project_path, "cache", "layers", "drone_mnt"),
+         file  = "mnt.tif"),
     list(label = "LiDAR HD MNT",
          dir   = file.path(project_path, "cache", "layers", "lidar_mnt")),
+    list(label = "LiDAR HD MNT (point cloud)",
+         dir   = file.path(project_path, "cache", "layers", "ign_mnt"),
+         file  = "mnt.tif"),
     list(label = "generic DEM cache",
          dir   = file.path(project_path, "cache", "layers", "dem")),
     list(label = "IGN BD ALTI",
@@ -331,8 +343,14 @@ resolve_project_chm <- function(project_path,
   # indices spectraux, qu'un candidat sans `file` mosaiquerait avec les
   # modeles de hauteur (v0.192.2).
   candidates <- list(
+    list(label = "drone MNH",
+         dir   = file.path(project_path, "cache", "layers", "drone_mnh"),
+         file  = "mnh.tif"),
     list(label = "LiDAR HD MNH",
          dir   = file.path(project_path, "cache", "layers", "lidar_mnh")),
+    list(label = "LiDAR HD MNH (point cloud)",
+         dir   = file.path(project_path, "cache", "layers", "ign_mnh"),
+         file  = "mnh.tif"),
     list(label = "generic MNH cache",
          dir   = file.path(project_path, "cache", "layers", "mnh")),
     list(label = "Open-Canopy CHM 0,2 m",
