@@ -7,6 +7,10 @@
 > contrainte : `nemetonshiny` doit tourner contre la 1.0.0, d'où le brief app
 > du §6.
 > **À confirmer avant le code** : le bump majeur (1.0.0) et la liste du §4.
+> **Amendement du 2026-10-09** (§ 8, demande de Pascal) : le versionnage
+> passe de `X.Y.Z` (sémantique) à `AAAA.MM.N` (calendaire). Le contrat d'API
+> reste ; c'est la façon d'annoncer une rupture qui change. **Validé** par
+> Pascal le 2026-10-09, appliqué en 2026.10.1.
 
 ## 1. Retour unique des indicateurs : un `sf`
 
@@ -122,3 +126,111 @@ Erreurs homogènes `cli::cli_abort()` (0.213.0) ; `lang` documenté inutilisé
 Ce contrat, plus les choix de méthode tranchés après la spec 056 (mesures en
 cours), plus les décisions d'infrastructure prises d'ici là. Version :
 **1.0.0** (bump majeur, à confirmer).
+
+## 8. Amendement du 2026-10-09 — versionnage calendaire `AAAA.MM.N`
+
+> **Statut** : **validé** par Pascal le 2026-10-09 (oui aux quatre questions
+> du § 8.6), appliqué en **2026.10.1**.
+> **Origine** : demande de Pascal le 2026-10-09 : « peut-on versionner les
+> packages sous R avec AAAA.MM.XX où AAAA est l'année en cours, MM le mois et
+> XX un numéro incrémenté ? », puis « écris la spec 057 pour dire le
+> changement AAAA.MM.X ».
+> **Dernière version sémantique** : 2.1.1 (2026-10-09).
+
+### 8.1 Format
+
+`AAAA.MM.N` :
+- `AAAA` : année de la release ;
+- `MM` : mois de la release, **sans zéro en tête** (`2026.1.1`, pas
+  `2026.01.1`) ;
+- `N` : numéro de la release dans le mois. Il commence à 1 et repart à 1
+  chaque mois.
+
+Exemples : `2026.10.1`, `2026.10.2`, `2026.11.1`, `2027.1.1`.
+
+**Pourquoi pas de zéro en tête sur le mois** :
+- R l'ignore de toute façon : `package_version("2026.01.1")` vaut
+  `2026.1.1`.
+- Le badge du README trie les releases en `sort=semver`. `2026.10.1` est une
+  version sémantique valide, alors que `2026.01.1` ne l'est pas, puisque le
+  versionnage sémantique interdit les zéros en tête.
+- La chaîne de DESCRIPTION reste identique au tag (`v2026.1.1`).
+
+Le mois et l'année sont ceux **du jour où la version stable est posée dans
+DESCRIPTION**. Une PR posée le 31 et fusionnée le 1er garde la version
+écrite. L'ordre reste croissant dans tous les cas.
+
+### 8.2 Ce que R et la CI en disent (vérifié le 2026-10-09)
+
+- **R** : `package_version("2026.10.1") > package_version("2.1.1")` est
+  vrai. Le passage depuis la 2.1.1 est donc une montée de version, et les
+  planchers existants (`nemeton (>= 2.1.0)`) restent satisfaits.
+- **Contrôles CRAN** (`tools:::.check_package_CRAN_incoming`) : ils exemptent
+  explicitement ce schéma. Les zéros en tête sont tolérés après `AAAA.MM`, et
+  une composante ≥ 1234 est acceptée si elle vaut l'année en cours. Le
+  paquet n'est pas sur le CRAN : c'est indicatif.
+- **`release.yml`** (porte `^[0-9]+\.[0-9]+\.[0-9]+$`) et
+  **`version-consistency`** de `r.yml` (même motif) acceptent déjà
+  `2026.10.1`. Le cycle de dev `2026.10.1.9000` reste ignoré par la release.
+  **Aucune modification nécessaire.**
+
+### 8.3 Ce que devient le contrat d'API (§ 1 à § 7)
+
+Le numéro ne dit plus « cette version casse l'API ». Le contrat est conservé,
+mais l'annonce d'une rupture change de forme :
+
+| | Avant (sémantique) | Après (calendaire) |
+|---|---|---|
+| Fonction **stable** : retrait ou changement incompatible | seulement en version majeure | seulement **après dépréciation** : avertissement `deprecatedWarning` une fois par session, pendant **au moins 3 mois** ou jusqu'à ce que plus aucun appelant ne reste dans `nemetonshiny` et `nemetonclaude` (vérifié en lecture seule), au premier des deux termes atteint |
+| Fonction **experimental** | peut changer dans toute version | inchangé |
+| Annonce | numéro majeur | section **« Changements cassants »** obligatoire en tête de l'entrée NEWS, et mention dans le titre de la PR (`feat!:` / `BREAKING CHANGE:`) |
+| Confirmation de Pascal | avant tout bump majeur | avant tout **retrait ou changement incompatible d'une fonction stable** |
+
+Les commits restent au format Conventional Commits (`feat:`, `fix:`,
+`feat!:`). Seul le numéro ne s'en déduit plus.
+
+### 8.4 Fichiers à modifier au passage (après validation)
+
+1. **`R/nemeton-package.R`** et `man/nemeton-package.Rd`, § Lifecycle : « a
+   breaking change needs a major release » devient « a breaking change needs
+   a deprecation period (spec 057 § 8) ».
+2. **Pages experimental des specs 058 et 059** (4 pages, dont
+   `construire_ugf_onf`, `caler_onf_sur_cadastre`,
+   `load_parcelles_personnes_morales` et `traiter_nuage_points`) : « may
+   change in a minor release » devient « may change in any release »,
+   comme les 83 autres pages experimental. Les 71 pages « Stable: covered by
+   the 1.0 API contract (spec 057) » restent vraies telles quelles.
+3. **`CLAUDE.md`, § Consignes de release** :
+   - l'étape 1 (« bump semver correspondant ») devient : la version stable est
+     `AAAA.MM.N` du jour ;
+   - l'étape 6 et la section sur le cycle de dev passent à `AAAA.MM.N.9000` ;
+   - « Toujours demander confirmation avant un bump majeur » devient « avant
+     un retrait ou un changement incompatible d'une fonction stable ».
+4. **Mémoire du projet** (`project_release_workflow.md`,
+   `project_v1_no_migration.md`) : mettre à jour la règle.
+5. **`NEWS.md`** : en-têtes inchangés dans leur forme
+   (`# nemeton 2026.10.1 (2026-10-15)`). La première entrée calendaire
+   explique le changement de schéma.
+6. **Garde-fou CI (optionnel, recommandé)** : dans `version-consistency`,
+   vérifier que `AAAA.MM` de la version correspond à l'année et au mois de la
+   date de l'en-tête NEWS. Cela évite un `2026.10.3` daté de novembre.
+
+### 8.5 Mise en œuvre
+
+- **Première version calendaire** : la prochaine release après validation,
+  par exemple `2026.10.1`. Elle peut ne contenir que le changement de schéma
+  et les points du § 8.4.
+- **Sans retour** : une fois en `2026.x`, revenir à `2.x` serait une baisse de
+  version.
+- **`nemetonshiny`** : rien d'obligatoire, puisque son plancher reste
+  satisfait. S'il adopte le même schéma, c'est une décision de ses propres
+  sessions, et un brief le proposera.
+
+### 8.6 Décisions de Pascal (2026-10-09)
+
+| Question | Décision |
+|---|---|
+| Mois sans zéro en tête (`2026.1.1`) | oui |
+| Dépréciation d'une fonction stable : 3 mois, ou plus aucun appelant, au premier terme atteint | oui |
+| Garde-fou CI année et mois (§ 8.4, point 6) | oui |
+| Proposer le même schéma à `nemetonshiny` | oui, par un brief |

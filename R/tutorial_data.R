@@ -39,6 +39,8 @@ NULL
 
 # Référence git d'où tirer les fichiers : tag `vX.Y.Z` pour une version
 # stable, branche `main` pour une version de développement (X.Y.Z.9000).
+# Vaut aussi pour le schéma calendaire AAAA.M.N (spec 057 § 8) : le mois sans
+# zéro en tête garantit que le tag reconstruit est identique à DESCRIPTION.
 .tutorial_data_ref <- function(version = utils::packageVersion("nemeton")) {
   v <- unlist(unclass(package_version(as.character(version))))
   if (length(v) == 3L) paste0("v", paste(v, collapse = ".")) else "main"

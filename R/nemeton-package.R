@@ -176,7 +176,8 @@
 #' \itemize{
 #'   \item \strong{Stable}: indicators, families, NDP, normalisation, data
 #'     loaders, sampling and the API consumed by nemetonshiny. Covered by the
-#'     1.0 API contract: a breaking change needs a major release.
+#'     1.0 API contract: a breaking change needs a deprecation period
+#'     (spec 057, section 8).
 #'   \item \strong{Experimental}: RAG (knowledge corpus), Sentinel-2
 #'     biophysics, FORDEAD / RECONFORT health monitoring and their field
 #'     validation, regeneration (microclimate, water balance, E-OBS). May
@@ -196,6 +197,10 @@
 #' @section Version History:
 #'
 #' See \code{news(package = "nemeton")} (NEWS.md) for the release history.
+#' Since 2026.10.1, versions are calendar-based, \code{YYYY.M.N}: year and
+#' month of the release (month without leading zero), then the release number
+#' within the month (spec 057, section 8). Versions up to 2.1.1 followed
+#' semantic versioning.
 #'
 #' @section Links:
 #'

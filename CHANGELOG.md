@@ -3,12 +3,18 @@
 All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project uses calendar versioning `YYYY.M.N` since 2026.10.1 (semantic versioning up to 2.1.1).
 
 For a narrative, per-feature description of each release, see
 [NEWS.md](NEWS.md). This file is the concise, categorised trail.
 
 ## [Unreleased]
+
+## [2026.10.1] - 2026-10-09
+
+### Changed
+- Versionnage calendaire `AAAA.M.N` à la place du versionnage sémantique (spec 057 § 8) ; rupture d'une fonction stable seulement après dépréciation (3 mois ou plus aucun appelant) et section « Changements cassants » dans NEWS.
+- CI `version-consistency` : forme `AAAA.M.N` et cohérence année/mois avec la date de l'entrée NEWS.
 
 ## [2.1.1] - 2026-10-09
 

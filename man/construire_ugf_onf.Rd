@@ -162,7 +162,7 @@ management plan.
 
 \section{Lifecycle}{
 
-Experimental (spec 058): may change in a minor release.
+Experimental (spec 058): may change in any release.
 }
 
 \seealso{

@@ -1,3 +1,33 @@
+# nemeton 2026.10.1 (2026-10-09)
+
+Premier numéro calendaire. Le paquet passe du versionnage sémantique
+(`X.Y.Z`, dernière version 2.1.1) au versionnage calendaire `AAAA.M.N`.
+Décision de Pascal du 2026-10-09, spec 057 § 8. Le code des fonctions ne
+change pas.
+
+## Nouveau schéma de version
+
+- **`AAAA.M.N`** : année et mois de la release (mois sans zéro en tête),
+  puis numéro de la release dans le mois, qui repart à 1 chaque mois. Par
+  exemple `2026.10.1`, `2026.10.2`, `2026.11.1`, `2027.1.1`.
+- `2026.10.1` est supérieur à `2.1.1` pour R : les planchers existants
+  (`nemeton (>= 2.1.0)`) restent satisfaits.
+- Le cycle de dev reste en `.9000` (`2026.10.1.9000`).
+- La CI vérifie que la version est bien formée et que son année et son mois
+  correspondent à la date de l'entrée NEWS.
+
+## Contrat d'API : ce qui change
+
+- Le numéro ne signale plus une rupture. Une fonction **stable** n'est
+  retirée ou changée de façon incompatible qu'après une dépréciation
+  (avertissement une fois par session) d'au moins 3 mois, ou dès que plus
+  aucun appelant connu ne reste, au premier terme atteint. Toute rupture
+  ouvre l'entrée NEWS par une section « Changements cassants ».
+- Les fonctions **experimental** peuvent toujours changer dans toute
+  release. Les pages des specs 058 et 059 disaient « may change in a minor
+  release » : elles disent désormais « may change in any release », comme
+  les autres.
+
 # nemeton 2.1.1 (2026-10-09)
 
 ## Correctif : bruit des dalles IGN LiDAR HD

@@ -99,6 +99,20 @@ un raccourci.
 
 ---
 
+# Décision — versionnage calendaire `AAAA.M.N` (spec 057 § 8)
+
+**Journal** — *2026-10-09* (**2026.10.1**) : passage du versionnage
+sémantique (dernière version 2.1.1) au calendaire `AAAA.M.N`, à la demande de
+Pascal (oui aux quatre questions du § 8.6). Le mois s'écrit sans zéro en tête,
+pour garder des numéros de version sémantique valides : le badge du README trie
+en `sort=semver`. Une fonction stable ne casse qu'après dépréciation (3 mois,
+ou plus aucun appelant). `version-consistency` vérifie la forme et
+l'année/mois face à la date NEWS. CLAUDE.md, la page du paquet, 4 pages
+experimental et la mémoire sont à jour. Brief émis vers `nemetonshiny` pour
+proposer le même schéma. Code inchangé.
+
+---
+
 # Chantier — MNT, MNS et MNH depuis un nuage de points (spec 059)
 
 > Demande de Pascal du 2026-10-09 : traiter un nuage de drone (classification,
