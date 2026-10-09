@@ -86,7 +86,7 @@ control point, `onf` is returned unwarped with a warning.
 
 ## Lifecycle
 
-Experimental (spec 058): may change in a minor release.
+Experimental (spec 058): may change in any release.
 
 ## See also
 

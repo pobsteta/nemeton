@@ -180,7 +180,7 @@ or the classification settings change.
 
 ## Lifecycle
 
-Experimental (spec 059): may change in a minor release.
+Experimental (spec 059): may change in any release.
 
 ## See also
 

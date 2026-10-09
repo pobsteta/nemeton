@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,24 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.1" id="nemeton-2026101-2026-10-09">nemeton 2026.10.1 (2026-10-09)<a class="anchor" aria-label="anchor" href="#nemeton-2026101-2026-10-09"></a></h2>
+<p>Premier numéro calendaire. Le paquet passe du versionnage sémantique (<code>X.Y.Z</code>, dernière version 2.1.1) au versionnage calendaire <code>AAAA.M.N</code>. Décision de Pascal du 2026-10-09, spec 057 § 8. Le code des fonctions ne change pas.</p>
+<div class="section level3">
+<h3 id="nouveau-schéma-de-version-2026-10-1">Nouveau schéma de version<a class="anchor" aria-label="anchor" href="#nouveau-sch%C3%A9ma-de-version-2026-10-1"></a></h3>
+<ul><li>
+<strong><code>AAAA.M.N</code></strong> : année et mois de la release (mois sans zéro en tête), puis numéro de la release dans le mois, qui repart à 1 chaque mois. Par exemple <code>2026.10.1</code>, <code>2026.10.2</code>, <code>2026.11.1</code>, <code>2027.1.1</code>.</li>
+<li>
+<code>2026.10.1</code> est supérieur à <code>2.1.1</code> pour R : les planchers existants (<code>nemeton (&gt;= 2.1.0)</code>) restent satisfaits.</li>
+<li>Le cycle de dev reste en <code>.9000</code> (<code>2026.10.1.9000</code>).</li>
+<li>La CI vérifie que la version est bien formée et que son année et son mois correspondent à la date de l’entrée NEWS.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="contrat-dapi--ce-qui-change-2026-10-1">Contrat d’API : ce qui change<a class="anchor" aria-label="anchor" href="#contrat-dapi--ce-qui-change-2026-10-1"></a></h3>
+<ul><li>Le numéro ne signale plus une rupture. Une fonction <strong>stable</strong> n’est retirée ou changée de façon incompatible qu’après une dépréciation (avertissement une fois par session) d’au moins 3 mois, ou dès que plus aucun appelant connu ne reste, au premier terme atteint. Toute rupture ouvre l’entrée NEWS par une section « Changements cassants ».</li>
+<li>Les fonctions <strong>experimental</strong> peuvent toujours changer dans toute release. Les pages des specs 058 et 059 disaient « may change in a minor release » : elles disent désormais « may change in any release », comme les autres.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2.1.1" id="nemeton-211-2026-10-09">nemeton 2.1.1 (2026-10-09)<a class="anchor" aria-label="anchor" href="#nemeton-211-2026-10-09"></a></h2>
 <div class="section level3">

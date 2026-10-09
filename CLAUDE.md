@@ -405,27 +405,42 @@ sortie testthat).
 **Le tag et la release GitHub sont AUTOMATISÉS** par
 `.github/workflows/release.yml` : quand le workflow R-CMD-check réussit
 sur `main` (check, tests et couverture), il lit `Version:` dans
-DESCRIPTION et, si c’est une version **stable `X.Y.Z`** dont le tag
-`vX.Y.Z` n’existe pas encore, crée le tag annoté + la release GitHub
-(`--generate-notes`). **Ne plus faire `git tag` /
-`git push origin vX.Y.Z` / `gh release create` à la main.**
+DESCRIPTION et, si c’est une version **stable `AAAA.M.N`** dont le tag
+`vAAAA.M.N` n’existe pas encore, crée le tag annoté + la release GitHub
+(`--generate-notes`). **Ne plus faire `git tag` / `git push origin v…` /
+`gh release create` à la main.**
+
+**Versionnage calendaire `AAAA.M.N`** depuis 2026.10.1 (spec 057 § 8,
+validé par Pascal le 2026-10-09) : `AAAA` = année, `M` = mois **sans
+zéro en tête** (`2026.1.1`, jamais `2026.01.1`), `N` = numéro de la
+release dans le mois, qui repart à 1 chaque mois. Année et mois = ceux
+du jour où la version stable est posée dans DESCRIPTION. Jusqu’à 2.1.1,
+le versionnage était sémantique.
 
 À chaque push qui modifie le code fonctionnel (hors doc pure, hors CI),
 Claude doit :
 
-1.  Déterminer le type de changement selon Conventional Commits (feat: /
-    fix: / BREAKING CHANGE:) → bump semver correspondant (minor / patch
-    / major).
+1.  Qualifier le changement selon Conventional Commits (feat: / fix: /
+    feat!: / BREAKING CHANGE:) pour le titre de la PR et NEWS. La
+    version stable ne s’en déduit plus : c’est `AAAA.M.N` du jour (N = 1
+    pour la première release du mois, sinon N de la dernière release du
+    mois + 1). **Rupture d’une fonction stable** (retrait, changement
+    incompatible) : seulement après dépréciation (`deprecatedWarning`
+    une fois par session) pendant 3 mois, ou dès que plus aucun appelant
+    ne reste dans `nemetonshiny` et `nemetonclaude` (vérifié en lecture
+    seule), au premier terme atteint ; section « Changements cassants »
+    en tête de l’entrée NEWS.
 
 2.  Mettre à jour la version, de façon **cohérente** dans les trois
     fichiers (le job CI `version-consistency` de `r.yml` échoue sinon) :
 
-    - DESCRIPTION (champ Version) → la version stable `X.Y.Z` de la
+    - DESCRIPTION (champ Version) → la version stable `AAAA.M.N` de la
       release
-    - NEWS.md (entrée datée `# nemeton X.Y.Z (YYYY-MM-DD)`)
+    - NEWS.md (entrée datée `# nemeton AAAA.M.N (AAAA-MM-JJ)` ; le
+      garde-fou vérifie que `AAAA.M` = année et mois de cette date)
     - CITATION.cff (`version:` + `date-released:`)
 
-3.  Si CHANGELOG.md existe, ajouter la section `[X.Y.Z] - YYYY-MM-DD`
+3.  Si CHANGELOG.md existe, ajouter la section `[AAAA.M.N] - AAAA-MM-JJ`
     (Added / Changed / Fixed / Removed).
 
 4.  Mettre à jour `PLAN.md` (journal daté ; table d’avancement si l’état
@@ -438,28 +453,29 @@ Claude doit :
     seul.
 
 6.  **Repasser en cycle dev** : juste après la release, bumper
-    DESCRIPTION en version de dev `X.Y.Z.9000` (cf. *Cycle de
+    DESCRIPTION en version de dev `AAAA.M.N.9000` (cf. *Cycle de
     développement* ci-dessous).
 
 ## Cycle de développement (versions `.9000`)
 
 Entre deux releases, `DESCRIPTION` porte une version de **dév**
-`X.Y.Z.9000` (4 composantes). Convention :
+`AAAA.M.N.9000` (4 composantes). Convention :
 
-- **État publié sur `main`** : DESCRIPTION = `X.Y.Z` stable, tag
-  `vX.Y.Z` posé par le CI.
-- **Démarrage du cycle dev** : bumper DESCRIPTION → `X.Y.Z.9000`.
-  NEWS.md et CITATION.cff **restent** sur `X.Y.Z` (la dernière release).
-- **Pendant le dev** : DESCRIPTION reste `X.Y.Z.9000`.
-- **Release suivante** : poser une version stable `X.Y.(Z+1)` (ou
-  `X.(Y+1).0`, etc.) dans DESCRIPTION **et** NEWS **et** CITATION,
-  merger.
+- **État publié sur `main`** : DESCRIPTION = `AAAA.M.N` stable, tag
+  `vAAAA.M.N` posé par le CI.
+- **Démarrage du cycle dev** : bumper DESCRIPTION → `AAAA.M.N.9000`.
+  NEWS.md et CITATION.cff **restent** sur `AAAA.M.N` (la dernière
+  release).
+- **Pendant le dev** : DESCRIPTION reste `AAAA.M.N.9000`.
+- **Release suivante** : poser la version stable du jour (`AAAA.M.(N+1)`
+  dans le même mois, `AAAA.M'.1` un autre mois) dans DESCRIPTION **et**
+  NEWS **et** CITATION, merger.
 
 `release.yml` **ignore** les versions `.9000+` (gate « stable only »),
 et le garde-fou `version-consistency` **saute** quand DESCRIPTION est en
 cycle dev (il ne compare DESCRIPTION = NEWS = CITATION que pour une
-version stable `X.Y.Z`). Un push de cycle dev ne déclenche donc ni
-release ni échec CI.
+version stable à trois composantes). Un push de cycle dev ne déclenche
+donc ni release ni échec CI.
 
 ## Règles de cohérence
 
@@ -469,7 +485,8 @@ release ni échec CI.
   construction.
 - Vérifier que la page de documentation (pkgdown) est à jour — elle rend
   le README (badge dynamique) et lit la version de DESCRIPTION.
-- Toujours demander confirmation avant un bump majeur.
+- Toujours demander confirmation avant de retirer ou de changer de façon
+  incompatible une fonction **stable** (spec 057 § 8).
 
 ## Règles strictes
 

@@ -236,7 +236,8 @@ Every help page states the status of its function (spec 057):
 
 - **Stable**: indicators, families, NDP, normalisation, data loaders,
   sampling and the API consumed by nemetonshiny. Covered by the 1.0 API
-  contract: a breaking change needs a major release.
+  contract: a breaking change needs a deprecation period (spec 057,
+  section 8).
 
 - **Experimental**: RAG (knowledge corpus), Sentinel-2 biophysics,
   FORDEAD / RECONFORT health monitoring and their field validation,
@@ -255,7 +256,11 @@ families representing key dimensions of forest functioning.
 
 ## Version History
 
-See `news(package = "nemeton")` (NEWS.md) for the release history.
+See `news(package = "nemeton")` (NEWS.md) for the release history. Since
+2026.10.1, versions are calendar-based, `YYYY.M.N`: year and month of
+the release (month without leading zero), then the release number within
+the month (spec 057, section 8). Versions up to 2.1.1 followed semantic
+versioning.
 
 ## Links
 

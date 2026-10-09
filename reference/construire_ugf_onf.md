@@ -196,7 +196,7 @@ of it, to be checked against the management plan.
 
 ## Lifecycle
 
-Experimental (spec 058): may change in a minor release.
+Experimental (spec 058): may change in any release.
 
 ## See also
 

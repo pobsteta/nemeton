@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -495,37 +495,38 @@ R/utils_i18n.R                → Traductions FR/EN (liste TRANSLATIONS, source 
 </div>
 <div class="section level1">
 <h1 id="consignes-de-release-pour-ce-projet">Consignes de release pour ce projet<a class="anchor" aria-label="anchor" href="#consignes-de-release-pour-ce-projet"></a></h1>
-<p><strong>Le tag et la release GitHub sont AUTOMATISÉS</strong> par <code>.github/workflows/release.yml</code> : quand le workflow R-CMD-check réussit sur <code>main</code> (check, tests et couverture), il lit <code>Version:</code> dans DESCRIPTION et, si c’est une version <strong>stable <code>X.Y.Z</code></strong> dont le tag <code>vX.Y.Z</code> n’existe pas encore, crée le tag annoté + la release GitHub (<code>--generate-notes</code>). <strong>Ne plus faire <code>git tag</code> / <code>git push origin vX.Y.Z</code> / <code>gh release create</code> à la main.</strong></p>
+<p><strong>Le tag et la release GitHub sont AUTOMATISÉS</strong> par <code>.github/workflows/release.yml</code> : quand le workflow R-CMD-check réussit sur <code>main</code> (check, tests et couverture), il lit <code>Version:</code> dans DESCRIPTION et, si c’est une version <strong>stable <code>AAAA.M.N</code></strong> dont le tag <code>vAAAA.M.N</code> n’existe pas encore, crée le tag annoté + la release GitHub (<code>--generate-notes</code>). <strong>Ne plus faire <code>git tag</code> / <code>git push origin v…</code> / <code>gh release create</code> à la main.</strong></p>
+<p><strong>Versionnage calendaire <code>AAAA.M.N</code></strong> depuis 2026.10.1 (spec 057 § 8, validé par Pascal le 2026-10-09) : <code>AAAA</code> = année, <code>M</code> = mois <strong>sans zéro en tête</strong> (<code>2026.1.1</code>, jamais <code>2026.01.1</code>), <code>N</code> = numéro de la release dans le mois, qui repart à 1 chaque mois. Année et mois = ceux du jour où la version stable est posée dans DESCRIPTION. Jusqu’à 2.1.1, le versionnage était sémantique.</p>
 <p>À chaque push qui modifie le code fonctionnel (hors doc pure, hors CI), Claude doit :</p>
-<ol style="list-style-type: decimal"><li><p>Déterminer le type de changement selon Conventional Commits (feat: / fix: / BREAKING CHANGE:) → bump semver correspondant (minor / patch / major).</p></li>
+<ol style="list-style-type: decimal"><li><p>Qualifier le changement selon Conventional Commits (feat: / fix: / feat!: / BREAKING CHANGE:) pour le titre de la PR et NEWS. La version stable ne s’en déduit plus : c’est <code>AAAA.M.N</code> du jour (N = 1 pour la première release du mois, sinon N de la dernière release du mois + 1). <strong>Rupture d’une fonction stable</strong> (retrait, changement incompatible) : seulement après dépréciation (<code>deprecatedWarning</code> une fois par session) pendant 3 mois, ou dès que plus aucun appelant ne reste dans <code>nemetonshiny</code> et <code>nemetonclaude</code> (vérifié en lecture seule), au premier terme atteint ; section « Changements cassants » en tête de l’entrée NEWS.</p></li>
 <li>
 <p>Mettre à jour la version, de façon <strong>cohérente</strong> dans les trois fichiers (le job CI <code>version-consistency</code> de <code>r.yml</code> échoue sinon) :</p>
-<ul><li>DESCRIPTION (champ Version) → la version stable <code>X.Y.Z</code> de la release</li>
-<li>NEWS.md (entrée datée <code># nemeton X.Y.Z (YYYY-MM-DD)</code>)</li>
+<ul><li>DESCRIPTION (champ Version) → la version stable <code>AAAA.M.N</code> de la release</li>
+<li>NEWS.md (entrée datée <code># nemeton AAAA.M.N (AAAA-MM-JJ)</code> ; le garde-fou vérifie que <code>AAAA.M</code> = année et mois de cette date)</li>
 <li>CITATION.cff (<code>version:</code> + <code>date-released:</code>)</li>
 </ul></li>
-<li><p>Si CHANGELOG.md existe, ajouter la section <code>[X.Y.Z] - YYYY-MM-DD</code> (Added / Changed / Fixed / Removed).</p></li>
+<li><p>Si CHANGELOG.md existe, ajouter la section <code>[AAAA.M.N] - AAAA-MM-JJ</code> (Added / Changed / Fixed / Removed).</p></li>
 <li><p>Mettre à jour <code>PLAN.md</code> (journal daté ; table d’avancement si l’état change). Source unique de vérité du walking skeleton. Ne jamais clore un chantier sans release correspondante.</p></li>
 <li><p>Ouvrir une PR vers <code>main</code> et la merger → <code>release.yml</code> pose le tag + la release. <strong>Rien d’autre à faire</strong> : le badge version du README est dynamique (<code>img.shields.io/github/v/release</code>) et se met à jour seul.</p></li>
-<li><p><strong>Repasser en cycle dev</strong> : juste après la release, bumper DESCRIPTION en version de dev <code>X.Y.Z.9000</code> (cf. <em>Cycle de développement</em> ci-dessous).</p></li>
+<li><p><strong>Repasser en cycle dev</strong> : juste après la release, bumper DESCRIPTION en version de dev <code>AAAA.M.N.9000</code> (cf. <em>Cycle de développement</em> ci-dessous).</p></li>
 </ol><div class="section level2">
 <h2 id="cycle-de-développement-versions-9000">Cycle de développement (versions <code>.9000</code>)<a class="anchor" aria-label="anchor" href="#cycle-de-d%C3%A9veloppement-versions-9000"></a></h2>
-<p>Entre deux releases, <code>DESCRIPTION</code> porte une version de <strong>dév</strong> <code>X.Y.Z.9000</code> (4 composantes). Convention :</p>
+<p>Entre deux releases, <code>DESCRIPTION</code> porte une version de <strong>dév</strong> <code>AAAA.M.N.9000</code> (4 composantes). Convention :</p>
 <ul><li>
-<strong>État publié sur <code>main</code></strong> : DESCRIPTION = <code>X.Y.Z</code> stable, tag <code>vX.Y.Z</code> posé par le CI.</li>
+<strong>État publié sur <code>main</code></strong> : DESCRIPTION = <code>AAAA.M.N</code> stable, tag <code>vAAAA.M.N</code> posé par le CI.</li>
 <li>
-<strong>Démarrage du cycle dev</strong> : bumper DESCRIPTION → <code>X.Y.Z.9000</code>. NEWS.md et CITATION.cff <strong>restent</strong> sur <code>X.Y.Z</code> (la dernière release).</li>
+<strong>Démarrage du cycle dev</strong> : bumper DESCRIPTION → <code>AAAA.M.N.9000</code>. NEWS.md et CITATION.cff <strong>restent</strong> sur <code>AAAA.M.N</code> (la dernière release).</li>
 <li>
-<strong>Pendant le dev</strong> : DESCRIPTION reste <code>X.Y.Z.9000</code>.</li>
+<strong>Pendant le dev</strong> : DESCRIPTION reste <code>AAAA.M.N.9000</code>.</li>
 <li>
-<strong>Release suivante</strong> : poser une version stable <code>X.Y.(Z+1)</code> (ou <code>X.(Y+1).0</code>, etc.) dans DESCRIPTION <strong>et</strong> NEWS <strong>et</strong> CITATION, merger.</li>
-</ul><p><code>release.yml</code> <strong>ignore</strong> les versions <code>.9000+</code> (gate « stable only »), et le garde-fou <code>version-consistency</code> <strong>saute</strong> quand DESCRIPTION est en cycle dev (il ne compare DESCRIPTION = NEWS = CITATION que pour une version stable <code>X.Y.Z</code>). Un push de cycle dev ne déclenche donc ni release ni échec CI.</p>
+<strong>Release suivante</strong> : poser la version stable du jour (<code>AAAA.M.(N+1)</code> dans le même mois, <code>AAAA.M'.1</code> un autre mois) dans DESCRIPTION <strong>et</strong> NEWS <strong>et</strong> CITATION, merger.</li>
+</ul><p><code>release.yml</code> <strong>ignore</strong> les versions <code>.9000+</code> (gate « stable only »), et le garde-fou <code>version-consistency</code> <strong>saute</strong> quand DESCRIPTION est en cycle dev (il ne compare DESCRIPTION = NEWS = CITATION que pour une version stable à trois composantes). Un push de cycle dev ne déclenche donc ni release ni échec CI.</p>
 </div>
 <div class="section level2">
 <h2 id="règles-de-cohérence">Règles de cohérence<a class="anchor" aria-label="anchor" href="#r%C3%A8gles-de-coh%C3%A9rence"></a></h2>
 <ul><li>Pour une version <strong>stable</strong>, DESCRIPTION = tête de NEWS.md = CITATION.cff (vérifié en CI par <code>version-consistency</code>). Le tag et la release sont ensuite posés automatiquement et donc identiques par construction.</li>
 <li>Vérifier que la page de documentation (pkgdown) est à jour — elle rend le README (badge dynamique) et lit la version de DESCRIPTION.</li>
-<li>Toujours demander confirmation avant un bump majeur.</li>
+<li>Toujours demander confirmation avant de retirer ou de changer de façon incompatible une fonction <strong>stable</strong> (spec 057 § 8).</li>
 </ul></div>
 <div class="section level2">
 <h2 id="règles-strictes">Règles strictes<a class="anchor" aria-label="anchor" href="#r%C3%A8gles-strictes"></a></h2>
