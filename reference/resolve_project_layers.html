@@ -29,7 +29,7 @@ calls transparently cover the full footprint."><meta property="og:image" content
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -225,7 +225,9 @@ yourself if a broken file should mean "skip" rather than "stop".</p></dd>
     <h2 id="search-order-dem-">Search order (DEM)<a class="anchor" aria-label="anchor" href="#search-order-dem-"></a></h2>
 
 
-<ol><li><p>`&lt;project&gt;/cache/layers/lidar_mnt/*.tif`  — LiDAR HD (1 m)</p></li>
+<ol><li><p>`&lt;project&gt;/cache/layers/drone_mnt/mnt.tif` — drone, <code><a href="traiter_nuage_points.html">traiter_nuage_points</a></code> (spec 059)</p></li>
+<li><p>`&lt;project&gt;/cache/layers/lidar_mnt/*.tif`  — LiDAR HD (1 m)</p></li>
+<li><p>`&lt;project&gt;/cache/layers/ign_mnt/mnt.tif`  — LiDAR HD point cloud, <code><a href="traiter_nuage_points.html">traiter_nuage_points</a></code></p></li>
 <li><p>`&lt;project&gt;/cache/layers/dem/*.tif`        — generic DEM cache</p></li>
 <li><p>`&lt;project&gt;/cache/layers/bd_alti/*.tif`    — IGN BD ALTI (25 m)</p></li>
 <li><p>`&lt;project&gt;/cache/layers/rge_alti/*.tif`   — IGN RGE ALTI (5 m)</p></li>
@@ -245,7 +247,9 @@ yourself if a broken file should mean "skip" rather than "stop".</p></dd>
     <h2 id="search-order-chm-">Search order (CHM)<a class="anchor" aria-label="anchor" href="#search-order-chm-"></a></h2>
 
 
-<ol><li><p>`&lt;project&gt;/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH</p></li>
+<ol><li><p>`&lt;project&gt;/cache/layers/drone_mnh/mnh.tif` — drone, <code><a href="traiter_nuage_points.html">traiter_nuage_points</a></code> (spec 059)</p></li>
+<li><p>`&lt;project&gt;/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH</p></li>
+<li><p>`&lt;project&gt;/cache/layers/ign_mnh/mnh.tif`  — LiDAR HD point cloud, <code><a href="traiter_nuage_points.html">traiter_nuage_points</a></code></p></li>
 <li><p>`&lt;project&gt;/cache/layers/mnh/*.tif`        — generic MNH cache</p></li>
 <li><p>`&lt;project&gt;/cache/layers/opencanopy/chm_predicted_0_2m.tif`
         — Open-Canopy CHM 0.2 m (v0.192.2)</p></li>

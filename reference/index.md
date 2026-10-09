@@ -498,6 +498,8 @@ Acquisition des couches publiques (WMS/WFS, COG, STAC, CDS)
   : Discover the best available DEM / CHM raster in a Nemeton project
 - [`compute_dtm_chm_from_laz()`](https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.md)
   : Derive DTM and CHM rasters from IGN LiDAR HD point clouds
+- [`traiter_nuage_points()`](https://pobsteta.github.io/nemeton/reference/traiter_nuage_points.md)
+  : Derive DTM, DSM and CHM rasters from a point cloud
 - [`get_ndp_augmented()`](https://pobsteta.github.io/nemeton/reference/get_ndp_augmented.md)
   : Extract augmentation flags from a detect_ndp() result
 - [`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)

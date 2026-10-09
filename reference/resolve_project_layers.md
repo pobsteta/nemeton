@@ -87,64 +87,78 @@ attribute \`"nemeton_dem_layer"\` / \`"nemeton_chm_layer"\`.
 
 ## Search order (DEM)
 
-1.  \`\<project\>/cache/layers/lidar_mnt/\*.tif\` — LiDAR HD (1 m)
+1.  \`\<project\>/cache/layers/drone_mnt/mnt.tif\` — drone,
+    [`traiter_nuage_points`](https://pobsteta.github.io/nemeton/reference/traiter_nuage_points.md)
+    (spec 059)
 
-2.  \`\<project\>/cache/layers/dem/\*.tif\` — generic DEM cache
+2.  \`\<project\>/cache/layers/lidar_mnt/\*.tif\` — LiDAR HD (1 m)
 
-3.  \`\<project\>/cache/layers/bd_alti/\*.tif\` — IGN BD ALTI (25 m)
+3.  \`\<project\>/cache/layers/ign_mnt/mnt.tif\` — LiDAR HD point cloud,
+    [`traiter_nuage_points`](https://pobsteta.github.io/nemeton/reference/traiter_nuage_points.md)
 
-4.  \`\<project\>/cache/layers/rge_alti/\*.tif\` — IGN RGE ALTI (5 m)
+4.  \`\<project\>/cache/layers/dem/\*.tif\` — generic DEM cache
 
-5.  \`\<project\>/cache/layers/dtm/\*.tif\` — generic DTM cache
+5.  \`\<project\>/cache/layers/bd_alti/\*.tif\` — IGN BD ALTI (25 m)
 
-6.  \`\<project\>/cache/layers/mnt/\*.tif\` — generic MNT cache
+6.  \`\<project\>/cache/layers/rge_alti/\*.tif\` — IGN RGE ALTI (5 m)
 
-7.  \`\<project\>/cache/layers/dem.tif\` — direct file (v0.25.5)
+7.  \`\<project\>/cache/layers/dtm/\*.tif\` — generic DTM cache
 
-8.  \`\<project\>/cache/layers/dtm.tif\` — direct file (v0.25.5)
+8.  \`\<project\>/cache/layers/mnt/\*.tif\` — generic MNT cache
 
-9.  \`\<project\>/cache/layers/mnt.tif\` — direct file (v0.25.5)
+9.  \`\<project\>/cache/layers/dem.tif\` — direct file (v0.25.5)
 
-10. \`\<project\>/dtm.tif\` — \`opencanopy\` convention
+10. \`\<project\>/cache/layers/dtm.tif\` — direct file (v0.25.5)
 
-11. \`\<project\>/dem.tif\` — project root (v0.25.5)
+11. \`\<project\>/cache/layers/mnt.tif\` — direct file (v0.25.5)
 
-12. \`\<project\>/mnt.tif\` — tutorial convention
+12. \`\<project\>/dtm.tif\` — \`opencanopy\` convention
 
-13. \`\<project\>/data/dtm.tif\` — alt project layout
+13. \`\<project\>/dem.tif\` — project root (v0.25.5)
 
-14. \`\<project\>/data/dem.tif\` — alt project layout (v0.25.5)
+14. \`\<project\>/mnt.tif\` — tutorial convention
 
-15. \`\<project\>/data/mnt.tif\` — alt project layout
+15. \`\<project\>/data/dtm.tif\` — alt project layout
+
+16. \`\<project\>/data/dem.tif\` — alt project layout (v0.25.5)
+
+17. \`\<project\>/data/mnt.tif\` — alt project layout
 
 ## Search order (CHM)
 
-1.  \`\<project\>/cache/layers/lidar_mnh/\*.tif\` — LiDAR HD MNH
+1.  \`\<project\>/cache/layers/drone_mnh/mnh.tif\` — drone,
+    [`traiter_nuage_points`](https://pobsteta.github.io/nemeton/reference/traiter_nuage_points.md)
+    (spec 059)
 
-2.  \`\<project\>/cache/layers/mnh/\*.tif\` — generic MNH cache
+2.  \`\<project\>/cache/layers/lidar_mnh/\*.tif\` — LiDAR HD MNH
 
-3.  \`\<project\>/cache/layers/opencanopy/chm_predicted_0_2m.tif\` —
+3.  \`\<project\>/cache/layers/ign_mnh/mnh.tif\` — LiDAR HD point cloud,
+    [`traiter_nuage_points`](https://pobsteta.github.io/nemeton/reference/traiter_nuage_points.md)
+
+4.  \`\<project\>/cache/layers/mnh/\*.tif\` — generic MNH cache
+
+5.  \`\<project\>/cache/layers/opencanopy/chm_predicted_0_2m.tif\` —
     Open-Canopy CHM 0.2 m (v0.192.2)
 
-4.  \`\<project\>/cache/layers/opencanopy/chm_predicted_1_5m.tif\` —
+6.  \`\<project\>/cache/layers/opencanopy/chm_predicted_1_5m.tif\` —
     Open-Canopy CHM 1.5 m (v0.192.2)
 
-5.  \`\<project\>/cache/layers/opencanopy/chm_1_5m.tif\` — Open-Canopy
+7.  \`\<project\>/cache/layers/opencanopy/chm_1_5m.tif\` — Open-Canopy
     CHM, completion witness (v0.192.2)
 
-6.  \`\<project\>/cache/layers/chm/\*.tif\` — generic CHM cache
+8.  \`\<project\>/cache/layers/chm/\*.tif\` — generic CHM cache
 
-7.  \`\<project\>/cache/layers/chm.tif\` — direct file (v0.25.5)
+9.  \`\<project\>/cache/layers/chm.tif\` — direct file (v0.25.5)
 
-8.  \`\<project\>/cache/layers/mnh.tif\` — direct file (v0.25.5)
+10. \`\<project\>/cache/layers/mnh.tif\` — direct file (v0.25.5)
 
-9.  \`\<project\>/chm.tif\` — single-file convention
+11. \`\<project\>/chm.tif\` — single-file convention
 
-10. \`\<project\>/mnh.tif\` — tutorial convention
+12. \`\<project\>/mnh.tif\` — tutorial convention
 
-11. \`\<project\>/data/chm.tif\` — alt project layout
+13. \`\<project\>/data/chm.tif\` — alt project layout
 
-12. \`\<project\>/data/mnh.tif\` — alt project layout
+14. \`\<project\>/data/mnh.tif\` — alt project layout
 
 The Open-Canopy entries are named file by file on purpose:
 \`cache/layers/opencanopy/\` also holds orthophotos (\`ortho_rvb.tif\`,

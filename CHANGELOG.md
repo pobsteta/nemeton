@@ -12,6 +12,26 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2.1.0\] - 2026-10-09
+
+### Added
+
+- [`traiter_nuage_points()`](https://pobsteta.github.io/nemeton/reference/traiter_nuage_points.md)
+  (experimental, spec 059) : MNT, MNS et MNH depuis un nuage IGN, LiDAR
+  drone ou photogrammétrie drone ; reclassification bruit + sol
+  (CSF/PTD) par défaut ; MNT externe et recalage vertical sur le sol nu
+  pour la photogrammétrie.
+
+### Changed
+
+- [`resolve_project_dem()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)
+  /
+  [`resolve_project_chm()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)
+  : produits drone en premier, puis LiDAR HD publié, puis `ign_mnt/` /
+  `ign_mnh/` recalculés.
+- `detect_ndp_from_cache()` : produits drone → NDP 2 ; `ign_*` comptés
+  comme LiDAR HD.
+
 ## \[2.0.0\] - 2026-10-08
 
 ### Removed

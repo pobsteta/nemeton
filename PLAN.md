@@ -7,8 +7,8 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v1.3.0**
-> (release du 2026-10-08), relevée le 2026-10-08.
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2.0.0**
+> (release du 2026-10-08), relevée le 2026-10-09.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
@@ -114,6 +114,41 @@ la **classe** de bug : quatre jours plus tard, la correction du sens de
 la famille R (v0.181.0) puis le décroisement de F (v0.182.0) ont
 traversé l’app **sans une ligne de table à toucher**. C’est l’argument à
 opposer au prochain fork qui se présentera comme un raccourci.
+
+------------------------------------------------------------------------
+
+# Chantier — MNT, MNS et MNH depuis un nuage de points (spec 059)
+
+> Demande de Pascal du 2026-10-09 : traiter un nuage de drone
+> (classification, puis MNT, MNS, MNH), et le cas où l’IGN ne livre que
+> le nuage. Spec : `specs/059-nuage-points-mnt-mns-mnh/spec.md`.
+
+| Étape | Contenu | Release | État |
+|----|----|----|----|
+| Cœur | [`traiter_nuage_points()`](https://pobsteta.github.io/nemeton/reference/traiter_nuage_points.md) (IGN, LiDAR drone, photogrammétrie), produits drone d’abord dans `resolve_project_*()`, NDP 2 | **v2.1.0** | ✅ livré |
+| Cœur | correctif : classes de bruit IGN dans le filtre du MNH de [`compute_dtm_chm_from_laz()`](https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.md) (7 et 18 absentes des dalles IGN) | patch | ⬜ après lecture du descriptif LiDAR HD |
+| App | import d’un nuage de drone, appel du cœur, affichage MNS/MNH, NDP 2 | `nemetonshiny` | ⬜ note émise |
+
+**Décisions** — *2026-10-09* (Pascal) : nom
+[`traiter_nuage_points()`](https://pobsteta.github.io/nemeton/reference/traiter_nuage_points.md)
+; 0,5 m pour l’IGN et 0,25 m pour le drone ; reclassification par
+défaut, IGN compris ; eau comptée comme sol ; sol nu du recalage
+photogrammétrique = MNH IGN \< 0,5 m ; produits drone → NDP 2 et
+prioritaires dans `resolve_project_*()`.
+
+**Journal** — *2026-10-09* (**v2.1.0**) : livré sans nouvelle dépendance
+(`lasR` 0.21 fournit CSF, PTD, IVF et SOR). Dalle IGN
+`LHD_FXX_0633_6767` (20,7 M points) : MNT reclassé à 1,1 cm du MNT IGN
+publié (médiane, p95 7,7 cm), MNH à 0 m (médiane, p95 1,12 m), 2 min 15
+s sur 4 cœurs. Recalage photogrammétrique simulé : 2,30 m retrouvés à 3
+mm. Constat en route : le filtre de bruit de
+[`compute_dtm_chm_from_laz()`](https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.md)
+écarte les classes 7 et 18, absentes des dalles IGN (classes vues : 1,
+2, 3, 4, 5, 6, 9, 67), donc sans effet sur l’IGN. Version `nemetonshiny`
+publiée : v2.0.0.
+
+**Prochaine étape** : correctif du filtre de bruit IGN ; intégration
+app.
 
 ------------------------------------------------------------------------
 
