@@ -112,6 +112,43 @@ test_that("IGN cloud: own classes kept with classifier = FALSE, ign_* outputs", 
   expect_setequal(names(out$classes), c("1", "2", "5"))
 })
 
+test_that("IGN artefacts (65) and virtual points (66) never reach the models", {
+  .np_skip()
+  couches <- withr::local_tempdir()
+  f <- .np_nuage(file.path(couches, "lidar_nuage"), classe = "vrai")
+  # Amas dense de points 65 et 66, 40 m au-dessus du sol nu en (5, 55) :
+  # trop groupés pour que le filtre de points isolés les attrape.
+  las <- lidR::readLAS(f)
+  set.seed(2)
+  amas <- data.frame(X = round(stats::runif(200, 4, 6), 2),
+                     Y = round(stats::runif(200, 54, 56), 2),
+                     Z = 100.5 + 40, Classification = rep(c(65L, 66L), 100),
+                     ReturnNumber = 1L, NumberOfReturns = 1L)
+  dt <- data.table::rbindlist(list(las@data[, names(amas), with = FALSE],
+                                   data.table::as.data.table(amas)))
+  # Classes > 31 : format de points 6 (LAS 1.4), comme les dalles IGN.
+  h <- lidR::LASheader(dt)
+  h@PHB[["Point Data Format ID"]] <- 6L
+  h@PHB[["Version Minor"]] <- 4L
+  h@PHB[["Header Size"]] <- 375L
+  h@PHB[["Offset to point data"]] <- 375L
+  for (a in c("X", "Y", "Z")) {
+    h@PHB[[paste(a, "scale factor")]] <- 0.001
+    h@PHB[[paste(a, "offset")]] <- 0
+  }
+  las2 <- lidR::LAS(dt, h)
+  sf::st_crs(las2) <- 2154
+  lidR::writeLAS(las2, f)
+
+  for (cl in c(TRUE, FALSE)) {
+    out <- traiter_nuage_points(file.path(couches, "lidar_nuage"), type = "lidar_ign",
+                                classifier = cl, overwrite = TRUE, verbose = FALSE)
+    expect_lt(.np_max(terra::rast(out$mns), 5, 55), 102)
+    expect_lt(.np_max(terra::rast(out$mnh), 5, 55), 1)
+    expect_false(any(c("65", "66") %in% names(out$classes)))
+  }
+})
+
 test_that("classifier = FALSE without ground points stops", {
   .np_skip()
   couches <- withr::local_tempdir()

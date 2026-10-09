@@ -10,8 +10,13 @@
 # projet en NDP 2 et passent avant ceux de l'IGN dans resolve_project_*().
 
 # Classes LAS de bruit (ASPRS 7 bas, 18 haut) : celles que posent
-# classify_with_ivf() / classify_with_sor().
+# classify_with_ivf() / classify_with_sor(). Les classes exclues des MNx
+# (bruit + IGN 65/66) sont dans `.LAS_CLASSES_EXCLUES` (lidar_processing.R).
 .NUAGE_BRUIT <- c(7L, 18L)
+# Classes IGN supprimées avant tout traitement : artefacts (65) et points
+# virtuels sous les ponts (66). Reclassés, ils redeviendraient du sol ou du
+# sursol.
+.NUAGE_IGN_A_SUPPRIMER <- c(65L, 66L)
 # Classes du TIN de sol : sol (2) et eau (9).
 .NUAGE_SOL <- c(2L, 9L)
 # Seuil de sol nu pour le recalage vertical : MNH de référence < 0,5 m.
@@ -323,7 +328,8 @@ traiter_nuage_points <- function(nuage,
 .nuage_lasr <- function(fichiers, type, res, classifier, methode_sol, csf_args,
                         tmp, ncores) {
   photo <- identical(type, "photogrammetrie")
-  pipeline <- lasR::reader_las()
+  pipeline <- lasR::reader_las() +
+    lasR::delete_points(lasR::keep_class(.NUAGE_IGN_A_SUPPRIMER))
   if (classifier) {
     pipeline <- pipeline +
       lasR::edit_attribute(attribute = "Classification", value = 1L) +
@@ -339,7 +345,7 @@ traiter_nuage_points <- function(nuage,
     }
   }
   pipeline <- pipeline + lasR::summarise()
-  mns <- lasR::rasterize(res, "max", filter = lasR::drop_class(.NUAGE_BRUIT),
+  mns <- lasR::rasterize(res, "max", filter = lasR::drop_class(.LAS_CLASSES_EXCLUES),
                          ofile = tmp[["mns"]])
   if (photo) {
     pipeline <- pipeline + mns
@@ -349,7 +355,7 @@ traiter_nuage_points <- function(nuage,
       lasR::rasterize(res, tri, ofile = tmp[["mnt"]]) +
       mns +
       lasR::transform_with(tri) +
-      lasR::rasterize(res, "max", filter = lasR::drop_class(.NUAGE_BRUIT),
+      lasR::rasterize(res, "max", filter = lasR::drop_class(.LAS_CLASSES_EXCLUES),
                       ofile = tmp[["mnh"]])
   }
   lasR::exec(pipeline, on = fichiers,

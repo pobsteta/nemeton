@@ -108,7 +108,7 @@ un raccourci.
 | Étape | Contenu | Release | État |
 |---|---|---|---|
 | Cœur | `traiter_nuage_points()` (IGN, LiDAR drone, photogrammétrie), produits drone d'abord dans `resolve_project_*()`, NDP 2 | **v2.1.0** | ✅ livré |
-| Cœur | correctif : classes de bruit IGN dans le filtre du MNH de `compute_dtm_chm_from_laz()` (7 et 18 absentes des dalles IGN) | patch | ⬜ après lecture du descriptif LiDAR HD |
+| Cœur | correctif : classes de bruit IGN dans le filtre du MNH de `compute_dtm_chm_from_laz()` (7 et 18 absentes des dalles IGN) | **v2.1.1** | ✅ livré (65 et 66 exclues) |
 | App | import d'un nuage de drone, appel du cœur, affichage MNS/MNH, NDP 2 | `nemetonshiny` | ⬜ note émise |
 
 **Décisions** — *2026-10-09* (Pascal) : nom `traiter_nuage_points()` ; 0,5 m
@@ -125,7 +125,19 @@ filtre de bruit de `compute_dtm_chm_from_laz()` écarte les classes 7 et 18,
 absentes des dalles IGN (classes vues : 1, 2, 3, 4, 5, 6, 9, 67), donc sans
 effet sur l'IGN. Version `nemetonshiny` publiée : v2.0.0.
 
-**Prochaine étape** : correctif du filtre de bruit IGN ; intégration app.
+**Journal** — *2026-10-09* (**v2.1.1**) : correctif du filtre de bruit. D'après
+le descriptif IGN (table des classes, atelier LiDAR HD 2025), les classes IGN
+à écarter des MNx sont 66 (points virtuels sous les ponts, « pour les retirer
+dans les MNx ») et 65 (artefacts, retirée des spécifications en mars 2025 mais
+présente dans les dalles plus anciennes). `.LAS_CLASSES_EXCLUES` vaut
+désormais 7, 18, 65 et 66, pour `compute_dtm_chm_from_laz()` comme pour
+`traiter_nuage_points()`, qui supprime en plus les points 65 et 66 avant de
+reclasser. La version du traitement entre dans la clé de cache, si bien que
+les rasters déjà calculés sont refaits une fois. Le test synthétique est
+discriminant : sans le correctif, un amas de points 65/66 placé 40 m au-dessus
+du sol monte le MNS à 140,5 m.
+
+**Prochaine étape** : intégration app.
 
 ---
 
