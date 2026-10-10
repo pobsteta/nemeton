@@ -31,7 +31,7 @@
       "browser": "https://browser.datastore-mtd.theia.data-terra.org/",
       "stac_version": "1.1.0",
       "provider": "Maison de la Télédétection (MTD) / Theia — DATA TERRA",
-      "auth": "Catalogue browsing (collections, items, search) is anonymous. Asset download is authenticated: the COG/VRT objects live on the S3 store declared in `theia_s3`. The teledetection Python SDK signs hrefs via a download gateway; the R side instead reads the objects directly with GDAL /vsis3/ using the S3 credentials (see theia_s3 and theia_configure_s3()).",
+      "auth": "Catalogue browsing (collections, items, search) is anonymous. Asset download is authenticated: the COG/VRT objects live on the S3 store declared in `theia_s3`. The teledetection Python SDK signs hrefs via a download gateway; the R side does the same: theia_sign_urls() posts the object URLs to signing.stac.teledetection.fr with the TLD_ACCESS_KEY / TLD_SECRET_KEY pair and GDAL reads the pre-signed URLs with /vsicurl/.",
       "note": "STAC API root consumed by load_theia_source() / resolve_theia_assets()."
     },
     "theia_s3": {
@@ -41,7 +41,7 @@
       "virtual_hosting": false,
       "https": true,
       "region": "sm1",
-      "note": "S3-compatible (MinIO) object store hosting the THEIA / FORMS COG and VRT assets, served by the MESO@UM datacentre. Credentials are NOT stored here: the THEIA API key (access + secret, created at https://gate.stac.teledetection.fr) is a standard S3 SigV4 key pair. Set TLD_ACCESS_KEY and TLD_SECRET_KEY in a gitignored .Renviron, call theia_configure_s3() once per session, then GDAL reads /vsis3/ paths with native SigV4 signing — no Python / teledetection SDK needed."
+      "note": "S3-compatible (MinIO) object store hosting the THEIA / FORMS COG and VRT assets, served by the MESO@UM datacentre. Credentials are NOT stored here: the THEIA API key (access + secret, created at https://gate.stac.teledetection.fr) is a standard S3 SigV4 key pair. The store rejects these keys for direct /vsis3/ reads: set TLD_ACCESS_KEY and TLD_SECRET_KEY in a gitignored .Renviron and let theia_sign_urls() pre-sign the URLs, read by GDAL with /vsicurl/ — no Python / teledetection SDK needed."
     },
     "onf_wfs": {
       "url": "http://ws.carmencarto.fr/WFS/105/ONF_Forets",

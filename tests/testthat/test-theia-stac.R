@@ -185,21 +185,6 @@ test_that(".theia_href_to_gdal leaves a /vsi path untouched", {
   )
 })
 
-# ---- theia_configure_s3 ----
-
-test_that("theia_configure_s3 aborts when credentials are absent", {
-  withr::local_envvar(TLD_ACCESS_KEY = "", TLD_SECRET_KEY = "")
-  expect_error(theia_configure_s3(), "credentials")
-})
-
-test_that("theia_configure_s3 succeeds with explicit credentials", {
-  skip_if_not_installed("terra")
-  expect_invisible(
-    res <- theia_configure_s3(access_key = "AKfake", secret_key = "SKfake")
-  )
-  expect_true(res)
-})
-
 # ---- load_theia_source ----
 
 test_that("load_theia_source propagates an unknown-datasource error", {

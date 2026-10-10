@@ -1,3 +1,28 @@
+# nemeton 2026.10.2 (2026-10-10)
+
+## Changements cassants
+
+- **`create_qfield_project()`** est retirée. C'était un alias déprécié de
+  `create_qgis_project()`, avec les mêmes arguments : il suffit de remplacer
+  le nom.
+- **`theia_configure_s3()`** est retirée. Elle était dépréciée depuis la
+  0.136.0 et n'activait plus rien : le stockage MESO@UM refuse les clés THEIA en
+  lecture `/vsis3/` directe. Les assets THEIA se lisent par des URL pré-signées
+  (`theia_sign_urls()`, `theia_signed_href()`, `load_theia_source()`), sans
+  configuration préalable.
+
+Ces retraits suivent la règle de la spec 057 § 8 : plus aucun appelant ne
+reste. `nemetonshiny` v2.0.1 appelle `create_qgis_project()` et ne mocke plus
+`theia_configure_s3()` ; `nemetonclaude` n'utilise ni l'une ni l'autre. Les deux
+dépôts ont été vérifiés en lecture seule. Pascal a confirmé le retrait le
+2026-10-10.
+
+## Documentation
+
+- Le tutoriel d'échantillonnage (`09-sampling`) appelle `create_qgis_project()`.
+- Les notes `theia_stac` et `theia_s3` de `inst/datasources/FR.json` décrivent
+  l'accès réel, par URL pré-signées lues en `/vsicurl/`.
+
 # nemeton 2026.10.1 (2026-10-09)
 
 Premier numéro calendaire. Le paquet passe du versionnage sémantique

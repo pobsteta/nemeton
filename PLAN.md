@@ -124,6 +124,14 @@ appelant ne reste, ces deux fonctions peuvent être retirées sans dépréciatio
 (spec 057 § 8). Cela demande l'accord de Pascal, car elles sont stables. La
 même release app porte le correctif des dalles LiDAR HD vides.
 
+**Journal** — *2026-10-10* (**2026.10.2**) : `create_qfield_project()` et
+`theia_configure_s3()` sont retirées avec l'accord de Pascal, puisque plus
+aucun appelant ne reste. C'est le premier usage de la règle « plus aucun
+appelant » de la spec 057 § 8. NEWS s'ouvre sur « Changements cassants ». Le
+tutoriel 09 appelle `create_qgis_project()`. Les notes THEIA de `FR.json`
+décrivent l'accès par URL pré-signées. Version `nemetonshiny` publiée :
+v2026.10.1.
+
 ---
 
 # Chantier — MNT, MNS et MNH depuis un nuage de points (spec 059)

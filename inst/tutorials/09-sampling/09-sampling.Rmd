@@ -1753,7 +1753,7 @@ de collecter directement sur le terrain les mesures
 dendrométriques (DBH, hauteur, espèce, qualité...) avec des
 **formulaires préconfigurés**, en mode hors-ligne.
 
-Néméton fournit `create_qfield_project()` qui empaquète en un seul
+Néméton fournit `create_qgis_project()` qui empaquète en un seul
 fichier `.qgz` :
 
 - la couche **placettes** (GRTS, lecture/écriture) ;
@@ -1802,7 +1802,7 @@ export_dir <- file.path(data_dir, "result_sampling")
 dir.create(export_dir, showWarnings = FALSE, recursive = TRUE)
 
 # Création du projet QField
-qgz_path <- nemeton::create_qfield_project(
+qgz_path <- nemeton::create_qgis_project(
   placettes    = sample_plots,
   zone_etude   = zone_etude,
   output_dir   = export_dir,

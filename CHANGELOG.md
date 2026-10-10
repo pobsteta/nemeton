@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.2] - 2026-10-10
+
+### Removed
+- `create_qfield_project()`, deprecated alias of `create_qgis_project()`.
+- `theia_configure_s3()`, deprecated since 0.136.0 and without effect (THEIA
+  assets are read through pre-signed URLs).
+
+### Changed
+- Sampling tutorial and THEIA notes in `inst/datasources/FR.json` updated.
+
 ## [2026.10.1] - 2026-10-09
 
 ### Changed

@@ -451,7 +451,6 @@ reference:
     - get_datasource_product
     - stac_search_s2
     - theia_stac
-    - theia_configure_s3
     - theia_source_status
     - probe_ign_lidar_tiles
 
@@ -508,7 +507,6 @@ reference:
     - get_arbre_schema
     - qgis_export
     - create_qgis_project
-    - create_qfield_project
     - qgis_import
     - import_qgis_gpkg
     - validate_field_data
