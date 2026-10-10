@@ -13,6 +13,20 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.10.2\] - 2026-10-10
+
+### Removed
+
+- `create_qfield_project()`, deprecated alias of
+  [`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md).
+- `theia_configure_s3()`, deprecated since 0.136.0 and without effect
+  (THEIA assets are read through pre-signed URLs).
+
+### Changed
+
+- Sampling tutorial and THEIA notes in `inst/datasources/FR.json`
+  updated.
+
 ## \[2026.10.1\] - 2026-10-09
 
 ### Changed
@@ -1116,9 +1130,9 @@ concise, categorised trail.
 
 ### Deprecated
 
-- [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-  — the <MESO@UM> store rejects portal keys for direct S3 access; assets
-  are read via pre-signed URLs. Kept for back-compat (now warns).
+- `theia_configure_s3()` — the <MESO@UM> store rejects portal keys for
+  direct S3 access; assets are read via pre-signed URLs. Kept for
+  back-compat (now warns).
 
 ## \[0.135.0\] - 2026-07-05
 
@@ -1165,10 +1179,10 @@ concise, categorised trail.
   `.get_s2_band_raster()`, never configured GDAL S3 for the `/vsis3/`
   THEIA COGs, and didn’t resample the mixed-resolution bands (B05 20 m
   vs B04/B08 10 m). Now uses the returned raster directly, calls
-  [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-  (degrading to `NULL` + warning when TLD creds are absent), and
-  resamples to a common grid. MUSCATE STAC search validated on real data
-  (22 Vercors scenes). CI tests added (mocked search/S3/band).
+  `theia_configure_s3()` (degrading to `NULL` + warning when TLD creds
+  are absent), and resamples to a common grid. MUSCATE STAC search
+  validated on real data (22 Vercors scenes). CI tests added (mocked
+  search/S3/band).
 
 ## \[0.134.0\] - 2026-07-05
 
@@ -3325,10 +3339,10 @@ préexistants » documented in v0.43.2.
 
 ### Fixed
 
-- [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-  reads `TLD_ACCESS_KEY` / `TLD_SECRET_KEY` (the THEIA API-key pair)
-  instead of `THEIA_S3_*`, and the S3 region is `sm1` (not `us-east-1`).
-  GDAL `/vsis3/` reads the THEIA assets directly — no Python SDK needed.
+- `theia_configure_s3()` reads `TLD_ACCESS_KEY` / `TLD_SECRET_KEY` (the
+  THEIA API-key pair) instead of `THEIA_S3_*`, and the S3 region is
+  `sm1` (not `us-east-1`). GDAL `/vsis3/` reads the THEIA assets
+  directly — no Python SDK needed.
 
 ## \[0.39.0\] - 2026-05-20
 
@@ -3345,10 +3359,9 @@ préexistants » documented in v0.43.2.
 
 ### Added
 
-- [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-  — configures GDAL `/vsis3/` for authenticated reads of the THEIA S3
-  object store; credentials from `THEIA_S3_ACCESS_KEY` /
-  `THEIA_S3_SECRET_KEY` env vars.
+- `theia_configure_s3()` — configures GDAL `/vsis3/` for authenticated
+  reads of the THEIA S3 object store; credentials from
+  `THEIA_S3_ACCESS_KEY` / `THEIA_S3_SECRET_KEY` env vars.
 - `services.theia_s3` entry in `FR.json` (endpoint, bucket).
 
 ### Changed
@@ -3680,10 +3693,9 @@ préexistants » documented in v0.43.2.
   [`aggregate_plot_metrics()`](https://pobsteta.github.io/nemeton/reference/aggregate_plot_metrics.md),
   [`attach_field_data_to_units()`](https://pobsteta.github.io/nemeton/reference/attach_field_data_to_units.md),
   [`tag_field_data_sources()`](https://pobsteta.github.io/nemeton/reference/tag_field_data_sources.md).
-- QField project export
-  [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
-  producing a ready-to-use `.qgz` (ZIP of `.qgs` XML + GPKG) with zero
-  new hard dependency.
+- QField project export `create_qfield_project()` producing a
+  ready-to-use `.qgz` (ZIP of `.qgs` XML + GPKG) with zero new hard
+  dependency.
 - Placette / arbre schema module (`R/field_schema.R`) used on both
   export and re-ingestion sides.
 - [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)

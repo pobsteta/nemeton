@@ -5,27 +5,10 @@ Packages sampling plots, study area, and (optionally) the TSP route as a
 QGIS project file wired with field schemas, ready to open in QGIS
 Desktop and to push to QField via QFieldSync.
 
-\`create_qfield_project()\` is a deprecated alias kept for backwards
-compatibility. It forwards to \[create_qgis_project()\] and emits a
-deprecation warning once per session. New code should call
-\[create_qgis_project()\] directly.
-
 ## Usage
 
 ``` r
 create_qgis_project(
-  placettes,
-  zone_etude = NULL,
-  parcours_tsp = NULL,
-  output_dir,
-  project_name = "echantillon",
-  crs = 2154,
-  region = "BFC",
-  lang = "fr",
-  overwrite = TRUE
-)
-
-create_qfield_project(
   placettes,
   zone_etude = NULL,
   parcours_tsp = NULL,

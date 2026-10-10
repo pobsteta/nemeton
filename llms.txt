@@ -733,8 +733,6 @@ Acquisition des couches publiques (WMS/WFS, COG, STAC, CDS)
   : Search Sentinel-2 L2A scenes via STAC
 - [`theia_stac`](https://pobsteta.github.io/nemeton/reference/theia_stac.md)
   : THEIA STAC resolver
-- [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-  : Configure GDAL for authenticated THEIA S3 reads
 - [`theia_source_status()`](https://pobsteta.github.io/nemeton/reference/theia_source_status.md)
   : Report whether a THEIA datasource is usable over an AOI
 - [`probe_ign_lidar_tiles()`](https://pobsteta.github.io/nemeton/reference/probe_ign_lidar_tiles.md)
@@ -837,7 +835,6 @@ Inventaire derive du CHM, densite maximale, derive de croissance
 - [`qgis_export`](https://pobsteta.github.io/nemeton/reference/qgis_export.md)
   : QGIS Project Export
 - [`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
-  [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
   : Create a QGIS project from a sampling plan
 - [`qgis_import`](https://pobsteta.github.io/nemeton/reference/qgis_import.md)
   : QGIS Project Import and Aggregation

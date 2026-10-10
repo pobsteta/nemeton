@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,6 +110,22 @@
     </div>
 
     <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.2" id="nemeton-2026102-2026-10-10">nemeton 2026.10.2 (2026-10-10)<a class="anchor" aria-label="anchor" href="#nemeton-2026102-2026-10-10"></a></h2>
+<div class="section level3">
+<h3 id="changements-cassants-2026-10-2">Changements cassants<a class="anchor" aria-label="anchor" href="#changements-cassants-2026-10-2"></a></h3>
+<ul><li>
+<strong><code>create_qfield_project()</code></strong> est retirée. C’était un alias déprécié de <code><a href="../reference/create_qgis_project.html">create_qgis_project()</a></code>, avec les mêmes arguments : il suffit de remplacer le nom.</li>
+<li>
+<strong><code>theia_configure_s3()</code></strong> est retirée. Elle était dépréciée depuis la 0.136.0 et n’activait plus rien : le stockage <a href="mailto:MESO@UM" class="email">MESO@UM</a> refuse les clés THEIA en lecture <code>/vsis3/</code> directe. Les assets THEIA se lisent par des URL pré-signées (<code>theia_sign_urls()</code>, <code>theia_signed_href()</code>, <code><a href="../reference/load_theia_source.html">load_theia_source()</a></code>), sans configuration préalable.</li>
+</ul><p>Ces retraits suivent la règle de la spec 057 § 8 : plus aucun appelant ne reste. <code>nemetonshiny</code> v2.0.1 appelle <code><a href="../reference/create_qgis_project.html">create_qgis_project()</a></code> et ne mocke plus <code>theia_configure_s3()</code> ; <code>nemetonclaude</code> n’utilise ni l’une ni l’autre. Les deux dépôts ont été vérifiés en lecture seule. Pascal a confirmé le retrait le 2026-10-10.</p>
+</div>
+<div class="section level3">
+<h3 id="documentation-2026-10-2">Documentation<a class="anchor" aria-label="anchor" href="#documentation-2026-10-2"></a></h3>
+<ul><li>Le tutoriel d’échantillonnage (<code>09-sampling</code>) appelle <code><a href="../reference/create_qgis_project.html">create_qgis_project()</a></code>.</li>
+<li>Les notes <code>theia_stac</code> et <code>theia_s3</code> de <code>inst/datasources/FR.json</code> décrivent l’accès réel, par URL pré-signées lues en <code>/vsicurl/</code>.</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.1" id="nemeton-2026101-2026-10-09">nemeton 2026.10.1 (2026-10-09)<a class="anchor" aria-label="anchor" href="#nemeton-2026101-2026-10-09"></a></h2>
 <p>Premier numéro calendaire. Le paquet passe du versionnage sémantique (<code>X.Y.Z</code>, dernière version 2.1.1) au versionnage calendaire <code>AAAA.M.N</code>. Décision de Pascal du 2026-10-09, spec 057 § 8. Le code des fonctions ne change pas.</p>
 <div class="section level3">
@@ -178,9 +194,9 @@
 <div class="section level3">
 <h3 id="conservés-2-0-0">Conservés<a class="anchor" aria-label="anchor" href="#conserv%C3%A9s-2-0-0"></a></h3>
 <ul><li>
-<code><a href="../reference/create_qgis_project.html">create_qfield_project()</a></code> reste dépréciée mais présente : <code>nemetonshiny</code> l’appelle encore dans le module d’échantillonnage.</li>
+<code>create_qfield_project()</code> reste dépréciée mais présente : <code>nemetonshiny</code> l’appelle encore dans le module d’échantillonnage.</li>
 <li>
-<code><a href="../reference/theia_configure_s3.html">theia_configure_s3()</a></code> reste dépréciée et sans effet : un test de <code>nemetonshiny</code> la mocke encore par son nom, et ce mock casserait si elle disparaissait.</li>
+<code>theia_configure_s3()</code> reste dépréciée et sans effet : un test de <code>nemetonshiny</code> la mocke encore par son nom, et ce mock casserait si elle disparaissait.</li>
 </ul><p>Rien d’autre ne change : les autres fonctions exportées et leurs sorties sont identiques à la 1.2.0.</p>
 </div>
 </div>
@@ -363,7 +379,7 @@
 <ul><li>Santé et base : <code><a href="../reference/classify_disturbance.html">classify_disturbance()</a></code> tolère une date NA ; <code><a href="../reference/list_alerts.html">list_alerts()</a></code> sans <code>IN ()</code> vide ; FORDEAD accepte une fin NA et n’élague que les runs antérieurs ; FAST signale les scènes sans tuile MGRS ; une erreur de base n’est plus prise pour « zone sans géométrie » ; zones multi-entités fusionnées, id par <code>RETURNING</code> (SQLite ≥ 3.35), zone la plus ancienne renvoyée de façon déterministe.</li>
 <li>RECONFORT : marqueur de fin robuste, défauts iota2 <a href="https://github.com/pobsteta/nemeton/issues/9" class="external-link">#9</a>-#11 sondés côté R, <code>skip_ingest</code> contrôlé, chemins absolus, pas de <code>__pycache__</code>, recadrage sans regex, run le plus récent servi au rechargement ; modèle LAI PROSAIL propre à chaque géométrie d’acquisition.</li>
 <li>RAG : corpus idempotent par <code>doc_id</code>, <code>fresh = TRUE</code> transactionnel, tableaux texte PostgreSQL échappés, UTF-8 invalide toléré.</li>
-<li>QGIS/QField : dépréciation de <code><a href="../reference/create_qgis_project.html">create_qfield_project()</a></code> une fois par session, agrégats sans <code>dbh_cm</code> signalés, unités regroupées par ligne.</li>
+<li>QGIS/QField : dépréciation de <code>create_qfield_project()</code> une fois par session, agrégats sans <code>dbh_cm</code> signalés, unités regroupées par ligne.</li>
 <li>
 <code><a href="../reference/detect_ndp.html">detect_ndp()</a></code> tolère des comptages NA ; <code><a href="../reference/compute_general_index_mixed.html">compute_general_index_mixed()</a></code> avertit ; <code><a href="../reference/nemeton_temporal.html">nemeton_temporal()</a></code> nomme les périodes ; <code><a href="../reference/cluster_parcels.html">cluster_parcels()</a></code> borne k et gagne <code>seed</code> ; <code><a href="../reference/smart_map.html">smart_map()</a></code> sans <code>detectCores()</code> ; heatmap sans « NA » ; <code>linewidth</code> au lieu de <code>size</code> ; palette de risque selon le sens ; <code><a href="../reference/get_global_cache_dir.html">get_global_cache_dir()</a></code> ne crée plus de dossier ; 11 libellés i18n manquants ; <code><a href="../reference/microclimate_detect_years.html">microclimate_detect_years()</a></code> contrôle 2 années après retrait des NA ; B1 <code>source = "wfs"</code> sans faux message.</li>
 <li>Documentation alignée sur le code : S3, N1-N3, P1, <code>compute_site_index</code>, <code>microclimate_run</code>, <code>segment_houppiers</code>, chargeur ONF (HTTP en clair), <code>massif_demo_units</code>, <code>eobs_downscale</code>, <code>read_fordead_dieback_mask</code>, page du paquet ; <code>FR.json</code> complété (E-OBS, SAFRAN EDR, INSEE 200 m).</li>
@@ -2750,7 +2766,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <li>
 <strong><code>.get_s2_band_raster()</code></strong> (repli MUSCATE du pipeline FAST) : signe les hrefs <code>/vsis3/</code> THEIA avant lecture (les backends CDSE/PC ne sont pas touchés).</li>
 <li>
-<strong><code><a href="../reference/theia_configure_s3.html">theia_configure_s3()</a></code></strong> : <strong>déprécié</strong> (avertissement) — le store <a href="mailto:MESO@UM" class="email">MESO@UM</a> ne reconnaît pas les clés du portail en accès S3 direct ; conservé pour rétro-compat mais n’active plus de lecture fonctionnelle.</li>
+<strong><code>theia_configure_s3()</code></strong> : <strong>déprécié</strong> (avertissement) — le store <a href="mailto:MESO@UM" class="email">MESO@UM</a> ne reconnaît pas les clés du portail en accès S3 direct ; conservé pour rétro-compat mais n’active plus de lecture fonctionnelle.</li>
 </ul></div>
 </div>
     <div class="section level2">
@@ -2789,7 +2805,7 @@ ERROR: lazy loading failed for package 'microclimc'</code></pre>
 <ul><li>
 <strong>Contrat</strong> : <code>.get_s2_band_raster()</code> renvoie un <strong>SpatRaster</strong>, mais le code lisait <code>g$path</code> (comme si c’était une liste) → chaque scène plantait dans le <code>tryCatch</code> → assemblage <code>NULL</code>. Corrigé : usage direct du raster retourné.</li>
 <li>
-<strong>S3</strong> : les COG MUSCATE vivent sur le magasin S3 THEIA (<code>/vsis3/</code>, lecture authentifiée). Ajout de <code><a href="../reference/theia_configure_s3.html">theia_configure_s3()</a></code> (une fois) avant lecture, avec <strong>dégradation propre en <code>NULL</code> + avertissement</strong> si <code>TLD_ACCESS_KEY</code>/ <code>TLD_SECRET_KEY</code> manquent (au lieu d’un abort).</li>
+<strong>S3</strong> : les COG MUSCATE vivent sur le magasin S3 THEIA (<code>/vsis3/</code>, lecture authentifiée). Ajout de <code>theia_configure_s3()</code> (une fois) avant lecture, avec <strong>dégradation propre en <code>NULL</code> + avertissement</strong> si <code>TLD_ACCESS_KEY</code>/ <code>TLD_SECRET_KEY</code> manquent (au lieu d’un abort).</li>
 <li>
 <strong>Résolution mixte</strong> : rééchantillonnage des bandes 20 m (B05) sur la grille 10 m (B04/B08) avant empilement (<code><a href="https://rspatial.github.io/terra/reference/rast.html" class="external-link">terra::rast()</a></code> refusait des géométries hétérogènes).</li>
 </ul><p><strong>Recherche MUSCATE validée sur données réelles</strong> (22 scènes Vercors, source souveraine CNES, hrefs <code>/vsis3/</code>). Tests CI ajoutés (mock search/S3/band). Le download COG réel reste à valider avec des identifiants Theia S3.</p>
@@ -4782,9 +4798,9 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 <h2 class="pkg-version" data-toc-text="0.39.1" id="nemeton-0391-2026-05-20">nemeton 0.39.1 (2026-05-20)<a class="anchor" aria-label="anchor" href="#nemeton-0391-2026-05-20"></a></h2>
 <div class="section level4">
 <h4 id="fixed--correct-theia-s3-credentials-and-region-0-39-1">Fixed — correct THEIA S3 credentials and region<a class="anchor" aria-label="anchor" href="#fixed--correct-theia-s3-credentials-and-region-0-39-1"></a></h4>
-<p>A live test against the THEIA store showed the v0.38.0 <code><a href="../reference/theia_configure_s3.html">theia_configure_s3()</a></code> config was wrong on two points, now fixed:</p>
+<p>A live test against the THEIA store showed the v0.38.0 <code>theia_configure_s3()</code> config was wrong on two points, now fixed:</p>
 <ul><li>
-<strong>Environment variables</strong>: the THEIA API key (created at <a href="https://gate.stac.teledetection.fr" class="external-link uri">https://gate.stac.teledetection.fr</a>) is a standard S3 SigV4 key pair. <code><a href="../reference/theia_configure_s3.html">theia_configure_s3()</a></code> now reads <code>TLD_ACCESS_KEY</code> / <code>TLD_SECRET_KEY</code> (the same names the <code>teledetection</code> SDK uses), not <code>THEIA_S3_*</code>.</li>
+<strong>Environment variables</strong>: the THEIA API key (created at <a href="https://gate.stac.teledetection.fr" class="external-link uri">https://gate.stac.teledetection.fr</a>) is a standard S3 SigV4 key pair. <code>theia_configure_s3()</code> now reads <code>TLD_ACCESS_KEY</code> / <code>TLD_SECRET_KEY</code> (the same names the <code>teledetection</code> SDK uses), not <code>THEIA_S3_*</code>.</li>
 <li>
 <strong>Region</strong>: the S3 region is <code>sm1</code> (visible in the <code>X-Amz-Credential</code> scope of a signed URL), not <code>us-east-1</code>. <code>services.theia_s3.region</code> in <code>FR.json</code> is corrected.</li>
 </ul><p>With the correct key pair and region, GDAL reads the THEIA assets directly via <code>/vsis3/</code> with native SigV4 signing — no Python / <code>teledetection</code> SDK required.</p>
@@ -4816,7 +4832,7 @@ ex. fast_NBR_count_thr0.30_2025-05-23_2026-05-23_w30_fd9ca32a.tif</code></pre>
 <li>
 <strong><code><a href="../reference/load_raster_source.html">load_raster_source()</a></code> accepts remote paths.</strong> Its <code>path</code> argument now takes <code>s3://</code>, <code>http(s)://</code> and <code>/vsi*</code> paths in addition to local files (<code>s3://</code> is normalised to <code>/vsis3/</code>, <code>http(s)://</code> to <code>/vsicurl/</code>).</li>
 <li>New <code>services.theia_s3</code> entry in <code>FR.json</code> declaring the (non-secret) S3 endpoint <code>s3-data.meso.umontpellier.fr</code> and bucket <code>sm1-gdc-ext</code>.</li>
-</ul><p>Workflow: <code><a href="../reference/theia_configure_s3.html">theia_configure_s3()</a></code> once per session, then <code>load_theia_source("formspot", aoi, asset = "height_2023")</code>.</p>
+</ul><p>Workflow: <code>theia_configure_s3()</code> once per session, then <code>load_theia_source("formspot", aoi, asset = "height_2023")</code>.</p>
 </div>
 </div>
     <div class="section level2">
@@ -5948,7 +5964,7 @@ docker compose up -d timescaledb</code></pre>
 <h4 id="renamed--qgis--qfield-terminology-cleanup-0-20-1-9005">Renamed — QGIS / QField terminology cleanup<a class="anchor" aria-label="anchor" href="#renamed--qgis--qfield-terminology-cleanup-0-20-1-9005"></a></h4>
 <p>The two QField-named exports were renamed to reflect what they actually do: produce / consume a standard <code>.qgz</code> QGIS 3.x project (zip of <code>.qgs</code> XML + GPKG) which any QGIS-speaking client (QGIS Desktop, QField via QFieldSync, etc.) can open. There is no QFieldSync-specific tagging in the output, so the previous names were misleading.</p>
 <ul><li>
-<code><a href="../reference/create_qgis_project.html">create_qfield_project()</a></code> → <strong><code><a href="../reference/create_qgis_project.html">create_qgis_project()</a></code></strong>
+<code>create_qfield_project()</code> → <strong><code><a href="../reference/create_qgis_project.html">create_qgis_project()</a></code></strong>
 </li>
 <li>
 <code>import_qfield_gpkg()</code> → <strong><code><a href="../reference/import_qgis_gpkg.html">import_qgis_gpkg()</a></code></strong>
@@ -5964,7 +5980,7 @@ docker compose up -d timescaledb</code></pre>
 </div>
 <div class="section level4">
 <h4 id="deprecated-0-20-1-9005">Deprecated<a class="anchor" aria-label="anchor" href="#deprecated-0-20-1-9005"></a></h4>
-<p><code><a href="../reference/create_qgis_project.html">create_qfield_project()</a></code> and <code>import_qfield_gpkg()</code> are kept as deprecated aliases for backwards compatibility with <code>nemetonshiny</code> and any external caller. They forward to the new names and emit a one-shot <code><a href="https://rdrr.io/r/base/Deprecated.html" class="external-link">.Deprecated()</a></code> warning. <strong>They will be removed in a future release</strong> — please migrate.</p>
+<p><code>create_qfield_project()</code> and <code>import_qfield_gpkg()</code> are kept as deprecated aliases for backwards compatibility with <code>nemetonshiny</code> and any external caller. They forward to the new names and emit a one-shot <code><a href="https://rdrr.io/r/base/Deprecated.html" class="external-link">.Deprecated()</a></code> warning. <strong>They will be removed in a future release</strong> — please migrate.</p>
 </div>
 <div class="section level4">
 <h4 id="internal-cross-references-updated-0-20-1-9005">Internal cross-references updated<a class="anchor" aria-label="anchor" href="#internal-cross-references-updated-0-20-1-9005"></a></h4>
@@ -6003,7 +6019,7 @@ docker compose up -d timescaledb</code></pre>
 <li>
 <code>HEALTH_VALIDATION_CAUSES</code> — 7 free-form cause suggestions rendered as a value-map in the QField form.</li>
 <li>
-<code>get_health_validation_schema(region, lang)</code> — 11 <code>.field()</code> descriptors compatible with <code><a href="../reference/create_qgis_project.html">create_qfield_project()</a></code>. The <code>essence_dominante</code> domain comes from <code><a href="../reference/list_species_classes.html">list_species_classes()</a></code> and falls back to free text when the region is unknown.</li>
+<code>get_health_validation_schema(region, lang)</code> — 11 <code>.field()</code> descriptors compatible with <code>create_qfield_project()</code>. The <code>essence_dominante</code> domain comes from <code><a href="../reference/list_species_classes.html">list_species_classes()</a></code> and falls back to free text when the region is unknown.</li>
 <li>
 <code>generate_health_validation_plots(alerts_sf, n, method, crs)</code> — stratified draw on <code>confidence_class</code>. Uses <code><a href="https://usepa.github.io/spsurvey/reference/grts.html" class="external-link">spsurvey::grts()</a></code> when available, falls back to per-stratum random sampling otherwise (the <code>sampling_method</code> column of the result tracks which path ran). Internal <code>.allocate_health_strata()</code> distributes the budget with a largest-remainder method while guaranteeing at least one plot per present class. Output ready for QField export (typed-NA editable columns).</li>
 <li>
@@ -6120,7 +6136,7 @@ docker compose up -d timescaledb</code></pre>
 <div class="section level4">
 <h4 id="fixed-0-19-12">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-19-12"></a></h4>
 <ul><li>
-<p><strong><code><a href="../reference/create_qgis_project.html">create_qfield_project()</a></code> now produces a <code>.qgz</code> that opens in QGIS 3.x without crashing</strong>. Three latent bugs in the hand-written <code>.qgs</code> / GeoPackage made the project file unusable:</p>
+<p><strong><code>create_qfield_project()</code> now produces a <code>.qgz</code> that opens in QGIS 3.x without crashing</strong>. Three latent bugs in the hand-written <code>.qgs</code> / GeoPackage made the project file unusable:</p>
 <ol style="list-style-type: decimal"><li><p>Placette columns that were not supplied by the caller were filled with plain <code>NA</code> (logical), so the GeoPackage ended up typing <code>date_visite</code>, <code>pente_pct</code>, <code>observateur</code>, etc. as <code>Integer(Boolean)</code>. QGIS then tried to bind <code>DateTime</code> / <code>Range</code> / <code>TextEdit</code> widgets to boolean columns and crashed while building the attribute form. Missing columns are now filled with a <strong>typed NA</strong> (<code>NA_character_</code>, <code>NA_real_</code>, <code>NA_integer_</code>, <code>as.POSIXct(NA)</code>) matching the schema.</p></li>
 <li><p><code>ValueMap</code> widgets (<code>type</code>, <code>exposition</code>, <code>espece</code>, <code>statut</code>, <code>qualite</code>) were emitted as <code>List-of-Lists</code> instead of the canonical QGIS 3.x <code>List-of-Maps</code> (each entry is a <code>&lt;Option type="Map"&gt;</code> wrapping one <code>&lt;Option type="QString" name=... value=...&gt;</code>). QGIS crashed while parsing the form definition.</p></li>
 <li><p>The QGIS 2.x <code>&lt;prop k="..." v="..."/&gt;</code> syntax used by the categorised point renderer is rejected by QGIS 3.x. The custom renderer has been dropped; QGIS now applies its default single-symbol renderer, which users can categorise in the UI.</p></li>
@@ -6266,7 +6282,7 @@ docker compose up -d timescaledb</code></pre>
 <li>
 <strong><code>R/qfield_export.R</code></strong> — <code>create_qfield_project(placettes, zone_etude, parcours_tsp, output_dir, project_name, crs, region, lang, overwrite)</code> packages a sampling plan as a QField-ready <code>.qgz</code> (a ZIP of a minimal QGIS 3.x <code>.qgs</code> XML + a GeoPackage with <code>placettes</code> / <code>arbres</code> / <code>zone_etude</code> / <code>parcours_tsp</code> layers). Edit widgets (TextEdit, Range, DateTime, ValueMap, ExternalResource), aliases and NotNull constraints are generated from the schemas. Zero new hard dependency: the XML is produced by string assembly, the GPKG by <code>sf</code>, the ZIP by <code><a href="https://rdrr.io/r/utils/zip.html" class="external-link">utils::zip()</a></code>.</li>
 <li>
-<strong>Tutorial 09-sampling</strong> — new Section 6 “Export QField” exercises <code><a href="../reference/create_qgis_project.html">create_qfield_project()</a></code> on the GRTS output, plus a 3-question quiz on the <code>.qgz</code> format, NotNull constraints and the species domain source.</li>
+<strong>Tutorial 09-sampling</strong> — new Section 6 “Export QField” exercises <code>create_qfield_project()</code> on the GRTS output, plus a 3-question quiz on the <code>.qgz</code> format, NotNull constraints and the species domain source.</li>
 </ul></div>
 <div class="section level4">
 <h4 id="new-feature--library-level-sampling-pipeline-épaississementa-bis-0-18-0-9000">New feature — Library-level sampling pipeline (Épaississement 5.a bis)<a class="anchor" aria-label="anchor" href="#new-feature--library-level-sampling-pipeline-%C3%A9paississementa-bis-0-18-0-9000"></a></h4>

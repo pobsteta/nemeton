@@ -137,16 +137,22 @@ est publié directement en 2026.10.1. `version-consistency` reprend le
 bloc du cœur. Le plancher reste `nemeton (>= 2.1.0)`.
 
 **Retraits possibles** : `nemetonshiny` v2.0.1 (PR \#234, `957952de`)
-n’appelle plus
-[`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md),
-remplacée par
+n’appelle plus `create_qfield_project()`, remplacée par
 [`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
-dans `mod_sampling.R`, et ne mocke plus
-[`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md).
-Comme plus aucun appelant ne reste, ces deux fonctions peuvent être
-retirées sans dépréciation (spec 057 § 8). Cela demande l’accord de
-Pascal, car elles sont stables. La même release app porte le correctif
-des dalles LiDAR HD vides.
+dans `mod_sampling.R`, et ne mocke plus `theia_configure_s3()`. Comme
+plus aucun appelant ne reste, ces deux fonctions peuvent être retirées
+sans dépréciation (spec 057 § 8). Cela demande l’accord de Pascal, car
+elles sont stables. La même release app porte le correctif des dalles
+LiDAR HD vides.
+
+**Journal** — *2026-10-10* (**2026.10.2**) : `create_qfield_project()`
+et `theia_configure_s3()` sont retirées avec l’accord de Pascal, puisque
+plus aucun appelant ne reste. C’est le premier usage de la règle « plus
+aucun appelant » de la spec 057 § 8. NEWS s’ouvre sur « Changements
+cassants ». Le tutoriel 09 appelle
+[`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md).
+Les notes THEIA de `FR.json` décrivent l’accès par URL pré-signées.
+Version `nemetonshiny` publiée : v2026.10.1.
 
 ------------------------------------------------------------------------
 
@@ -271,11 +277,10 @@ l’arrondi au centimètre venaient en fait de s2.
 `2026-10-08-onf-retrait-ancien-calage` (décision de Pascal : ne garder
 que la nouvelle façon). `croiser_parcelles_onf()` dépréciée sans
 dépendance nouvelle : avertissement `deprecatedWarning` une fois par
-session, comme
-[`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md),
-réglable par `nemeton.deprecation_verbosity` ; elle reste jusqu’à la
-2.0, le contrat 057 interdisant de retirer une fonction stable en
-version mineure. Ses helpers restent avec elle jusqu’au retrait.
+session, comme `create_qfield_project()`, réglable par
+`nemeton.deprecation_verbosity` ; elle reste jusqu’à la 2.0, le contrat
+057 interdisant de retirer une fonction stable en version mineure. Ses
+helpers restent avec elle jusqu’au retrait.
 [`construire_ugf_onf()`](https://pobsteta.github.io/nemeton/reference/construire_ugf_onf.md)
 : `insee` vectoriel ou déduit du cadastre, cadastre fourni pris tel quel
 (changement sur une API experimental), parcelles hors ONF listées dans
@@ -309,13 +314,11 @@ l’argument `by_family` de
 et `.nemeton_deprecier()` devenu orphelin. Avant chaque retrait,
 recherche en lecture seule dans `nemetonshiny`, `nemetonclaude` et
 `sommieR` : aucun appel. Gardés, car encore référencés par l’app :
-[`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
-(appelée dans `mod_sampling.R`) et
-[`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-(mockée par nom dans `test-sufosat-t3.R`). Le commentaire sur le piège
-`st_cast("POLYGON")` est passé dans `.ugf_polygones()`. Plancher app
-inchangé : `nemeton (>= 1.2.0)` reste compatible tant qu’elle n’appelle
-rien de retiré.
+`create_qfield_project()` (appelée dans `mod_sampling.R`) et
+`theia_configure_s3()` (mockée par nom dans `test-sufosat-t3.R`). Le
+commentaire sur le piège `st_cast("POLYGON")` est passé dans
+`.ugf_polygones()`. Plancher app inchangé : `nemeton (>= 1.2.0)` reste
+compatible tant qu’elle n’appelle rien de retiré.
 
 **Journal** — *2026-10-08* (**nemetonshiny v1.3.1**, PR \#232, cycle dev
 `1.3.0.9001`, commit `107a3b69`) : chemin A livré côté app. Le bouton «
@@ -4974,8 +4977,7 @@ retourne désormais des attributs sans contour). 16 tests offline. Suite
 [`generate_health_validation_plots()`](https://pobsteta.github.io/nemeton/reference/generate_health_validation_plots.md)
 (stratifié `confidence_class`, GRTS via `spsurvey` ou repli random,
 `.allocate_health_strata()` largest-remainder, NA typés, sortie `sf`
-POINT EPSG:2154 prête pour
-[`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)),
+POINT EPSG:2154 prête pour `create_qfield_project()`),
 [`ingest_health_validation()`](https://pobsteta.github.io/nemeton/reference/ingest_health_validation.md)
 (snap par plus-proche-voisin Lambert-93, mapping
 `stade → (validation_status, validation_cause)` avec règle
@@ -8942,9 +8944,8 @@ c’est attendu et documenté (NEWS).
     re-téléchargements.
   - WMS NDP 0 (DEM BD ALTI + IRC) → EPSG:4326 ; NDVI dérivé hérite →
     plus de « CRS do not match » sur C2/R1/R2/R3/W3.
-  - Retrait de l’appel déprécié
-    [`nemeton::theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-    (le cœur signe en interne via la gateway STAC
+  - Retrait de l’appel déprécié `nemeton::theia_configure_s3()` (le cœur
+    signe en interne via la gateway STAC
     `signing.stac.teledetection.fr`, R pur), remplacé par le garde amont
     `theia_api_key_configured()` ; commentaires `reticulate` périmés mis
     à jour (reticulate conservé pour FORDEAD/RECONFORT).
@@ -9140,12 +9141,10 @@ sur la page du dataset. Voir \[\[project_eobs_source\]\].
 Le « reste MUSCATE » = D4 (assemblage réflectances pour le repli LAI).
 Bug trouvé par inspection : `.get_s2_band_raster()` renvoie un
 SpatRaster mais le code lisait `g$path` → assemblage toujours NULL
-(jamais validé). Corrigé + ajout
-[`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-(dégradation propre sans creds) + rééchantillonnage 20 m→10 m.
-**Recherche MUSCATE validée réel** (22 scènes Vercors, hrefs `/vsis3/`).
-Reste : download COG réel avec `TLD_ACCESS_KEY`/`TLD_SECRET_KEY` Theia
-S3. Voir spec 033.
+(jamais validé). Corrigé + ajout `theia_configure_s3()` (dégradation
+propre sans creds) + rééchantillonnage 20 m→10 m. **Recherche MUSCATE
+validée réel** (22 scènes Vercors, hrefs `/vsis3/`). Reste : download
+COG réel avec `TLD_ACCESS_KEY`/`TLD_SECRET_KEY` Theia S3. Voir spec 033.
 
 ### 2026-07-05 — Added v0.134.0 : progression BILJOU + ERA5 validé réel
 
@@ -13013,8 +13012,7 @@ changement cœur `nemeton`.
   Deux enseignements : (1) la clé API THEIA (créée sur
   gate.stac.teledetection.fr) **est** un couple de clés S3 SigV4
   standard ; (2) la région est **`sm1`** (lue dans le scope
-  `X-Amz-Credential`), pas `us-east-1`. La config
-  [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
+  `X-Amz-Credential`), pas `us-east-1`. La config `theia_configure_s3()`
   de v0.38.0 avait donc deux erreurs corrigées ici : variables d’env
   `THEIA_S3_*` → **`TLD_ACCESS_KEY` / `TLD_SECRET_KEY`** (mêmes noms que
   le SDK `teledetection`, une seule paire à poser dans `.Renviron`) ;
@@ -13025,8 +13023,8 @@ changement cœur `nemeton`.
   (`load_theia_source`, `resolve_theia_assets`, ciblage année) est
   inchangé. Test corrigé (`THEIA_S3_*` → `TLD_*`). À valider en local :
   `.Renviron` avec `TLD_ACCESS_KEY`/`TLD_SECRET_KEY`,
-  [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md),
-  puis `terra::rast("/vsis3/sm1-gdc-ext/FORMSpoT/2023/full_2023.vrt")`.
+  `theia_configure_s3()`, puis
+  `terra::rast("/vsis3/sm1-gdc-ext/FORMSpoT/2023/full_2023.vrt")`.
 
 - **2026-05-20** — Release **v0.39.0** (ciblage par année). FORMSpoT
   publie un item STAC par an (`FORMSpoT-{year}`, 2014-2024), chacun avec
@@ -13079,9 +13077,7 @@ changement cœur `nemeton`.
   `theia_configure_s3` 2 cas, résolveur renvoie `/vsis3/`),
   `test-datasources.R` (`load_raster_source` chemins `s3://` et
   `https://`). Tests R non exécutés (runtime R absent). **Workflow
-  final** :
-  [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-  une fois, puis
+  final** : `theia_configure_s3()` une fois, puis
   `load_theia_source("formspot", aoi, asset="height_2023")`. Chaîne
   Theia → indicateurs désormais complète côté `nemeton`.
 
@@ -14784,8 +14780,7 @@ changement cœur `nemeton`.
   `.allocate_health_strata()` qui distribue le budget `n` à la
   largest-remainder method en respectant la capacité par strate et
   garantit ≥ 1 placette par classe présente. Sortie sf POINT EPSG:2154
-  prête à passer dans
-  [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md). (3)
+  prête à passer dans `create_qfield_project()`. (3)
   `ingest_health_validation(con, gpkg_path, zone_id, snap_distance_m, validated_by, layer)`
   : lecture du GPKG, snap par plus-proche-voisin en Lambert-93 (par
   défaut 50 m, `reason = "no_alert_within_snap"` au-delà), mapping

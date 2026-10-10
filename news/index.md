@@ -1,5 +1,34 @@
 # Changelog
 
+## nemeton 2026.10.2 (2026-10-10)
+
+### Changements cassants
+
+- **`create_qfield_project()`** est retirée. C’était un alias déprécié
+  de
+  [`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md),
+  avec les mêmes arguments : il suffit de remplacer le nom.
+- **`theia_configure_s3()`** est retirée. Elle était dépréciée depuis la
+  0.136.0 et n’activait plus rien : le stockage <MESO@UM> refuse les
+  clés THEIA en lecture `/vsis3/` directe. Les assets THEIA se lisent
+  par des URL pré-signées (`theia_sign_urls()`, `theia_signed_href()`,
+  [`load_theia_source()`](https://pobsteta.github.io/nemeton/reference/load_theia_source.md)),
+  sans configuration préalable.
+
+Ces retraits suivent la règle de la spec 057 § 8 : plus aucun appelant
+ne reste. `nemetonshiny` v2.0.1 appelle
+[`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
+et ne mocke plus `theia_configure_s3()` ; `nemetonclaude` n’utilise ni
+l’une ni l’autre. Les deux dépôts ont été vérifiés en lecture seule.
+Pascal a confirmé le retrait le 2026-10-10.
+
+### Documentation
+
+- Le tutoriel d’échantillonnage (`09-sampling`) appelle
+  [`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md).
+- Les notes `theia_stac` et `theia_s3` de `inst/datasources/FR.json`
+  décrivent l’accès réel, par URL pré-signées lues en `/vsicurl/`.
+
 ## nemeton 2026.10.1 (2026-10-09)
 
 Premier numéro calendaire. Le paquet passe du versionnage sémantique
@@ -119,12 +148,11 @@ rien n’appelle : ni `nemetonshiny` (v1.3.0), ni `nemetonclaude`, ni
 
 ### Conservés
 
-- [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
-  reste dépréciée mais présente : `nemetonshiny` l’appelle encore dans
-  le module d’échantillonnage.
-- [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-  reste dépréciée et sans effet : un test de `nemetonshiny` la mocke
-  encore par son nom, et ce mock casserait si elle disparaissait.
+- `create_qfield_project()` reste dépréciée mais présente :
+  `nemetonshiny` l’appelle encore dans le module d’échantillonnage.
+- `theia_configure_s3()` reste dépréciée et sans effet : un test de
+  `nemetonshiny` la mocke encore par son nom, et ce mock casserait si
+  elle disparaissait.
 
 Rien d’autre ne change : les autres fonctions exportées et leurs sorties
 sont identiques à la 1.2.0.
@@ -482,10 +510,8 @@ l’app ne change.
   modèle LAI PROSAIL propre à chaque géométrie d’acquisition.
 - RAG : corpus idempotent par `doc_id`, `fresh = TRUE` transactionnel,
   tableaux texte PostgreSQL échappés, UTF-8 invalide toléré.
-- QGIS/QField : dépréciation de
-  [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
-  une fois par session, agrégats sans `dbh_cm` signalés, unités
-  regroupées par ligne.
+- QGIS/QField : dépréciation de `create_qfield_project()` une fois par
+  session, agrégats sans `dbh_cm` signalés, unités regroupées par ligne.
 - [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)
   tolère des comptages NA ;
   [`compute_general_index_mixed()`](https://pobsteta.github.io/nemeton/reference/compute_general_index_mixed.md)
@@ -6134,10 +6160,10 @@ des clés THEIA, pour une cohérence totale côté application :
 - **`.get_s2_band_raster()`** (repli MUSCATE du pipeline FAST) : signe
   les hrefs `/vsis3/` THEIA avant lecture (les backends CDSE/PC ne sont
   pas touchés).
-- **[`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)**
-  : **déprécié** (avertissement) — le store <MESO@UM> ne reconnaît pas
-  les clés du portail en accès S3 direct ; conservé pour rétro-compat
-  mais n’active plus de lecture fonctionnelle.
+- **`theia_configure_s3()`** : **déprécié** (avertissement) — le store
+  <MESO@UM> ne reconnaît pas les clés du portail en accès S3 direct ;
+  conservé pour rétro-compat mais n’active plus de lecture
+  fonctionnelle.
 
 ## nemeton 0.135.0 (2026-07-05)
 
@@ -6205,11 +6231,9 @@ L’assemblage automatique des réflectances MUSCATE
   plantait dans le `tryCatch` → assemblage `NULL`. Corrigé : usage
   direct du raster retourné.
 - **S3** : les COG MUSCATE vivent sur le magasin S3 THEIA (`/vsis3/`,
-  lecture authentifiée). Ajout de
-  [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-  (une fois) avant lecture, avec **dégradation propre en `NULL` +
-  avertissement** si `TLD_ACCESS_KEY`/ `TLD_SECRET_KEY` manquent (au
-  lieu d’un abort).
+  lecture authentifiée). Ajout de `theia_configure_s3()` (une fois)
+  avant lecture, avec **dégradation propre en `NULL` + avertissement**
+  si `TLD_ACCESS_KEY`/ `TLD_SECRET_KEY` manquent (au lieu d’un abort).
 - **Résolution mixte** : rééchantillonnage des bandes 20 m (B05) sur la
   grille 10 m (B04/B08) avant empilement
   ([`terra::rast()`](https://rspatial.github.io/terra/reference/rast.html)
@@ -11025,14 +11049,12 @@ and a registered THEIA API key (<https://gate.stac.teledetection.fr>).
 #### Fixed — correct THEIA S3 credentials and region
 
 A live test against the THEIA store showed the v0.38.0
-[`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-config was wrong on two points, now fixed:
+`theia_configure_s3()` config was wrong on two points, now fixed:
 
 - **Environment variables**: the THEIA API key (created at
   <https://gate.stac.teledetection.fr>) is a standard S3 SigV4 key pair.
-  [`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-  now reads `TLD_ACCESS_KEY` / `TLD_SECRET_KEY` (the same names the
-  `teledetection` SDK uses), not `THEIA_S3_*`.
+  `theia_configure_s3()` now reads `TLD_ACCESS_KEY` / `TLD_SECRET_KEY`
+  (the same names the `teledetection` SDK uses), not `THEIA_S3_*`.
 - **Region**: the S3 region is `sm1` (visible in the `X-Amz-Credential`
   scope of a signed URL), not `us-east-1`. `services.theia_s3.region` in
   `FR.json` is corrected.
@@ -11091,9 +11113,7 @@ virtual filesystem, which signs each request natively.
 - New `services.theia_s3` entry in `FR.json` declaring the (non-secret)
   S3 endpoint `s3-data.meso.umontpellier.fr` and bucket `sm1-gdc-ext`.
 
-Workflow:
-[`theia_configure_s3()`](https://pobsteta.github.io/nemeton/reference/theia_configure_s3.md)
-once per session, then
+Workflow: `theia_configure_s3()` once per session, then
 `load_theia_source("formspot", aoi, asset = "height_2023")`.
 
 ## nemeton 0.37.0 (2026-05-20)
@@ -13405,8 +13425,7 @@ XML + GPKG) which any QGIS-speaking client (QGIS Desktop, QField via
 QFieldSync, etc.) can open. There is no QFieldSync-specific tagging in
 the output, so the previous names were misleading.
 
-- [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
-  →
+- `create_qfield_project()` →
   **[`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)**
 - `import_qfield_gpkg()` →
   **[`import_qgis_gpkg()`](https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.md)**
@@ -13422,10 +13441,9 @@ unchanged — this is a pure rename.
 
 #### Deprecated
 
-[`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
-and `import_qfield_gpkg()` are kept as deprecated aliases for backwards
-compatibility with `nemetonshiny` and any external caller. They forward
-to the new names and emit a one-shot
+`create_qfield_project()` and `import_qfield_gpkg()` are kept as
+deprecated aliases for backwards compatibility with `nemetonshiny` and
+any external caller. They forward to the new names and emit a one-shot
 [`.Deprecated()`](https://rdrr.io/r/base/Deprecated.html) warning.
 **They will be removed in a future release** — please migrate.
 
@@ -13498,9 +13516,8 @@ Total suite: 5994 PASS / 0 FAIL.
   - `HEALTH_VALIDATION_CAUSES` — 7 free-form cause suggestions rendered
     as a value-map in the QField form.
   - `get_health_validation_schema(region, lang)` — 11 `.field()`
-    descriptors compatible with
-    [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md).
-    The `essence_dominante` domain comes from
+    descriptors compatible with `create_qfield_project()`. The
+    `essence_dominante` domain comes from
     [`list_species_classes()`](https://pobsteta.github.io/nemeton/reference/list_species_classes.md)
     and falls back to free text when the region is unknown.
   - `generate_health_validation_plots(alerts_sf, n, method, crs)` —
@@ -13814,10 +13831,9 @@ Total suite: 5994 PASS / 0 FAIL.
 
 #### Fixed
 
-- **[`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
-  now produces a `.qgz` that opens in QGIS 3.x without crashing**. Three
-  latent bugs in the hand-written `.qgs` / GeoPackage made the project
-  file unusable:
+- **`create_qfield_project()` now produces a `.qgz` that opens in QGIS
+  3.x without crashing**. Three latent bugs in the hand-written `.qgs` /
+  GeoPackage made the project file unusable:
 
   1.  Placette columns that were not supplied by the caller were filled
       with plain `NA` (logical), so the GeoPackage ended up typing
@@ -14113,9 +14129,9 @@ Total suite: 5994 PASS / 0 FAIL.
   produced by string assembly, the GPKG by `sf`, the ZIP by
   [`utils::zip()`](https://rdrr.io/r/utils/zip.html).
 - **Tutorial 09-sampling** — new Section 6 “Export QField” exercises
-  [`create_qfield_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
-  on the GRTS output, plus a 3-question quiz on the `.qgz` format,
-  NotNull constraints and the species domain source.
+  `create_qfield_project()` on the GRTS output, plus a 3-question quiz
+  on the `.qgz` format, NotNull constraints and the species domain
+  source.
 
 #### New feature — Library-level sampling pipeline (Épaississement 5.a bis)
 
