@@ -64,8 +64,7 @@ NULL
 # (gate.../download?url=<inner>), an `s3://bucket/key` URI, a
 # path-style `https://<endpoint>/bucket/key` URL, or an already-/vsi
 # path. All forms are reduced to `/vsis3/bucket/key` so GDAL reads
-# the object directly with native SigV4 signing (see
-# theia_configure_s3()).
+# the object directly with native SigV4 signing.
 .theia_href_to_gdal <- function(href) {
   if (!nzchar(href %||% "")) {
     cli::cli_abort("Empty Theia asset href.")
@@ -98,7 +97,7 @@ NULL
 #' Computer's SAS tokens. This function POSTs the object URLs to the gateway
 #' (authenticated with the API key sent as `access-key` / `secret-key` headers)
 #' and returns short-lived pre-signed URLs (`X-Amz-*` query string, ~8 h) that
-#' GDAL reads with `/vsicurl/` — no `theia_configure_s3()` needed.
+#' GDAL reads with `/vsicurl/`.
 #'
 #' @param urls Character vector of `https://<...>.meso.umontpellier.fr/...`
 #'   object URLs to sign. Non-MESO URLs are returned unchanged.
@@ -296,83 +295,6 @@ stac_get_item <- function(stac_api, collection, item_id) {
     ))
   }
   url
-}
-
-
-#' Configure GDAL for authenticated THEIA S3 reads
-#'
-#' The THEIA / FORMS COG and VRT assets live on an S3-compatible
-#' (MinIO) object store. This helper sets the GDAL configuration
-#' options so that \code{terra}/GDAL can read \code{/vsis3/} paths
-#' with native SigV4 signing — call it once per session before
-#' \code{\link{load_theia_source}}.
-#'
-#' Credentials are never stored in the package. They are read from
-#' the \env{TLD_ACCESS_KEY} and \env{TLD_SECRET_KEY} environment
-#' variables — the same THEIA API-key pair used by the
-#' \code{teledetection} SDK (create one at
-#' \url{https://gate.stac.teledetection.fr}, set it in a gitignored
-#' \file{.Renviron}) — or passed explicitly. The non-secret S3
-#' endpoint, region and options are read from the
-#' \code{services$theia_s3} entry of the country configuration.
-#'
-#' @param access_key,secret_key Character. THEIA S3 credentials.
-#'   When \code{NULL} (default) they are read from
-#'   \env{TLD_ACCESS_KEY} and \env{TLD_SECRET_KEY}.
-#' @param country Character. ISO country code. Default \code{"FR"}.
-#'
-#' @return \code{TRUE} invisibly on success.
-#'
-#' @section Lifecycle:
-#' Stable: covered by the 1.0 API contract (spec 057).
-#'
-#' @examples
-#' \dontrun{
-#' theia_configure_s3()
-#' chm <- load_theia_source("formspot", aoi, asset = "height_2023")
-#' }
-#'
-#' @export
-theia_configure_s3 <- function(access_key = NULL, secret_key = NULL,
-                               country = "FR") {
-  # Déprécié (v0.136.0) : le store MESO@UM ne reconnaît PAS les clés du portail
-  # en accès S3 direct (« AccessKeyId does not exist ») — les assets THEIA se
-  # lisent via des URLs pré-signées par la gateway (theia_sign_urls). Conservée
-  # pour rétro-compat ; ne configure plus un accès fonctionnel.
-  cli::cli_warn(c(
-    "{.fn theia_configure_s3} is deprecated and no longer enables THEIA reads.",
-    i = "THEIA assets are read via pre-signed URLs; use {.fn theia_sign_urls} / {.fn theia_signed_href} / {.fn load_theia_source} instead."
-  ))
-  if (is.null(access_key)) {
-    access_key <- Sys.getenv("TLD_ACCESS_KEY", "")
-  }
-  if (is.null(secret_key)) {
-    secret_key <- Sys.getenv("TLD_SECRET_KEY", "")
-  }
-  if (!nzchar(access_key) || !nzchar(secret_key)) {
-    cli::cli_abort(c(
-      "THEIA S3 credentials not found.",
-      i = "Set {.envvar TLD_ACCESS_KEY} and {.envvar TLD_SECRET_KEY} in a gitignored {.file .Renviron} (create an API key at {.url https://gate.stac.teledetection.fr}), or pass {.arg access_key} / {.arg secret_key}."
-    ))
-  }
-
-  config <- get_country_config(country)
-  s3 <- config$services$theia_s3
-  if (is.null(s3) || !nzchar(s3$endpoint %||% "")) {
-    cli::cli_abort("No {.field services.theia_s3} endpoint configured for country {.val {country}}.")
-  }
-
-  terra::setGDALconfig("AWS_ACCESS_KEY_ID", access_key)
-  terra::setGDALconfig("AWS_SECRET_ACCESS_KEY", secret_key)
-  terra::setGDALconfig("AWS_S3_ENDPOINT", s3$endpoint)
-  terra::setGDALconfig("AWS_VIRTUAL_HOSTING",
-                       if (isTRUE(s3$virtual_hosting)) "TRUE" else "FALSE")
-  terra::setGDALconfig("AWS_HTTPS",
-                       if (isFALSE(s3$https)) "NO" else "YES")
-  terra::setGDALconfig("AWS_REGION", s3$region %||% "sm1")
-
-  cli::cli_alert_success("THEIA S3 configured ({.val {s3$endpoint}}).")
-  invisible(TRUE)
 }
 
 
