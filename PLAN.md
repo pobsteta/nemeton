@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2.0.0** (release du 2026-10-08), relevée le 2026-10-09.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.1** (release du 2026-10-09), relevée le 2026-10-10.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -111,6 +111,19 @@ l'année/mois face à la date NEWS. CLAUDE.md, la page du paquet, 4 pages
 experimental et la mémoire sont à jour. Brief émis vers `nemetonshiny` pour
 proposer le même schéma. Code inchangé.
 
+**Journal** — *2026-10-09* (**nemetonshiny 2026.10.1**, `nemetonshiny@1bd48611`) :
+l'app adopte le même schéma. La dernière version sémantique publiée de l'app est
+2.0.1 ; le cycle `2.0.1.9003` est publié directement en 2026.10.1.
+`version-consistency` reprend le bloc du cœur. Le plancher reste
+`nemeton (>= 2.1.0)`.
+
+**Retraits possibles** : `nemetonshiny` v2.0.1 (PR #234, `957952de`) n'appelle plus
+`create_qfield_project()`, remplacée par `create_qgis_project()` dans
+`mod_sampling.R`, et ne mocke plus `theia_configure_s3()`. Comme plus aucun
+appelant ne reste, ces deux fonctions peuvent être retirées sans dépréciation
+(spec 057 § 8). Cela demande l'accord de Pascal, car elles sont stables. La
+même release app porte le correctif des dalles LiDAR HD vides.
+
 ---
 
 # Chantier — MNT, MNS et MNH depuis un nuage de points (spec 059)
@@ -123,7 +136,7 @@ proposer le même schéma. Code inchangé.
 |---|---|---|---|
 | Cœur | `traiter_nuage_points()` (IGN, LiDAR drone, photogrammétrie), produits drone d'abord dans `resolve_project_*()`, NDP 2 | **v2.1.0** | ✅ livré |
 | Cœur | correctif : classes de bruit IGN dans le filtre du MNH de `compute_dtm_chm_from_laz()` (7 et 18 absentes des dalles IGN) | **v2.1.1** | ✅ livré (65 et 66 exclues) |
-| App | import d'un nuage de drone, appel du cœur, affichage MNS/MNH, NDP 2 | `nemetonshiny` | ⬜ note émise |
+| App | import d'un nuage de drone, appel du cœur, affichage MNS/MNH, NDP 2 | **nemetonshiny 2026.10.1** | ✅ livré (sauf `type = "lidar_ign"` dans l'app) |
 
 **Décisions** — *2026-10-09* (Pascal) : nom `traiter_nuage_points()` ; 0,5 m
 pour l'IGN et 0,25 m pour le drone ; reclassification par défaut, IGN compris ;
@@ -151,7 +164,24 @@ les rasters déjà calculés sont refaits une fois. Le test synthétique est
 discriminant : sans le correctif, un amas de points 65/66 placé 40 m au-dessus
 du sol monte le MNS à 140,5 m.
 
-**Prochaine étape** : intégration app.
+**Journal** — *2026-10-09* (**nemetonshiny 2026.10.1**, PR #235,
+`nemetonshiny@a265ddf8` + `76342975`, cycle `2.0.1.9003`, plancher
+`nemeton (>= 2.1.0)`) : intégration app livrée, avec un sous-onglet
+Terrain › Import › Nuage de points drone. Les fichiers sont déposés dans
+`cache/layers/drone_nuage/`, avec envoi jusqu'à 20 Go. `traiter_nuage_points()`
+tourne en `ExtendedTask`. En photogrammétrie, le MNT et le MNH de référence sont
+pris parmi les mosaïques IGN, et une mosaïque sans pixel valide est écartée. La
+carte montre le MNH, le MNS et le MNT avec les mesures de qualité. Le NDP 2 est
+automatique. Vérifié en réel sur une dalle COPC IGN de Couchey traitée en
+« LiDAR drone » : 50,3 M de points, 55,6 pts/m², 35 % de sol, MNH de 0 à 34,1 m ;
+`detect_ndp_from_cache()` vaut alors 2, et `resolve_project_*()` rend les
+produits drone. Le choix `type = "lidar_ign"` n'est pas proposé dans l'app : le
+repli `compute_dtm_chm_from_laz()` reste en place. Le même cycle porte le
+contrôle d'emprise des caches, lasR plafonné en mémoire (`23e4d7dc`) et
+Marculus au format 4 (`39556c6f`).
+
+**Prochaine étape** : aucune côté cœur. Il reste, en option côté app, à
+proposer `type = "lidar_ign"`.
 
 ---
 
@@ -167,7 +197,7 @@ du sol monte le MNS à 140,5 m.
 | Cœur | `construire_ugf_onf()`, `caler_onf_sur_cadastre()`, `load_parcelles_personnes_morales()`, option `calage_elastique` de `croiser_parcelles_onf()` | **v1.1.0** | ✅ livré |
 | Cœur | correctif : `croiser_parcelles_onf()` reprojette avant de valider | **v1.1.1** | ✅ livré |
 | Cœur | chemin unique : `croiser_parcelles_onf()` dépréciée, `construire_ugf_onf()` multi-communes, parcelles « hors ONF » listées | **v1.2.0** | ✅ livré |
-| App | stockage du n° ONF dans les UGF, intégration, API d'écriture des UGF ; ne plus appeler `croiser_parcelles_onf()` | **nemetonshiny v1.3.0** | ✅ livré (chemin B, colonnes ONF, API MCP) ; chemin A ouvert |
+| App | stockage du n° ONF dans les UGF, intégration, API d'écriture des UGF ; ne plus appeler `croiser_parcelles_onf()` | **nemetonshiny v1.3.0 + v1.3.1** | ✅ livré (chemin B, colonnes ONF, API MCP en v1.3.0 ; chemin A en v1.3.1) |
 | Cœur | retrait de `croiser_parcelles_onf()` et de ses helpers propres | **v2.0.0** | ✅ livré (plus aucun appelant : `nemetonshiny` v1.3.0, `nemetonclaude`) |
 
 **Décisions** — *2026-10-08* : nom `construire_ugf_onf()` ; fichier DGFiP national
@@ -239,9 +269,28 @@ commentaire sur le piège `st_cast("POLYGON")` est passé dans
 `.ugf_polygones()`. Plancher app inchangé : `nemeton (>= 1.2.0)` reste
 compatible tant qu'elle n'appelle rien de retiré.
 
-**Prochaine étape** : côté app, chemin A (création d'un projet depuis la forêt
-ONF, brief `vers-nemetonshiny/2026-10-08-reste-ugf-onf-chemin-a.md`). Chantier
-spec 058 clos côté cœur.
+**Journal** — *2026-10-08* (**nemetonshiny v1.3.1**, PR #232, cycle dev
+`1.3.0.9001`, commit `107a3b69`) : chemin A livré côté app. Le bouton
+« Nouveau projet depuis la forêt ONF » demande une commune et propose les
+parcelles du cadastre qui touchent l'ONF. Il appelle ensuite
+`construire_ugf_onf(selection = "foret")`, puis crée et ouvre le projet. Sur
+Sombernon (21611) : 65 candidates, 20 retenues (204,7 ha), 58 UGF, écart médian
+de calage 3,2 m. Ont été écartées 41 parcelles privées et 4 trop peu couvertes.
+Le calcul prend 16 s en direct et de 48 à 70 s dans l'app.
+
+**Vérification** — *2026-10-10* (cœur, lecture seule) : la parcelle
+**21611000ZA0029** est classée `privee` alors que l'ONF calé la couvre à 99 %.
+Elle est absente de l'extrait DGFiP des personnes morales (millésime 2025,
+département 21), qui ne porte en section ZA de Sombernon que ZA10 (commune de
+Remilly-en-Montagne) ainsi que ZA21 et ZA26 (commune de Sombernon). La jointure
+n'est donc pas en cause : ou bien un particulier la possède, ou bien la parcelle
+a été renumérotée après le millésime 2025 et le fichier DGFiP ne la connaît pas
+sous ce numéro. Ce cas limite de la sélection « publique » peut se repérer par
+un taux de couverture ONF élevé sur une parcelle `privee`. Il n'y a pas de
+correctif cœur tant qu'aucun autre cas ne se présente.
+
+**Prochaine étape** : aucune. Le chantier spec 058 est clos côté cœur et côté
+app.
 
 ---
 
