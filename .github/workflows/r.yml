@@ -87,7 +87,8 @@ jobs:
           r-version: 'release'
           use-public-rspm: true
           # lasR / lidR are not on CRAN; resolve them from r-lidar's
-          # r-universe. lidaRtRee comes from forge.inrae.fr (Remotes).
+          # r-universe. lidaRtRee vient de CRAN (4.0.9) : plus de clone de
+          # forge.inrae.fr, dont les 401 et les timeouts cassaient la CI.
           extra-repositories: 'https://r-lidar.r-universe.dev'
 
       # --- Cache des paquets R, clé déterministe -------------------------
@@ -214,7 +215,8 @@ jobs:
           r-version: 'release'
           use-public-rspm: true
           # lasR / lidR are not on CRAN; resolve them from r-lidar's
-          # r-universe. lidaRtRee comes from forge.inrae.fr (Remotes).
+          # r-universe. lidaRtRee vient de CRAN (4.0.9) : plus de clone de
+          # forge.inrae.fr, dont les 401 et les timeouts cassaient la CI.
           extra-repositories: 'https://r-lidar.r-universe.dev'
 
       # --- Cache des paquets R, clé déterministe -------------------------
@@ -313,7 +315,8 @@ jobs:
           r-version: 'release'
           use-public-rspm: true
           # lasR / lidR are not on CRAN; resolve them from r-lidar's
-          # r-universe. lidaRtRee comes from forge.inrae.fr (Remotes).
+          # r-universe. lidaRtRee vient de CRAN (4.0.9) : plus de clone de
+          # forge.inrae.fr, dont les 401 et les timeouts cassaient la CI.
           extra-repositories: 'https://r-lidar.r-universe.dev'
 
       # --- Cache des paquets R, clé déterministe -------------------------

@@ -134,6 +134,18 @@ v2026.10.1.
 
 ---
 
+# CI — lidaRtRee depuis CRAN
+
+**Journal** — *2026-10-10* (cycle `2026.10.2.9000`, sans release) : la CI
+tombait régulièrement à l'installation des dépendances. forge.inrae.fr
+renvoyait des 401 ou expirait au clonage de lidaRtRee, ce qui est arrivé deux
+fois le 2026-10-09 et a demandé une relance à la main. Le `Remotes` git vers la
+forge datait du 2026-06-10, quand lidaRtRee avait quitté CRAN (4.0.8 archivée)
+et que le r-universe jmmonnet renvoyait 404. La 4.0.9 est revenue sur CRAN le
+2026-09-23 : le `Remotes` est retiré et pak la prend sur CRAN/PPM. La CI ne
+dépend plus de forge.inrae.fr. lidaRtRee n'est qu'en `Suggests`, pour les
+tutoriels 01 et 08.
+
 # Chantier — MNT, MNS et MNH depuis un nuage de points (spec 059)
 
 > Demande de Pascal du 2026-10-09 : traiter un nuage de drone (classification,

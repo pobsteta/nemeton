@@ -10,6 +10,10 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+### Changed
+- `Remotes`: lidaRtRee is no longer cloned from forge.inrae.fr (401 errors and
+  timeouts broke CI); it comes from CRAN again (4.0.9).
+
 ## [2026.10.2] - 2026-10-10
 
 ### Removed
