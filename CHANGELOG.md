@@ -17,6 +17,8 @@ concise, categorised trail.
 
 - `Remotes`: lidaRtRee is no longer cloned from forge.inrae.fr (401
   errors and timeouts broke CI); it comes from CRAN again (4.0.9).
+- GitHub Actions pinned to commit SHAs (same commits as before); weekly
+  grouped Dependabot updates (`.github/dependabot.yml`).
 
 ## \[2026.10.2\] - 2026-10-10
 
