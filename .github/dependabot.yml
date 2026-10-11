@@ -1,0 +1,23 @@
+# Mises à jour des actions GitHub. Les workflows épinglent chaque action sur
+# un SHA de commit, avec la version en commentaire : un tag (`@v4`) peut être
+# déplacé vers un autre commit, un SHA non. Dependabot lit le commentaire et
+# propose le nouveau SHA avec sa version.
+#
+# Une seule PR par semaine pour toutes les actions. Elle ne touche que la CI :
+# DESCRIPTION reste en `.9000`, donc la fusionner ne déclenche aucune release.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    groups:
+      actions:
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "ci"
+    open-pull-requests-limit: 5

@@ -146,6 +146,17 @@ et que le r-universe jmmonnet renvoyait 404. La 4.0.9 est revenue sur CRAN le
 dépend plus de forge.inrae.fr. lidaRtRee n'est qu'en `Suggests`, pour les
 tutoriels 01 et 08.
 
+**Journal** — *2026-10-11* (cycle `2026.10.2.9000`, sans release) : les actions
+GitHub sont épinglées sur un SHA de commit, avec leur version en commentaire,
+dans les trois workflows. Il y en avait 23 sur des tags mobiles (`@v4`, `@v2`).
+Chacune est épinglée sur le commit qu'elle utilisait déjà, donc le comportement
+est inchangé : checkout v4.4.0, cache v4.3.0, upload-artifact v4.6.2,
+download-artifact v4.3.0, r-lib/actions v2.14.0. JamesIves et codecov étaient
+déjà épinglées. `.github/dependabot.yml` ouvre une PR groupée par semaine (le
+lundi à 6 h) pour toutes les actions, avec le préfixe `ci`. Elle ne déclenche
+pas de release, puisque DESCRIPTION reste en `.9000`. Le point « épinglage des
+actions (Dependabot) » de l'après-1.0 est clos.
+
 # Chantier — MNT, MNS et MNH depuis un nuage de points (spec 059)
 
 > Demande de Pascal du 2026-10-09 : traiter un nuage de drone (classification,
