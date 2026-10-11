@@ -197,14 +197,16 @@ indicateur_t1_anciennete <- function(units,
 # T039: T2 - Stability / Change Rate Index
 # ==============================================================================
 
-#' Calculate Temporal Stability Proxy (T2)
+#' Calculate Canopy Stability (T2)
 #'
-#' Despite its name (\code{changement}), T2 does **not** measure a rate of
-#' change: no time series is read. It is a temporal **stability proxy**
-#' derived from other indicators -- a copy of N2 (forest continuity) when
-#' present, otherwise the T1 stand age capped at 100 -- following tuto 04.
-#' It therefore carries no information of its own, and in the T family it
-#' may duplicate T1.
+#' T2 scores how stable the forest canopy of each unit has been over recent
+#' years. Given a FORMS-T canopy-height time series (`forms_t`, spec 060), it
+#' is **measured**: the share of the unit's canopy that lost at least
+#' `seuil_perte` metres of height for good, whatever the cause (clear-cut,
+#' partial cut, dieback, windthrow). Without that series it falls back on a
+#' **stability proxy** derived from other indicators -- a copy of N2 (forest
+#' continuity), otherwise the T1 stand age capped at 100 (tuto 04) -- which
+#' carries no information of its own.
 #'
 #' @param units An sf object with forest parcels. May contain pre-computed
 #'   columns: N2 (forest continuity) or T1 (stand age).
@@ -212,23 +214,57 @@ indicateur_t1_anciennete <- function(units,
 #'   kept for interface consistency.
 #' @param t1_values Numeric vector. Pre-computed T1 age values (same length
 #'   as nrow(units)). If NULL and units has no T1 column, T2 is \code{NA}.
+#' @param forms_t FORMS-T canopy height, one layer per year (at least
+#'   three), layers named by year: a `terra::SpatRaster`, as returned by
+#'   [charger_forms_t_hauteurs()], or a vector of file paths. `NULL`
+#'   (default) looks for a raster named `"forms_t"` in `layers`, and falls
+#'   back on the proxy when there is none.
+#' @param seuil_perte Numeric. Height loss, in metres, that counts as a
+#'   canopy loss. Default `5`.
+#' @param unite_hauteur Unit of `forms_t`: `"cm"` (default, FORMS-T as
+#'   published) or `"m"`.
 #'
-#' @return The input \code{units} (same class, rows and order) with an added numeric column \code{T2}: stability proxy scores (0-100), 100 = very
-#'   stable (ancient forest). \code{NA} where the source (N2 or T1) is
-#'   unknown -- no default value.
+#' @return The input \code{units} (same class, rows and order) with an added
+#'   numeric column \code{T2} (0-100, 100 = stable canopy). \code{NA} where
+#'   no source is available -- no default value.
+#'
+#'   When FORMS-T heights are supplied, four more columns are added:
+#'   \itemize{
+#'     \item `t2_status`: `"forms_t"` (measured), `"proxy"` (unit outside the
+#'       series, proxy used) or `"no_source"`;
+#'     \item `t2_perte_pct`: share of the unit's canopy in lasting loss (%);
+#'     \item `t2_croissance_m_an`: median Theil-Sen height trend of the
+#'       canopy without loss (m/year);
+#'     \item `t2_annees`: years read, e.g. `"2019-2024"`.
+#'   }
+#'   Without FORMS-T the result is unchanged from earlier releases (`T2`
+#'   only).
 #'
 #' @details
-#' **Primary method**: copy of the N2 (forest continuity/antiquity) column if
-#' present in units, clamped to 0-100.
+#' **Measured path (FORMS-T)**. Only pixels whose height reached
+#' `seuil_perte` at least once are canopy. A canopy pixel is in lasting loss
+#' when, from some year on, its height stays at least `seuil_perte` below its
+#' maximum over the previous years until the end of the series; a one-year
+#' dip that recovers does not count. `T2 = 100 * (1 - share of the unit's
+#' canopy in loss)`, coverage-weighted with exactextractr. The Theil-Sen
+#' slope of the other canopy pixels gives `t2_croissance_m_an`, a diagnostic
+#' that does not enter the score.
 #'
-#' **Fallback**: T1 stand age (years) capped at 100 (\code{t1_values}, then a
-#' \code{T1} column). Older forests are assumed more stable.
+#' Validation (spec 060, 2026-10-11): on Reconfort, 96 % of the losses
+#' outside SUFOSAT clear-cuts are confirmed by the LiDAR HD canopy (flown
+#' 2023-2024), so T2 also sees partial cuts and dieback that T3 does not; on
+#' Fordead (bark-beetle site) the loss covers 98 % of the forest.
 #'
-#' The fallback applies **unit by unit**: a unit whose N2 is \code{NA} takes
-#' its T1 age when known.
+#' **Proxy (no FORMS-T)**: copy of the N2 (forest continuity/antiquity)
+#' column if present in units, clamped to 0-100, otherwise the T1 stand age
+#' (years) capped at 100 (\code{t1_values}, then a \code{T1} column). The
+#' fallback applies **unit by unit**: a unit whose N2 is \code{NA} takes its
+#' T1 age when known. With FORMS-T, a unit the series does not cover takes
+#' the proxy too.
 #'
-#' A genuine change-rate indicator (e.g. a Sentinel-2 change detection) is
-#' not implemented in T2.
+#' Do not compare T2 values computed over different year windows. FORMS-T is
+#' a height **predicted** from Sentinel-1/2 and GEDI, not measured; light
+#' thinnings (less than `seuil_perte`) are not seen.
 #'
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
@@ -247,12 +283,26 @@ indicateur_t1_anciennete <- function(units,
 #' t1 <- indicateur_t1_anciennete(units, layers = massif_demo_layers())
 #' t2 <- indicateur_t2_changement(t1)
 #' t2$T2
+#'
+#' # Measured canopy stability from FORMS-T (spec 060)
+#' h <- charger_forms_t_hauteurs(units)
+#' t2 <- indicateur_t2_changement(t1, forms_t = h)
+#' t2[, c("T2", "t2_status", "t2_perte_pct", "t2_croissance_m_an")]
 #' }
 indicateur_t2_changement <- function(units,
                                       layers = NULL,
-                                      t1_values = NULL) {
+                                      t1_values = NULL,
+                                      forms_t = NULL,
+                                      seuil_perte = 5,
+                                      unite_hauteur = c("cm", "m")) {
   # Validate inputs
   validate_sf(units)
+  unite_hauteur <- match.arg(unite_hauteur)
+  if (is.null(forms_t)) forms_t <- resolve_raster_layer(layers, "forms_t")
+  if (is.character(forms_t)) forms_t <- terra::rast(forms_t)
+  mesure <- if (!is.null(forms_t)) {
+    .t2_forms_t(units, forms_t, seuil_perte, unite_hauteur)
+  }
 
   n <- nrow(units)
 
@@ -285,7 +335,7 @@ indicateur_t2_changement <- function(units,
   }
 
   # --- Aucune source : NA (plus de 50 par défaut) ---
-  if (length(sources) == 0L) {
+  if (length(sources) == 0L && is.null(mesure)) {
     cli::cli_alert_warning("T2: No N2 or T1 data available, returning NA")
     return(.indicateur_resultat(units, "T2", rep(NA_real_, n)))
   }
@@ -299,15 +349,120 @@ indicateur_t2_changement <- function(units,
       used <- c(used, sprintf("%s (%d)", nm, sum(fill)))
     }
   }
-  if (length(used) == 0L) {
-    cli::cli_alert_warning(
-      "T2: {paste(names(sources), collapse = ', ')} present but all NA, returning NA"
-    )
-  } else {
-    cli::cli_alert_info("T2: stability proxy from {paste(used, collapse = ', ')}")
-    msg_info("indicateur_t2_changement")
+  if (is.null(mesure)) {
+    if (length(used) == 0L) {
+      cli::cli_alert_warning(
+        "T2: {paste(names(sources), collapse = ', ')} present but all NA, returning NA"
+      )
+    } else {
+      cli::cli_alert_info("T2: stability proxy from {paste(used, collapse = ', ')}")
+      msg_info("indicateur_t2_changement")
+    }
+    return(.indicateur_resultat(units, "T2", t2))
   }
-  .indicateur_resultat(units, "T2", t2)
+
+  # Chemin mesuré : FORMS-T d'abord, proxy unité par unité ailleurs.
+  mes <- !is.na(mesure$score)
+  statut <- ifelse(mes, "forms_t", ifelse(is.na(t2), "no_source", "proxy"))
+  t2[mes] <- mesure$score[mes]
+  cli::cli_alert_info(
+    "T2: canopy stability from FORMS-T {mesure$annees} ({sum(mes)}/{n} units{if (any(statut == 'proxy')) paste0(', proxy for ', sum(statut == 'proxy')) else ''})"
+  )
+  out <- .indicateur_resultat(units, "T2", t2)
+  out$t2_status <- statut
+  out$t2_perte_pct <- mesure$perte_pct
+  out$t2_croissance_m_an <- mesure$croissance
+  out$t2_annees <- ifelse(mes, mesure$annees, NA_character_)
+  out
+}
+
+
+# Stabilité du couvert mesurée sur une série FORMS-T (spec 060). Rend, par
+# unité, le score T2, la part de couvert en perte durable (%) et la pente de
+# Theil-Sen médiane du couvert sans perte (m/an) ; NA pour une unité sans
+# pixel de couvert dans la série.
+.t2_forms_t <- function(units, forms_t, seuil_perte, unite_hauteur) {
+  if (!inherits(forms_t, "SpatRaster")) {
+    cli::cli_abort("{.arg forms_t} must be a {.cls SpatRaster} or file paths.")
+  }
+  annees <- suppressWarnings(as.integer(sub("^\\D*", "", names(forms_t))))
+  if (anyNA(annees) || anyDuplicated(annees)) {
+    cli::cli_abort(c(
+      "{.arg forms_t} layers must be named by year.",
+      i = "Got {.val {names(forms_t)}}; {.fn charger_forms_t_hauteurs} names them."
+    ))
+  }
+  if (terra::nlyr(forms_t) < 3L) {
+    cli::cli_abort("{.arg forms_t} needs at least three years, got {terra::nlyr(forms_t)}.")
+  }
+  o <- order(annees)
+  forms_t <- forms_t[[o]]
+  annees <- annees[o]
+  n <- nrow(units)
+  vide <- list(score = rep(NA_real_, n), perte_pct = rep(NA_real_, n),
+               croissance = rep(NA_real_, n),
+               annees = sprintf("%d-%d", annees[1L], annees[length(annees)]))
+
+  u <- sf::st_transform(sf::st_geometry(units), terra::crs(forms_t))
+  r <- tryCatch(terra::crop(forms_t, terra::vect(u), snap = "out"),
+                error = function(e) NULL)
+  if (is.null(r)) return(vide)
+
+  M <- terra::values(r, mat = TRUE)
+  if (unite_hauteur == "cm") M <- M / 100
+  M[!is.na(M) & M <= 0] <- NA                      # NoData FORMS-T = 0
+  p <- ncol(M)
+  ok <- stats::complete.cases(M)
+  # Couvert : hauteur ayant atteint le seuil au moins une année.
+  couvert <- ok & apply(M, 1L, max, na.rm = TRUE) >= seuil_perte
+  couvert[is.na(couvert)] <- FALSE
+
+  perte <- rep(NA_real_, nrow(M))
+  pente <- rep(NA_real_, nrow(M))
+  if (any(couvert)) {
+    X <- M[couvert, , drop = FALSE]
+    # Perte durable : à partir d'une année j, toutes les hauteurs restent
+    # sous max(années avant j) - seuil. Maximum cumulé à gauche, maximum des
+    # suffixes à droite, comparés colonne à colonne.
+    cmax <- X
+    for (j in 2L:p) cmax[, j] <- pmax(cmax[, j - 1L], X[, j])
+    smax <- X
+    for (j in (p - 1L):1L) smax[, j] <- pmax(smax[, j + 1L], X[, j])
+    en_perte <- rep(FALSE, nrow(X))
+    for (j in 2L:p) en_perte <- en_perte | smax[, j] <= cmax[, j - 1L] - seuil_perte
+    perte[couvert] <- as.numeric(en_perte)
+    sans <- which(couvert)[!en_perte]
+    if (length(sans)) pente[sans] <- .theil_sen_pentes(M[sans, , drop = FALSE], annees)
+  }
+
+  r_perte <- terra::rast(r, nlyrs = 1L, vals = perte)
+  r_pente <- terra::rast(r, nlyrs = 1L, vals = pente)
+  zones <- sf::st_as_sf(data.frame(id = seq_len(n)), geometry = u)
+  part <- exactextractr::exact_extract(r_perte, zones, "mean", progress = FALSE)
+  nb <- exactextractr::exact_extract(r_perte, zones, "count", progress = FALSE)
+  med <- exactextractr::exact_extract(r_pente, zones, "median", progress = FALSE)
+  part[is.na(nb) | nb < 1] <- NA                   # moins d'un pixel de couvert
+  med[is.na(part)] <- NA
+
+  list(score = 100 * (1 - part), perte_pct = 100 * part,
+       croissance = med, annees = vide$annees)
+}
+
+# Pente de Theil-Sen (médiane des pentes par paire) de chaque ligne de M,
+# séries complètes. Même calcul que le mode « trend » de FAST (spec 023),
+# mais signé et sans test : T2 garde la croissance comme les déclins.
+# Traité par blocs pour borner la mémoire (pixels x paires).
+.theil_sen_pentes <- function(M, annees, bloc = 50000L) {
+  prs <- utils::combn(ncol(M), 2L)
+  dx <- annees[prs[2L, ]] - annees[prs[1L, ]]
+  out <- numeric(nrow(M))
+  for (debut in seq(1L, nrow(M), by = bloc)) {
+    i <- debut:min(debut + bloc - 1L, nrow(M))
+    D <- M[i, prs[2L, ], drop = FALSE] - M[i, prs[1L, ], drop = FALSE]
+    D <- D / rep(dx, each = length(i))
+    out[i] <- apply(D, 1L, stats::median)
+  }
+  out
 }
 
 

@@ -987,29 +987,32 @@ FICHES <- list(
 
   T2 = list(
     code = "T2", fichier = "fiche-t2-changement_fr.Rmd",
-    titre = paste("Chaine de calcul de T2 : l'indicateur ne mesure rien en propre, il",
-                  "recopie la continuite N2 quand elle existe, sinon l'age T1",
-                  "plafonne a 100 (age inconnu : NA) — d'ou un double comptage",
-                  "possible dans la famille temporelle."),
+    titre = paste("Chaine de calcul de T2 : avec la serie FORMS-T, la part du couvert",
+                  "en perte durable de hauteur donne le score ; sans elle, ou pour une",
+                  "unite hors serie, T2 se replie sur la continuite N2 puis sur l'age",
+                  "T1 plafonne a 100."),
     entrees = list(
-      list(titre = "Colonne N2 — continuité", lignes = "ou N2_anciennete / N2_anciennet", vers = 1),
-      list(titre = "t1_values — âge T1", lignes = "utilisé seulement sans N2", vers = 2)
+      list(titre = "FORMS-T — hauteur annuelle", lignes = c("10 m, 2019 à 2024, en cm",
+                                                            "charger_forms_t_hauteurs()"), vers = 1),
+      list(titre = "Colonne N2 ou âge T1", lignes = "repli sans FORMS-T", vers = 2, tirets = TRUE)
     ),
     chemins = list(
-      list(titre = "N2 comme proxy", lignes = "T2 = N2, écrêté [0, 100]"),
-      list(titre = "T1 plafonné", lignes = c("T2 = min(100, âge)",
-                                             "NA conservés (plus de 50)"))
+      list(titre = "Perte durable de couvert", lignes = c("hauteur ≤ max antérieur − 5 m",
+                                                          "jusqu'à la fin de la série",
+                                                          "T2 = 100 × (1 − part en perte)")),
+      list(titre = "Proxy N2 puis T1", lignes = c("T2 = N2 écrêté, sinon min(100, âge)",
+                                                  "t2_status = \"proxy\""))
     ),
     aval = av("indicateur_t2_changement", "score 0–100, natif",
               "écrêtage natif 0–100", "T", "famille_temporel", "T1 à T3"),
     notes = c(
-      "Un âge inconnu reste NA sur le chemin 2 (il devenait 50 jusqu'à la 0.211.0).",
-      "Quand T2 recopie T1, famille_temporel compte deux fois la même grandeur.",
-      "Le nom annonce un changement, la valeur mesure une stabilité — haut = stable."
+      "Diagnostics : t2_perte_pct, t2_croissance_m_an (Theil-Sen), t2_annees, t2_status.",
+      "Ne pas comparer deux T2 calculés sur des fenêtres d'années différentes.",
+      "Sans FORMS-T, le résultat est celui des versions antérieures (T2 seul)."
     ),
-    legende = paste("Un indicateur dérivé, pas mesuré. Avant de lire une famille T, vérifier",
-                    "lequel des deux chemins a servi : sur le second, T1 et T2 portent la même",
-                    "information sous deux noms.")
+    legende = paste("Avec FORMS-T, T2 mesure la stabilité du couvert, toutes causes de perte",
+                    "confondues (coupe, dépérissement, chablis). Le proxy ne sert que hors série,",
+                    "et t2_status dit lequel des deux chemins a servi.")
   ),
 
   T3 = list(

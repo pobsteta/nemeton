@@ -1,3 +1,47 @@
+# nemeton 2026.10.3 (2026-10-11)
+
+T2 mesure enfin un changement (spec 060). Jusqu'ici, il recopiait N2 ou T1.
+
+## Nouveautés
+
+- **`indicateur_t2_changement(forms_t = )`** : avec la hauteur de canopée
+  annuelle FORMS-T (Theia, 10 m, 2019 à 2024), T2 devient la **stabilité du
+  couvert**. Il vaut 100 moins la part du couvert de l'unité qui a perdu au
+  moins 5 m de hauteur pour de bon, quelle qu'en soit la cause : coupe,
+  dépérissement ou chablis. Nouveaux arguments `seuil_perte` (5 m) et
+  `unite_hauteur` (`"cm"`). La série peut aussi venir de
+  `layers$rasters$forms_t`, et `nemeton_compute(..., forms_t = )` la transmet.
+  Quatre colonnes s'ajoutent alors :
+  - `t2_status` (`forms_t`, `proxy` ou `no_source`) ;
+  - `t2_perte_pct` ;
+  - `t2_croissance_m_an` (pente de Theil-Sen du couvert sans perte, hors
+    score) ;
+  - `t2_annees`.
+- **`charger_forms_t_hauteurs()`** (experimental) : charge la série FORMS-T sur
+  une emprise, une couche par année. Elle lit d'abord une copie locale
+  (`dossier` ou `NEMETON_FORMS_T_DIR`), sinon Theia.
+
+## Compatibilité
+
+Sans FORMS-T, T2 rend exactement ce qu'il rendait avant : la colonne `T2`,
+issue de N2 puis de T1. Rien ne change pour les appelants actuels. Le proxy
+sera déprécié dans une prochaine release, une fois le chemin mesuré branché dans
+l'app.
+
+## Validation
+
+- **Bruit** : à Dabo, la hauteur d'un pixel varie de 17 cm d'une année à
+  l'autre.
+- **Croissance** : elle va de +1,2 m/an pour les peuplements de 5 à 15 m à
+  +0,07 m/an au-delà de 35 m.
+- **Pertes à Fordead** (scolytes) : 98 % du couvert est en perte.
+- **Pertes à Reconfort** : celles que SUFOSAT ne connaît pas sont confirmées à
+  96 % par le LiDAR HD de 2023-2024. Ce sont des disparitions de couvert que T3
+  ne voit pas.
+
+Aucune nouvelle dépendance : `bfast`, `Rbeast`, `trend` et quelques autres ont
+été examinés et écartés (spec 060 § 3).
+
 # nemeton 2026.10.2 (2026-10-10)
 
 ## Changements cassants
