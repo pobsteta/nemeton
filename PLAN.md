@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.1** (release du 2026-10-09), relevée le 2026-10-10.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.4** (release du 2026-10-11), relevée le 2026-10-11.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -134,7 +134,7 @@ v2026.10.1.
 
 ---
 
-# CI — lidaRtRee depuis CRAN
+# CI — dépendances et actions GitHub
 
 **Journal** — *2026-10-10* (cycle `2026.10.2.9000`, sans release) : la CI
 tombait régulièrement à l'installation des dépendances. forge.inrae.fr
@@ -156,6 +156,18 @@ déjà épinglées. `.github/dependabot.yml` ouvre une PR groupée par semaine (
 lundi à 6 h) pour toutes les actions, avec le préfixe `ci`. Elle ne déclenche
 pas de release, puisque DESCRIPTION reste en `.9000`. Le point « épinglage des
 actions (Dependabot) » de l'après-1.0 est clos.
+
+**Journal** — *2026-10-11* (sans release) : première PR Dependabot (#549)
+fusionnée, avec six actions montées : checkout v7.0.1, cache v6.1.0,
+upload-artifact v7.0.2, download-artifact v8.0.2, codecov v7.1.1 et
+github-pages-deploy-action v4.9.0. Vérifié sur `main` après fusion : tests,
+check, couverture, build et **déploiement** pkgdown passent (download-artifact
+ne tourne que dans le déploiement, donc la CI de la PR ne pouvait pas le
+tester). L'envoi Codecov aboutit avec le jeton. Sur les PR Dependabot, cet
+envoi échoue (« Token required because branch is protected »), car GitHub ne
+leur transmet pas les secrets Actions. La CI reste verte, puisque cet envoi ne
+bloque pas. Pour le corriger, ajouter `CODECOV_TOKEN` aux secrets Dependabot
+du dépôt (facultatif). Version `nemetonshiny` publiée : v2026.10.4.
 
 # Chantier — MNT, MNS et MNH depuis un nuage de points (spec 059)
 
@@ -580,14 +592,16 @@ changement de code ni d'API, rien à faire côté app. Le job `tests` du run sur
 
 **Chantier « Pré-version 1.0 » clos** (2026-10-06) : cœur **et** app en 1.0.0.
 Après la 1.0, côté cœur : vrai taux de changement pour T2, `urban_areas` dans
-A2, épinglage des actions GitHub de premier rang (Dependabot), fixture de démo
-plus réaliste. Côté app : indicateurs conditionnels (A3, A4, W4, B4, L3,
+A2, ~~épinglage des actions GitHub de premier rang (Dependabot)~~ (fait le
+2026-10-11, voir « CI »), fixture de démo plus réaliste. Côté app : indicateurs conditionnels (A3, A4, W4, B4, L3,
 R5-R7, T3) absents de la table PostGIS `nemeton.indicators` ; isolation des
 projets entre utilisateurs ; factorisation de `mod_monitoring.R`.
 
-**Prochaine étape** : semver strict depuis la 1.0.0 (une rupture d'API
-**stable** exige un bump majeur ; les pages **experimental** peuvent changer en
-mineur). L'app consomme les exports listés dans
+**Prochaine étape** : ~~semver strict depuis la 1.0.0~~. Depuis la 2026.10.1,
+versionnage calendaire `AAAA.M.N` (spec 057 § 8) : une rupture d'API
+**stable** n'arrive qu'après dépréciation (3 mois, ou plus aucun appelant) et
+avec l'accord de Pascal ; les pages **experimental** peuvent changer à toute
+release. L'app consomme les exports listés dans
 `specs/audit-1.0/exports-consommes-app.md` (dont les 41 indicateurs, appelés
 par leur nom) : ne rien retirer ni changer de signature parmi eux sans brief
 app.
