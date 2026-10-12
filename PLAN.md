@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.4** (release du 2026-10-11), relevée le 2026-10-11.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.4** (release du 2026-10-11), relevée le 2026-10-12.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -163,6 +163,13 @@ nouvelle dépendance : `bfast` et `Rbeast` sont faits pour des séries denses,
 
 Ajout compatible : sans FORMS-T, T2 est inchangé. Brief app :
 `vers-nemetonshiny/2026-10-11-t2-forms-t.md`.
+
+*2026-10-12* : PR #551 mergée, tag `v2026.10.3` posé par `release.yml`.
+La CI avait cassé sur deux défauts de documentation : une apostrophe dans un
+`\code{}` du `.Rd` de T2, et un lien vers `theia_sign_urls()`, qui est
+interne. Le test de `charger_forms_t_hauteurs()` passe désormais par
+`skip_if_terra_write_broken()` (anomalie terra du runner). Cycle dev
+`2026.10.3.9000`.
 
 ---
 
