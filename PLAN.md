@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.4** (release du 2026-10-11), relevée le 2026-10-12.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.6** (release du 2026-10-12), relevée le 2026-10-12.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -142,8 +142,8 @@ v2026.10.1.
 | Étape | Contenu | Release | État |
 |---|---|---|---|
 | Cœur | `indicateur_t2_changement(forms_t = )` : stabilité du couvert (perte durable ≥ 5 m) ; `charger_forms_t_hauteurs()` | **2026.10.3** | ✅ livré |
-| App | charger FORMS-T 2019-2024, le passer à T2, afficher `t2_status` et les diagnostics | `nemetonshiny` | ⬜ brief émis |
-| Cœur | dépréciation puis retrait du proxy N2/T1 (accord de Pascal requis) | — | ⬜ après l'app |
+| App | charger FORMS-T 2019-2024, le passer à T2, afficher `t2_status` et les diagnostics | `nemetonshiny` **v2026.10.5** | ✅ livré |
+| Cœur | dépréciation puis retrait du proxy N2/T1 (accord de Pascal requis) | — | ⬜ à proposer à Pascal |
 
 **Journal** — *2026-10-11* (**2026.10.3**) : T2 recopiait N2 ou T1 et ne lisait
 aucune série. Il mesure maintenant la stabilité du couvert sur la hauteur
@@ -170,6 +170,53 @@ La CI avait cassé sur deux défauts de documentation : une apostrophe dans un
 interne. Le test de `charger_forms_t_hauteurs()` passe désormais par
 `skip_if_terra_write_broken()` (anomalie terra du runner). Cycle dev
 `2026.10.3.9000`.
+
+*2026-10-12* — nemetonshiny **v2026.10.5** (`nemetonshiny@4b726dbe`, PR #239,
+cycle `2026.10.4.9000`→`2026.10.5`) : spec 060 T2/FORMS-T branché dans l'app
+(`charger_forms_t_hauteurs()` une fois par calcul, cache
+`cache/layers/forms_t/` à clé d'emprise, diagnostics `.t2_*` et bandeau sous
+la carte T2, plancher `Imports: nemeton (>= 2026.10.3)`) ; notes `_norm`
+persistées dans `indicators.parquet`. Vérifié à Dabo (T2 95,5 à 99,95) et à
+Fordead (67 à 100 % du couvert perdu par parcelle), lecture 0,3 à 1,1 s. Le
+chemin mesuré tourne en service : la dépréciation du proxy N2/T1 peut être
+proposée à Pascal (pas engagée sans son accord).
+
+*2026-10-12* — nemetonshiny **v2026.10.6** (`nemetonshiny@5bb76fe8`, PR #240,
+cycle `2026.10.5.9000`→`2026.10.6`) : progression « Famille (i/13) » de la
+synthèse IA rétablie (perdue au passage des appels LLM dans un worker
+`future`). Correctif seul, sans impact cœur.
+
+---
+
+# Chantier — Inventaire vidéo Groma (spec 061)
+
+> Brief `groma_nemeton` du 2026-10-12 (`vers-nemeton/2026-10-12-inventaire-video.md`),
+> décisions 1 à 3 de Pascal du même jour. Spec : `specs/061-inventaire-video/spec.md`.
+
+| Étape | Contenu | Release | État |
+|---|---|---|---|
+| Cœur | schéma partagé, GeoPackage + rasters + projet QField, numérotation, hauteurs par houppier, rapprochement, validation, import/fusion, client API Groma ; `validate_field_data(dbh_max_cm, dbh_alerte_cm)`, `tag_field_data_sources(source)` | **2026.10.4** | ✅ livré |
+| Cœur | plugin de projet QField `.qml` (contenu à fournir par groma) ; renvoi filtré des `a_completer`/`a_verifier` | — | ⬜ |
+| App | sous-onglet Terrain > Inventaire vidéo | `nemetonshiny` | ⬜ brief émis par groma |
+
+**Journal** — *2026-10-12* (**2026.10.4**) : 9 fonctions exportées
+(experimental) dans `R/inventaire_video.R`. Le schéma, les déclencheurs et le
+référentiel d'essences sont copiés tels quels de groma dans
+`inst/inventaire_video/`, les cas communs dans `tests/testthat/fixtures/`.
+Les 10 cas de numérotation, les 5 cas de rapprochement (dont l'absence de
+perte d'attribut) et les 9 cas de hauteur passent. Méthode hongroise écrite
+dans le cœur plutôt que d'ajouter `clue`. Les couches `placettes`, `arbres`
+et `detections` sont écrites sans index spatial ; un test insère dans
+`detections` par une connexion RSQLite sans fonction spatiale et vérifie la
+ligne `arbres` créée par le déclencheur. Sur l'exemple groma, l'import
+rapproche P001 (14 définitifs, 4 à compléter, 1 à vérifier, aucune alerte),
+signale le diamètre de 208,7 cm et donne G = 37,2 m²/ha. Sept libellés BD
+Forêt V2 ne tombent plus en `essence_mixte`. Une note de l'app arrivée en
+cours de route (`inventaire-video-retours-app`) a fixé les formes de retour :
+`importer_inventaire_video()` rend `a_completer`, `a_verifier`,
+`classique_conserve` et `ndp`, `groma_telecharger_resultats()` rend des
+chemins, et un inventaire vidéo porteur d'arbres atteint le NDP 3 sans le
+seuil de 10 arbres par placette (l'exemple groma en compte 9).
 
 ---
 

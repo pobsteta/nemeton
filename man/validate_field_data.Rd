@@ -4,7 +4,14 @@
 \alias{validate_field_data}
 \title{Validate field data against placette + arbre schemas}
 \usage{
-validate_field_data(placettes, arbres = NULL, region = "BFC", lang = "fr")
+validate_field_data(
+  placettes,
+  arbres = NULL,
+  region = "BFC",
+  lang = "fr",
+  dbh_max_cm = 300,
+  dbh_alerte_cm = NULL
+)
 }
 \arguments{
 \item{placettes}{sf POINT data-frame of placettes.}
@@ -16,6 +23,13 @@ validate_field_data(placettes, arbres = NULL, region = "BFC", lang = "fr")
 
 \item{lang}{Character. Language for species labels. Default
 \code{"fr"}.}
+
+\item{dbh_max_cm}{Numeric. Maximal admissible DBH (cm); above is an error.
+Default 300. \code{Inf} accepts any diameter.}
+
+\item{dbh_alerte_cm}{Numeric or \code{NULL}. DBH above which a warning
+(\code{"DBH above alert threshold"}) is raised. Default \code{NULL}
+(no alert).}
 }
 \value{
 A list with:
@@ -35,3 +49,4 @@ tree-id uniqueness within a plot.
 
 Stable: covered by the 1.0 API contract (spec 057).
 }
+

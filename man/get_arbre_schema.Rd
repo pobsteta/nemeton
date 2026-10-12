@@ -4,7 +4,7 @@
 \alias{get_arbre_schema}
 \title{Get the arbre layer schema}
 \usage{
-get_arbre_schema(region = "BFC", lang = "fr")
+get_arbre_schema(region = "BFC", lang = "fr", dbh_max_cm = 300)
 }
 \arguments{
 \item{region}{Character. Species region used to populate the
@@ -12,6 +12,9 @@ get_arbre_schema(region = "BFC", lang = "fr")
 
 \item{lang}{Character. Language for the species labels. Default
 \code{"fr"}.}
+
+\item{dbh_max_cm}{Numeric. Upper bound of the DBH widget (cm). Default
+300.}
 }
 \value{
 A list of field descriptors.

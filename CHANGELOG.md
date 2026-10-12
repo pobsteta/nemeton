@@ -10,6 +10,27 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.4] - 2026-10-12
+
+### Added
+- Groma video inventory (spec 061, experimental): `schema_inventaire_video()`,
+  `creer_projet_inventaire_video()`, `numeroter_arbres()`,
+  `affecter_hauteur_houppier()`, `rapprocher_arbres()`,
+  `valider_inventaire_video()`, `importer_inventaire_video()`,
+  `groma_etat_placettes()`, `groma_telecharger_resultats()`.
+- `inst/inventaire_video/`: shared GeoPackage schema, SQLite triggers, tree
+  species reference (BD Forêt V2).
+
+### Changed
+- `validate_field_data()`: arguments `dbh_max_cm` (300) and `dbh_alerte_cm`
+  (`NULL`); defaults unchanged.
+- `get_arbre_schema()`: argument `dbh_max_cm` (300).
+- `tag_field_data_sources()`: argument `source`; `detect_ndp()` reports
+  `"inventaire_video"` among the sources and gives a video inventory with
+  trees NDP 3 (complete inventory, no 10-trees-per-plot threshold).
+- `inst/species/BFC.json`: seven BD Forêt V2 labels mapped instead of
+  `essence_mixte`.
+
 ## [2026.10.3] - 2026-10-11
 
 ### Added

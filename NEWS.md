@@ -1,3 +1,53 @@
+# nemeton 2026.10.4 (2026-10-12)
+
+L'inventaire vidéo Groma arrive dans le cœur (spec 061) : une vidéo au
+smartphone remplace le compas, la boussole et le décamètre sur une placette
+circulaire.
+
+## Nouveautés
+
+Neuf fonctions, toutes *experimental* :
+
+- **`creer_projet_inventaire_video()`** : GeoPackage de terrain
+  `inventaire_video.gpkg` (placettes, centres mesurés, cibles, arbres,
+  détections, houppiers), MNT et MNH découpés par placette en GeoTIFF Float32
+  à 0,5 m, projet QField, le tout dans un `.qgz`. `placettes`, `arbres` et
+  `detections` sont sans index spatial, pour que Groma puisse les mettre à jour
+  avec le SQLite d'Android ; des déclencheurs relient `detections` (écrite par
+  Groma seul) à `arbres` par `uuid`. La convergence des méridiens est calculée,
+  la pente, l'exposition et le recouvrement sont remplis depuis le MNT et le
+  MNH.
+- **`numeroter_arbres()`** : la règle de numérotation Groma, identique en
+  Python, Kotlin et R.
+- **`affecter_hauteur_houppier()`** : hauteur de l'arbre lue sur le houppier
+  qui contient son tronc. Une hauteur mesurée n'est jamais écrasée.
+- **`rapprocher_arbres()`** : passage de l'inventaire provisoire au définitif
+  par affectation optimale (méthode hongroise). Aucun attribut saisi sur le
+  terrain n'est perdu ; les arbres non retrouvés passent « à vérifier » (V1,
+  V2…), les faux positifs restent marqués (F1, F2…).
+- **`valider_inventaire_video()`** et **`importer_inventaire_video()`** :
+  validation, type de peuplement déduit de l'essence saisie, agrégats par
+  rayon de placette, source `"inventaire_video"` pour le NDP, fusion dans les
+  données terrain du projet sans écraser un inventaire classique. Le retour
+  donne aussi les arbres à compléter et à vérifier, les placettes dont
+  l'inventaire classique a été conservé et le NDP atteint.
+- **`schema_inventaire_video()`** : le schéma partagé avec Groma.
+- **`groma_etat_placettes()`**, **`groma_telecharger_resultats()`** : client du
+  serveur Groma (`httr2`).
+
+## Changements compatibles
+
+- `validate_field_data()` gagne `dbh_max_cm` (300) et `dbh_alerte_cm`
+  (`NULL`) ; `get_arbre_schema()` gagne `dbh_max_cm`. Les défauts ne changent
+  rien. L'inventaire vidéo accepte tout diamètre et signale ceux au-delà de
+  200 cm.
+- `tag_field_data_sources()` gagne `source` ; `detect_ndp()` cite
+  `"inventaire_video"` parmi les sources. Un inventaire vidéo mesure tous les
+  arbres de la placette : il atteint le NDP 3 dès qu'il porte des arbres, sans
+  le seuil de 10 arbres par placette appliqué aux autres données terrain.
+- `map_bdforet_essence()` : « Sapin, épicéa », « Chênes sempervirents »,
+  « Robinier » et quatre libellés de pins ne tombent plus en `essence_mixte`.
+
 # nemeton 2026.10.3 (2026-10-11)
 
 T2 mesure enfin un changement (spec 060). Jusqu'ici, il recopiait N2 ou T1.

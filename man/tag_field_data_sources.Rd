@@ -4,7 +4,12 @@
 \alias{tag_field_data_sources}
 \title{Tag an sf object with field-data NDP attributes}
 \usage{
-tag_field_data_sources(data, placettes, arbres = NULL)
+tag_field_data_sources(
+  data,
+  placettes,
+  arbres = NULL,
+  source = "inventaire_terrain"
+)
 }
 \arguments{
 \item{data}{An sf / data.frame to tag.}
@@ -12,6 +17,12 @@ tag_field_data_sources(data, placettes, arbres = NULL)
 \item{placettes}{sf or data.frame of placettes.}
 
 \item{arbres}{sf or data.frame of trees (may be NULL).}
+
+\item{source}{Character. Kind of field inventory, stored in
+\code{attr(data, "field_data_source")}: \code{"inventaire_terrain"}
+(default) or \code{"inventaire_video"} (Groma: a complete inventory, NDP 3
+  as soon as it carries trees), which
+\code{\link{detect_ndp}} adds to the detected sources.}
 }
 \value{
 \code{data} with the added attributes.
