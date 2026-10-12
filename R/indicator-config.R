@@ -262,8 +262,8 @@ INDICATOR_FAMILIES <- list(
         en = "Age of wooded state since Cassini maps (18th century). Ancient forests harbor specific biodiversity. Raw value in years, rescaled to 0-100 against a 200-year upper bound: beyond that, ancientness counts as maximal."
       ),
       T2 = list(
-        fr = "Indicateur de stabilit\u00e9 temporelle d\u00e9riv\u00e9, et non un taux de changement : copie de la continuit\u00e9 foresti\u00e8re N2 quand elle existe, sinon \u00e2ge T1 plafonn\u00e9 \u00e0 100. Aucune s\u00e9rie temporelle n'est lue. 100 = for\u00eat ancienne et stable ; vide si N2 et T1 sont inconnus.",
-        en = "Derived temporal stability proxy, not a change rate: a copy of forest continuity N2 when available, otherwise T1 stand age capped at 100. No time series is read. 100 = ancient, stable forest; empty when both N2 and T1 are unknown."
+        fr = "Stabilit\u00e9 du couvert de 2019 \u00e0 2024, mesur\u00e9e sur la hauteur de canop\u00e9e annuelle FORMS-T : part du couvert sans perte durable de plus de 5 m (coupe, d\u00e9p\u00e9rissement, chablis). 100 = couvert stable. Sans FORMS-T, repli sur la continuit\u00e9 N2 puis l'\u00e2ge T1 plafonn\u00e9 \u00e0 100 (t2_status = proxy).",
+        en = "Canopy stability from 2019 to 2024, measured on FORMS-T annual canopy height: share of the canopy without a lasting loss of more than 5 m (cut, dieback, windthrow). 100 = stable canopy. Without FORMS-T, falls back on forest continuity N2, then T1 stand age capped at 100 (t2_status = proxy)."
       ),
       T3 = list(
         fr = "Pression de coupe rase (produit SUFOSAT, radar Sentinel-1). Fraction r\u00e9cente coup\u00e9e \u00e0 blanc, pond\u00e9r\u00e9e par r\u00e9cence. Sens invers\u00e9 : plus de coupe = indice plus bas.",

@@ -444,6 +444,7 @@ reference:
     contents:
     - load_raster_source
     - load_theia_source
+    - charger_forms_t_hauteurs
     - load_eobs_source
     - load_foret_ancienne_source
     - load_onf_parcelles_source
