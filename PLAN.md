@@ -218,6 +218,12 @@ cours de route (`inventaire-video-retours-app`) a fixé les formes de retour :
 chemins, et un inventaire vidéo porteur d'arbres atteint le NDP 3 sans le
 seuil de 10 arbres par placette (l'exemple groma en compte 9).
 
+*2026-10-12* : PR #553 mergée (CI verte : R-CMD-check, tests, couverture,
+pkgdown) ; tag `v2026.10.4` posé par `release.yml`. Cycle dev
+`2026.10.4.9000`. Réponse à l'app :
+`vers-nemetonshiny/2026-10-12-reponse-inventaire-video-retours.md` (plancher
+`nemeton (>= 2026.10.4)`).
+
 ---
 
 # CI — dépendances et actions GitHub
