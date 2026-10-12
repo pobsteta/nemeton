@@ -113,6 +113,8 @@ get_placette_schema <- function() {
 #'   \code{espece} domain. Default \code{"BFC"}.
 #' @param lang Character. Language for the species labels. Default
 #'   \code{"fr"}.
+#' @param dbh_max_cm Numeric. Upper bound of the DBH widget (cm). Default
+#'   300.
 #'
 #' @return A list of field descriptors.
 #'
@@ -125,7 +127,7 @@ get_placette_schema <- function() {
 #' espece$domain
 #'
 #' @export
-get_arbre_schema <- function(region = "BFC", lang = "fr") {
+get_arbre_schema <- function(region = "BFC", lang = "fr", dbh_max_cm = 300) {
   species_df <- tryCatch(
     list_species_classes(region = region, lang = lang),
     error = function(e) {
@@ -150,7 +152,7 @@ get_arbre_schema <- function(region = "BFC", lang = "fr") {
            domain = species_domain,
            default = NULL),
     .field("dbh_cm",   "double",    "range",
-           label = "DBH (cm)", min = 0, max = 300, required = TRUE),
+           label = "DBH (cm)", min = 0, max = dbh_max_cm, required = TRUE),
     .field("h_m",      "double",    "range",
            label = "Total height (m)", min = 0, max = 80),
     .field("statut",   "character", "value_map",

@@ -98,10 +98,14 @@ NULL
       #     </Option>
       #   </Option>
       # Earlier we emitted List-of-Lists which crashes QGIS at form build.
+      # `labels` (code -> libellé), facultatif : le libellé est affiché, le
+      # code est stocké. Sans `labels`, le code sert des deux côtés.
+      lab <- field$labels
       entries <- vapply(dom, function(v) {
+        nom <- if (!is.null(lab) && !is.na(lab[v])) unname(lab[v]) else v
         .xml_tag("Option", attrs = list(type = "Map"),
                  children = .xml_tag("Option",
-                   attrs = list(type = "QString", name = v, value = v)))
+                   attrs = list(type = "QString", name = nom, value = v)))
       }, character(1))
       opts <- list(
         .xml_tag("Option", attrs = list(type = "List", name = "map"),
@@ -226,9 +230,38 @@ col2rgb_str <- function(hex) {
 }
 
 
+# Champs non éditables (descripteurs `readonly = TRUE`). Rien n'est émis
+# quand aucun champ ne l'est, pour laisser create_qgis_project() inchangé.
+.editable_xml <- function(schema) {
+  visible <- Filter(function(f) !startsWith(f$name, "."), schema)
+  ro <- vapply(visible, function(f) isTRUE(f$readonly), logical(1))
+  if (!any(ro)) return("")
+  items <- vapply(visible, function(f) {
+    .xml_tag("field", attrs = list(name = f$name,
+                                   editable = if (isTRUE(f$readonly)) "0" else "1"))
+  }, character(1))
+  .xml_tag("editable", children = items)
+}
+
+
+.raster_maplayer_xml <- function(id, name, source, crs, bbox = NULL) {
+  .xml_tag("maplayer",
+    attrs = list(type = "raster", hasScaleBasedVisibilityFlag = "0"),
+    children = c(
+      .extent_xml(bbox),
+      .xml_tag("id", text = id),
+      .xml_tag("datasource", text = paste0("./", source)),
+      .xml_tag("layername", text = name),
+      .xml_tag("provider", text = "gdal"),
+      .srs_xml(crs)
+    ))
+}
+
+
 .maplayer_xml <- function(id, name, gpkg_rel, layername, geometry,
                           schema, crs, bbox = NULL,
-                          renderer_xml = NULL, readonly = FALSE) {
+                          renderer_xml = NULL, readonly = FALSE,
+                          labeling_xml = NULL) {
   children <- c(
     .extent_xml(bbox),
     .xml_tag("id", text = id),
@@ -239,33 +272,43 @@ col2rgb_str <- function(hex) {
     if (!is.null(schema)) .field_config_xml(schema) else "",
     if (!is.null(schema)) .aliases_xml(schema) else "",
     if (!is.null(schema)) .constraints_xml(schema) else "",
+    if (!is.null(schema)) .editable_xml(schema) else "",
     if (!is.null(renderer_xml)) renderer_xml else "",
+    if (!is.null(labeling_xml)) labeling_xml else "",
     if (readonly) .xml_tag("flags", text = "Identifiable|Readonly") else ""
   )
-  .xml_tag("maplayer",
-    attrs = list(type = "vector", geometry = geometry,
-                 hasScaleBasedVisibilityFlag = "0",
-                 readOnly = if (readonly) "1" else "0"),
-    children = children)
+  attrs <- list(type = "vector", geometry = geometry,
+                hasScaleBasedVisibilityFlag = "0",
+                readOnly = if (readonly) "1" else "0")
+  if (!is.null(labeling_xml)) attrs$labelsEnabled <- "1"
+  .xml_tag("maplayer", attrs = attrs, children = children)
 }
 
 
-.layer_tree_node <- function(id, name, source) {
+.layer_tree_node <- function(id, name, source, provider = "ogr") {
   .xml_tag("layer-tree-layer",
     attrs = list(id = id, name = name, source = source,
                  checked = "Qt::Checked", expanded = "1",
-                 providerKey = "ogr", patch_size = "-1,-1"))
+                 providerKey = provider, patch_size = "-1,-1"))
 }
 
 
 .build_qgs_xml <- function(layers, crs = 2154, project_name = "Nemeton sampling") {
   # layers: list of list(id, name, gpkg_rel, layername, geometry, schema,
-  #                     renderer, readonly, bbox)
+  #                     renderer, readonly, bbox, labeling), ou, pour un
+  #                     raster GeoTIFF, list(type = "raster", id, name,
+  #                     source, bbox)
+  est_raster <- function(l) identical(l$type, "raster")
   maplayers <- vapply(layers, function(l) {
+    if (est_raster(l)) return(.raster_maplayer_xml(l$id, l$name, l$source, crs, l$bbox))
     .maplayer_xml(l$id, l$name, l$gpkg_rel, l$layername, l$geometry,
-                  l$schema, crs, l$bbox, l$renderer, isTRUE(l$readonly))
+                  l$schema, crs, l$bbox, l$renderer, isTRUE(l$readonly),
+                  l$labeling)
   }, character(1))
   tree_nodes <- vapply(layers, function(l) {
+    if (est_raster(l)) {
+      return(.layer_tree_node(l$id, l$name, paste0("./", l$source), provider = "gdal"))
+    }
     src <- sprintf("./%s|layername=%s", l$gpkg_rel, l$layername)
     .layer_tree_node(l$id, l$name, src)
   }, character(1))

@@ -131,6 +131,13 @@
     "Chêne vert": "essence_chene_vert",
     "Peuplier": "essence_peupleraie",
     "Peupleraie": "essence_peupleraie",
+    "Sapin, épicéa": "essence_pessiere_sapiniere",
+    "Chênes sempervirents": "essence_chene_vert",
+    "Robinier": "essence_feuillus_pionniers",
+    "Pin maritime": "essence_pinede",
+    "Pin d'Alep": "essence_pinede",
+    "Pin à crochets, pin cembro": "essence_pinede",
+    "Autres pins": "essence_pinede",
     "NC": "essence_mixte"
   }
 }

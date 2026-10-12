@@ -557,6 +557,22 @@ reference:
     - caler_onf_sur_cadastre
     - load_parcelles_personnes_morales
 
+  - subtitle: "Inventaire video Groma (spec 061)"
+    desc: >
+      Placette circulaire mesuree par video au smartphone : GeoPackage de
+      terrain, numerotation, hauteurs par houppier, rapprochement provisoire
+      vers definitif, import et client du serveur Groma
+    contents:
+    - inventaire_video
+    - schema_inventaire_video
+    - creer_projet_inventaire_video
+    - numeroter_arbres
+    - affecter_hauteur_houppier
+    - rapprocher_arbres
+    - valider_inventaire_video
+    - importer_inventaire_video
+    - groma_etat_placettes
+
   - subtitle: "Corpus de connaissances et RAG"
     contents:
     - rag

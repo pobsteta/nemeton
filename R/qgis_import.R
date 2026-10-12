@@ -87,6 +87,11 @@ import_qgis_gpkg <- function(path) {
 #'   \code{espece} domain. Default \code{"BFC"}.
 #' @param lang Character. Language for species labels. Default
 #'   \code{"fr"}.
+#' @param dbh_max_cm Numeric. Maximal admissible DBH (cm); above is an error.
+#'   Default 300. \code{Inf} accepts any diameter.
+#' @param dbh_alerte_cm Numeric or \code{NULL}. DBH above which a warning
+#'   (\code{"DBH above alert threshold"}) is raised. Default \code{NULL}
+#'   (no alert).
 #'
 #' @return A list with:
 #'   \itemize{
@@ -100,7 +105,8 @@ import_qgis_gpkg <- function(path) {
 #'
 #' @export
 validate_field_data <- function(placettes, arbres = NULL,
-                                region = "BFC", lang = "fr") {
+                                region = "BFC", lang = "fr",
+                                dbh_max_cm = 300, dbh_alerte_cm = NULL) {
   issues <- list()
 
   # --- Placettes --------------------------------------------------------
@@ -179,14 +185,33 @@ validate_field_data <- function(placettes, arbres = NULL,
       }
 
       # DBH checks
-      bad_dbh <- which(is.na(arbres$dbh_cm) | arbres$dbh_cm <= 0 | arbres$dbh_cm > 300)
+      bad_dbh <- which(is.na(arbres$dbh_cm) | arbres$dbh_cm <= 0 | arbres$dbh_cm > dbh_max_cm)
       if (length(bad_dbh)) {
         issues <- c(issues, list(.mk_issue(
           plot_id = as.character(arbres$plot_id[bad_dbh]),
           tree_id = as.character(arbres$tree_id[bad_dbh]),
           field = "dbh_cm",
-          issue = "DBH out of range (expected > 0 and <= 300 cm)."
+          issue = if (is.finite(dbh_max_cm)) {
+            sprintf("DBH out of range (expected > 0 and <= %s cm).", format(dbh_max_cm))
+          } else {
+            "DBH out of range (expected > 0 cm)."
+          }
         )))
+      }
+      # Seuil d'alerte (inventaire vidéo : tout diamètre est accepté, mais
+      # signalé au-delà de 200 cm).
+      if (!is.null(dbh_alerte_cm)) {
+        gros <- which(!is.na(arbres$dbh_cm) & arbres$dbh_cm > dbh_alerte_cm &
+                        arbres$dbh_cm <= dbh_max_cm)
+        if (length(gros)) {
+          issues <- c(issues, list(.mk_issue(
+            plot_id = as.character(arbres$plot_id[gros]),
+            tree_id = as.character(arbres$tree_id[gros]),
+            field = "dbh_cm",
+            issue = sprintf("DBH above alert threshold (%s cm).", format(dbh_alerte_cm)),
+            severity = "warning"
+          )))
+        }
       }
 
       # Height checks (warning level; height is not required)
@@ -384,6 +409,10 @@ aggregate_plot_metrics <- function(placettes, arbres = NULL,
 #' @param data An sf / data.frame to tag.
 #' @param placettes sf or data.frame of placettes.
 #' @param arbres sf or data.frame of trees (may be NULL).
+#' @param source Character. Kind of field inventory, stored in
+#'   \code{attr(data, "field_data_source")}: \code{"inventaire_terrain"}
+#'   (default) or \code{"inventaire_video"} (Groma), which
+#'   \code{\link{detect_ndp}} adds to the detected sources.
 #'
 #' @return \code{data} with the added attributes.
 #'
@@ -398,7 +427,8 @@ aggregate_plot_metrics <- function(placettes, arbres = NULL,
 #' detect_ndp(tagged)$level  # 3
 #'
 #' @export
-tag_field_data_sources <- function(data, placettes, arbres = NULL) {
+tag_field_data_sources <- function(data, placettes, arbres = NULL,
+                                   source = "inventaire_terrain") {
   n_plots <- if (inherits(placettes, "data.frame")) nrow(placettes) else 0L
   n_trees <- if (!is.null(arbres) && inherits(arbres, "data.frame")) {
     nrow(arbres)
@@ -407,6 +437,7 @@ tag_field_data_sources <- function(data, placettes, arbres = NULL) {
   }
   attr(data, "field_plots_count") <- as.integer(n_plots)
   attr(data, "field_trees_count") <- as.integer(n_trees)
+  attr(data, "field_data_source") <- source
   data
 }
 

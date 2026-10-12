@@ -319,6 +319,11 @@ detect_ndp <- function(data) {
   if (isTRUE(attr(data, "has_modele_3d"))) sources <- c(sources, "modele_3d")
   if (field_plots > 0L) {
     sources <- c(sources, "field_qfield")
+    # Inventaire vidéo Groma : traité comme un inventaire terrain (même
+    # palier), mais la source est nommée (spec 061).
+    if (identical(attr(data, "field_data_source"), "inventaire_video")) {
+      sources <- c(sources, "inventaire_video")
+    }
   }
 
   # Flags d'augmentation ML (ADR-011 amende)
