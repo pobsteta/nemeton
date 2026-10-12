@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.3.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -114,7 +114,7 @@
 
 <p><strong>Source unique de vérité</strong> pour la séquence des épaississements (E1, E2, …) du <strong>package cœur <code>nemeton</code></strong> et leur état d’avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. <em>Consignes de release</em> étape 8 dans CLAUDE.md).</p>
 <blockquote>
-<p><strong>Version <code>nemetonshiny</code> publiée</strong> (vérifiée sur GitHub à chaque merge, <code>gh release list -R pobsteta/nemetonshiny</code>) : <strong>v2026.10.4</strong> (release du 2026-10-11), relevée le 2026-10-11.</p>
+<p><strong>Version <code>nemetonshiny</code> publiée</strong> (vérifiée sur GitHub à chaque merge, <code>gh release list -R pobsteta/nemetonshiny</code>) : <strong>v2026.10.4</strong> (release du 2026-10-11), relevée le 2026-10-12.</p>
 </blockquote>
 <blockquote>
 <p><strong>Scope</strong> : ce fichier ne suit que les chantiers du repo <code>nemeton</code> (cœur métier). Les épaississements portés côté app (<code>nemetonshiny</code>) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.</p>
@@ -332,6 +332,7 @@
 <td>⬜ après l’app</td>
 </tr></tbody></table><p><strong>Journal</strong> — <em>2026-10-11</em> (<strong>2026.10.3</strong>) : T2 recopiait N2 ou T1 et ne lisait aucune série. Il mesure maintenant la stabilité du couvert sur la hauteur FORMS-T 2019-2024 : <code>T2 = 100 × (1 − part du couvert en perte durable ≥ 5 m)</code>, avec en diagnostic la part en perte et la croissance de Theil-Sen. Aucune nouvelle dépendance : <code>bfast</code> et <code>Rbeast</code> sont faits pour des séries denses, <code>trend</code>, <code>Kendall</code> et <code>mblm</code> étaient redondants avec le Theil-Sen du cœur, et <code>greenbrown</code> et <code>gfcanalysis</code> ne sont pas sur CRAN. Mesures : - bruit de 17 cm par pixel et par an à Dabo ; - croissance de 1,2 m/an pour les peuplements de 5 à 15 m, 0,07 m/an au-delà de 35 m ; - 98 % du couvert en perte à Fordead (scolytes) ; - à Reconfort, 96 % des pertes hors SUFOSAT confirmées par le LiDAR HD de 2023-2024 ; T2 voit donc ce que T3 ne voit pas ; - seuil peu sensible entre 3 et 8 m ; - 2 à 4 s par projet depuis le cache national.</p>
 <p>Ajout compatible : sans FORMS-T, T2 est inchangé. Brief app : <code>vers-nemetonshiny/2026-10-11-t2-forms-t.md</code>.</p>
+<p><em>2026-10-12</em> : PR #551 mergée, tag <code>v2026.10.3</code> posé par <code>release.yml</code>. La CI avait cassé sur deux défauts de documentation : une apostrophe dans un <code>\code{}</code> du <code>.Rd</code> de T2, et un lien vers <code>theia_sign_urls()</code>, qui est interne. Le test de <code><a href="reference/charger_forms_t_hauteurs.html">charger_forms_t_hauteurs()</a></code> passe désormais par <code>skip_if_terra_write_broken()</code> (anomalie terra du runner). Cycle dev <code>2026.10.3.9000</code>.</p>
 <hr></div>
 <div class="section level1">
 <h1 id="ci--dépendances-et-actions-github">CI — dépendances et actions GitHub<a class="anchor" aria-label="anchor" href="#ci--d%C3%A9pendances-et-actions-github"></a></h1>
