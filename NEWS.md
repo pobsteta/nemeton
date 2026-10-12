@@ -28,7 +28,9 @@ Neuf fonctions, toutes *experimental* :
 - **`valider_inventaire_video()`** et **`importer_inventaire_video()`** :
   validation, type de peuplement déduit de l'essence saisie, agrégats par
   rayon de placette, source `"inventaire_video"` pour le NDP, fusion dans les
-  données terrain du projet sans écraser un inventaire classique.
+  données terrain du projet sans écraser un inventaire classique. Le retour
+  donne aussi les arbres à compléter et à vérifier, les placettes dont
+  l'inventaire classique a été conservé et le NDP atteint.
 - **`schema_inventaire_video()`** : le schéma partagé avec Groma.
 - **`groma_etat_placettes()`**, **`groma_telecharger_resultats()`** : client du
   serveur Groma (`httr2`).
@@ -40,7 +42,9 @@ Neuf fonctions, toutes *experimental* :
   rien. L'inventaire vidéo accepte tout diamètre et signale ceux au-delà de
   200 cm.
 - `tag_field_data_sources()` gagne `source` ; `detect_ndp()` cite
-  `"inventaire_video"` parmi les sources (même palier qu'un inventaire terrain).
+  `"inventaire_video"` parmi les sources. Un inventaire vidéo mesure tous les
+  arbres de la placette : il atteint le NDP 3 dès qu'il porte des arbres, sans
+  le seuil de 10 arbres par placette appliqué aux autres données terrain.
 - `map_bdforet_essence()` : « Sapin, épicéa », « Chênes sempervirents »,
   « Robinier » et quatre libellés de pins ne tombent plus en `essence_mixte`.
 

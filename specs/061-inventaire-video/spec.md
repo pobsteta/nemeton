@@ -34,8 +34,9 @@ l'interface (sous-onglet Terrain > Inventaire vidéo).
 - `get_arbre_schema(dbh_max_cm = 300)` ;
 - `tag_field_data_sources(source = "inventaire_terrain")` →
   `attr(, "field_data_source")` ; `detect_ndp()` ajoute `"inventaire_video"`
-  aux sources, même palier qu'un inventaire terrain (NDP 3 dès 10 arbres par
-  placette) ;
+  aux sources. Un inventaire vidéo mesure tous les arbres de la placette : NDP 3
+  dès qu'il porte des arbres, sans le seuil de 10 arbres par placette des autres
+  données terrain (attendu par l'app, note `inventaire-video-retours-app`) ;
 - `bdforet_mapping` de `BFC.json` : 7 libellés BD Forêt V2 qui tombaient en
   `essence_mixte` (§ 7 du brief), données seulement ;
 - helpers QGIS : rasters GeoTIFF, étiquettes, champs en lecture seule,
@@ -66,6 +67,12 @@ l'interface (sous-onglet Terrain > Inventaire vidéo).
 - **Écarts du brief acceptés** : `date_mesure` (et non `date`),
   `convergence_deg` ajoutée, azimut rendu dans l'unité de la placette,
   tolérance d'égalité toujours en degrés.
+
+- **Formes de retour** alignées sur la note de l'app du 2026-10-12
+  (`vers-nemeton/2026-10-12-inventaire-video-retours-app.md`) :
+  `importer_inventaire_video()` rend aussi `a_completer`, `a_verifier`,
+  `classique_conserve` et `ndp` ; `groma_telecharger_resultats()` rend les
+  chemins téléchargés (détail HTTP en attribut `detail`).
 
 ## 4. Reste à faire
 

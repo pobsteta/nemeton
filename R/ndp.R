@@ -289,6 +289,7 @@ detect_ndp <- function(data) {
   # Heuristic:
   #   * >=1 placette recorded        -> at least NDP 2 (Exploration)
   #   * >=10 trees per plot on avg   -> NDP 3 (Diagnostic)
+  #   * inventaire vidéo avec arbres -> NDP 3 (inventaire complet)
   # Un comptage NA (ou non numérique) vaut « inconnu » : aucun palier n'est
   # accordé sur sa base, au lieu de faire planter le `if` (audit 1.0).
   .count_attr <- function(x) {
@@ -300,6 +301,13 @@ detect_ndp <- function(data) {
   if (field_plots >= 1L) {
     trees_per_plot <- field_trees / max(1L, field_plots)
     field_level <- if (trees_per_plot >= 10) 3L else 2L
+    # Un inventaire vidéo Groma mesure, par construction, tous les arbres de
+    # la placette au-dessus du seuil : c'est un inventaire complet, palier 3
+    # dès qu'il porte des arbres, quelle que soit la densité (spec 061).
+    if (identical(attr(data, "field_data_source"), "inventaire_video") &&
+        field_trees >= 1L) {
+      field_level <- 3L
+    }
     level <- max(level, field_level)
   }
 

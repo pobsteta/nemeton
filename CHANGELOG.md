@@ -26,7 +26,8 @@ For a narrative, per-feature description of each release, see
   (`NULL`); defaults unchanged.
 - `get_arbre_schema()`: argument `dbh_max_cm` (300).
 - `tag_field_data_sources()`: argument `source`; `detect_ndp()` reports
-  `"inventaire_video"` among the sources.
+  `"inventaire_video"` among the sources and gives a video inventory with
+  trees NDP 3 (complete inventory, no 10-trees-per-plot threshold).
 - `inst/species/BFC.json`: seven BD Forêt V2 labels mapped instead of
   `essence_mixte`.
 

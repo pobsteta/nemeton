@@ -411,7 +411,8 @@ aggregate_plot_metrics <- function(placettes, arbres = NULL,
 #' @param arbres sf or data.frame of trees (may be NULL).
 #' @param source Character. Kind of field inventory, stored in
 #'   \code{attr(data, "field_data_source")}: \code{"inventaire_terrain"}
-#'   (default) or \code{"inventaire_video"} (Groma), which
+#'   (default) or \code{"inventaire_video"} (Groma: a complete inventory, NDP 3
+#'   as soon as it carries trees), which
 #'   \code{\link{detect_ndp}} adds to the detected sources.
 #'
 #' @return \code{data} with the added attributes.

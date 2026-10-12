@@ -28,9 +28,10 @@ groma_telecharger_resultats(
 }
 \value{
 \code{groma_etat_placettes()}: a data.frame, one row per plot.
-  \code{groma_telecharger_resultats()}: a data.frame \code{plot_id},
-  \code{fichier}, \code{chemin} (\code{NA} when the download failed),
-  \code{statut} (HTTP status).
+  \code{groma_telecharger_resultats()}: character vector of the downloaded
+  files (\code{<plot_id>_<fichier>}), with the attribute \code{detail}, a
+  data.frame \code{plot_id}, \code{fichier}, \code{chemin} (\code{NA} when
+  the download failed), \code{statut} (HTTP status).
 }
 \description{
 \code{groma_etat_placettes()} lists the plots known to the Groma server

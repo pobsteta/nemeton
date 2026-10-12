@@ -183,9 +183,11 @@ test_that("le client Groma interroge et télécharge", {
     expect_equal(etat$plot_id, "P001")
     res <- suppressWarnings(groma_telecharger_resultats(
       "https://groma.example/api", "jeton", c("P001", "P404"), "dl", fichiers = "resultat.gpkg"))
-    expect_equal(res$statut, c(200L, 404L))
-    expect_true(file.exists(res$chemin[1]))
-    expect_true(is.na(res$chemin[2]))
+    expect_length(res, 1L)
+    expect_true(file.exists(res))
+    expect_match(basename(res), "P001")
+    expect_equal(attr(res, "detail")$statut, c(200L, 404L))
+    expect_true(is.na(attr(res, "detail")$chemin[2]))
     expect_error(groma_telecharger_resultats("https://x", NULL, "../P1", "dl"), "plot_ids")
   })
 })
@@ -215,4 +217,40 @@ test_that("map_bdforet_essence couvre tout le référentiel d'essences Groma", {
   for (lib in names(attendu)) expect_equal(map_bdforet_essence(lib), attendu[[lib]], info = lib)
   hors_nc <- setdiff(unique(ess$bdforet), "NC")
   expect_false(any(vapply(hors_nc, map_bdforet_essence, "") == "essence_mixte"))
+})
+
+test_that("importer_inventaire_video rend les formes attendues par l'app", {
+  gpkg_iv <- iv_fixture("inventaire_video.gpkg")
+  withr::with_tempdir({
+    fd <- "field_data.gpkg"
+    # Inventaire classique de P002, à conserver tel quel.
+    p2 <- sf::st_sf(plot_id = "P002", geometry = sf::st_sfc(sf::st_point(c(925180, 6700090)),
+                                                            crs = 2154))
+    a2 <- sf::st_sf(plot_id = "P002", tree_id = c("1", "2"), dbh_cm = c(30, 42),
+                    geometry = sf::st_sfc(sf::st_point(c(925181, 6700091)),
+                                          sf::st_point(c(925183, 6700088)), crs = 2154))
+    sf::st_write(p2, fd, layer = "placettes", quiet = TRUE)
+    sf::st_write(a2, fd, layer = "arbres", quiet = TRUE)
+    res <- importer_inventaire_video(gpkg_iv, resultats = NULL, field_data_gpkg = fd)
+    expect_true(res$validation$ok)
+    expect_identical(res$ndp, 3L)
+    expect_equal(res$classique_conserve, "P002")
+    expect_s3_class(res$a_completer, "data.frame")
+    expect_s3_class(res$a_verifier, "data.frame")
+    expect_named(res$numeros_modifies, c("plot_id", "uuid", "ancien", "nouveau"))
+    a <- sf::st_read(fd, layer = "arbres", quiet = TRUE)
+    cl <- a[a$plot_id == "P002", ]
+    expect_equal(sort(cl$dbh_cm), c(30, 42))
+    expect_true(all(cl$source != "inventaire_video"))
+    expect_true("P001" %in% a$plot_id)
+  })
+})
+
+test_that("detect_ndp : inventaire vidéo = palier 3 dès qu'il porte des arbres", {
+  df <- data.frame(x = 1)
+  pl <- data.frame(plot_id = c("P1", "P2"))
+  ar <- data.frame(plot_id = rep("P1", 5))
+  expect_equal(detect_ndp(tag_field_data_sources(df, pl, ar))$level, 2L)
+  expect_equal(detect_ndp(tag_field_data_sources(df, pl, ar, source = "inventaire_video"))$level, 3L)
+  expect_equal(detect_ndp(tag_field_data_sources(df, pl, NULL, source = "inventaire_video"))$level, 2L)
 })

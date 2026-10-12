@@ -1229,8 +1229,11 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
 #' @return A list with \code{placettes}, \code{arbres} (video inventory after
 #'   reconciliation, without \code{faux_positif}), \code{agregats} (tagged
 #'   \code{\link{aggregate_plot_metrics}} output), \code{validation},
-#'   \code{alertes} and \code{numeros_modifies} (reconciliation) and
-#'   \code{field_data_gpkg} (path or \code{NULL}).
+#'   \code{a_completer} and \code{a_verifier} (subsets of \code{arbres} by
+#'   \code{etat_detection}), \code{classique_conserve} (plots whose classical
+#'   inventory stayed in the main layers), \code{ndp} (integer, NDP level of
+#'   \code{agregats}), \code{alertes} and \code{numeros_modifies}
+#'   (reconciliation) and \code{field_data_gpkg} (path or \code{NULL}).
 #'
 #' @section Lifecycle:
 #' Experimental (spec 061).
@@ -1306,9 +1309,11 @@ importer_inventaire_video <- function(gpkg, resultats = NULL, field_data_gpkg = 
   }))
   agregats <- tag_field_data_sources(agregats, placettes, arbres, source = "inventaire_video")
 
+  classique_conserve <- character(0)
   if (!is.null(field_data_gpkg)) {
-    .iv_fusionner(field_data_gpkg, placettes, arbres, priorite)
+    classique_conserve <- .iv_fusionner(field_data_gpkg, placettes, arbres, priorite)
   }
+  etat <- as.character(.iv_col(arbres, "etat_detection", NA_character_))
 
   vide_alertes <- data.frame(plot_id = character(0), uuid = character(0), motif = character(0),
                              dbh_provisoire = numeric(0), dbh_definitif = numeric(0))
@@ -1316,6 +1321,10 @@ importer_inventaire_video <- function(gpkg, resultats = NULL, field_data_gpkg = 
                               ancien = character(0), nouveau = character(0))
   list(placettes = placettes, arbres = arbres, agregats = agregats,
        validation = validation,
+       a_completer = arbres[!is.na(etat) & etat == "a_completer", ],
+       a_verifier = arbres[!is.na(etat) & etat == "a_verifier", ],
+       classique_conserve = classique_conserve,
+       ndp = as.integer(detect_ndp(agregats)$level),
        alertes = if (length(alertes)) do.call(rbind, unname(alertes)) else vide_alertes,
        numeros_modifies = if (length(modifies)) do.call(rbind, unname(modifies)) else vide_modifies,
        field_data_gpkg = field_data_gpkg)
@@ -1372,6 +1381,7 @@ importer_inventaire_video <- function(gpkg, resultats = NULL, field_data_gpkg = 
     a_main <- .iv_empiler(a_ex, arbres[!arbres$plot_id %in% communs, ])
   }
 
+  conserve <- if (priorite == "classique") communs else character(0)
   .atomic_write(chemin, function(tmp) {
     if (file.exists(chemin)) file.copy(chemin, tmp)
     for (couche in c("placettes", "arbres", "placettes_alternatives", "arbres_alternatives")) {
@@ -1382,7 +1392,8 @@ importer_inventaire_video <- function(gpkg, resultats = NULL, field_data_gpkg = 
       }
     }
   })
-  invisible(chemin)
+  # Placettes dont l'inventaire classique reste dans les couches principales.
+  conserve
 }
 
 
@@ -1411,9 +1422,10 @@ importer_inventaire_video <- function(gpkg, resultats = NULL, field_data_gpkg = 
 #' @param fichiers Files to download per plot. Default all three.
 #'
 #' @return \code{groma_etat_placettes()}: a data.frame, one row per plot.
-#'   \code{groma_telecharger_resultats()}: a data.frame \code{plot_id},
-#'   \code{fichier}, \code{chemin} (\code{NA} when the download failed),
-#'   \code{statut} (HTTP status).
+#'   \code{groma_telecharger_resultats()}: character vector of the downloaded
+#'   files (\code{<plot_id>_<fichier>}), with the attribute \code{detail}, a
+#'   data.frame \code{plot_id}, \code{fichier}, \code{chemin} (\code{NA} when
+#'   the download failed), \code{statut} (HTTP status).
 #'
 #' @section Lifecycle:
 #' Experimental (spec 061).
@@ -1457,5 +1469,8 @@ groma_telecharger_resultats <- function(url, jeton = NULL, plot_ids, dossier,
                                                   statut = statut, stringsAsFactors = FALSE)
     }
   }
-  do.call(rbind, lignes)
+  detail <- do.call(rbind, lignes)
+  chemins <- detail$chemin[!is.na(detail$chemin)]
+  attr(chemins, "detail") <- detail
+  chemins
 }

@@ -36,8 +36,11 @@ version of a plot inventoried both ways enters the main layers.}
 A list with \code{placettes}, \code{arbres} (video inventory after
   reconciliation, without \code{faux_positif}), \code{agregats} (tagged
   \code{\link{aggregate_plot_metrics}} output), \code{validation},
-  \code{alertes} and \code{numeros_modifies} (reconciliation) and
-  \code{field_data_gpkg} (path or \code{NULL}).
+  \code{a_completer} and \code{a_verifier} (subsets of \code{arbres} by
+  \code{etat_detection}), \code{classique_conserve} (plots whose classical
+  inventory stayed in the main layers), \code{ndp} (integer, NDP level of
+  \code{agregats}), \code{alertes} and \code{numeros_modifies}
+  (reconciliation) and \code{field_data_gpkg} (path or \code{NULL}).
 }
 \description{
 The \dQuote{Integrate} step: reads \code{inventaire_video.gpkg}

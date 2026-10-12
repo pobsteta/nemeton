@@ -211,7 +211,12 @@ et `detections` sont écrites sans index spatial ; un test insère dans
 ligne `arbres` créée par le déclencheur. Sur l'exemple groma, l'import
 rapproche P001 (14 définitifs, 4 à compléter, 1 à vérifier, aucune alerte),
 signale le diamètre de 208,7 cm et donne G = 37,2 m²/ha. Sept libellés BD
-Forêt V2 ne tombent plus en `essence_mixte`.
+Forêt V2 ne tombent plus en `essence_mixte`. Une note de l'app arrivée en
+cours de route (`inventaire-video-retours-app`) a fixé les formes de retour :
+`importer_inventaire_video()` rend `a_completer`, `a_verifier`,
+`classique_conserve` et `ndp`, `groma_telecharger_resultats()` rend des
+chemins, et un inventaire vidéo porteur d'arbres atteint le NDP 3 sans le
+seuil de 10 arbres par placette (l'exemple groma en compte 9).
 
 ---
 
