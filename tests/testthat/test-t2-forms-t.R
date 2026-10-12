@@ -117,6 +117,7 @@ test_that("T2 rejects a malformed FORMS-T series", {
 })
 
 test_that("charger_forms_t_hauteurs reads local yearly files", {
+  skip_if_terra_write_broken()
   dossier <- withr::local_tempdir()
   s <- .t2_serie()
   for (k in c(1, 2, 4, 5)) {

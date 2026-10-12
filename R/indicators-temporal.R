@@ -245,8 +245,9 @@ indicateur_t1_anciennete <- function(units,
 #' `seuil_perte` at least once are canopy. A canopy pixel is in lasting loss
 #' when, from some year on, its height stays at least `seuil_perte` below its
 #' maximum over the previous years until the end of the series; a one-year
-#' dip that recovers does not count. `T2 = 100 * (1 - share of the unit's
-#' canopy in loss)`, coverage-weighted with exactextractr. The Theil-Sen
+#' dip that recovers does not count. `T2 = 100 * (1 - loss_share)`, where
+#' loss_share is the share of the unit canopy in loss (coverage-weighted with
+#' exactextractr). The Theil-Sen
 #' slope of the other canopy pixels gives `t2_croissance_m_an`, a diagnostic
 #' that does not enter the score.
 #'
