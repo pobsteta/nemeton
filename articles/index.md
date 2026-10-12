@@ -78,8 +78,8 @@
   accessible](https://pobsteta.github.io/nemeton/articles/fiche-s3-population_fr.md):
 - [Fiche indicateur T1 - Anciennete du
   peuplement](https://pobsteta.github.io/nemeton/articles/fiche-t1-anciennete_fr.md):
-- [Fiche indicateur T2 - Stabilite
-  temporelle](https://pobsteta.github.io/nemeton/articles/fiche-t2-changement_fr.md):
+- [Fiche indicateur T2 - Stabilite du
+  couvert](https://pobsteta.github.io/nemeton/articles/fiche-t2-changement_fr.md):
 - [Fiche indicateur T3 - Coupes rases
   (SUFOSAT)](https://pobsteta.github.io/nemeton/articles/fiche-t3-coupes-rases_fr.md):
 - [Fiche indicateur W1 - Reseau

@@ -156,6 +156,37 @@ Version `nemetonshiny` publiée : v2026.10.1.
 
 ------------------------------------------------------------------------
 
+# Chantier — T2 mesuré sur FORMS-T (spec 060)
+
+> Demande de Pascal du 2026-10-11 : « je te laisse faire ce qu’il y a de
+> mieux pour T2 ». Spec : `specs/060-t2-taux-de-changement/spec.md`.
+
+| Étape | Contenu | Release | État |
+|----|----|----|----|
+| Cœur | `indicateur_t2_changement(forms_t = )` : stabilité du couvert (perte durable ≥ 5 m) ; [`charger_forms_t_hauteurs()`](https://pobsteta.github.io/nemeton/reference/charger_forms_t_hauteurs.md) | **2026.10.3** | ✅ livré |
+| App | charger FORMS-T 2019-2024, le passer à T2, afficher `t2_status` et les diagnostics | `nemetonshiny` | ⬜ brief émis |
+| Cœur | dépréciation puis retrait du proxy N2/T1 (accord de Pascal requis) | — | ⬜ après l’app |
+
+**Journal** — *2026-10-11* (**2026.10.3**) : T2 recopiait N2 ou T1 et ne
+lisait aucune série. Il mesure maintenant la stabilité du couvert sur la
+hauteur FORMS-T 2019-2024 :
+`T2 = 100 × (1 − part du couvert en perte durable ≥ 5 m)`, avec en
+diagnostic la part en perte et la croissance de Theil-Sen. Aucune
+nouvelle dépendance : `bfast` et `Rbeast` sont faits pour des séries
+denses, `trend`, `Kendall` et `mblm` étaient redondants avec le
+Theil-Sen du cœur, et `greenbrown` et `gfcanalysis` ne sont pas sur
+CRAN. Mesures : - bruit de 17 cm par pixel et par an à Dabo ; -
+croissance de 1,2 m/an pour les peuplements de 5 à 15 m, 0,07 m/an
+au-delà de 35 m ; - 98 % du couvert en perte à Fordead (scolytes) ; - à
+Reconfort, 96 % des pertes hors SUFOSAT confirmées par le LiDAR HD de
+2023-2024 ; T2 voit donc ce que T3 ne voit pas ; - seuil peu sensible
+entre 3 et 8 m ; - 2 à 4 s par projet depuis le cache national.
+
+Ajout compatible : sans FORMS-T, T2 est inchangé. Brief app :
+`vers-nemetonshiny/2026-10-11-t2-forms-t.md`.
+
+------------------------------------------------------------------------
+
 # CI — dépendances et actions GitHub
 
 **Journal** — *2026-10-10* (cycle `2026.10.2.9000`, sans release) : la
@@ -669,12 +700,13 @@ HTTP 401 ponctuel de forge.inrae.fr (`lidaRtRee`), puis était repassé à
 la relance.
 
 **Chantier « Pré-version 1.0 » clos** (2026-10-06) : cœur **et** app en
-1.0.0. Après la 1.0, côté cœur : vrai taux de changement pour T2,
-`urban_areas` dans A2, ~~épinglage des actions GitHub de premier rang
-(Dependabot)~~ (fait le 2026-10-11, voir « CI »), fixture de démo plus
-réaliste. Côté app : indicateurs conditionnels (A3, A4, W4, B4, L3,
-R5-R7, T3) absents de la table PostGIS `nemeton.indicators` ; isolation
-des projets entre utilisateurs ; factorisation de `mod_monitoring.R`.
+1.0.0. Après la 1.0, côté cœur : ~~vrai taux de changement pour T2~~
+(2026.10.3, spec 060, voir son chantier), `urban_areas` dans A2,
+~~épinglage des actions GitHub de premier rang (Dependabot)~~ (fait le
+2026-10-11, voir « CI »), fixture de démo plus réaliste. Côté app :
+indicateurs conditionnels (A3, A4, W4, B4, L3, R5-R7, T3) absents de la
+table PostGIS `nemeton.indicators` ; isolation des projets entre
+utilisateurs ; factorisation de `mod_monitoring.R`.
 
 **Prochaine étape** : ~~semver strict depuis la 1.0.0~~. Depuis la
 2026.10.1, versionnage calendaire `AAAA.M.N` (spec 057 § 8) : une

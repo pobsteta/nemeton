@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -308,6 +308,32 @@
 <p><strong>Journal</strong> — <em>2026-10-10</em> (<strong>2026.10.2</strong>) : <code>create_qfield_project()</code> et <code>theia_configure_s3()</code> sont retirées avec l’accord de Pascal, puisque plus aucun appelant ne reste. C’est le premier usage de la règle « plus aucun appelant » de la spec 057 § 8. NEWS s’ouvre sur « Changements cassants ». Le tutoriel 09 appelle <code><a href="reference/create_qgis_project.html">create_qgis_project()</a></code>. Les notes THEIA de <code>FR.json</code> décrivent l’accès par URL pré-signées. Version <code>nemetonshiny</code> publiée : v2026.10.1.</p>
 <hr></div>
 <div class="section level1">
+<h1 id="chantier--t2-mesuré-sur-forms-t-spec-060">Chantier — T2 mesuré sur FORMS-T (spec 060)<a class="anchor" aria-label="anchor" href="#chantier--t2-mesur%C3%A9-sur-forms-t-spec-060"></a></h1>
+<blockquote>
+<p>Demande de Pascal du 2026-10-11 : « je te laisse faire ce qu’il y a de mieux pour T2 ». Spec : <code>specs/060-t2-taux-de-changement/spec.md</code>.</p>
+</blockquote>
+<table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>Étape</th>
+<th>Contenu</th>
+<th>Release</th>
+<th>État</th>
+</tr></thead><tbody><tr><td>Cœur</td>
+<td>
+<code>indicateur_t2_changement(forms_t = )</code> : stabilité du couvert (perte durable ≥ 5 m) ; <code><a href="reference/charger_forms_t_hauteurs.html">charger_forms_t_hauteurs()</a></code>
+</td>
+<td><strong>2026.10.3</strong></td>
+<td>✅ livré</td>
+</tr><tr><td>App</td>
+<td>charger FORMS-T 2019-2024, le passer à T2, afficher <code>t2_status</code> et les diagnostics</td>
+<td><code>nemetonshiny</code></td>
+<td>⬜ brief émis</td>
+</tr><tr><td>Cœur</td>
+<td>dépréciation puis retrait du proxy N2/T1 (accord de Pascal requis)</td>
+<td>—</td>
+<td>⬜ après l’app</td>
+</tr></tbody></table><p><strong>Journal</strong> — <em>2026-10-11</em> (<strong>2026.10.3</strong>) : T2 recopiait N2 ou T1 et ne lisait aucune série. Il mesure maintenant la stabilité du couvert sur la hauteur FORMS-T 2019-2024 : <code>T2 = 100 × (1 − part du couvert en perte durable ≥ 5 m)</code>, avec en diagnostic la part en perte et la croissance de Theil-Sen. Aucune nouvelle dépendance : <code>bfast</code> et <code>Rbeast</code> sont faits pour des séries denses, <code>trend</code>, <code>Kendall</code> et <code>mblm</code> étaient redondants avec le Theil-Sen du cœur, et <code>greenbrown</code> et <code>gfcanalysis</code> ne sont pas sur CRAN. Mesures : - bruit de 17 cm par pixel et par an à Dabo ; - croissance de 1,2 m/an pour les peuplements de 5 à 15 m, 0,07 m/an au-delà de 35 m ; - 98 % du couvert en perte à Fordead (scolytes) ; - à Reconfort, 96 % des pertes hors SUFOSAT confirmées par le LiDAR HD de 2023-2024 ; T2 voit donc ce que T3 ne voit pas ; - seuil peu sensible entre 3 et 8 m ; - 2 à 4 s par projet depuis le cache national.</p>
+<p>Ajout compatible : sans FORMS-T, T2 est inchangé. Brief app : <code>vers-nemetonshiny/2026-10-11-t2-forms-t.md</code>.</p>
+<hr></div>
+<div class="section level1">
 <h1 id="ci--dépendances-et-actions-github">CI — dépendances et actions GitHub<a class="anchor" aria-label="anchor" href="#ci--d%C3%A9pendances-et-actions-github"></a></h1>
 <p><strong>Journal</strong> — <em>2026-10-10</em> (cycle <code>2026.10.2.9000</code>, sans release) : la CI tombait régulièrement à l’installation des dépendances. forge.inrae.fr renvoyait des 401 ou expirait au clonage de lidaRtRee, ce qui est arrivé deux fois le 2026-10-09 et a demandé une relance à la main. Le <code>Remotes</code> git vers la forge datait du 2026-06-10, quand lidaRtRee avait quitté CRAN (4.0.8 archivée) et que le r-universe jmmonnet renvoyait 404. La 4.0.9 est revenue sur CRAN le 2026-09-23 : le <code>Remotes</code> est retiré et pak la prend sur CRAN/PPM. La CI ne dépend plus de forge.inrae.fr. lidaRtRee n’est qu’en <code>Suggests</code>, pour les tutoriels 01 et 08.</p>
 <p><strong>Journal</strong> — <em>2026-10-11</em> (cycle <code>2026.10.2.9000</code>, sans release) : les actions GitHub sont épinglées sur un SHA de commit, avec leur version en commentaire, dans les trois workflows. Il y en avait 23 sur des tags mobiles (<code>@v4</code>, <code>@v2</code>). Chacune est épinglée sur le commit qu’elle utilisait déjà, donc le comportement est inchangé : checkout v4.4.0, cache v4.3.0, upload-artifact v4.6.2, download-artifact v4.3.0, r-lib/actions v2.14.0. JamesIves et codecov étaient déjà épinglées. <code>.github/dependabot.yml</code> ouvre une PR groupée par semaine (le lundi à 6 h) pour toutes les actions, avec le préfixe <code>ci</code>. Elle ne déclenche pas de release, puisque DESCRIPTION reste en <code>.9000</code>. Le point « épinglage des actions (Dependabot) » de l’après-1.0 est clos.</p>
@@ -451,7 +477,7 @@
 <p><strong>Journal</strong> — <em>2026-10-06</em> (<strong>app v0.157.1</strong>, <code>nemetonshiny@284b8f8b</code>, PR #222) : guide de l’application repris dans <code>nemetonshiny</code> (brief <code>2026-10-06-nemeton-guide-app-a-reprendre.md</code>) ; retiré du cœur en 1.0.0.</p>
 <p><strong>Journal</strong> — <em>2026-10-06</em> (<strong>app v1.0.0</strong>, <code>nemetonshiny@c292ea02</code>, PR #223) : <strong>première version stable de l’app</strong>, sur <code>nemeton</code> 1.0.0 (plancher <code>&gt;= 1.0.0</code>). Brief <code>brief-nemetonshiny-1.0.0.md</code> appliqué : messages clairs pour les bases antérieures (<code>nemeton_legacy_schema</code>, base de suivi et base plateforme), nouveaux statuts traduits (P3, P2 hors courbe, A3/A4/W4/R6, T3, B4/L3), P2 sans âge réel et C1 par le NDVI expliqués dans la fiche, couche INPN « zones humides » retirée, guide de l’app repris (v0.157.1). Décision de Pascal : <strong>aucune migration des projets 0.x</strong> — marqueur <code>format_projet</code>, projets antérieurs signalés et refusés, <code>projet_migrer()</code> retiré, <code>schema.sql</code> consolidé (migrations SQL de l’app retirées).</p>
 <p><strong>Journal</strong> — <em>2026-10-07</em> (<strong>v1.0.1</strong>) : correctif de documentation. Le nombre d’indicateurs est aligné partout sur <code><a href="reference/list_indicators.html">list_indicators()</a></code> : 41 (31 de base + 10 conditionnels). Restaient fausses la page d’accueil pkgdown (31), la vignette des familles (29) et le README du tutoriel 01 (PR #527). Aucun changement de code ni d’API, rien à faire côté app. Le job <code>tests</code> du run sur <code>main</code> avait échoué une fois sur un HTTP 401 ponctuel de forge.inrae.fr (<code>lidaRtRee</code>), puis était repassé à la relance.</p>
-<p><strong>Chantier « Pré-version 1.0 » clos</strong> (2026-10-06) : cœur <strong>et</strong> app en 1.0.0. Après la 1.0, côté cœur : vrai taux de changement pour T2, <code>urban_areas</code> dans A2, <del>épinglage des actions GitHub de premier rang (Dependabot)</del> (fait le 2026-10-11, voir « CI »), fixture de démo plus réaliste. Côté app : indicateurs conditionnels (A3, A4, W4, B4, L3, R5-R7, T3) absents de la table PostGIS <code>nemeton.indicators</code> ; isolation des projets entre utilisateurs ; factorisation de <code>mod_monitoring.R</code>.</p>
+<p><strong>Chantier « Pré-version 1.0 » clos</strong> (2026-10-06) : cœur <strong>et</strong> app en 1.0.0. Après la 1.0, côté cœur : <del>vrai taux de changement pour T2</del> (2026.10.3, spec 060, voir son chantier), <code>urban_areas</code> dans A2, <del>épinglage des actions GitHub de premier rang (Dependabot)</del> (fait le 2026-10-11, voir « CI »), fixture de démo plus réaliste. Côté app : indicateurs conditionnels (A3, A4, W4, B4, L3, R5-R7, T3) absents de la table PostGIS <code>nemeton.indicators</code> ; isolation des projets entre utilisateurs ; factorisation de <code>mod_monitoring.R</code>.</p>
 <p><strong>Prochaine étape</strong> : <del>semver strict depuis la 1.0.0</del>. Depuis la 2026.10.1, versionnage calendaire <code>AAAA.M.N</code> (spec 057 § 8) : une rupture d’API <strong>stable</strong> n’arrive qu’après dépréciation (3 mois, ou plus aucun appelant) et avec l’accord de Pascal ; les pages <strong>experimental</strong> peuvent changer à toute release. L’app consomme les exports listés dans <code>specs/audit-1.0/exports-consommes-app.md</code> (dont les 41 indicateurs, appelés par leur nom) : ne rien retirer ni changer de signature parmi eux sans brief app.</p>
 <hr></div>
 <div class="section level1">

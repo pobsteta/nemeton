@@ -13,8 +13,22 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.10.3\] - 2026-10-11
+
+### Added
+
+- [`indicateur_t2_changement()`](https://pobsteta.github.io/nemeton/reference/indicateur_t2_changement.md):
+  arguments `forms_t`, `seuil_perte`, `unite_hauteur`. With a FORMS-T
+  canopy-height series, T2 measures canopy stability (share of canopy
+  without a lasting loss of 5 m or more) and adds `t2_status`,
+  `t2_perte_pct`, `t2_croissance_m_an`, `t2_annees` (spec 060).
+- [`charger_forms_t_hauteurs()`](https://pobsteta.github.io/nemeton/reference/charger_forms_t_hauteurs.md)
+  (experimental): FORMS-T yearly height series over an area, from a
+  local copy or Theia.
+
 ### Changed
 
+- T2 indicator sheet, tooltip and diagram describe the measured path.
 - `Remotes`: lidaRtRee is no longer cloned from forge.inrae.fr (401
   errors and timeouts broke CI); it comes from CRAN again (4.0.9).
 - GitHub Actions pinned to commit SHAs (same commits as before); weekly

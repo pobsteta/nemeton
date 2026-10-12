@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,42 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.3" id="nemeton-2026103-2026-10-11">nemeton 2026.10.3 (2026-10-11)<a class="anchor" aria-label="anchor" href="#nemeton-2026103-2026-10-11"></a></h2>
+<p>T2 mesure enfin un changement (spec 060). Jusqu’ici, il recopiait N2 ou T1.</p>
+<div class="section level3">
+<h3 id="nouveautés-2026-10-3">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-10-3"></a></h3>
+<ul><li>
+<strong><code>indicateur_t2_changement(forms_t = )</code></strong> : avec la hauteur de canopée annuelle FORMS-T (Theia, 10 m, 2019 à 2024), T2 devient la <strong>stabilité du couvert</strong>. Il vaut 100 moins la part du couvert de l’unité qui a perdu au moins 5 m de hauteur pour de bon, quelle qu’en soit la cause : coupe, dépérissement ou chablis. Nouveaux arguments <code>seuil_perte</code> (5 m) et <code>unite_hauteur</code> (<code>"cm"</code>). La série peut aussi venir de <code>layers$rasters$forms_t</code>, et <code>nemeton_compute(..., forms_t = )</code> la transmet. Quatre colonnes s’ajoutent alors :
+<ul><li>
+<code>t2_status</code> (<code>forms_t</code>, <code>proxy</code> ou <code>no_source</code>) ;</li>
+<li>
+<code>t2_perte_pct</code> ;</li>
+<li>
+<code>t2_croissance_m_an</code> (pente de Theil-Sen du couvert sans perte, hors score) ;</li>
+<li>
+<code>t2_annees</code>.</li>
+</ul></li>
+<li>
+<strong><code><a href="../reference/charger_forms_t_hauteurs.html">charger_forms_t_hauteurs()</a></code></strong> (experimental) : charge la série FORMS-T sur une emprise, une couche par année. Elle lit d’abord une copie locale (<code>dossier</code> ou <code>NEMETON_FORMS_T_DIR</code>), sinon Theia.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="compatibilité-2026-10-3">Compatibilité<a class="anchor" aria-label="anchor" href="#compatibilit%C3%A9-2026-10-3"></a></h3>
+<p>Sans FORMS-T, T2 rend exactement ce qu’il rendait avant : la colonne <code>T2</code>, issue de N2 puis de T1. Rien ne change pour les appelants actuels. Le proxy sera déprécié dans une prochaine release, une fois le chemin mesuré branché dans l’app.</p>
+</div>
+<div class="section level3">
+<h3 id="validation-2026-10-3">Validation<a class="anchor" aria-label="anchor" href="#validation-2026-10-3"></a></h3>
+<ul><li>
+<strong>Bruit</strong> : à Dabo, la hauteur d’un pixel varie de 17 cm d’une année à l’autre.</li>
+<li>
+<strong>Croissance</strong> : elle va de +1,2 m/an pour les peuplements de 5 à 15 m à +0,07 m/an au-delà de 35 m.</li>
+<li>
+<strong>Pertes à Fordead</strong> (scolytes) : 98 % du couvert est en perte.</li>
+<li>
+<strong>Pertes à Reconfort</strong> : celles que SUFOSAT ne connaît pas sont confirmées à 96 % par le LiDAR HD de 2023-2024. Ce sont des disparitions de couvert que T3 ne voit pas.</li>
+</ul><p>Aucune nouvelle dépendance : <code>bfast</code>, <code>Rbeast</code>, <code>trend</code> et quelques autres ont été examinés et écartés (spec 060 § 3).</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.2" id="nemeton-2026102-2026-10-10">nemeton 2026.10.2 (2026-10-10)<a class="anchor" aria-label="anchor" href="#nemeton-2026102-2026-10-10"></a></h2>
 <div class="section level3">

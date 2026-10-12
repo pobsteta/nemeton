@@ -115,7 +115,7 @@ Anciennete des peuplements et changements d’occupation
 - [`indicateur_t1_anciennete()`](https://pobsteta.github.io/nemeton/reference/indicateur_t1_anciennete.md)
   : Calculate Stand Age Index (T1)
 - [`indicateur_t2_changement()`](https://pobsteta.github.io/nemeton/reference/indicateur_t2_changement.md)
-  : Calculate Temporal Stability Proxy (T2)
+  : Calculate Canopy Stability (T2)
 - [`indicateur_t3_coupes_rases()`](https://pobsteta.github.io/nemeton/reference/indicateur_t3_coupes_rases.md)
   : Calculate Clear-cut Pressure Index (T3)
 
@@ -468,6 +468,8 @@ Acquisition des couches publiques (WMS/WFS, COG, STAC, CDS)
   : Load a raster datasource as a SpatRaster
 - [`load_theia_source()`](https://pobsteta.github.io/nemeton/reference/load_theia_source.md)
   : Load a THEIA datasource as a SpatRaster
+- [`charger_forms_t_hauteurs()`](https://pobsteta.github.io/nemeton/reference/charger_forms_t_hauteurs.md)
+  : Load a FORMS-T canopy-height time series over an area
 - [`load_eobs_source()`](https://pobsteta.github.io/nemeton/reference/load_eobs_source.md)
   : Acquire E-OBS per-year summer fields (Tmax / precipitation) for an
   AOI
