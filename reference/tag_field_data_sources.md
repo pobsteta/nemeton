@@ -8,7 +8,12 @@ trees/plot on average) along the alternative field-data path.
 ## Usage
 
 ``` r
-tag_field_data_sources(data, placettes, arbres = NULL)
+tag_field_data_sources(
+  data,
+  placettes,
+  arbres = NULL,
+  source = "inventaire_terrain"
+)
 ```
 
 ## Arguments
@@ -24,6 +29,15 @@ tag_field_data_sources(data, placettes, arbres = NULL)
 - arbres:
 
   sf or data.frame of trees (may be NULL).
+
+- source:
+
+  Character. Kind of field inventory, stored in
+  `attr(data, "field_data_source")`: `"inventaire_terrain"` (default) or
+  `"inventaire_video"` (Groma: a complete inventory, NDP 3 as soon as it
+  carries trees), which
+  [`detect_ndp`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)
+  adds to the detected sources.
 
 ## Value
 

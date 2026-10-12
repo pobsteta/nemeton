@@ -13,6 +13,39 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.10.4\] - 2026-10-12
+
+### Added
+
+- Groma video inventory (spec 061, experimental):
+  [`schema_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/schema_inventaire_video.md),
+  [`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md),
+  [`numeroter_arbres()`](https://pobsteta.github.io/nemeton/reference/numeroter_arbres.md),
+  [`affecter_hauteur_houppier()`](https://pobsteta.github.io/nemeton/reference/affecter_hauteur_houppier.md),
+  [`rapprocher_arbres()`](https://pobsteta.github.io/nemeton/reference/rapprocher_arbres.md),
+  [`valider_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/valider_inventaire_video.md),
+  [`importer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/importer_inventaire_video.md),
+  [`groma_etat_placettes()`](https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.md),
+  [`groma_telecharger_resultats()`](https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.md).
+- `inst/inventaire_video/`: shared GeoPackage schema, SQLite triggers,
+  tree species reference (BD Forêt V2).
+
+### Changed
+
+- [`validate_field_data()`](https://pobsteta.github.io/nemeton/reference/validate_field_data.md):
+  arguments `dbh_max_cm` (300) and `dbh_alerte_cm` (`NULL`); defaults
+  unchanged.
+- [`get_arbre_schema()`](https://pobsteta.github.io/nemeton/reference/get_arbre_schema.md):
+  argument `dbh_max_cm` (300).
+- [`tag_field_data_sources()`](https://pobsteta.github.io/nemeton/reference/tag_field_data_sources.md):
+  argument `source`;
+  [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)
+  reports `"inventaire_video"` among the sources and gives a video
+  inventory with trees NDP 3 (complete inventory, no 10-trees-per-plot
+  threshold).
+- `inst/species/BFC.json`: seven BD Forêt V2 labels mapped instead of
+  `essence_mixte`.
+
 ## \[2026.10.3\] - 2026-10-11
 
 ### Added

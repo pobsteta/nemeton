@@ -10,7 +10,7 @@ of the package.
 ## Usage
 
 ``` r
-get_arbre_schema(region = "BFC", lang = "fr")
+get_arbre_schema(region = "BFC", lang = "fr", dbh_max_cm = 300)
 ```
 
 ## Arguments
@@ -23,6 +23,10 @@ get_arbre_schema(region = "BFC", lang = "fr")
 - lang:
 
   Character. Language for the species labels. Default `"fr"`.
+
+- dbh_max_cm:
+
+  Numeric. Upper bound of the DBH widget (cm). Default 300.
 
 ## Value
 

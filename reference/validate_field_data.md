@@ -8,7 +8,14 @@ within a plot.
 ## Usage
 
 ``` r
-validate_field_data(placettes, arbres = NULL, region = "BFC", lang = "fr")
+validate_field_data(
+  placettes,
+  arbres = NULL,
+  region = "BFC",
+  lang = "fr",
+  dbh_max_cm = 300,
+  dbh_alerte_cm = NULL
+)
 ```
 
 ## Arguments
@@ -29,6 +36,16 @@ validate_field_data(placettes, arbres = NULL, region = "BFC", lang = "fr")
 - lang:
 
   Character. Language for species labels. Default `"fr"`.
+
+- dbh_max_cm:
+
+  Numeric. Maximal admissible DBH (cm); above is an error. Default 300.
+  `Inf` accepts any diameter.
+
+- dbh_alerte_cm:
+
+  Numeric or `NULL`. DBH above which a warning
+  (`"DBH above alert threshold"`) is raised. Default `NULL` (no alert).
 
 ## Value
 

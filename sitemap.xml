@@ -77,6 +77,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_VALIDITY_DEPARTMENTS.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_VALIDITY_SPECIES.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/a5_applicabilite.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/affecter_hauteur_houppier.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/aggregate_family_scores.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/aggregate_plot_metrics.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/attach_field_data_to_units.html</loc></url>
@@ -124,6 +125,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/create_sampling_plan.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/create_trend_sanitary_plan.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/create_validation_sampling_plan.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/cv_from_bdforet.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/cv_lookup.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/cv_typology.html</loc></url>
@@ -231,6 +233,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/get_placette_schema.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/get_species_config.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/get_storage_crs.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/identify_hotspots.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/identify_pareto_optimal.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_campagne_disponible.html</loc></url>
@@ -247,6 +250,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_volume_essence_ser.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_volume_reference.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/import_qgis_gpkg.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/importer_inventaire_video.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_a1_couverture.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_a2_qualite_air.html</loc></url>
@@ -301,6 +305,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/ingest_knowledge_document.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ingest_knowledge_reference.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/inventaire_video.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/invert_indicator.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/is_conifer.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/knowledge-corpus.html</loc></url>
@@ -347,6 +352,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/nemeton_units.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/normalize_indicator.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/normalize_indicators.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/numeroter_arbres.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/plot_comparison_map.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/plot_correlation_matrix.html</loc></url>
@@ -369,6 +375,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/qgis_import.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/r5_applicabilite.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/rag.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/rapprocher_arbres.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_fast_alert_mask.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_fast_alert_raster.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_fordead_dieback_mask.html</loc></url>
@@ -403,6 +410,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/sample_size.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/sampling_plan.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/sanitize_chm.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/schema_inventaire_video.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/segment_houppiers.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/site_index.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/site_index_reference_points.html</loc></url>
@@ -427,6 +435,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/utils-chm.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/validate_field_data.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/validate_knowledge_manifest.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/valider_inventaire_video.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/volume_mobilisable.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/write_knowledge_manifest.html</loc></url>
 </urlset>

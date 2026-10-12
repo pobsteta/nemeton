@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.3.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -114,7 +114,7 @@
 
 <p><strong>Source unique de vérité</strong> pour la séquence des épaississements (E1, E2, …) du <strong>package cœur <code>nemeton</code></strong> et leur état d’avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. <em>Consignes de release</em> étape 8 dans CLAUDE.md).</p>
 <blockquote>
-<p><strong>Version <code>nemetonshiny</code> publiée</strong> (vérifiée sur GitHub à chaque merge, <code>gh release list -R pobsteta/nemetonshiny</code>) : <strong>v2026.10.4</strong> (release du 2026-10-11), relevée le 2026-10-12.</p>
+<p><strong>Version <code>nemetonshiny</code> publiée</strong> (vérifiée sur GitHub à chaque merge, <code>gh release list -R pobsteta/nemetonshiny</code>) : <strong>v2026.10.6</strong> (release du 2026-10-12), relevée le 2026-10-12.</p>
 </blockquote>
 <blockquote>
 <p><strong>Scope</strong> : ce fichier ne suit que les chantiers du repo <code>nemeton</code> (cœur métier). Les épaississements portés côté app (<code>nemetonshiny</code>) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.</p>
@@ -324,15 +324,44 @@
 <td>✅ livré</td>
 </tr><tr><td>App</td>
 <td>charger FORMS-T 2019-2024, le passer à T2, afficher <code>t2_status</code> et les diagnostics</td>
-<td><code>nemetonshiny</code></td>
-<td>⬜ brief émis</td>
+<td>
+<code>nemetonshiny</code> <strong>v2026.10.5</strong>
+</td>
+<td>✅ livré</td>
 </tr><tr><td>Cœur</td>
 <td>dépréciation puis retrait du proxy N2/T1 (accord de Pascal requis)</td>
 <td>—</td>
-<td>⬜ après l’app</td>
+<td>⬜ à proposer à Pascal</td>
 </tr></tbody></table><p><strong>Journal</strong> — <em>2026-10-11</em> (<strong>2026.10.3</strong>) : T2 recopiait N2 ou T1 et ne lisait aucune série. Il mesure maintenant la stabilité du couvert sur la hauteur FORMS-T 2019-2024 : <code>T2 = 100 × (1 − part du couvert en perte durable ≥ 5 m)</code>, avec en diagnostic la part en perte et la croissance de Theil-Sen. Aucune nouvelle dépendance : <code>bfast</code> et <code>Rbeast</code> sont faits pour des séries denses, <code>trend</code>, <code>Kendall</code> et <code>mblm</code> étaient redondants avec le Theil-Sen du cœur, et <code>greenbrown</code> et <code>gfcanalysis</code> ne sont pas sur CRAN. Mesures : - bruit de 17 cm par pixel et par an à Dabo ; - croissance de 1,2 m/an pour les peuplements de 5 à 15 m, 0,07 m/an au-delà de 35 m ; - 98 % du couvert en perte à Fordead (scolytes) ; - à Reconfort, 96 % des pertes hors SUFOSAT confirmées par le LiDAR HD de 2023-2024 ; T2 voit donc ce que T3 ne voit pas ; - seuil peu sensible entre 3 et 8 m ; - 2 à 4 s par projet depuis le cache national.</p>
 <p>Ajout compatible : sans FORMS-T, T2 est inchangé. Brief app : <code>vers-nemetonshiny/2026-10-11-t2-forms-t.md</code>.</p>
 <p><em>2026-10-12</em> : PR #551 mergée, tag <code>v2026.10.3</code> posé par <code>release.yml</code>. La CI avait cassé sur deux défauts de documentation : une apostrophe dans un <code>\code{}</code> du <code>.Rd</code> de T2, et un lien vers <code>theia_sign_urls()</code>, qui est interne. Le test de <code><a href="reference/charger_forms_t_hauteurs.html">charger_forms_t_hauteurs()</a></code> passe désormais par <code>skip_if_terra_write_broken()</code> (anomalie terra du runner). Cycle dev <code>2026.10.3.9000</code>.</p>
+<p><em>2026-10-12</em> — nemetonshiny <strong>v2026.10.5</strong> (<code>nemetonshiny@4b726dbe</code>, PR #239, cycle <code>2026.10.4.9000</code>→<code>2026.10.5</code>) : spec 060 T2/FORMS-T branché dans l’app (<code><a href="reference/charger_forms_t_hauteurs.html">charger_forms_t_hauteurs()</a></code> une fois par calcul, cache <code>cache/layers/forms_t/</code> à clé d’emprise, diagnostics <code>.t2_*</code> et bandeau sous la carte T2, plancher <code>Imports: nemeton (&gt;= 2026.10.3)</code>) ; notes <code>_norm</code> persistées dans <code>indicators.parquet</code>. Vérifié à Dabo (T2 95,5 à 99,95) et à Fordead (67 à 100 % du couvert perdu par parcelle), lecture 0,3 à 1,1 s. Le chemin mesuré tourne en service : la dépréciation du proxy N2/T1 peut être proposée à Pascal (pas engagée sans son accord).</p>
+<p><em>2026-10-12</em> — nemetonshiny <strong>v2026.10.6</strong> (<code>nemetonshiny@5bb76fe8</code>, PR #240, cycle <code>2026.10.5.9000</code>→<code>2026.10.6</code>) : progression « Famille (i/13) » de la synthèse IA rétablie (perdue au passage des appels LLM dans un worker <code>future</code>). Correctif seul, sans impact cœur.</p>
+<hr></div>
+<div class="section level1">
+<h1 id="chantier--inventaire-vidéo-groma-spec-061">Chantier — Inventaire vidéo Groma (spec 061)<a class="anchor" aria-label="anchor" href="#chantier--inventaire-vid%C3%A9o-groma-spec-061"></a></h1>
+<blockquote>
+<p>Brief <code>groma_nemeton</code> du 2026-10-12 (<code>vers-nemeton/2026-10-12-inventaire-video.md</code>), décisions 1 à 3 de Pascal du même jour. Spec : <code>specs/061-inventaire-video/spec.md</code>.</p>
+</blockquote>
+<table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>Étape</th>
+<th>Contenu</th>
+<th>Release</th>
+<th>État</th>
+</tr></thead><tbody><tr><td>Cœur</td>
+<td>schéma partagé, GeoPackage + rasters + projet QField, numérotation, hauteurs par houppier, rapprochement, validation, import/fusion, client API Groma ; <code>validate_field_data(dbh_max_cm, dbh_alerte_cm)</code>, <code>tag_field_data_sources(source)</code>
+</td>
+<td><strong>2026.10.4</strong></td>
+<td>✅ livré</td>
+</tr><tr><td>Cœur</td>
+<td>plugin de projet QField <code>.qml</code> (contenu à fournir par groma) ; renvoi filtré des <code>a_completer</code>/<code>a_verifier</code>
+</td>
+<td>—</td>
+<td>⬜</td>
+</tr><tr><td>App</td>
+<td>sous-onglet Terrain &gt; Inventaire vidéo</td>
+<td><code>nemetonshiny</code></td>
+<td>⬜ brief émis par groma</td>
+</tr></tbody></table><p><strong>Journal</strong> — <em>2026-10-12</em> (<strong>2026.10.4</strong>) : 9 fonctions exportées (experimental) dans <code>R/inventaire_video.R</code>. Le schéma, les déclencheurs et le référentiel d’essences sont copiés tels quels de groma dans <code>inst/inventaire_video/</code>, les cas communs dans <code>tests/testthat/fixtures/</code>. Les 10 cas de numérotation, les 5 cas de rapprochement (dont l’absence de perte d’attribut) et les 9 cas de hauteur passent. Méthode hongroise écrite dans le cœur plutôt que d’ajouter <code>clue</code>. Les couches <code>placettes</code>, <code>arbres</code> et <code>detections</code> sont écrites sans index spatial ; un test insère dans <code>detections</code> par une connexion RSQLite sans fonction spatiale et vérifie la ligne <code>arbres</code> créée par le déclencheur. Sur l’exemple groma, l’import rapproche P001 (14 définitifs, 4 à compléter, 1 à vérifier, aucune alerte), signale le diamètre de 208,7 cm et donne G = 37,2 m²/ha. Sept libellés BD Forêt V2 ne tombent plus en <code>essence_mixte</code>. Une note de l’app arrivée en cours de route (<code>inventaire-video-retours-app</code>) a fixé les formes de retour : <code><a href="reference/importer_inventaire_video.html">importer_inventaire_video()</a></code> rend <code>a_completer</code>, <code>a_verifier</code>, <code>classique_conserve</code> et <code>ndp</code>, <code><a href="reference/groma_etat_placettes.html">groma_telecharger_resultats()</a></code> rend des chemins, et un inventaire vidéo porteur d’arbres atteint le NDP 3 sans le seuil de 10 arbres par placette (l’exemple groma en compte 9).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="ci--dépendances-et-actions-github">CI — dépendances et actions GitHub<a class="anchor" aria-label="anchor" href="#ci--d%C3%A9pendances-et-actions-github"></a></h1>

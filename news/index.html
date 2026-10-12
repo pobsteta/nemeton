@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.3.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,37 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.4" id="nemeton-2026104-2026-10-12">nemeton 2026.10.4 (2026-10-12)<a class="anchor" aria-label="anchor" href="#nemeton-2026104-2026-10-12"></a></h2>
+<p>L’inventaire vidéo Groma arrive dans le cœur (spec 061) : une vidéo au smartphone remplace le compas, la boussole et le décamètre sur une placette circulaire.</p>
+<div class="section level3">
+<h3 id="nouveautés-2026-10-4">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-10-4"></a></h3>
+<p>Neuf fonctions, toutes <em>experimental</em> :</p>
+<ul><li>
+<strong><code><a href="../reference/creer_projet_inventaire_video.html">creer_projet_inventaire_video()</a></code></strong> : GeoPackage de terrain <code>inventaire_video.gpkg</code> (placettes, centres mesurés, cibles, arbres, détections, houppiers), MNT et MNH découpés par placette en GeoTIFF Float32 à 0,5 m, projet QField, le tout dans un <code>.qgz</code>. <code>placettes</code>, <code>arbres</code> et <code>detections</code> sont sans index spatial, pour que Groma puisse les mettre à jour avec le SQLite d’Android ; des déclencheurs relient <code>detections</code> (écrite par Groma seul) à <code>arbres</code> par <code>uuid</code>. La convergence des méridiens est calculée, la pente, l’exposition et le recouvrement sont remplis depuis le MNT et le MNH.</li>
+<li>
+<strong><code><a href="../reference/numeroter_arbres.html">numeroter_arbres()</a></code></strong> : la règle de numérotation Groma, identique en Python, Kotlin et R.</li>
+<li>
+<strong><code><a href="../reference/affecter_hauteur_houppier.html">affecter_hauteur_houppier()</a></code></strong> : hauteur de l’arbre lue sur le houppier qui contient son tronc. Une hauteur mesurée n’est jamais écrasée.</li>
+<li>
+<strong><code><a href="../reference/rapprocher_arbres.html">rapprocher_arbres()</a></code></strong> : passage de l’inventaire provisoire au définitif par affectation optimale (méthode hongroise). Aucun attribut saisi sur le terrain n’est perdu ; les arbres non retrouvés passent « à vérifier » (V1, V2…), les faux positifs restent marqués (F1, F2…).</li>
+<li>
+<strong><code><a href="../reference/valider_inventaire_video.html">valider_inventaire_video()</a></code></strong> et <strong><code><a href="../reference/importer_inventaire_video.html">importer_inventaire_video()</a></code></strong> : validation, type de peuplement déduit de l’essence saisie, agrégats par rayon de placette, source <code>"inventaire_video"</code> pour le NDP, fusion dans les données terrain du projet sans écraser un inventaire classique. Le retour donne aussi les arbres à compléter et à vérifier, les placettes dont l’inventaire classique a été conservé et le NDP atteint.</li>
+<li>
+<strong><code><a href="../reference/schema_inventaire_video.html">schema_inventaire_video()</a></code></strong> : le schéma partagé avec Groma.</li>
+<li>
+<strong><code><a href="../reference/groma_etat_placettes.html">groma_etat_placettes()</a></code></strong>, <strong><code><a href="../reference/groma_etat_placettes.html">groma_telecharger_resultats()</a></code></strong> : client du serveur Groma (<code>httr2</code>).</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changements-compatibles-2026-10-4">Changements compatibles<a class="anchor" aria-label="anchor" href="#changements-compatibles-2026-10-4"></a></h3>
+<ul><li>
+<code><a href="../reference/validate_field_data.html">validate_field_data()</a></code> gagne <code>dbh_max_cm</code> (300) et <code>dbh_alerte_cm</code> (<code>NULL</code>) ; <code><a href="../reference/get_arbre_schema.html">get_arbre_schema()</a></code> gagne <code>dbh_max_cm</code>. Les défauts ne changent rien. L’inventaire vidéo accepte tout diamètre et signale ceux au-delà de 200 cm.</li>
+<li>
+<code><a href="../reference/tag_field_data_sources.html">tag_field_data_sources()</a></code> gagne <code>source</code> ; <code><a href="../reference/detect_ndp.html">detect_ndp()</a></code> cite <code>"inventaire_video"</code> parmi les sources. Un inventaire vidéo mesure tous les arbres de la placette : il atteint le NDP 3 dès qu’il porte des arbres, sans le seuil de 10 arbres par placette appliqué aux autres données terrain.</li>
+<li>
+<code><a href="../reference/map_bdforet_essence.html">map_bdforet_essence()</a></code> : « Sapin, épicéa », « Chênes sempervirents », « Robinier » et quatre libellés de pins ne tombent plus en <code>essence_mixte</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.3" id="nemeton-2026103-2026-10-11">nemeton 2026.10.3 (2026-10-11)<a class="anchor" aria-label="anchor" href="#nemeton-2026103-2026-10-11"></a></h2>
 <p>T2 mesure enfin un changement (spec 060). Jusqu’ici, il recopiait N2 ou T1.</p>
