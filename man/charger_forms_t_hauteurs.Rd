@@ -34,7 +34,7 @@ This is the input of the measured path of \code{\link[=indicateur_t2_changement]
 Each year is read from a local copy of the national rasters when one is
 available (\code{dossier}, files \verb{Height_<year>.tif} as published on Zenodo),
 otherwise from the Theia STAC catalogue through \code{\link[=load_theia_source]{load_theia_source()}}
-(THEIA API key required, see \code{\link[=theia_sign_urls]{theia_sign_urls()}}). A year that cannot be
+(THEIA API key required, see \code{theia_sign_urls()}). A year that cannot be
 read is skipped with a warning.
 }
 \section{Lifecycle}{

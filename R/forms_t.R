@@ -8,7 +8,7 @@
 #' Each year is read from a local copy of the national rasters when one is
 #' available (`dossier`, files `Height_<year>.tif` as published on Zenodo),
 #' otherwise from the Theia STAC catalogue through [load_theia_source()]
-#' (THEIA API key required, see [theia_sign_urls()]). A year that cannot be
+#' (THEIA API key required, see `theia_sign_urls()`). A year that cannot be
 #' read is skipped with a warning.
 #'
 #' @param aoi An `sf`/`sfc` area of interest (any CRS).
