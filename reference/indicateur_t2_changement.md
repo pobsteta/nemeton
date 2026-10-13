@@ -4,10 +4,9 @@ T2 scores how stable the forest canopy of each unit has been over recent
 years. Given a FORMS-T canopy-height time series (`forms_t`, spec 060),
 it is **measured**: the share of the unit's canopy that lost at least
 `seuil_perte` metres of height for good, whatever the cause (clear-cut,
-partial cut, dieback, windthrow). Without that series it falls back on a
-**stability proxy** derived from other indicators – a copy of N2 (forest
-continuity), otherwise the T1 stand age capped at 100 (tuto 04) – which
-carries no information of its own.
+partial cut, dieback, windthrow). Without that series T2 is `NA`: the
+stability proxy (a copy of N2, or the T1 age capped at 100) was removed
+in 2026.10.5, as it carried no information of its own.
 
 ## Usage
 
@@ -26,8 +25,7 @@ indicateur_t2_changement(
 
 - units:
 
-  An sf object with forest parcels. May contain pre-computed columns: N2
-  (forest continuity) or T1 (stand age).
+  An sf object with forest parcels.
 
 - layers:
 
@@ -36,8 +34,8 @@ indicateur_t2_changement(
 
 - t1_values:
 
-  Numeric vector. Pre-computed T1 age values (same length as
-  nrow(units)). If NULL and units has no T1 column, T2 is `NA`.
+  Deprecated and ignored since 2026.10.5 (it fed the removed proxy); a
+  warning is raised once per session when supplied.
 
 - forms_t:
 
@@ -47,8 +45,7 @@ indicateur_t2_changement(
   as returned by
   [`charger_forms_t_hauteurs()`](https://pobsteta.github.io/nemeton/reference/charger_forms_t_hauteurs.md),
   or a vector of file paths. `NULL` (default) looks for a raster named
-  `"forms_t"` in `layers`, and falls back on the proxy when there is
-  none.
+  `"forms_t"` in `layers`; T2 is `NA` when there is none.
 
 - seuil_perte:
 
@@ -62,13 +59,13 @@ indicateur_t2_changement(
 ## Value
 
 The input `units` (same class, rows and order) with an added numeric
-column `T2` (0-100, 100 = stable canopy). `NA` where no source is
-available – no default value.
+column `T2` (0-100, 100 = stable canopy). `NA` where FORMS-T is missing
+– no default value.
 
 When FORMS-T heights are supplied, four more columns are added:
 
-- `t2_status`: `"forms_t"` (measured), `"proxy"` (unit outside the
-  series, proxy used) or `"no_source"`;
+- `t2_status`: `"forms_t"` (measured) or `"no_source"` (unit without
+  canopy in the series);
 
 - `t2_perte_pct`: share of the unit's canopy in lasting loss (%);
 
@@ -77,8 +74,7 @@ When FORMS-T heights are supplied, four more columns are added:
 
 - `t2_annees`: years read, e.g. `"2019-2024"`.
 
-Without FORMS-T the result is unchanged from earlier releases (`T2`
-only).
+Without FORMS-T only the `T2` column (all `NA`) is added.
 
 ## Details
 
@@ -96,13 +92,6 @@ Validation (spec 060, 2026-10-11): on Reconfort, 96 % of the losses
 outside SUFOSAT clear-cuts are confirmed by the LiDAR HD canopy (flown
 2023-2024), so T2 also sees partial cuts and dieback that T3 does not;
 on Fordead (bark-beetle site) the loss covers 98 % of the forest.
-
-**Proxy (no FORMS-T)**: copy of the N2 (forest continuity/antiquity)
-column if present in units, clamped to 0-100, otherwise the T1 stand age
-(years) capped at 100 (`t1_values`, then a `T1` column). The fallback
-applies **unit by unit**: a unit whose N2 is `NA` takes its T1 age when
-known. With FORMS-T, a unit the series does not cover takes the proxy
-too.
 
 Do not compare T2 values computed over different year windows. FORMS-T
 is a height **predicted** from Sentinel-1/2 and GEDI, not measured;
@@ -126,14 +115,9 @@ library(nemeton)
 data(massif_demo_units)
 units <- massif_demo_units[1:10, ]
 
-# Compute T1 first, then T2: the T1 column of the result feeds T2
-t1 <- indicateur_t1_anciennete(units, layers = massif_demo_layers())
-t2 <- indicateur_t2_changement(t1)
-t2$T2
-
-# Measured canopy stability from FORMS-T (spec 060)
+# Canopy stability measured on FORMS-T (spec 060)
 h <- charger_forms_t_hauteurs(units)
-t2 <- indicateur_t2_changement(t1, forms_t = h)
+t2 <- indicateur_t2_changement(units, forms_t = h)
 t2[, c("T2", "t2_status", "t2_perte_pct", "t2_croissance_m_an")]
 } # }
 ```

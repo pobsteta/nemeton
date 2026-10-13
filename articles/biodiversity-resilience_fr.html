@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.4.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -335,8 +335,9 @@ climatiques et BD Forêt.</em></p>
 <h3 id="t2-changements-doccupation">T2 : Changements d’occupation<a class="anchor" aria-label="anchor" href="#t2-changements-doccupation"></a>
 </h3>
 <p>L’indicateur <strong>T2</strong> détecte les transformations.
-<em>Note: Utiliser <code><a href="../reference/indicateur_t2_changement.html">indicateur_t2_changement()</a></code> avec des
-rasters Corine Land Cover multi-dates pour un usage réel.</em></p>
+<em>Note : pour un usage réel, <code><a href="../reference/indicateur_t2_changement.html">indicateur_t2_changement()</a></code>
+mesure la stabilité du couvert sur la série FORMS-T
+(<code><a href="../reference/charger_forms_t_hauteurs.html">charger_forms_t_hauteurs()</a></code>).</em></p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Simulation de taux de changement (%/an)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">44</span><span class="op">)</span></span>

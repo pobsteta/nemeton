@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.4.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -150,7 +150,8 @@ Obstetar</h4>
     
 <blockquote>
 <p><strong>Document de référence</strong> — Néméton (package cœur),
-2026-10-11 (spec 060).</p>
+2026-10-11 (spec 060) ; proxy N2 / T1 retiré en 2026.10.5
+(2026-10-13).</p>
 </blockquote>
 <hr>
 <div class="section level2">
@@ -247,9 +248,8 @@ part est pondérée par la couverture des pixels (exactextractr).</li>
 <tr class="odd">
 <td><code>t2_status</code></td>
 <td>
-<code>"forms_t"</code> (mesuré), <code>"proxy"</code> (unité hors
-série) ou <code>"no_source"</code>
-</td>
+<code>"forms_t"</code> (mesuré) ou <code>"no_source"</code> (unité
+sans couvert dans la série)</td>
 </tr>
 <tr class="even">
 <td><code>t2_perte_pct</code></td>
@@ -308,52 +308,21 @@ ou des chablis. Le seuil compte peu : entre 3 et 8 m, la part en perte
 de Reconfort varie de 8,4 à 6,3 %.</p>
 </div>
 <div class="section level2">
-<h2 id="le-repli-sans-forms-t">3. Le repli sans FORMS-T<a class="anchor" aria-label="anchor" href="#le-repli-sans-forms-t"></a>
+<h2 id="sans-forms-t-na">3. Sans FORMS-T : NA<a class="anchor" aria-label="anchor" href="#sans-forms-t-na"></a>
 </h2>
-<p>Hors France, si FORMS-T n’est pas lisible ou qu’une unité sort de la
-série, T2 recopie un autre indicateur :</p>
-<table class="table">
-<colgroup>
-<col width="25%">
-<col width="25%">
-<col width="25%">
-<col width="25%">
-</colgroup>
-<thead><tr class="header">
-<th>Ordre</th>
-<th>Chemin</th>
-<th>Condition</th>
-<th>Valeur</th>
-</tr></thead>
-<tbody>
-<tr class="odd">
-<td>1</td>
-<td><strong>N2 comme proxy</strong></td>
-<td>colonne <code>N2</code>, <code>N2_anciennete</code> ou
-<code>N2_anciennet</code> présente</td>
-<td>
-<code>N2</code>, écrêté <code>[0, 100]</code>
-</td>
-</tr>
-<tr class="even">
-<td>2</td>
-<td><strong>T1 plafonné</strong></td>
-<td>
-<code>t1_values</code> ou colonne <code>T1</code>
-</td>
-<td>
-<code>min(100, âge)</code>, les <code>NA</code> restent
-<code>NA</code>
-</td>
-</tr>
-</tbody>
-</table>
-<p>Le repli se fait unité par unité. Sans FORMS-T du tout, la fonction
-rend ce qu’elle rendait avant la spec 060 : la seule colonne
-<code>T2</code>, sans colonne de diagnostic.</p>
+<p>Hors France, si FORMS-T n’est pas lisible, T2 vaut <code>NA</code> et
+la fonction n’ajoute que la colonne <code>T2</code>. Une unité que la
+série ne couvre pas reçoit <code>NA</code> et
+<code>t2_status = "no_source"</code>.</p>
+<p>Jusqu’à la 2026.10.4, T2 se repliait sur une copie de N2, puis sur
+l’âge T1 plafonné à 100. Ce proxy a été retiré en 2026.10.5 : il ne
+mesurait aucun changement et comptait deux fois N2 ou T1 dans les
+familles. L’argument <code>t1_values</code> est conservé pour ne pas
+casser les appels, mais il est ignoré et lève un avertissement une fois
+par session.</p>
 </div>
 <div class="section level2">
-<h2 id="quatre-pièges">4. Quatre pièges<a class="anchor" aria-label="anchor" href="#quatre-pi%C3%A8ges"></a>
+<h2 id="trois-pièges">4. Trois pièges<a class="anchor" aria-label="anchor" href="#trois-pi%C3%A8ges"></a>
 </h2>
 <ol style="list-style-type: decimal">
 <li>
@@ -370,10 +339,6 @@ faible (moins de 5 m) n’est pas vue.</li>
 récolte de 1 à 2 % de la surface par an donne un T2 de 88 à 94 sur six
 ans. Un T2 bas signale une perte, pas sa cause : T3 (SUFOSAT) dit si ce
 sont des coupes rases, R5 si c’est du dépérissement.</li>
-<li>
-<strong>Le repli proxy double T1.</strong> Quand T2 recopie T1,
-<code>famille_temporelle</code> compte deux fois la même grandeur.
-<code>t2_status = "proxy"</code> le signale.</li>
 </ol>
 </div>
 <div class="section level2">
@@ -389,19 +354,18 @@ indicateur_t2_changement(forms_t = )  -&gt;  T2 (0-100) + t2_status, t2_perte_pc
 <h2 id="diagramme-densemble">6. Diagramme d’ensemble<a class="anchor" aria-label="anchor" href="#diagramme-densemble"></a>
 </h2>
 <!-- diagramme:auto:debut -->
-<figure><svg viewbox="0 0 820 360" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de T2 : avec la serie FORMS-T, la part du couvert en perte durable de hauteur donne le score ; sans elle, ou pour une unite hors serie, T2 se replie sur la continuite N2 puis sur l'age T1 plafonne a 100."><defs><marker id="fd" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="6" markerheight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path></marker></defs><g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55"><text x="10" y="16">ENTRÉES</text><text x="290" y="16">CALCUL — PREMIER
+<figure><svg viewbox="0 0 820 360" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de T2 : avec la serie FORMS-T, la part du couvert en perte durable de hauteur donne le score ; sans elle, ou pour une unite hors serie, T2 vaut NA."><defs><marker id="fd" viewbox="0 0 10 10" refx="9" refy="5" markerwidth="6" markerheight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path></marker></defs><g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55"><text x="10" y="16">ENTRÉES</text><text x="290" y="16">CALCUL — PREMIER
 CHEMIN SERVI</text><text x="588" y="16">AVAL</text></g><rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">FORMS-T
 — hauteur annuelle</text><text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">10
-m, 2019 à 2024, en cm</text><text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">charger_forms_t_hauteurs()</text><rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"></rect><text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">Colonne
-N2 ou âge T1</text><text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">repli
-sans FORMS-T</text><rect x="288" y="34" width="262" height="74" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Perte
+m, 2019 à 2024, en cm</text><text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">charger_forms_t_hauteurs()</text><rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"></rect><text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">Pas
+de série FORMS-T</text><text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">hors
+France, Theia absent</text><rect x="288" y="34" width="262" height="74" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Perte
 durable de couvert</text><text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">hauteur
 ≤ max antérieur − 5 m</text><text x="300" y="85" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">jusqu’à
 la fin de la série</text><text x="300" y="101" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">T2
-= 100 × (1 − part en perte)</text><rect x="288" y="142" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="300" y="161" font-size="12.5" font-weight="600" fill="currentColor">Proxy
-N2 puis T1</text><text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">T2
-= N2 écrêté, sinon min(100, âge)</text><text x="300" y="193" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">t2_status
-= “proxy”</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_t2_changement</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score
+= 100 × (1 − part en perte)</text><rect x="288" y="142" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"></rect><text x="300" y="161" font-size="12.5" font-weight="600" fill="currentColor">NA</text><text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">aucune
+stabilité inventée</text><text x="300" y="193" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">t2_status
+= “no_source”</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_t2_changement</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score
 0–100, natif</text><rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text><text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">écrêtage
 natif 0–100</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“T”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_temporel</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
 de T1 à T3</text><rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
@@ -409,12 +373,12 @@ de T1 à T3</text><rect x="586" y="242" width="226" height="42" rx="3" fill="non
 : t2_perte_pct, t2_croissance_m_an (Theil-Sen), t2_annees,
 t2_status.</text><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Ne
 pas comparer deux T2 calculés sur des fenêtres d’années
-différentes.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Sans
-FORMS-T, le résultat est celui des versions antérieures (T2
-seul).</text></svg><figcaption style="font-size:.9em;opacity:.75">
+différentes.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Le
+proxy N2 / T1 est retiré en 2026.10.5 : il ne mesurait aucun
+changement.</text></svg><figcaption style="font-size:.9em;opacity:.75">
 Avec FORMS-T, T2 mesure la stabilité du couvert, toutes causes de perte
-confondues (coupe, dépérissement, chablis). Le proxy ne sert que hors
-série, et t2_status dit lequel des deux chemins a servi.
+confondues (coupe, dépérissement, chablis). Sans la série, T2 reste NA
+plutôt que de recopier N2 ou T1.
 </figcaption></figure><!-- diagramme:auto:fin -->
 </div>
 <div class="section level2">

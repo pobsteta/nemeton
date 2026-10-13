@@ -13,6 +13,28 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.10.5\] - 2026-10-13
+
+### Added
+
+- [`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md)
+  (spec 061, experimental): field-return QField project for the trees
+  still `a_completer` / `a_verifier`, with a display filter on `arbres`
+  (QGIS `subset`) and all reconciled trees kept.
+
+### Removed
+
+- [`indicateur_t2_changement()`](https://pobsteta.github.io/nemeton/reference/indicateur_t2_changement.md):
+  the N2 / T1 stability proxy. Without FORMS-T, T2 is `NA`; a unit
+  outside the series gets `t2_status = "no_source"` (the `"proxy"`
+  status is gone). `t1_values` is kept but deprecated and ignored.
+
+### Changed
+
+- [`nemeton_compute()`](https://pobsteta.github.io/nemeton/reference/nemeton_compute.md):
+  T2 is no longer a composite computed last.
+- `massif_demo_units` regenerated (T2, T2_norm, famille_temporel only).
+
 ## \[2026.10.4\] - 2026-10-12
 
 ### Added

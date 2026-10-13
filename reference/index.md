@@ -696,6 +696,8 @@ vers definitif, import et client du serveur Groma
   : Validate a video inventory
 - [`importer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/importer_inventaire_video.md)
   : Import a video inventory into the project field data
+- [`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md)
+  : Send video-inventory trees back to the field
 - [`groma_etat_placettes()`](https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.md)
   [`groma_telecharger_resultats()`](https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.md)
   : Groma server client

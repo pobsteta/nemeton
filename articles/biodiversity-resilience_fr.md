@@ -194,9 +194,11 @@ summary(result$T1)
 
 ### T2 : Changements d’occupation
 
-L’indicateur **T2** détecte les transformations. *Note: Utiliser
+L’indicateur **T2** détecte les transformations. *Note : pour un usage
+réel,
 [`indicateur_t2_changement()`](https://pobsteta.github.io/nemeton/reference/indicateur_t2_changement.md)
-avec des rasters Corine Land Cover multi-dates pour un usage réel.*
+mesure la stabilité du couvert sur la série FORMS-T
+([`charger_forms_t_hauteurs()`](https://pobsteta.github.io/nemeton/reference/charger_forms_t_hauteurs.md)).*
 
 ``` r
 

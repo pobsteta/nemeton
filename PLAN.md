@@ -8,7 +8,7 @@ chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
 > merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.6**
-> (release du 2026-10-12), relevée le 2026-10-12.
+> (release du 2026-10-12), relevée le 2026-10-13.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
@@ -165,7 +165,8 @@ Version `nemetonshiny` publiée : v2026.10.1.
 |----|----|----|----|
 | Cœur | `indicateur_t2_changement(forms_t = )` : stabilité du couvert (perte durable ≥ 5 m) ; [`charger_forms_t_hauteurs()`](https://pobsteta.github.io/nemeton/reference/charger_forms_t_hauteurs.md) | **2026.10.3** | ✅ livré |
 | App | charger FORMS-T 2019-2024, le passer à T2, afficher `t2_status` et les diagnostics | `nemetonshiny` **v2026.10.5** | ✅ livré |
-| Cœur | dépréciation puis retrait du proxy N2/T1 (accord de Pascal requis) | — | ⬜ à proposer à Pascal |
+| Cœur | retrait du proxy N2/T1 (accord de Pascal du 2026-10-13) | **2026.10.5** | ✅ livré |
+| App | retirer le message `t2_proxy` et l’ordre N2 avant T2, devenus inutiles | `nemetonshiny` | ⬜ brief envoyé |
 
 **Journal** — *2026-10-11* (**2026.10.3**) : T2 recopiait N2 ou T1 et ne
 lisait aucune série. Il mesure maintenant la stabilité du couvert sur la
@@ -210,6 +211,18 @@ proposée à Pascal (pas engagée sans son accord).
 (i/13) » de la synthèse IA rétablie (perdue au passage des appels LLM
 dans un worker `future`). Correctif seul, sans impact cœur.
 
+*2026-10-13* (**2026.10.5**) : retrait du proxy N2/T1, confirmé par
+Pascal. Sans FORMS-T, T2 vaut `NA` ; une unité hors série prend
+`t2_status = "no_source"`. `t1_values` est gardé dans la signature,
+ignoré, avec un avertissement une fois par session. Aucun appelant ne
+passe `t1_values` dans `nemetonshiny` ni dans `nemetonclaude` (lecture
+seule).
+[`nemeton_compute()`](https://pobsteta.github.io/nemeton/reference/nemeton_compute.md)
+ne traite plus T2 comme un composite. `massif_demo_units` est régénérée
+: seules `T2`, `T2_norm` et `famille_temporel` changent. Brief app
+`vers-nemetonshiny/2026-10-13-t2-retrait-proxy.md` (textes et ordre
+N2→T2 devenus inutiles). **Chantier T2 clos côté cœur.**
+
 ------------------------------------------------------------------------
 
 # Chantier — Inventaire vidéo Groma (spec 061)
@@ -221,7 +234,8 @@ dans un worker `future`). Correctif seul, sans impact cœur.
 | Étape | Contenu | Release | État |
 |----|----|----|----|
 | Cœur | schéma partagé, GeoPackage + rasters + projet QField, numérotation, hauteurs par houppier, rapprochement, validation, import/fusion, client API Groma ; `validate_field_data(dbh_max_cm, dbh_alerte_cm)`, `tag_field_data_sources(source)` | **2026.10.4** | ✅ livré |
-| Cœur | plugin de projet QField `.qml` (contenu à fournir par groma) ; renvoi filtré des `a_completer`/`a_verifier` | — | ⬜ |
+| Cœur | renvoi sur le terrain des `a_completer`/`a_verifier` : [`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md) | **2026.10.5** | ✅ livré |
+| Cœur | plugin de projet QField `.qml` (contenu à fournir par groma) | — | ⬜ attend groma |
 | App | sous-onglet Terrain \> Inventaire vidéo | `nemetonshiny` | ⬜ brief émis par groma |
 
 **Journal** — *2026-10-12* (**2026.10.4**) : 9 fonctions exportées
@@ -250,6 +264,17 @@ couverture, pkgdown) ; tag `v2026.10.4` posé par `release.yml`. Cycle
 dev `2026.10.4.9000`. Réponse à l’app :
 `vers-nemetonshiny/2026-10-12-reponse-inventaire-video-retours.md`
 (plancher `nemeton (>= 2026.10.4)`).
+
+*2026-10-13* (**2026.10.5**) :
+[`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md),
+option du § 4 du brief. Le `.qgz` de retour garde tous les arbres
+réconciliés des placettes concernées et filtre seulement l’affichage de
+`arbres` (`|subset=` OGR), pour qu’une nouvelle importation remplace la
+placette sans perte. Sur l’exemple groma : P001 seule, 5 arbres à
+reprendre sur 19, rasters et couches annexes repris, réimportation
+identique. Assemblage du `.qgz` factorisé avec
+[`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md)
+(`.iv_empaqueter()`). Reste le plugin `.qml`, qui attend groma.
 
 ------------------------------------------------------------------------
 

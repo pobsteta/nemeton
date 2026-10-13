@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.4.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,29 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.5" id="nemeton-2026105-2026-10-13">nemeton 2026.10.5 (2026-10-13)<a class="anchor" aria-label="anchor" href="#nemeton-2026105-2026-10-13"></a></h2>
+<p>T2 ne recopie plus N2 ni T1 : sans série FORMS-T, il vaut <code>NA</code> (spec 060, release B). L’inventaire vidéo peut renvoyer sur le terrain les arbres à compléter ou à vérifier (spec 061).</p>
+<div class="section level3">
+<h3 id="changements-cassants-2026-10-5">Changements cassants<a class="anchor" aria-label="anchor" href="#changements-cassants-2026-10-5"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/indicateur_t2_changement.html">indicateur_t2_changement()</a></code></strong> : le proxy de stabilité est retiré, avec l’accord de Pascal. Sans FORMS-T, T2 valait une copie de N2 (écrêtée à 0-100), à défaut l’âge T1 plafonné à 100 ; il vaut désormais <code>NA</code>. Une unité que la série ne couvre pas prend <code>t2_status = "no_source"</code> : la valeur <code>"proxy"</code> disparaît. Ce proxy ne mesurait aucun changement et comptait deux fois N2 ou T1 dans les familles. Aucun appelant de <code>nemetonshiny</code> ni de <code>nemetonclaude</code> ne dépend de l’argument retiré.</li>
+<li>L’argument <code>t1_values</code> est conservé, mais il est ignoré et lève un avertissement une fois par session.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="nouveautés-2026-10-5">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-10-5"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/renvoyer_inventaire_video.html">renvoyer_inventaire_video()</a></code></strong> (<em>experimental</em>, spec 061) : après <code><a href="../reference/importer_inventaire_video.html">importer_inventaire_video()</a></code>, construit un nouveau <code>.qgz</code> pour les placettes qui portent encore des arbres <code>a_completer</code> ou <code>a_verifier</code>. Le GeoPackage garde tous les arbres réconciliés de ces placettes, pour qu’une nouvelle importation les remplace sans perte ; seul l’affichage de la couche <code>arbres</code> est filtré dans QField. Les couches annexes et les rasters des mêmes placettes sont repris du terrain s’ils sont fournis.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changements-compatibles-2026-10-5">Changements compatibles<a class="anchor" aria-label="anchor" href="#changements-compatibles-2026-10-5"></a></h3>
+<ul><li>
+<code><a href="../reference/nemeton_compute.html">nemeton_compute()</a></code> ne calcule plus T2 après les autres indicateurs : il ne lit plus N2.</li>
+<li>
+<code>massif_demo_units</code> est régénérée : seules <code>T2</code>, <code>T2_norm</code> et <code>famille_temporel</code> changent.</li>
+<li>Fiches T2 et N2 et leurs diagrammes mis à jour.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.4" id="nemeton-2026104-2026-10-12">nemeton 2026.10.4 (2026-10-12)<a class="anchor" aria-label="anchor" href="#nemeton-2026104-2026-10-12"></a></h2>
 <p>L’inventaire vidéo Groma arrive dans le cœur (spec 061) : une vidéo au smartphone remplace le compas, la boussole et le décamètre sur une placette circulaire.</p>

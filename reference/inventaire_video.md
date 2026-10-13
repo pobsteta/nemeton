@@ -26,6 +26,9 @@ every platform step:
   validation, aggregation, NDP tagging and merge into the project field
   data;
 
+- [`renvoyer_inventaire_video`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md):
+  new QField project with the trees still to complete or to check;
+
 - [`groma_etat_placettes`](https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.md)
   and
   [`groma_telecharger_resultats`](https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.md):

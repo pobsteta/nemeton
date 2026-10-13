@@ -3,17 +3,15 @@
 years. Given a FORMS-T canopy-height time series (forms_t, spec 060), it
 is measured: the share of the unit's canopy that lost at least
 seuil_perte metres of height for good, whatever the cause (clear-cut,
-partial cut, dieback, windthrow). Without that series it falls back on a
-stability proxy derived from other indicators – a copy of N2 (forest
-continuity), otherwise the T1 stand age capped at 100 (tuto 04) – which
-carries no information of its own."><meta property="og:description" content="T2 scores how stable the forest canopy of each unit has been over recent
+partial cut, dieback, windthrow). Without that series T2 is NA: the
+stability proxy (a copy of N2, or the T1 age capped at 100) was removed in
+2026.10.5, as it carried no information of its own."><meta property="og:description" content="T2 scores how stable the forest canopy of each unit has been over recent
 years. Given a FORMS-T canopy-height time series (forms_t, spec 060), it
 is measured: the share of the unit's canopy that lost at least
 seuil_perte metres of height for good, whatever the cause (clear-cut,
-partial cut, dieback, windthrow). Without that series it falls back on a
-stability proxy derived from other indicators – a copy of N2 (forest
-continuity), otherwise the T1 stand age capped at 100 (tuto 04) – which
-carries no information of its own."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
+partial cut, dieback, windthrow). Without that series T2 is NA: the
+stability proxy (a copy of N2, or the T1 age capped at 100) was removed in
+2026.10.5, as it carried no information of its own."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -21,7 +19,7 @@ carries no information of its own."><meta property="og:image" content="https://p
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.4.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -129,10 +127,9 @@ carries no information of its own."><meta property="og:image" content="https://p
 years. Given a FORMS-T canopy-height time series (<code>forms_t</code>, spec 060), it
 is <strong>measured</strong>: the share of the unit's canopy that lost at least
 <code>seuil_perte</code> metres of height for good, whatever the cause (clear-cut,
-partial cut, dieback, windthrow). Without that series it falls back on a
-<strong>stability proxy</strong> derived from other indicators – a copy of N2 (forest
-continuity), otherwise the T1 stand age capped at 100 (tuto 04) – which
-carries no information of its own.</p>
+partial cut, dieback, windthrow). Without that series T2 is <code>NA</code>: the
+stability proxy (a copy of N2, or the T1 age capped at 100) was removed in
+2026.10.5, as it carried no information of its own.</p>
     </div>
 
     <div class="section level2">
@@ -152,8 +149,7 @@ carries no information of its own.</p>
 
 
 <dl><dt id="arg-units">units<a class="anchor" aria-label="anchor" href="#arg-units"></a></dt>
-<dd><p>An sf object with forest parcels. May contain pre-computed
-columns: N2 (forest continuity) or T1 (stand age).</p></dd>
+<dd><p>An sf object with forest parcels.</p></dd>
 
 
 <dt id="arg-layers">layers<a class="anchor" aria-label="anchor" href="#arg-layers"></a></dt>
@@ -162,16 +158,16 @@ kept for interface consistency.</p></dd>
 
 
 <dt id="arg-t-values">t1_values<a class="anchor" aria-label="anchor" href="#arg-t-values"></a></dt>
-<dd><p>Numeric vector. Pre-computed T1 age values (same length
-as nrow(units)). If NULL and units has no T1 column, T2 is <code>NA</code>.</p></dd>
+<dd><p>Deprecated and ignored since 2026.10.5 (it fed the
+removed proxy); a warning is raised once per session when supplied.</p></dd>
 
 
 <dt id="arg-forms-t">forms_t<a class="anchor" aria-label="anchor" href="#arg-forms-t"></a></dt>
 <dd><p>FORMS-T canopy height, one layer per year (at least
 three), layers named by year: a <code><a href="https://rspatial.github.io/terra/reference/SpatRaster-class.html" class="external-link">terra::SpatRaster</a></code>, as returned by
 <code><a href="charger_forms_t_hauteurs.html">charger_forms_t_hauteurs()</a></code>, or a vector of file paths. <code>NULL</code>
-(default) looks for a raster named <code>"forms_t"</code> in <code>layers</code>, and falls
-back on the proxy when there is none.</p></dd>
+(default) looks for a raster named <code>"forms_t"</code> in <code>layers</code>; T2 is
+<code>NA</code> when there is none.</p></dd>
 
 
 <dt id="arg-seuil-perte">seuil_perte<a class="anchor" aria-label="anchor" href="#arg-seuil-perte"></a></dt>
@@ -188,15 +184,14 @@ published) or <code>"m"</code>.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The input <code>units</code> (same class, rows and order) with an added
 numeric column <code>T2</code> (0-100, 100 = stable canopy). <code>NA</code> where
-no source is available – no default value.</p>
-<p>When FORMS-T heights are supplied, four more columns are added:</p><ul><li><p><code>t2_status</code>: <code>"forms_t"</code> (measured), <code>"proxy"</code> (unit outside the
-series, proxy used) or <code>"no_source"</code>;</p></li>
+FORMS-T is missing – no default value.</p>
+<p>When FORMS-T heights are supplied, four more columns are added:</p><ul><li><p><code>t2_status</code>: <code>"forms_t"</code> (measured) or <code>"no_source"</code> (unit
+without canopy in the series);</p></li>
 <li><p><code>t2_perte_pct</code>: share of the unit's canopy in lasting loss (%);</p></li>
 <li><p><code>t2_croissance_m_an</code>: median Theil-Sen height trend of the
 canopy without loss (m/year);</p></li>
 <li><p><code>t2_annees</code>: years read, e.g. <code>"2019-2024"</code>.</p></li>
-</ul><p>Without FORMS-T the result is unchanged from earlier releases (<code>T2</code>
-only).</p>
+</ul><p>Without FORMS-T only the <code>T2</code> column (all <code>NA</code>) is added.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -211,12 +206,6 @@ that does not enter the score.</p>
 outside SUFOSAT clear-cuts are confirmed by the LiDAR HD canopy (flown
 2023-2024), so T2 also sees partial cuts and dieback that T3 does not; on
 Fordead (bark-beetle site) the loss covers 98 % of the forest.</p>
-<p><strong>Proxy (no FORMS-T)</strong>: copy of the N2 (forest continuity/antiquity)
-column if present in units, clamped to 0-100, otherwise the T1 stand age
-(years) capped at 100 (<code>t1_values</code>, then a <code>T1</code> column). The
-fallback applies <strong>unit by unit</strong>: a unit whose N2 is <code>NA</code> takes its
-T1 age when known. With FORMS-T, a unit the series does not cover takes
-the proxy too.</p>
 <p>Do not compare T2 values computed over different year windows. FORMS-T is
 a height <strong>predicted</strong> from Sentinel-1/2 and GEDI, not measured; light
 thinnings (less than <code>seuil_perte</code>) are not seen.</p>
@@ -241,14 +230,9 @@ thinnings (less than <code>seuil_perte</code>) are not seen.</p>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">units</span> <span class="op">&lt;-</span> <span class="va">massif_demo_units</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">10</span>, <span class="op">]</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Compute T1 first, then T2: the T1 column of the result feeds T2</span></span></span>
-<span class="r-in"><span><span class="va">t1</span> <span class="op">&lt;-</span> <span class="fu"><a href="indicateur_t1_anciennete.html">indicateur_t1_anciennete</a></span><span class="op">(</span><span class="va">units</span>, layers <span class="op">=</span> <span class="fu"><a href="massif_demo_layers.html">massif_demo_layers</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">t2</span> <span class="op">&lt;-</span> <span class="fu">indicateur_t2_changement</span><span class="op">(</span><span class="va">t1</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">t2</span><span class="op">$</span><span class="va">T2</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Measured canopy stability from FORMS-T (spec 060)</span></span></span>
+<span class="r-in"><span><span class="co"># Canopy stability measured on FORMS-T (spec 060)</span></span></span>
 <span class="r-in"><span><span class="va">h</span> <span class="op">&lt;-</span> <span class="fu"><a href="charger_forms_t_hauteurs.html">charger_forms_t_hauteurs</a></span><span class="op">(</span><span class="va">units</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">t2</span> <span class="op">&lt;-</span> <span class="fu">indicateur_t2_changement</span><span class="op">(</span><span class="va">t1</span>, forms_t <span class="op">=</span> <span class="va">h</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">t2</span> <span class="op">&lt;-</span> <span class="fu">indicateur_t2_changement</span><span class="op">(</span><span class="va">units</span>, forms_t <span class="op">=</span> <span class="va">h</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">t2</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"T2"</span>, <span class="st">"t2_status"</span>, <span class="st">"t2_perte_pct"</span>, <span class="st">"t2_croissance_m_an"</span><span class="op">)</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>

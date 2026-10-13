@@ -1,5 +1,44 @@
 # Changelog
 
+## nemeton 2026.10.5 (2026-10-13)
+
+T2 ne recopie plus N2 ni T1 : sans série FORMS-T, il vaut `NA` (spec
+060, release B). L’inventaire vidéo peut renvoyer sur le terrain les
+arbres à compléter ou à vérifier (spec 061).
+
+### Changements cassants
+
+- **[`indicateur_t2_changement()`](https://pobsteta.github.io/nemeton/reference/indicateur_t2_changement.md)**
+  : le proxy de stabilité est retiré, avec l’accord de Pascal. Sans
+  FORMS-T, T2 valait une copie de N2 (écrêtée à 0-100), à défaut l’âge
+  T1 plafonné à 100 ; il vaut désormais `NA`. Une unité que la série ne
+  couvre pas prend `t2_status = "no_source"` : la valeur `"proxy"`
+  disparaît. Ce proxy ne mesurait aucun changement et comptait deux fois
+  N2 ou T1 dans les familles. Aucun appelant de `nemetonshiny` ni de
+  `nemetonclaude` ne dépend de l’argument retiré.
+- L’argument `t1_values` est conservé, mais il est ignoré et lève un
+  avertissement une fois par session.
+
+### Nouveautés
+
+- **[`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md)**
+  (*experimental*, spec 061) : après
+  [`importer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/importer_inventaire_video.md),
+  construit un nouveau `.qgz` pour les placettes qui portent encore des
+  arbres `a_completer` ou `a_verifier`. Le GeoPackage garde tous les
+  arbres réconciliés de ces placettes, pour qu’une nouvelle importation
+  les remplace sans perte ; seul l’affichage de la couche `arbres` est
+  filtré dans QField. Les couches annexes et les rasters des mêmes
+  placettes sont repris du terrain s’ils sont fournis.
+
+### Changements compatibles
+
+- [`nemeton_compute()`](https://pobsteta.github.io/nemeton/reference/nemeton_compute.md)
+  ne calcule plus T2 après les autres indicateurs : il ne lit plus N2.
+- `massif_demo_units` est régénérée : seules `T2`, `T2_norm` et
+  `famille_temporel` changent.
+- Fiches T2 et N2 et leurs diagrammes mis à jour.
+
 ## nemeton 2026.10.4 (2026-10-12)
 
 L’inventaire vidéo Groma arrive dans le cœur (spec 061) : une vidéo au
