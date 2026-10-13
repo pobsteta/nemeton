@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.4.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -362,6 +362,7 @@
 <td><code>nemetonshiny</code></td>
 <td>⬜ brief émis par groma</td>
 </tr></tbody></table><p><strong>Journal</strong> — <em>2026-10-12</em> (<strong>2026.10.4</strong>) : 9 fonctions exportées (experimental) dans <code>R/inventaire_video.R</code>. Le schéma, les déclencheurs et le référentiel d’essences sont copiés tels quels de groma dans <code>inst/inventaire_video/</code>, les cas communs dans <code>tests/testthat/fixtures/</code>. Les 10 cas de numérotation, les 5 cas de rapprochement (dont l’absence de perte d’attribut) et les 9 cas de hauteur passent. Méthode hongroise écrite dans le cœur plutôt que d’ajouter <code>clue</code>. Les couches <code>placettes</code>, <code>arbres</code> et <code>detections</code> sont écrites sans index spatial ; un test insère dans <code>detections</code> par une connexion RSQLite sans fonction spatiale et vérifie la ligne <code>arbres</code> créée par le déclencheur. Sur l’exemple groma, l’import rapproche P001 (14 définitifs, 4 à compléter, 1 à vérifier, aucune alerte), signale le diamètre de 208,7 cm et donne G = 37,2 m²/ha. Sept libellés BD Forêt V2 ne tombent plus en <code>essence_mixte</code>. Une note de l’app arrivée en cours de route (<code>inventaire-video-retours-app</code>) a fixé les formes de retour : <code><a href="reference/importer_inventaire_video.html">importer_inventaire_video()</a></code> rend <code>a_completer</code>, <code>a_verifier</code>, <code>classique_conserve</code> et <code>ndp</code>, <code><a href="reference/groma_etat_placettes.html">groma_telecharger_resultats()</a></code> rend des chemins, et un inventaire vidéo porteur d’arbres atteint le NDP 3 sans le seuil de 10 arbres par placette (l’exemple groma en compte 9).</p>
+<p><em>2026-10-12</em> : PR #553 mergée (CI verte : R-CMD-check, tests, couverture, pkgdown) ; tag <code>v2026.10.4</code> posé par <code>release.yml</code>. Cycle dev <code>2026.10.4.9000</code>. Réponse à l’app : <code>vers-nemetonshiny/2026-10-12-reponse-inventaire-video-retours.md</code> (plancher <code>nemeton (&gt;= 2026.10.4)</code>).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="ci--dépendances-et-actions-github">CI — dépendances et actions GitHub<a class="anchor" aria-label="anchor" href="#ci--d%C3%A9pendances-et-actions-github"></a></h1>
