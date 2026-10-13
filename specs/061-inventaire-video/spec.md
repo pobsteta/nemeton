@@ -28,6 +28,7 @@ l'interface (sous-onglet Terrain > Inventaire vidéo).
 | `valider_inventaire_video()` | `validate_field_data(dbh_max_cm = Inf, dbh_alerte_cm = 200)` + uuid, domaines, plan |
 | `importer_inventaire_video()` | bloc « Intégrer » : rapprochement, `espece`, retrait des faux positifs, validation, agrégats par rayon, marquage NDP, fusion |
 | `groma_etat_placettes()`, `groma_telecharger_resultats()` | client de l'API du serveur Groma (`httr2`, déjà en Suggests) |
+| `renvoyer_inventaire_video()` | **2026.10.5** : nouveau `.qgz` pour les arbres `a_completer` / `a_verifier` (option du § 4 du brief) |
 
 Évolutions non cassantes (défauts inchangés) :
 - `validate_field_data(dbh_max_cm = 300, dbh_alerte_cm = NULL)` (décision 2) ;
@@ -78,9 +79,24 @@ l'interface (sous-onglet Terrain > Inventaire vidéo).
 
 - Plugin de projet QField `<projet>.qml` : réservé, contenu à fournir par
   groma après validation sur appareil (Android 11+).
-- Option « renvoyer les `a_completer` / `a_verifier` sur le terrain dans un
-  `.qgz` filtré » : non livrée (le brief la note en option).
 - Câblage app (`nemetonshiny`) : brief émis par groma.
+
+## 4 bis. Renvoi sur le terrain (2026.10.5)
+
+`renvoyer_inventaire_video(import, gpkg, rasters, etats, filtrer)` prend le
+résultat de `importer_inventaire_video()`. Choix :
+
+- le GeoPackage garde **tous** les arbres réconciliés des placettes renvoyées,
+  pas seulement ceux à reprendre. Une nouvelle importation remplace la placette
+  entière lors de la fusion : n'y mettre que les arbres à reprendre ferait
+  perdre les autres. Le filtre ne porte que sur l'affichage (`|subset=` de la
+  source OGR dans le `.qgs`) ;
+- les couches annexes (`centres_mesures`, `cibles`, `detections`,
+  `houppiers`) viennent du GeoPackage de terrain quand il est fourni, les
+  rasters d'un dossier `rasters/` ;
+- `etat_traitement` des placettes n'est pas modifié ;
+- l'assemblage du `.qgz` est partagé avec `creer_projet_inventaire_video()`
+  (`.iv_empaqueter()`).
 
 ## 5. Tests
 

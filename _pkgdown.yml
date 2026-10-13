@@ -571,6 +571,7 @@ reference:
     - rapprocher_arbres
     - valider_inventaire_video
     - importer_inventaire_video
+    - renvoyer_inventaire_video
     - groma_etat_placettes
 
   - subtitle: "Corpus de connaissances et RAG"

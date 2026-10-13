@@ -207,7 +207,8 @@ devenus inutiles). **Chantier T2 clos côté cœur.**
 | Étape | Contenu | Release | État |
 |---|---|---|---|
 | Cœur | schéma partagé, GeoPackage + rasters + projet QField, numérotation, hauteurs par houppier, rapprochement, validation, import/fusion, client API Groma ; `validate_field_data(dbh_max_cm, dbh_alerte_cm)`, `tag_field_data_sources(source)` | **2026.10.4** | ✅ livré |
-| Cœur | plugin de projet QField `.qml` (contenu à fournir par groma) ; renvoi filtré des `a_completer`/`a_verifier` | — | ⬜ |
+| Cœur | renvoi sur le terrain des `a_completer`/`a_verifier` : `renvoyer_inventaire_video()` | **2026.10.5** | ✅ livré |
+| Cœur | plugin de projet QField `.qml` (contenu à fournir par groma) | — | ⬜ attend groma |
 | App | sous-onglet Terrain > Inventaire vidéo | `nemetonshiny` | ⬜ brief émis par groma |
 
 **Journal** — *2026-10-12* (**2026.10.4**) : 9 fonctions exportées
@@ -234,6 +235,15 @@ pkgdown) ; tag `v2026.10.4` posé par `release.yml`. Cycle dev
 `2026.10.4.9000`. Réponse à l'app :
 `vers-nemetonshiny/2026-10-12-reponse-inventaire-video-retours.md` (plancher
 `nemeton (>= 2026.10.4)`).
+
+*2026-10-13* (**2026.10.5**) : `renvoyer_inventaire_video()`, option du § 4 du
+brief. Le `.qgz` de retour garde tous les arbres réconciliés des placettes
+concernées et filtre seulement l'affichage de `arbres` (`|subset=` OGR), pour
+qu'une nouvelle importation remplace la placette sans perte. Sur l'exemple
+groma : P001 seule, 5 arbres à reprendre sur 19, rasters et couches annexes
+repris, réimportation identique. Assemblage du `.qgz` factorisé avec
+`creer_projet_inventaire_video()` (`.iv_empaqueter()`). Reste le plugin `.qml`,
+qui attend groma.
 
 ---
 

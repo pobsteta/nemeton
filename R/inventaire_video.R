@@ -17,6 +17,8 @@
 #'   \item \code{\link{valider_inventaire_video}} and
 #'     \code{\link{importer_inventaire_video}}: validation, aggregation, NDP
 #'     tagging and merge into the project field data;
+#'   \item \code{\link{renvoyer_inventaire_video}}: new QField project with
+#'     the trees still to complete or to check;
 #'   \item \code{\link{groma_etat_placettes}} and
 #'     \code{\link{groma_telecharger_resultats}}: client of the Groma server.
 #' }
@@ -959,6 +961,52 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
            )))
 }
 
+# Projet QGIS / QField écrit dans `stage`, puis zippé en `.qgz` avec le
+# GeoPackage et les rasters. `subset_arbres` filtre l'affichage de la couche
+# `arbres` (expression QGIS), sans toucher aux données du GeoPackage.
+.iv_empaqueter <- function(stage, gpkg_rel, rasters, schema, bbox, project_name,
+                           qgz_path, subset_arbres = NULL) {
+  noms_couches <- c(placettes = "Placettes", centres_mesures = "Centres mesur\u00e9s",
+                    cibles = "Cibles", arbres = "Arbres", detections = "D\u00e9tections Groma",
+                    houppiers = "Houppiers")
+  geoms <- c(POINT = "Point", POLYGON = "Polygon")
+  couches <- lapply(names(schema), function(couche) {
+    champs <- schema[[couche]]
+    list(id = paste0(couche, "_01"), name = unname(noms_couches[couche]),
+         gpkg_rel = gpkg_rel, layername = couche,
+         geometry = unname(geoms[attr(champs, "geometrie")]), schema = champs,
+         bbox = bbox,
+         renderer = if (couche == "arbres") .iv_renderer_etat() else NULL,
+         labeling = if (couche == "arbres") .iv_etiquette_arbres() else NULL,
+         readonly = attr(champs, "lecture_seule"),
+         subset = if (couche == "arbres") subset_arbres else NULL)
+  })
+  couches <- c(couches, lapply(rasters, function(f) {
+    list(type = "raster", id = gsub("[^A-Za-z0-9_]", "_", tools::file_path_sans_ext(basename(f))),
+         name = tools::file_path_sans_ext(basename(f)), source = f, bbox = bbox)
+  }))
+  qgs_rel <- paste0(project_name, ".qgs")
+  writeLines(.build_qgs_xml(couches, crs = 2154, project_name = project_name),
+             file.path(stage, qgs_rel), useBytes = TRUE)
+
+  fichiers <- c(qgs_rel, gpkg_rel, rasters)
+  zip_rc <- NA_integer_
+  tryCatch(
+    .atomic_write(qgz_path, function(tmp) {
+      withr::with_dir(stage, {
+        zip_rc <<- utils::zip(zipfile = tmp, files = fichiers, flags = "-q -X",
+                              zip = Sys.getenv("R_ZIPCMD", "zip"))
+      })
+      if (!identical(as.integer(zip_rc), 0L)) unlink(tmp)
+    }),
+    error = function(e) {
+      cli::cli_abort("Failed to build {.path {qgz_path}} (zip return code {zip_rc}).",
+                     parent = e)
+    }
+  )
+  invisible(qgz_path)
+}
+
 #' Create the video inventory field project
 #'
 #' Builds \code{inventaire_video.gpkg} (layers \code{placettes},
@@ -1125,46 +1173,9 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   }
   .iv_poser_declencheurs(gpkg)
 
-  # Projet QGIS / QField.
   bbox <- tryCatch(sf::st_bbox(sf::st_buffer(placettes, rayon_m + marge_m)),
                    error = function(e) NULL)
-  noms_couches <- c(placettes = "Placettes", centres_mesures = "Centres mesur\u00e9s",
-                    cibles = "Cibles", arbres = "Arbres", detections = "D\u00e9tections Groma",
-                    houppiers = "Houppiers")
-  geoms <- c(POINT = "Point", POLYGON = "Polygon")
-  couches <- lapply(names(schema), function(couche) {
-    champs <- schema[[couche]]
-    list(id = paste0(couche, "_01"), name = unname(noms_couches[couche]),
-         gpkg_rel = gpkg_rel, layername = couche,
-         geometry = unname(geoms[attr(champs, "geometrie")]), schema = champs,
-         bbox = bbox,
-         renderer = if (couche == "arbres") .iv_renderer_etat() else NULL,
-         labeling = if (couche == "arbres") .iv_etiquette_arbres() else NULL,
-         readonly = attr(champs, "lecture_seule"))
-  })
-  couches <- c(couches, lapply(rasters, function(f) {
-    list(type = "raster", id = gsub("[^A-Za-z0-9_]", "_", tools::file_path_sans_ext(basename(f))),
-         name = tools::file_path_sans_ext(basename(f)), source = f, bbox = bbox)
-  }))
-  qgs_rel <- paste0(project_name, ".qgs")
-  writeLines(.build_qgs_xml(couches, crs = 2154, project_name = project_name),
-             file.path(stage, qgs_rel), useBytes = TRUE)
-
-  fichiers <- c(qgs_rel, gpkg_rel, rasters)
-  zip_rc <- NA_integer_
-  tryCatch(
-    .atomic_write(qgz_path, function(tmp) {
-      withr::with_dir(stage, {
-        zip_rc <<- utils::zip(zipfile = tmp, files = fichiers, flags = "-q -X",
-                              zip = Sys.getenv("R_ZIPCMD", "zip"))
-      })
-      if (!identical(as.integer(zip_rc), 0L)) unlink(tmp)
-    }),
-    error = function(e) {
-      cli::cli_abort("Failed to build {.path {qgz_path}} (zip return code {zip_rc}).",
-                     parent = e)
-    }
-  )
+  .iv_empaqueter(stage, gpkg_rel, rasters, schema, bbox, project_name, qgz_path)
   cli::cli_alert_success("Video inventory project created: {.path {qgz_path}}")
   invisible(qgz_path)
 }
@@ -1328,6 +1339,140 @@ importer_inventaire_video <- function(gpkg, resultats = NULL, field_data_gpkg = 
        alertes = if (length(alertes)) do.call(rbind, unname(alertes)) else vide_alertes,
        numeros_modifies = if (length(modifies)) do.call(rbind, unname(modifies)) else vide_modifies,
        field_data_gpkg = field_data_gpkg)
+}
+
+#' Send video-inventory trees back to the field
+#'
+#' Builds a new QField project (\code{.qgz}) for the plots that still hold
+#' trees to complete or to check after \code{\link{importer_inventaire_video}}
+#' (groma brief, section 4, option). The GeoPackage
+#' \code{inventaire_video.gpkg} keeps \strong{all} the reconciled trees of
+#' those plots, so that importing it again replaces the plots without losing
+#' any tree; only the display of the \code{arbres} layer is filtered on
+#' \code{etat_detection} (QGIS \code{subset}), and it can be turned off with
+#' \code{filtrer = FALSE}.
+#'
+#' The other layers (\code{centres_mesures}, \code{cibles},
+#' \code{detections}, \code{houppiers}) are copied for the same plots from
+#' \code{gpkg} when given, and left empty otherwise. Layers are written as by
+#' \code{\link{creer_projet_inventaire_video}} (no spatial index on
+#' \code{placettes}, \code{arbres}, \code{detections}; SQLite triggers).
+#'
+#' @param import Result of \code{\link{importer_inventaire_video}} (list with
+#'   \code{placettes} and \code{arbres}).
+#' @param gpkg Optional path of the \code{inventaire_video.gpkg} returned from
+#'   the field, for the other layers.
+#' @param rasters Optional directory holding the per-plot GeoTIFFs
+#'   (\code{<plot_id>_mnt.tif}, \code{<plot_id>_mnh.tif}), e.g. the
+#'   \code{rasters/} folder of the original \code{.qgz}; the files of the
+#'   selected plots are copied.
+#' @param etats States of \code{etat_detection} to send back. Default
+#'   \code{c("a_completer", "a_verifier")}.
+#' @param filtrer Logical. Filter the display of \code{arbres} on
+#'   \code{etats}. Default \code{TRUE}.
+#' @param output_dir Destination directory.
+#' @param project_name File name of the \code{.qgz} (\code{^[A-Za-z0-9_-]+$}).
+#'   Default \code{"inventaire_video_retour"}.
+#' @param overwrite Logical. Overwrite an existing \code{.qgz}. Default
+#'   \code{TRUE}.
+#'
+#' @return Absolute path to the \code{.qgz} (invisibly), with attribute
+#'   \code{plot_ids} (plots sent back) and \code{n_arbres} (trees in
+#'   \code{etats}).
+#'
+#' @section Lifecycle:
+#' Experimental (spec 061).
+#'
+#' @export
+renvoyer_inventaire_video <- function(import, gpkg = NULL, rasters = NULL,
+                                      etats = c("a_completer", "a_verifier"),
+                                      filtrer = TRUE, output_dir,
+                                      project_name = "inventaire_video_retour",
+                                      overwrite = TRUE) {
+  if (!is.list(import) || is.null(import$placettes) || is.null(import$arbres)) {
+    cli::cli_abort("{.arg import} must be the result of {.fn importer_inventaire_video}.")
+  }
+  dom <- attr(schema_inventaire_video(), "domaines")$etat_detection
+  inconnus <- setdiff(etats, dom)
+  if (!length(etats) || length(inconnus)) {
+    cli::cli_abort(c("{.arg etats} must be values of {.val etat_detection}.",
+                     i = "Allowed: {.val {dom}}."))
+  }
+  if (!is.character(project_name) || length(project_name) != 1L ||
+      is.na(project_name) || !grepl("^[A-Za-z0-9_-]+$", project_name)) {
+    cli::cli_abort(c(
+      "{.arg project_name} must be a single name made of letters, digits, {.val _} or {.val -}.",
+      "x" = "Got {.val {project_name}}."
+    ))
+  }
+  rlang::check_installed(c("DBI", "RSQLite"), reason = "to install the GeoPackage triggers.")
+
+  arbres <- sf::st_transform(import$arbres, 2154)
+  etat <- as.character(.iv_col(arbres, "etat_detection", NA_character_))
+  cibles <- !is.na(etat) & etat %in% etats
+  if (!any(cibles)) {
+    cli::cli_abort("No tree in state {.val {etats}}: nothing to send back.")
+  }
+  plot_ids <- sort(unique(as.character(arbres$plot_id[cibles])))
+  placettes <- sf::st_transform(import$placettes, 2154)
+  placettes <- placettes[placettes$plot_id %in% plot_ids, ]
+  arbres <- arbres[arbres$plot_id %in% plot_ids, ]
+
+  dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+  output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
+  qgz_path <- file.path(output_dir, paste0(project_name, ".qgz"))
+  if (file.exists(qgz_path) && !overwrite) {
+    cli::cli_abort("File {.path {qgz_path}} already exists (overwrite = FALSE).")
+  }
+  stage <- tempfile("inventaire_video_retour_")
+  dir.create(file.path(stage, "rasters"), recursive = TRUE)
+  on.exit(unlink(stage, recursive = TRUE), add = TRUE)
+  gpkg_rel <- "inventaire_video.gpkg"
+  sortie <- file.path(stage, gpkg_rel)
+  schema <- schema_inventaire_video()
+
+  # Couches annexes des mêmes placettes, depuis le GeoPackage de terrain.
+  annexe <- function(couche) {
+    if (is.null(gpkg) || !couche %in% sf::st_layers(gpkg)$name) return(NULL)
+    x <- sf::st_read(gpkg, layer = couche, quiet = TRUE)
+    if (!nrow(x) || !"plot_id" %in% names(x)) return(NULL)
+    sf::st_transform(x[x$plot_id %in% plot_ids, ], 2154)
+  }
+  for (couche in names(schema)) {
+    champs <- schema[[couche]]
+    x <- switch(couche, placettes = placettes, arbres = arbres, annexe(couche))
+    x <- .iv_conformer(x, champs, attr(champs, "geometrie"))
+    .iv_ecrire_couche(x, sortie, couche, attr(champs, "index_spatial"))
+  }
+  .iv_poser_declencheurs(sortie)
+
+  fichiers_r <- character(0)
+  if (!is.null(rasters)) {
+    candidats <- file.path("rasters", c(paste0(plot_ids, "_mnt.tif"),
+                                        paste0(plot_ids, "_mnh.tif")))
+    for (f in candidats) {
+      src <- file.path(rasters, basename(f))
+      if (file.exists(src) && file.copy(src, file.path(stage, f))) {
+        fichiers_r <- c(fichiers_r, f)
+      }
+    }
+  }
+
+  subset <- if (isTRUE(filtrer)) {
+    sprintf('"etat_detection" IN (%s)', paste0("'", etats, "'", collapse = ", "))
+  }
+  rayon <- as.numeric(.iv_col(placettes, "rayon_m", NA_real_))
+  rayon[is.na(rayon)] <- 20
+  bbox <- tryCatch(sf::st_bbox(sf::st_buffer(placettes, rayon + 10)),
+                   error = function(e) NULL)
+  .iv_empaqueter(stage, gpkg_rel, fichiers_r, schema, bbox, project_name,
+                 qgz_path, subset_arbres = subset)
+  cli::cli_alert_success(
+    "Field return project created: {.path {qgz_path}} ({sum(cibles)} tree{?s}, {length(plot_ids)} plot{?s})"
+  )
+  attr(qgz_path, "plot_ids") <- plot_ids
+  attr(qgz_path, "n_arbres") <- sum(cibles)
+  invisible(qgz_path)
 }
 
 # Empile deux sf aux colonnes différentes (colonnes manquantes à NA).

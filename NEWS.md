@@ -1,7 +1,8 @@
 # nemeton 2026.10.5 (2026-10-13)
 
 T2 ne recopie plus N2 ni T1 : sans série FORMS-T, il vaut `NA` (spec 060,
-release B).
+release B). L'inventaire vidéo peut renvoyer sur le terrain les arbres à
+compléter ou à vérifier (spec 061).
 
 ## Changements cassants
 
@@ -14,6 +15,16 @@ release B).
   `nemetonclaude` ne dépend de l'argument retiré.
 - L'argument `t1_values` est conservé, mais il est ignoré et lève un
   avertissement une fois par session.
+
+## Nouveautés
+
+- **`renvoyer_inventaire_video()`** (*experimental*, spec 061) : après
+  `importer_inventaire_video()`, construit un nouveau `.qgz` pour les placettes
+  qui portent encore des arbres `a_completer` ou `a_verifier`. Le GeoPackage
+  garde tous les arbres réconciliés de ces placettes, pour qu'une nouvelle
+  importation les remplace sans perte ; seul l'affichage de la couche `arbres`
+  est filtré dans QField. Les couches annexes et les rasters des mêmes
+  placettes sont repris du terrain s'ils sont fournis.
 
 ## Changements compatibles
 

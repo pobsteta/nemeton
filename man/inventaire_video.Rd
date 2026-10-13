@@ -20,6 +20,8 @@ Groma server a **definitive** one. nemeton carries every platform step:
   \item \code{\link{valider_inventaire_video}} and
     \code{\link{importer_inventaire_video}}: validation, aggregation, NDP
     tagging and merge into the project field data;
+  \item \code{\link{renvoyer_inventaire_video}}: new QField project with
+    the trees still to complete or to check;
   \item \code{\link{groma_etat_placettes}} and
     \code{\link{groma_telecharger_resultats}}: client of the Groma server.
 }
