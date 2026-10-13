@@ -487,12 +487,11 @@ args_demo <- list(
                                       game_density = terra::init(landcover_r, NA))
 )
 
-# Les composites lisent des codes déjà calculés (T2 <- N2, E2 <- E1,
+# Les composites lisent des codes déjà calculés (E2 <- E1,
 # N3 <- N1/N2/L1/B3) : calculés en dernier, sur `travail` enrichi au fil de
 # la boucle, comme dans nemeton_compute().
 indicateurs <- list_indicators()
-composites <- c("indicateur_t2_changement", "indicateur_e2_evitement",
-                "indicateur_n3_naturalite")
+composites <- c("indicateur_e2_evitement", "indicateur_n3_naturalite")
 ordre <- c(setdiff(indicateurs, composites), composites)
 travail <- massif_demo_units
 codes <- setNames(vapply(indicateurs, .indicator_short_code, ""), indicateurs)

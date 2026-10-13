@@ -137,12 +137,12 @@ nemeton_compute <- function(units,
   }
 
   # Les indicateurs composites lisent des valeurs déjà calculées sous leur code
-  # court : T2 lit N2, E2 lit E1, N3 lit N1/N2/L1/B3. On les calcule en dernier
+  # court : E2 lit E1, N3 lit N1/N2/L1/B3 (T2 lisait N2 jusqu'au retrait de son
+  # proxy en 2026.10.5). On les calcule en dernier
   # et on leur passe `work`, une copie des unités enrichie des codes courts au
   # fil de la boucle. Avant 0.208.0, chaque indicateur recevait les unités
   # d'origine : N3 et E2 valaient toujours NA et T2 retombait sur 50 (audit 1.0).
-  composites <- c("indicateur_t2_changement", "indicateur_e2_evitement",
-                  "indicateur_n3_naturalite")
+  composites <- c("indicateur_e2_evitement", "indicateur_n3_naturalite")
   indicators <- c(setdiff(indicators, composites), intersect(composites, indicators))
   work <- units
 

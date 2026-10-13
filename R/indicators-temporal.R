@@ -203,22 +203,20 @@ indicateur_t1_anciennete <- function(units,
 #' years. Given a FORMS-T canopy-height time series (`forms_t`, spec 060), it
 #' is **measured**: the share of the unit's canopy that lost at least
 #' `seuil_perte` metres of height for good, whatever the cause (clear-cut,
-#' partial cut, dieback, windthrow). Without that series it falls back on a
-#' **stability proxy** derived from other indicators -- a copy of N2 (forest
-#' continuity), otherwise the T1 stand age capped at 100 (tuto 04) -- which
-#' carries no information of its own.
+#' partial cut, dieback, windthrow). Without that series T2 is `NA`: the
+#' stability proxy (a copy of N2, or the T1 age capped at 100) was removed in
+#' 2026.10.5, as it carried no information of its own.
 #'
-#' @param units An sf object with forest parcels. May contain pre-computed
-#'   columns: N2 (forest continuity) or T1 (stand age).
+#' @param units An sf object with forest parcels.
 #' @param layers A nemeton_layers object (optional). Not directly used but
 #'   kept for interface consistency.
-#' @param t1_values Numeric vector. Pre-computed T1 age values (same length
-#'   as nrow(units)). If NULL and units has no T1 column, T2 is \code{NA}.
+#' @param t1_values Deprecated and ignored since 2026.10.5 (it fed the
+#'   removed proxy); a warning is raised once per session when supplied.
 #' @param forms_t FORMS-T canopy height, one layer per year (at least
 #'   three), layers named by year: a `terra::SpatRaster`, as returned by
 #'   [charger_forms_t_hauteurs()], or a vector of file paths. `NULL`
-#'   (default) looks for a raster named `"forms_t"` in `layers`, and falls
-#'   back on the proxy when there is none.
+#'   (default) looks for a raster named `"forms_t"` in `layers`; T2 is
+#'   `NA` when there is none.
 #' @param seuil_perte Numeric. Height loss, in metres, that counts as a
 #'   canopy loss. Default `5`.
 #' @param unite_hauteur Unit of `forms_t`: `"cm"` (default, FORMS-T as
@@ -226,19 +224,18 @@ indicateur_t1_anciennete <- function(units,
 #'
 #' @return The input \code{units} (same class, rows and order) with an added
 #'   numeric column \code{T2} (0-100, 100 = stable canopy). \code{NA} where
-#'   no source is available -- no default value.
+#'   FORMS-T is missing -- no default value.
 #'
 #'   When FORMS-T heights are supplied, four more columns are added:
 #'   \itemize{
-#'     \item `t2_status`: `"forms_t"` (measured), `"proxy"` (unit outside the
-#'       series, proxy used) or `"no_source"`;
+#'     \item `t2_status`: `"forms_t"` (measured) or `"no_source"` (unit
+#'       without canopy in the series);
 #'     \item `t2_perte_pct`: share of the unit's canopy in lasting loss (%);
 #'     \item `t2_croissance_m_an`: median Theil-Sen height trend of the
 #'       canopy without loss (m/year);
 #'     \item `t2_annees`: years read, e.g. `"2019-2024"`.
 #'   }
-#'   Without FORMS-T the result is unchanged from earlier releases (`T2`
-#'   only).
+#'   Without FORMS-T only the `T2` column (all `NA`) is added.
 #'
 #' @details
 #' **Measured path (FORMS-T)**. Only pixels whose height reached
@@ -255,13 +252,6 @@ indicateur_t1_anciennete <- function(units,
 #' outside SUFOSAT clear-cuts are confirmed by the LiDAR HD canopy (flown
 #' 2023-2024), so T2 also sees partial cuts and dieback that T3 does not; on
 #' Fordead (bark-beetle site) the loss covers 98 % of the forest.
-#'
-#' **Proxy (no FORMS-T)**: copy of the N2 (forest continuity/antiquity)
-#' column if present in units, clamped to 0-100, otherwise the T1 stand age
-#' (years) capped at 100 (\code{t1_values}, then a \code{T1} column). The
-#' fallback applies **unit by unit**: a unit whose N2 is \code{NA} takes its
-#' T1 age when known. With FORMS-T, a unit the series does not cover takes
-#' the proxy too.
 #'
 #' Do not compare T2 values computed over different year windows. FORMS-T is
 #' a height **predicted** from Sentinel-1/2 and GEDI, not measured; light
@@ -280,14 +270,9 @@ indicateur_t1_anciennete <- function(units,
 #' data(massif_demo_units)
 #' units <- massif_demo_units[1:10, ]
 #'
-#' # Compute T1 first, then T2: the T1 column of the result feeds T2
-#' t1 <- indicateur_t1_anciennete(units, layers = massif_demo_layers())
-#' t2 <- indicateur_t2_changement(t1)
-#' t2$T2
-#'
-#' # Measured canopy stability from FORMS-T (spec 060)
+#' # Canopy stability measured on FORMS-T (spec 060)
 #' h <- charger_forms_t_hauteurs(units)
-#' t2 <- indicateur_t2_changement(t1, forms_t = h)
+#' t2 <- indicateur_t2_changement(units, forms_t = h)
 #' t2[, c("T2", "t2_status", "t2_perte_pct", "t2_croissance_m_an")]
 #' }
 indicateur_t2_changement <- function(units,
@@ -307,67 +292,27 @@ indicateur_t2_changement <- function(units,
 
   n <- nrow(units)
 
-  # Sources candidates, par ordre de priorité. Le repli se fait UNITÉ PAR
-  # UNITÉ : une colonne N2 présente mais NA sur une unité ne la condamne plus
-  # à NA quand son T1 est connu (avant 0.212.1, la colonne N2 était prise
-  # entière dès qu'elle existait, NA compris ; l'app devait écarter une N2
-  # toute NA pour retomber sur T1, et le cas mixte restait perdu).
-  sources <- list()
-
-  # --- Priorité 1 : N2 (continuité / ancienneté forestière) ---
-  n2_col <- NULL
-  for (col in c("N2_anciennete", "N2_anciennet", "N2")) {
-    if (col %in% names(units)) {
-      n2_col <- col
-      break
-    }
-  }
-  if (!is.null(n2_col)) {
-    sources[[n2_col]] <- pmin(pmax(as.numeric(units[[n2_col]]), 0), 100)
+  # Le proxy N2 / T1 est retiré en 2026.10.5 (accord de Pascal, 2026-10-13) :
+  # T2 recopiait un autre indicateur et n'apportait rien. Sans FORMS-T, NA.
+  if (!is.null(t1_values)) {
+    rlang::warn(
+      c("`t1_values` is deprecated and ignored since nemeton 2026.10.5.",
+        i = "T2 is measured on FORMS-T only; the N2 / T1 proxy was removed."),
+      .frequency = "once",
+      .frequency_id = "nemeton_t2_t1_values"
+    )
   }
 
-  # --- Priorité 2 : âge T1 plafonné à 100, argument puis colonne ---
-  # Âge inconnu -> NA : pas de stabilité « moyenne » inventée.
-  if (!is.null(t1_values) && is.numeric(t1_values) && length(t1_values) == n) {
-    sources[["T1 age values"]] <- pmin(100, t1_values)
-  }
-  if ("T1" %in% names(units)) {
-    sources[["T1 column"]] <- pmin(100, as.numeric(units$T1))
-  }
-
-  # --- Aucune source : NA (plus de 50 par défaut) ---
-  if (length(sources) == 0L && is.null(mesure)) {
-    cli::cli_alert_warning("T2: No N2 or T1 data available, returning NA")
+  if (is.null(mesure)) {
+    cli::cli_alert_warning("T2: no FORMS-T canopy-height series, returning NA")
     return(.indicateur_resultat(units, "T2", rep(NA_real_, n)))
   }
 
-  t2 <- rep(NA_real_, n)
-  used <- character(0)
-  for (nm in names(sources)) {
-    fill <- is.na(t2) & !is.na(sources[[nm]])
-    if (any(fill)) {
-      t2[fill] <- sources[[nm]][fill]
-      used <- c(used, sprintf("%s (%d)", nm, sum(fill)))
-    }
-  }
-  if (is.null(mesure)) {
-    if (length(used) == 0L) {
-      cli::cli_alert_warning(
-        "T2: {paste(names(sources), collapse = ', ')} present but all NA, returning NA"
-      )
-    } else {
-      cli::cli_alert_info("T2: stability proxy from {paste(used, collapse = ', ')}")
-      msg_info("indicateur_t2_changement")
-    }
-    return(.indicateur_resultat(units, "T2", t2))
-  }
-
-  # Chemin mesuré : FORMS-T d'abord, proxy unité par unité ailleurs.
   mes <- !is.na(mesure$score)
-  statut <- ifelse(mes, "forms_t", ifelse(is.na(t2), "no_source", "proxy"))
-  t2[mes] <- mesure$score[mes]
+  statut <- ifelse(mes, "forms_t", "no_source")
+  t2 <- ifelse(mes, mesure$score, NA_real_)
   cli::cli_alert_info(
-    "T2: canopy stability from FORMS-T {mesure$annees} ({sum(mes)}/{n} units{if (any(statut == 'proxy')) paste0(', proxy for ', sum(statut == 'proxy')) else ''})"
+    "T2: canopy stability from FORMS-T {mesure$annees} ({sum(mes)}/{n} units)"
   )
   out <- .indicateur_resultat(units, "T2", t2)
   out$t2_status <- statut

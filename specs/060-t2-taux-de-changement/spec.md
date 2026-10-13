@@ -1,7 +1,9 @@
 # Spec 060 — T2 : un vrai taux de changement, mesuré sur FORMS-T
 
 > **Statut** : validé le 2026-10-11 (Pascal : « je te laisse faire ce qu'il y a
-> de mieux pour T2 »), implémenté en **2026.10.3** (release A, § 5).
+> de mieux pour T2 »), implémenté en **2026.10.3** (release A, § 5). Proxy
+> N2 / T1 retiré en **2026.10.5** (release B, § 9), avec l'accord de Pascal
+> du 2026-10-13.
 > **Demande** : « Je te laisse me proposer ce qu'il y a de mieux, regarde
 > peut-être dans les paquets R déjà existants. »
 
@@ -177,3 +179,21 @@ mesurée. Les éclaircies faibles (moins de 5 m) ne sont pas vues.
   `t2_croissance_m_an` et `t2_annees`.
 - Fiche T2, infobulle et diagramme réécrits ; tests sur une série synthétique
   aux réponses connues.
+
+## 9. Livré en 2026.10.5 : retrait du proxy
+
+Pascal a confirmé le retrait le 2026-10-13, une fois le chemin FORMS-T en
+service dans l'app (`nemetonshiny` v2026.10.5). Aucun appelant ne passe
+`t1_values` dans `nemetonshiny` ni dans `nemetonclaude` (vérifié en lecture
+seule).
+
+- Sans FORMS-T, T2 vaut `NA` (colonne `T2` seule). Une unité hors série prend
+  `t2_status = "no_source"`. La valeur `"proxy"` disparaît.
+- `t1_values` reste dans la signature pour ne pas décaler un appel positionnel.
+  Il est ignoré et lève un avertissement une fois par session.
+- `nemeton_compute()` ne classe plus T2 parmi les composites calculés en
+  dernier.
+- La fixture `massif_demo_units` est régénérée : seules `T2`, `T2_norm` et
+  `famille_temporel` changent (T2 tout `NA` faute de série dans la démo).
+- Côté app, le message `t2_proxy` et le réordonnancement N2 avant T2 deviennent
+  inutiles (brief `vers-nemetonshiny`).

@@ -665,7 +665,7 @@ FICHES <- list(
               "écrêtage natif 0–100", "N", "famille_naturalite", "N1 à N3"),
     notes = c(
       "La continuité n'est pas la naturalité : une plantation d'épicéa sur sol forestier ancien score haut.",
-      "N2 alimente aussi T2 en proxy de stabilité dès que la colonne est présente.",
+      "N2 n'alimente plus T2 : le proxy de stabilité qui le recopiait est retiré (2026.10.5).",
       "La couche multi-époques vient de build_foret_ancienne_mask() — Corona et cartes d'état-major (spec 031)."
     ),
     legende = paste("Un croisement de deux dates, pas une mesure d'état. Ce que N2 sait, c'est",
@@ -989,30 +989,29 @@ FICHES <- list(
     code = "T2", fichier = "fiche-t2-changement_fr.Rmd",
     titre = paste("Chaine de calcul de T2 : avec la serie FORMS-T, la part du couvert",
                   "en perte durable de hauteur donne le score ; sans elle, ou pour une",
-                  "unite hors serie, T2 se replie sur la continuite N2 puis sur l'age",
-                  "T1 plafonne a 100."),
+                  "unite hors serie, T2 vaut NA."),
     entrees = list(
       list(titre = "FORMS-T — hauteur annuelle", lignes = c("10 m, 2019 à 2024, en cm",
                                                             "charger_forms_t_hauteurs()"), vers = 1),
-      list(titre = "Colonne N2 ou âge T1", lignes = "repli sans FORMS-T", vers = 2, tirets = TRUE)
+      list(titre = "Pas de série FORMS-T", lignes = "hors France, Theia absent", vers = 2, tirets = TRUE)
     ),
     chemins = list(
       list(titre = "Perte durable de couvert", lignes = c("hauteur ≤ max antérieur − 5 m",
                                                           "jusqu'à la fin de la série",
                                                           "T2 = 100 × (1 − part en perte)")),
-      list(titre = "Proxy N2 puis T1", lignes = c("T2 = N2 écrêté, sinon min(100, âge)",
-                                                  "t2_status = \"proxy\""))
+      list(titre = "NA", lignes = c("aucune stabilité inventée",
+                                    "t2_status = \"no_source\""), tirets = TRUE)
     ),
     aval = av("indicateur_t2_changement", "score 0–100, natif",
               "écrêtage natif 0–100", "T", "famille_temporel", "T1 à T3"),
     notes = c(
       "Diagnostics : t2_perte_pct, t2_croissance_m_an (Theil-Sen), t2_annees, t2_status.",
       "Ne pas comparer deux T2 calculés sur des fenêtres d'années différentes.",
-      "Sans FORMS-T, le résultat est celui des versions antérieures (T2 seul)."
+      "Le proxy N2 / T1 est retiré en 2026.10.5 : il ne mesurait aucun changement."
     ),
     legende = paste("Avec FORMS-T, T2 mesure la stabilité du couvert, toutes causes de perte",
-                    "confondues (coupe, dépérissement, chablis). Le proxy ne sert que hors série,",
-                    "et t2_status dit lequel des deux chemins a servi.")
+                    "confondues (coupe, dépérissement, chablis). Sans la série, T2 reste NA",
+                    "plutôt que de recopier N2 ou T1.")
   ),
 
   T3 = list(

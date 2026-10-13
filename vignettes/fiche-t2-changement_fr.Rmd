@@ -13,7 +13,8 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-> **Document de référence** — Néméton (package cœur), 2026-10-11 (spec 060).
+> **Document de référence** — Néméton (package cœur), 2026-10-11 (spec 060) ;
+> proxy N2 / T1 retiré en 2026.10.5 (2026-10-13).
 
 ---
 
@@ -49,7 +50,7 @@ On ajoute quatre colonnes de diagnostic :
 
 | Colonne | Contenu |
 |---|---|
-| `t2_status` | `"forms_t"` (mesuré), `"proxy"` (unité hors série) ou `"no_source"` |
+| `t2_status` | `"forms_t"` (mesuré) ou `"no_source"` (unité sans couvert dans la série) |
 | `t2_perte_pct` | part du couvert en perte durable (%) |
 | `t2_croissance_m_an` | pente de Theil-Sen médiane du couvert sans perte (m/an), hors score |
 | `t2_annees` | fenêtre lue, par exemple `"2019-2024"` |
@@ -71,21 +72,19 @@ disparitions de couvert que SUFOSAT ignore**, comme des coupes partielles, du
 dépérissement ou des chablis. Le seuil compte peu : entre 3 et 8 m, la part en
 perte de Reconfort varie de 8,4 à 6,3 %.
 
-## 3. Le repli sans FORMS-T
+## 3. Sans FORMS-T : NA
 
-Hors France, si FORMS-T n'est pas lisible ou qu'une unité sort de la série,
-T2 recopie un autre indicateur :
+Hors France, si FORMS-T n'est pas lisible, T2 vaut `NA` et la fonction n'ajoute
+que la colonne `T2`. Une unité que la série ne couvre pas reçoit `NA` et
+`t2_status = "no_source"`.
 
-| Ordre | Chemin | Condition | Valeur |
-|---|---|---|---|
-| 1 | **N2 comme proxy** | colonne `N2`, `N2_anciennete` ou `N2_anciennet` présente | `N2`, écrêté `[0, 100]` |
-| 2 | **T1 plafonné** | `t1_values` ou colonne `T1` | `min(100, âge)`, les `NA` restent `NA` |
+Jusqu'à la 2026.10.4, T2 se repliait sur une copie de N2, puis sur l'âge T1
+plafonné à 100. Ce proxy a été retiré en 2026.10.5 : il ne mesurait aucun
+changement et comptait deux fois N2 ou T1 dans les familles. L'argument
+`t1_values` est conservé pour ne pas casser les appels, mais il est ignoré et
+lève un avertissement une fois par session.
 
-Le repli se fait unité par unité. Sans FORMS-T du tout, la fonction rend ce
-qu'elle rendait avant la spec 060 : la seule colonne `T2`, sans colonne de
-diagnostic.
-
-## 4. Quatre pièges
+## 4. Trois pièges
 
 1. **Ne pas comparer deux fenêtres.** Un T2 sur 2019-2024 et un T2 sur
    2020-2025 ne se comparent pas : la part en perte grandit avec la durée.
@@ -97,8 +96,6 @@ diagnostic.
    la surface par an donne un T2 de 88 à 94 sur six ans. Un T2 bas signale une
    perte, pas sa cause : T3 (SUFOSAT) dit si ce sont des coupes rases, R5 si
    c'est du dépérissement.
-4. **Le repli proxy double T1.** Quand T2 recopie T1, `famille_temporelle`
-   compte deux fois la même grandeur. `t2_status = "proxy"` le signale.
 
 ## 5. Aval
 
@@ -114,7 +111,7 @@ indicateur_t2_changement(forms_t = )  ->  T2 (0-100) + t2_status, t2_perte_pct, 
 
 <!-- diagramme:auto:debut -->
 <figure>
-<svg viewBox="0 0 820 360" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de T2 : avec la serie FORMS-T, la part du couvert en perte durable de hauteur donne le score ; sans elle, ou pour une unite hors serie, T2 se replie sur la continuite N2 puis sur l'age T1 plafonne a 100.">
+<svg viewBox="0 0 820 360" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de T2 : avec la serie FORMS-T, la part du couvert en perte durable de hauteur donne le score ; sans elle, ou pour une unite hors serie, T2 vaut NA.">
 <defs>
 <marker id="fd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
@@ -130,17 +127,17 @@ indicateur_t2_changement(forms_t = )  ->  T2 (0-100) + t2_status, t2_perte_pct, 
 <text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">10 m, 2019 à 2024, en cm</text>
 <text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">charger_forms_t_hauteurs()</text>
 <rect x="8" y="106" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"/>
-<text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">Colonne N2 ou âge T1</text>
-<text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">repli sans FORMS-T</text>
+<text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">Pas de série FORMS-T</text>
+<text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">hors France, Theia absent</text>
 <rect x="288" y="34" width="262" height="74" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
 <text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Perte durable de couvert</text>
 <text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">hauteur ≤ max antérieur − 5 m</text>
 <text x="300" y="85" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">jusqu'à la fin de la série</text>
 <text x="300" y="101" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">T2 = 100 × (1 − part en perte)</text>
-<rect x="288" y="142" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
-<text x="300" y="161" font-size="12.5" font-weight="600" fill="currentColor">Proxy N2 puis T1</text>
-<text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">T2 = N2 écrêté, sinon min(100, âge)</text>
-<text x="300" y="193" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">t2_status = "proxy"</text>
+<rect x="288" y="142" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"/>
+<text x="300" y="161" font-size="12.5" font-weight="600" fill="currentColor">NA</text>
+<text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">aucune stabilité inventée</text>
+<text x="300" y="193" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">t2_status = "no_source"</text>
 <rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"/>
 <text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_t2_changement</text>
 <text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score 0–100, natif</text>
@@ -167,10 +164,10 @@ indicateur_t2_changement(forms_t = )  ->  T2 (0-100) + t2_status, t2_perte_pct, 
 <line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
 <text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">Diagnostics : t2_perte_pct, t2_croissance_m_an (Theil-Sen), t2_annees, t2_status.</text>
 <text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Ne pas comparer deux T2 calculés sur des fenêtres d'années différentes.</text>
-<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Sans FORMS-T, le résultat est celui des versions antérieures (T2 seul).</text>
+<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Le proxy N2 / T1 est retiré en 2026.10.5 : il ne mesurait aucun changement.</text>
 </svg>
 <figcaption style="font-size:.9em;opacity:.75">
-Avec FORMS-T, T2 mesure la stabilité du couvert, toutes causes de perte confondues (coupe, dépérissement, chablis). Le proxy ne sert que hors série, et t2_status dit lequel des deux chemins a servi.
+Avec FORMS-T, T2 mesure la stabilité du couvert, toutes causes de perte confondues (coupe, dépérissement, chablis). Sans la série, T2 reste NA plutôt que de recopier N2 ou T1.
 </figcaption>
 </figure>
 <!-- diagramme:auto:fin -->

@@ -1,3 +1,28 @@
+# nemeton 2026.10.5 (2026-10-13)
+
+T2 ne recopie plus N2 ni T1 : sans série FORMS-T, il vaut `NA` (spec 060,
+release B).
+
+## Changements cassants
+
+- **`indicateur_t2_changement()`** : le proxy de stabilité est retiré, avec
+  l'accord de Pascal. Sans FORMS-T, T2 valait une copie de N2 (écrêtée à
+  0-100), à défaut l'âge T1 plafonné à 100 ; il vaut désormais `NA`. Une unité
+  que la série ne couvre pas prend `t2_status = "no_source"` : la valeur
+  `"proxy"` disparaît. Ce proxy ne mesurait aucun changement et comptait deux
+  fois N2 ou T1 dans les familles. Aucun appelant de `nemetonshiny` ni de
+  `nemetonclaude` ne dépend de l'argument retiré.
+- L'argument `t1_values` est conservé, mais il est ignoré et lève un
+  avertissement une fois par session.
+
+## Changements compatibles
+
+- `nemeton_compute()` ne calcule plus T2 après les autres indicateurs : il ne
+  lit plus N2.
+- `massif_demo_units` est régénérée : seules `T2`, `T2_norm` et
+  `famille_temporel` changent.
+- Fiches T2 et N2 et leurs diagrammes mis à jour.
+
 # nemeton 2026.10.4 (2026-10-12)
 
 L'inventaire vidéo Groma arrive dans le cœur (spec 061) : une vidéo au

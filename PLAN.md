@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.6** (release du 2026-10-12), relevée le 2026-10-12.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.6** (release du 2026-10-12), relevée le 2026-10-13.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -143,7 +143,8 @@ v2026.10.1.
 |---|---|---|---|
 | Cœur | `indicateur_t2_changement(forms_t = )` : stabilité du couvert (perte durable ≥ 5 m) ; `charger_forms_t_hauteurs()` | **2026.10.3** | ✅ livré |
 | App | charger FORMS-T 2019-2024, le passer à T2, afficher `t2_status` et les diagnostics | `nemetonshiny` **v2026.10.5** | ✅ livré |
-| Cœur | dépréciation puis retrait du proxy N2/T1 (accord de Pascal requis) | — | ⬜ à proposer à Pascal |
+| Cœur | retrait du proxy N2/T1 (accord de Pascal du 2026-10-13) | **2026.10.5** | ✅ livré |
+| App | retirer le message `t2_proxy` et l'ordre N2 avant T2, devenus inutiles | `nemetonshiny` | ⬜ brief envoyé |
 
 **Journal** — *2026-10-11* (**2026.10.3**) : T2 recopiait N2 ou T1 et ne lisait
 aucune série. Il mesure maintenant la stabilité du couvert sur la hauteur
@@ -185,6 +186,16 @@ proposée à Pascal (pas engagée sans son accord).
 cycle `2026.10.5.9000`→`2026.10.6`) : progression « Famille (i/13) » de la
 synthèse IA rétablie (perdue au passage des appels LLM dans un worker
 `future`). Correctif seul, sans impact cœur.
+
+*2026-10-13* (**2026.10.5**) : retrait du proxy N2/T1, confirmé par Pascal.
+Sans FORMS-T, T2 vaut `NA` ; une unité hors série prend
+`t2_status = "no_source"`. `t1_values` est gardé dans la signature, ignoré,
+avec un avertissement une fois par session. Aucun appelant ne passe
+`t1_values` dans `nemetonshiny` ni dans `nemetonclaude` (lecture seule).
+`nemeton_compute()` ne traite plus T2 comme un composite. `massif_demo_units`
+est régénérée : seules `T2`, `T2_norm` et `famille_temporel` changent. Brief
+app `vers-nemetonshiny/2026-10-13-t2-retrait-proxy.md` (textes et ordre N2→T2
+devenus inutiles). **Chantier T2 clos côté cœur.**
 
 ---
 
