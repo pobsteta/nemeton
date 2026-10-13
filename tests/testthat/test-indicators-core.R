@@ -899,7 +899,8 @@ test_that("get_global_cache_dir returns path string", {
 test_that("nemeton_compute passe les codes courts déjà calculés aux composites (audit 1.0)", {
   skip_if_not_installed("terra")
   # Avant 0.208.0, E2 recevait les unités d'origine (sans E1) et valait NA ;
-  # T2 ne voyait jamais N2. Les composites sont aussi réordonnés en dernier.
+  # T2 ne voyait jamais N2 (T2 ne lit plus N2 depuis le retrait de son proxy,
+  # 2026.10.5). Les composites sont aussi réordonnés en dernier.
   units <- nemeton_units(create_test_units(n_features = 3))
   temp_files <- create_temp_test_files()
   layers <- nemeton_layers(rasters = list(biomass = temp_files$biomass))
@@ -915,7 +916,8 @@ test_that("nemeton_compute passe les codes courts déjà calculés aux composite
                    "indicateur_e1_bois_energie", "indicateur_n2_continuite"),
     preprocess = FALSE, progress = FALSE))
   expect_false(anyNA(res$indicateur_e2_evitement))
-  expect_equal(res$indicateur_t2_changement, c(10, 50, 90))
+  # Sans FORMS-T, T2 reste NA : il ne recopie plus N2.
+  expect_true(all(is.na(res$indicateur_t2_changement)))
   # Les codes courts de travail ne fuient pas dans le résultat.
   expect_false(any(c("E1", "N2") %in% names(res)))
 })

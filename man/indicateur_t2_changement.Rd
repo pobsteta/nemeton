@@ -14,20 +14,19 @@ indicateur_t2_changement(
 )
 }
 \arguments{
-\item{units}{An sf object with forest parcels. May contain pre-computed
-columns: N2 (forest continuity) or T1 (stand age).}
+\item{units}{An sf object with forest parcels.}
 
 \item{layers}{A nemeton_layers object (optional). Not directly used but
 kept for interface consistency.}
 
-\item{t1_values}{Numeric vector. Pre-computed T1 age values (same length
-as nrow(units)). If NULL and units has no T1 column, T2 is \code{NA}.}
+\item{t1_values}{Deprecated and ignored since 2026.10.5 (it fed the
+removed proxy); a warning is raised once per session when supplied.}
 
 \item{forms_t}{FORMS-T canopy height, one layer per year (at least
 three), layers named by year: a \code{terra::SpatRaster}, as returned by
 \code{\link[=charger_forms_t_hauteurs]{charger_forms_t_hauteurs()}}, or a vector of file paths. \code{NULL}
-(default) looks for a raster named \code{"forms_t"} in \code{layers}, and falls
-back on the proxy when there is none.}
+(default) looks for a raster named \code{"forms_t"} in \code{layers}; T2 is
+\code{NA} when there is none.}
 
 \item{seuil_perte}{Numeric. Height loss, in metres, that counts as a
 canopy loss. Default \code{5}.}
@@ -38,29 +37,27 @@ published) or \code{"m"}.}
 \value{
 The input \code{units} (same class, rows and order) with an added
 numeric column \code{T2} (0-100, 100 = stable canopy). \code{NA} where
-no source is available -- no default value.
+FORMS-T is missing -- no default value.
 
 When FORMS-T heights are supplied, four more columns are added:
 \itemize{
-\item \code{t2_status}: \code{"forms_t"} (measured), \code{"proxy"} (unit outside the
-series, proxy used) or \code{"no_source"};
+\item \code{t2_status}: \code{"forms_t"} (measured) or \code{"no_source"} (unit
+without canopy in the series);
 \item \code{t2_perte_pct}: share of the unit's canopy in lasting loss (\%);
 \item \code{t2_croissance_m_an}: median Theil-Sen height trend of the
 canopy without loss (m/year);
 \item \code{t2_annees}: years read, e.g. \code{"2019-2024"}.
 }
-Without FORMS-T the result is unchanged from earlier releases (\code{T2}
-only).
+Without FORMS-T only the \code{T2} column (all \code{NA}) is added.
 }
 \description{
 T2 scores how stable the forest canopy of each unit has been over recent
 years. Given a FORMS-T canopy-height time series (\code{forms_t}, spec 060), it
 is \strong{measured}: the share of the unit's canopy that lost at least
 \code{seuil_perte} metres of height for good, whatever the cause (clear-cut,
-partial cut, dieback, windthrow). Without that series it falls back on a
-\strong{stability proxy} derived from other indicators -- a copy of N2 (forest
-continuity), otherwise the T1 stand age capped at 100 (tuto 04) -- which
-carries no information of its own.
+partial cut, dieback, windthrow). Without that series T2 is \code{NA}: the
+stability proxy (a copy of N2, or the T1 age capped at 100) was removed in
+2026.10.5, as it carried no information of its own.
 }
 \details{
 \strong{Measured path (FORMS-T)}. Only pixels whose height reached
@@ -75,13 +72,6 @@ Validation (spec 060, 2026-10-11): on Reconfort, 96 \% of the losses
 outside SUFOSAT clear-cuts are confirmed by the LiDAR HD canopy (flown
 2023-2024), so T2 also sees partial cuts and dieback that T3 does not; on
 Fordead (bark-beetle site) the loss covers 98 \% of the forest.
-
-\strong{Proxy (no FORMS-T)}: copy of the N2 (forest continuity/antiquity)
-column if present in units, clamped to 0-100, otherwise the T1 stand age
-(years) capped at 100 (\code{t1_values}, then a \code{T1} column). The
-fallback applies \strong{unit by unit}: a unit whose N2 is \code{NA} takes its
-T1 age when known. With FORMS-T, a unit the series does not cover takes
-the proxy too.
 
 Do not compare T2 values computed over different year windows. FORMS-T is
 a height \strong{predicted} from Sentinel-1/2 and GEDI, not measured; light
@@ -99,14 +89,9 @@ library(nemeton)
 data(massif_demo_units)
 units <- massif_demo_units[1:10, ]
 
-# Compute T1 first, then T2: the T1 column of the result feeds T2
-t1 <- indicateur_t1_anciennete(units, layers = massif_demo_layers())
-t2 <- indicateur_t2_changement(t1)
-t2$T2
-
-# Measured canopy stability from FORMS-T (spec 060)
+# Canopy stability measured on FORMS-T (spec 060)
 h <- charger_forms_t_hauteurs(units)
-t2 <- indicateur_t2_changement(t1, forms_t = h)
+t2 <- indicateur_t2_changement(units, forms_t = h)
 t2[, c("T2", "t2_status", "t2_perte_pct", "t2_croissance_m_an")]
 }
 }

@@ -70,16 +70,16 @@ test_that("T2 threshold and height unit are honoured", {
   expect_true(all(is.na(res_30$T2) | res_30$T2 == 100))
 })
 
-test_that("T2 without FORMS-T is unchanged (proxy, no extra column)", {
+test_that("T2 without FORMS-T is NA, N2 and T1 are not copied", {
   u <- .t2_unites()
   u$N2 <- c(80, NA)
   u$T1 <- c(NA, 40)
-  res <- indicateur_t2_changement(u)
-  expect_equal(res$T2, c(80, 40))
+  res <- suppressMessages(indicateur_t2_changement(u))
+  expect_true(all(is.na(res$T2)))
   expect_false(any(grepl("^t2_", names(res))))
 })
 
-test_that("T2 falls back on the proxy for a unit outside the series", {
+test_that("T2 is no_source for a unit outside the series, even with N2", {
   skip_if_not_installed("exactextractr")
   u <- .t2_unites()
   loin <- sf::st_polygon(list(rbind(c(900000, 6700000), c(900100, 6700000),
@@ -88,15 +88,10 @@ test_that("T2 falls back on the proxy for a unit outside the series", {
   u <- rbind(u, sf::st_sf(id = "loin", geometry = sf::st_sfc(loin, crs = 2154)))
   u$N2 <- c(10, 10, 70)
   res <- indicateur_t2_changement(u, forms_t = .t2_serie())
-  expect_equal(res$t2_status, c("forms_t", "forms_t", "proxy"))
-  expect_equal(res$T2[3], 70)
+  expect_equal(res$t2_status, c("forms_t", "forms_t", "no_source"))
+  expect_true(is.na(res$T2[3]))
   expect_true(is.na(res$t2_perte_pct[3]))
   expect_true(is.na(res$t2_annees[3]))
-  # Sans proxy non plus : no_source.
-  u$N2 <- NULL
-  res2 <- indicateur_t2_changement(u, forms_t = .t2_serie())
-  expect_equal(res2$t2_status[3], "no_source")
-  expect_true(is.na(res2$T2[3]))
 })
 
 test_that("T2 reads a forms_t raster from layers", {

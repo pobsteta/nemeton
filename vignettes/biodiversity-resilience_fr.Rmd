@@ -171,7 +171,7 @@ summary(result$T1)
 ## T2 : Changements d'occupation
 
 L'indicateur **T2** détecte les transformations.
-*Note: Utiliser `indicateur_t2_changement()` avec des rasters Corine Land Cover multi-dates pour un usage réel.*
+*Note : pour un usage réel, `indicateur_t2_changement()` mesure la stabilité du couvert sur la série FORMS-T (`charger_forms_t_hauteurs()`).*
 
 ```{r}
 # Simulation de taux de changement (%/an)

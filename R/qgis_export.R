@@ -261,11 +261,11 @@ col2rgb_str <- function(hex) {
 .maplayer_xml <- function(id, name, gpkg_rel, layername, geometry,
                           schema, crs, bbox = NULL,
                           renderer_xml = NULL, readonly = FALSE,
-                          labeling_xml = NULL) {
+                          labeling_xml = NULL, subset = NULL) {
   children <- c(
     .extent_xml(bbox),
     .xml_tag("id", text = id),
-    .xml_tag("datasource", text = sprintf("./%s|layername=%s", gpkg_rel, layername)),
+    .xml_tag("datasource", text = .ogr_source(gpkg_rel, layername, subset)),
     .xml_tag("layername", text = name),
     .xml_tag("provider", attrs = list(encoding = "UTF-8"), text = "ogr"),
     .srs_xml(crs),
@@ -282,6 +282,15 @@ col2rgb_str <- function(hex) {
                 readOnly = if (readonly) "1" else "0")
   if (!is.null(labeling_xml)) attrs$labelsEnabled <- "1"
   .xml_tag("maplayer", attrs = attrs, children = children)
+}
+
+
+# Source OGR d'une couche de GeoPackage, avec filtre d'affichage optionnel
+# (syntaxe `|subset=` du fournisseur ogr de QGIS).
+.ogr_source <- function(gpkg_rel, layername, subset = NULL) {
+  src <- sprintf("./%s|layername=%s", gpkg_rel, layername)
+  if (!is.null(subset) && nzchar(subset)) src <- paste0(src, "|subset=", subset)
+  src
 }
 
 
@@ -303,14 +312,13 @@ col2rgb_str <- function(hex) {
     if (est_raster(l)) return(.raster_maplayer_xml(l$id, l$name, l$source, crs, l$bbox))
     .maplayer_xml(l$id, l$name, l$gpkg_rel, l$layername, l$geometry,
                   l$schema, crs, l$bbox, l$renderer, isTRUE(l$readonly),
-                  l$labeling)
+                  l$labeling, l$subset)
   }, character(1))
   tree_nodes <- vapply(layers, function(l) {
     if (est_raster(l)) {
       return(.layer_tree_node(l$id, l$name, paste0("./", l$source), provider = "gdal"))
     }
-    src <- sprintf("./%s|layername=%s", l$gpkg_rel, l$layername)
-    .layer_tree_node(l$id, l$name, src)
+    .layer_tree_node(l$id, l$name, .ogr_source(l$gpkg_rel, l$layername, l$subset))
   }, character(1))
 
   empty_map <- .xml_tag("Option", attrs = list(type = "Map"))

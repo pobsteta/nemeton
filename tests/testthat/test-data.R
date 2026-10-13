@@ -29,7 +29,7 @@ test_that("massif_demo_units carries the 41 indicators and their _norm", {
 
   # Calcules par le paquet depuis les couches de demo (data-raw/massif_demo.R)
   calcules <- c("C1", "B3", "W1", "W2", "W3", "A1", "A2", "F2", "L1", "L2",
-                "T1", "T2", "R1", "R2", "R3", "S1", "P1", "P2", "P3",
+                "T1", "R1", "R2", "R3", "S1", "P1", "P2", "P3",
                 "E1", "E2", "N2")
   for (ind in calcules) {
     expect_true(any(!is.na(massif_demo_units[[ind]])), info = ind)

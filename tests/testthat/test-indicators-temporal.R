@@ -153,7 +153,7 @@ test_that("indicateur_t2_changement returns numeric vector 0-100", {
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
 
-  # Ni N2 ni T1 -> NA (plus de 50 par défaut, audit 1.0)
+  # Sans FORMS-T -> NA (plus de 50 par défaut, audit 1.0)
   units$N2 <- NULL
   units$N2_anciennete <- NULL
   units$T1 <- NULL
@@ -164,63 +164,18 @@ test_that("indicateur_t2_changement returns numeric vector 0-100", {
   expect_true(all(is.na(result)))
 })
 
-test_that("indicateur_t2_changement uses N2 column as proxy", {
-  skip_if_not_installed("terra")
-  data(massif_demo_units, package = "nemeton")
-  units <- massif_demo_units[1:5, ]
-  units$N2 <- c(10, 30, 50, 70, 90)
-
-  result <- indicateur_t2_changement(units)$T2
-
-  expect_type(result, "double")
-  expect_length(result, 5)
-  expect_equal(result, c(10, 30, 50, 70, 90))
-})
-
-test_that("indicateur_t2_changement uses N2_anciennete column", {
+test_that("indicateur_t2_changement no longer copies N2 or T1 (proxy removed)", {
   skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:3, ]
+  units$N2 <- c(10, 50, 90)
   units$N2_anciennete <- c(20, 60, 95)
+  units$T1 <- c(40, 120, 30)
 
-  result <- indicateur_t2_changement(units)$T2
+  result <- suppressMessages(indicateur_t2_changement(units))
 
-  expect_equal(result, c(20, 60, 95))
-})
-
-test_that("indicateur_t2_changement falls back to T1 capped at 100", {
-  skip_if_not_installed("terra")
-  data(massif_demo_units, package = "nemeton")
-  units <- massif_demo_units[1:4, ]
-  # Remove N2 columns so T1 fallback is used
-  units$N2 <- NULL
-  units$N2_anciennete <- NULL
-  units$N2_norm <- NULL
-  units$T1 <- NULL
-
-  # Pass T1 values directly
-  t1 <- c(25, 80, 150, 200)
-  result <- indicateur_t2_changement(units, t1_values = t1)$T2
-
-  expect_type(result, "double")
-  expect_length(result, 4)
-  # Capped at 100
-  expect_equal(result, c(25, 80, 100, 100))
-})
-
-test_that("indicateur_t2_changement uses T1 column from units", {
-  skip_if_not_installed("terra")
-  data(massif_demo_units, package = "nemeton")
-  units <- massif_demo_units[1:3, ]
-  # Remove N2 so T1 fallback is used
-  units$N2 <- NULL
-  units$N2_anciennete <- NULL
-  units$N2_norm <- NULL
-  units$T1 <- c(40, 120, NA)
-
-  result <- indicateur_t2_changement(units)$T2
-
-  expect_equal(result, c(40, 100, NA))  # âge inconnu -> NA, plus 50
+  expect_true(all(is.na(result$T2)))
+  expect_false(any(grepl("^t2_", names(result))))
 })
 
 test_that("indicateur_t2_changement validates inputs", {
@@ -235,23 +190,17 @@ test_that("indicateur_t2_changement validates inputs", {
 # Integration: T1 + T2 together
 # ==============================================================================
 
-test_that("T1 and T2 work together", {
+test_that("T2 ignores a T1 computed upstream", {
   skip_if_not_installed("terra")
   data(massif_demo_units, package = "nemeton")
   units <- massif_demo_units[1:5, ]
-
-  # T1 with age field
   units$age <- c(30, 50, 80, 120, 200)
-  t1 <- indicateur_t1_anciennete(units, age_field = "age")$T1
+  units <- indicateur_t1_anciennete(units, age_field = "age")
 
-  # T2 from T1
-  t2 <- indicateur_t2_changement(units, t1_values = t1)$T2
+  t2 <- suppressMessages(indicateur_t2_changement(units))$T2
 
-  expect_length(t1, 5)
-  expect_length(t2, 5)
-  expect_true(all(!is.na(t1)))
-  expect_true(all(!is.na(t2)))
-  expect_true(all(t2 <= 100))
+  expect_true(all(!is.na(units$T1)))
+  expect_true(all(is.na(t2)))
 })
 
 test_that(".estimate_age_tfv maps vegetation types correctly", {
@@ -617,117 +566,36 @@ test_that("T1 resolves bdforet from nemeton_layers", {
 
 # --- T2: indicateur_t2_changement ---
 
-test_that("T2 uses N2_anciennet column (truncated name variant)", {
+test_that("T2 t1_values is deprecated and ignored", {
   skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 3)
-  test_units$N2_anciennet <- c(30, 70, 110)
+  rlang::reset_warning_verbosity("nemeton_t2_t1_values")
 
-  result <- nemeton::indicateur_t2_changement(test_units)$T2
-
-  # N2_anciennet found -> used as stability proxy, capped to 0-100
-  expect_equal(result, c(30, 70, 100))
+  expect_warning(
+    result <- suppressMessages(
+      nemeton::indicateur_t2_changement(test_units, t1_values = c(30, 70, 120))
+    ),
+    "deprecated and ignored"
+  )
+  expect_true(all(is.na(result$T2)))
+  # Une seule fois par session.
+  expect_no_warning(suppressMessages(
+    nemeton::indicateur_t2_changement(test_units, t1_values = c(30, 70, 120))
+  ))
 })
 
-test_that("T2 with N2 column containing values > 100 are capped", {
-  skip_if_not_installed("terra")
-  test_units <- create_test_units(n_features = 3)
-  test_units$N2 <- c(-5, 50, 150)
-
-  result <- nemeton::indicateur_t2_changement(test_units)$T2
-
-  # capped: pmin(pmax(t2, 0), 100)
-  expect_equal(result, c(0, 50, 100))
-})
-
-test_that("T2 fallback to t1_values keeps unknown ages NA", {
-  skip_if_not_installed("terra")
-  test_units <- create_test_units(n_features = 4)
-  # No N2 columns
-  t1 <- c(30, NA, 120, NA)
-
-  result <- nemeton::indicateur_t2_changement(test_units, t1_values = t1)$T2
-
-  # t1_values utilisés, plafonnés à 100 ; âge inconnu -> NA (plus 50)
-  expect_equal(result, c(30, NA, 100, NA))
-})
-
-test_that("T2 with T1 column in units (not t1_values argument)", {
-  skip_if_not_installed("terra")
-  test_units <- create_test_units(n_features = 3)
-  test_units$T1 <- c(25, NA, 90)
-
-  result <- nemeton::indicateur_t2_changement(test_units)$T2
-
-  # Colonne T1 utilisée, plafonnée à 100 ; NA conservé
-  expect_equal(result, c(25, NA, 90))
-})
-
-test_that("T2 is NA when no N2 or T1 available", {
+test_that("T2 is NA without FORMS-T", {
   skip_if_not_installed("terra")
   test_units <- create_test_units(n_features = 5)
 
-  result <- nemeton::indicateur_t2_changement(test_units)$T2
+  expect_message(
+    result <- nemeton::indicateur_t2_changement(test_units)$T2,
+    "no FORMS-T"
+  )
 
   expect_type(result, "double")
   expect_length(result, 5)
   expect_true(all(is.na(result)))
-})
-
-test_that("T2 t1_values wrong length is ignored, falls through", {
-  skip_if_not_installed("terra")
-  test_units <- create_test_units(n_features = 3)
-
-  # t1_values has wrong length (2 instead of 3) -> not used
-  result <- nemeton::indicateur_t2_changement(test_units, t1_values = c(40, 80))$T2
-
-  # Pas de colonne T1 non plus -> NA
-  expect_true(all(is.na(result)))
-})
-
-test_that("T2 t1_values non-numeric is ignored", {
-  skip_if_not_installed("terra")
-  test_units <- create_test_units(n_features = 2)
-
-  # t1_values is character -> not numeric -> not used
-  result <- nemeton::indicateur_t2_changement(test_units, t1_values = c("a", "b"))$T2
-
-  # Aucune source exploitable -> NA
-  expect_true(all(is.na(result)))
-})
-
-test_that("T2 N2_anciennete takes priority over N2", {
-  skip_if_not_installed("terra")
-  test_units <- create_test_units(n_features = 2)
-  test_units$N2_anciennete <- c(85, 95)
-  test_units$N2 <- c(30, 40)
-
-  result <- nemeton::indicateur_t2_changement(test_units)$T2
-
-  # N2_anciennete found first in the loop -> used
-  expect_equal(result, c(85, 95))
-})
-
-test_that("T2 priority: N2 column over T1 column", {
-  skip_if_not_installed("terra")
-  test_units <- create_test_units(n_features = 2)
-  test_units$N2 <- c(60, 80)
-  test_units$T1 <- c(30, 40)
-
-  result <- nemeton::indicateur_t2_changement(test_units)$T2
-
-  # N2 found -> used, T1 not reached
-  expect_equal(result, c(60, 80))
-})
-
-test_that("T2 priority: t1_values argument over T1 column", {
-  skip_if_not_installed("terra")
-  test_units <- create_test_units(n_features = 2)
-  test_units$T1 <- c(30, 40)
-
-  result <- nemeton::indicateur_t2_changement(test_units, t1_values = c(70, 90))$T2
-
-  # No N2 column -> t1_values used (correct length)
-  expect_equal(result, c(70, 90))
 })
 
 test_that("T2 with layers parameter (interface consistency)", {
@@ -744,10 +612,12 @@ test_that("T2 with layers parameter (interface consistency)", {
     class = "nemeton_layers"
   )
 
-  # layers is accepted but not used in T2
-  result <- nemeton::indicateur_t2_changement(test_units, layers = mock_layers)$T2
+  # layers without a forms_t raster: NA, N2 is not copied
+  result <- suppressMessages(
+    nemeton::indicateur_t2_changement(test_units, layers = mock_layers)$T2
+  )
 
-  expect_equal(result, c(45, 75))
+  expect_true(all(is.na(result)))
 })
 
 test_that("T2 validates sf input", {
@@ -766,43 +636,4 @@ test_that("T2 validates sf input", {
     nemeton::indicateur_t2_changement(NULL)$T2,
     "must be.*sf"
   )
-})
-
-# --- T2 : repli N2 -> T1 unité par unité (0.212.1) ---------------------------
-# Avant 0.212.1, la colonne N2 était prise entière dès qu'elle existait : une
-# unité à N2 = NA restait à T2 = NA même avec un T1 connu (relevé en relisant
-# la PR #218 de nemetonshiny, qui écartait une N2 toute NA pour s'en sortir).
-
-test_that("T2 falls back to T1 unit by unit when N2 is partly NA", {
-  units <- create_test_units(n_features = 4)
-  units$N2 <- c(80, NA, NA, 30)
-  units$T1 <- c(10, 60, NA, 150)
-  result <- suppressMessages(indicateur_t2_changement(units)$T2)
-  expect_equal(result, c(80, 60, NA, 30))
-})
-
-test_that("T2 with an all-NA N2 column falls back to T1", {
-  units <- create_test_units(n_features = 3)
-  units$N2 <- rep(NA_real_, 3)
-  result <- suppressMessages(
-    indicateur_t2_changement(units, t1_values = c(40, 200, NA))$T2
-  )
-  expect_equal(result, c(40, 100, NA))
-})
-
-test_that("T2 prefers t1_values over the T1 column, unit by unit", {
-  units <- create_test_units(n_features = 3)
-  units$T1 <- c(20, 30, 40)
-  result <- suppressMessages(
-    indicateur_t2_changement(units, t1_values = c(70, NA, 90))$T2
-  )
-  expect_equal(result, c(70, 30, 90))
-})
-
-test_that("T2 with sources present but all NA warns and returns NA", {
-  units <- create_test_units(n_features = 2)
-  units$N2 <- c(NA_real_, NA_real_)
-  units$T1 <- c(NA_real_, NA_real_)
-  expect_message(result <- indicateur_t2_changement(units)$T2, "all NA")
-  expect_true(all(is.na(result)))
 })

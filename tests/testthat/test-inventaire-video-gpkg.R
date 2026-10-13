@@ -161,6 +161,56 @@ test_that("creer_projet_inventaire_video produit un GeoPackage utilisable par Gr
   })
 })
 
+test_that("renvoyer_inventaire_video renvoie les arbres à reprendre sans en perdre", {
+  skip_if_not_installed("RSQLite")
+  gpkg_iv <- iv_fixture("inventaire_video.gpkg")
+  gpkg_def <- iv_fixture("P001_definitif.gpkg")
+  withr::with_tempdir({
+    res <- suppressWarnings(importer_inventaire_video(gpkg_iv, resultats = gpkg_def))
+    etat <- res$arbres$etat_detection
+    a_reprendre <- !is.na(etat) & etat %in% c("a_completer", "a_verifier")
+    skip_if(!any(a_reprendre), "fixture sans arbre à reprendre")
+    ids <- sort(unique(res$arbres$plot_id[a_reprendre]))
+
+    dir.create("rasters")
+    file.create(file.path("rasters", paste0(ids[1], "_mnt.tif")))
+    qgz <- suppressMessages(renvoyer_inventaire_video(
+      res, gpkg = gpkg_iv, rasters = "rasters", output_dir = "retour"))
+    expect_true(file.exists(qgz))
+    expect_equal(attr(qgz, "plot_ids"), ids)
+    expect_equal(attr(qgz, "n_arbres"), sum(a_reprendre))
+    contenu <- utils::unzip(qgz, list = TRUE)$Name
+    expect_true(all(c("inventaire_video_retour.qgs", "inventaire_video.gpkg",
+                      file.path("rasters", paste0(ids[1], "_mnt.tif"))) %in% contenu))
+    utils::unzip(qgz, exdir = "x")
+    g <- file.path("x", "inventaire_video.gpkg")
+    # Tous les arbres des placettes renvoyées, pas seulement ceux à reprendre.
+    a <- sf::st_read(g, layer = "arbres", quiet = TRUE)
+    expect_setequal(a$uuid, res$arbres$uuid[res$arbres$plot_id %in% ids])
+    expect_setequal(sf::st_read(g, layer = "placettes", quiet = TRUE)$plot_id, ids)
+    qgs <- paste(readLines(file.path("x", "inventaire_video_retour.qgs"), warn = FALSE),
+                 collapse = "")
+    expect_match(qgs, "subset=&quot;etat_detection&quot; IN (&apos;a_completer&apos;, &apos;a_verifier&apos;)",
+                 fixed = TRUE)
+
+    qgz2 <- suppressMessages(renvoyer_inventaire_video(
+      res, filtrer = FALSE, output_dir = "retour2"))
+    utils::unzip(qgz2, exdir = "y")
+    qgs2 <- paste(readLines(file.path("y", "inventaire_video_retour.qgs"), warn = FALSE),
+                  collapse = "")
+    expect_false(grepl("subset=", qgs2, fixed = TRUE))
+  })
+  expect_error(renvoyer_inventaire_video(list()), "importer_inventaire_video")
+  imp <- list(placettes = sf::st_sf(plot_id = "P1", geometry = sf::st_sfc(
+    sf::st_point(c(0, 0)), crs = 2154)), arbres = sf::st_sf(plot_id = "P1",
+    etat_detection = "definitif", geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = 2154)))
+  expect_error(renvoyer_inventaire_video(imp, etats = "inconnu", output_dir = tempdir()),
+               "etats")
+  expect_error(renvoyer_inventaire_video(imp, output_dir = tempdir()), "nothing to send back")
+  expect_error(renvoyer_inventaire_video(imp, output_dir = tempdir(), project_name = "../x"),
+               "project_name")
+})
+
 test_that("creer_projet_inventaire_video refuse un nom de projet dangereux", {
   pl <- sf::st_sf(plot_id = "P1", geometry = sf::st_sfc(sf::st_point(c(925000, 6700000)),
                                                          crs = 2154))
