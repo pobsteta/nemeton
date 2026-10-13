@@ -245,6 +245,12 @@ repris, réimportation identique. Assemblage du `.qgz` factorisé avec
 `creer_projet_inventaire_video()` (`.iv_empaqueter()`). Reste le plugin `.qml`,
 qui attend groma.
 
+*2026-10-13* : PR #555 mergée (T2 sans proxy + `renvoyer_inventaire_video()` ;
+CI verte : R-CMD-check, tests, couverture, pkgdown) ; tag `v2026.10.5` posé par
+`release.yml`. Cycle dev `2026.10.5.9000`. Brief app :
+`vers-nemetonshiny/2026-10-13-t2-retrait-proxy.md`. Dernière release
+`nemetonshiny` vérifiée sur GitHub : **v2026.10.6**.
+
 ---
 
 # CI — dépendances et actions GitHub
