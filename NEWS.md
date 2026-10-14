@@ -1,3 +1,39 @@
+# nemeton 2026.10.6 (2026-10-14)
+
+Le forçage ERA5 de la reGénération ne s'attend plus mois par mois : les
+requêtes mensuelles de toutes les années partent ensemble (brief nemetonshiny
+du 2026-10-14). Sur Couchey, les 24 requêtes servies en série prenaient
+7 h 40 sur un run de 9 h 04.
+
+## Nouveautés
+
+- **`regen_sensibilite(era5_cache_dir = NULL)`** et
+  **`load_biljou_forcing(era5_cache_dir = NULL)`** : dossier des seuls `.nc`
+  ERA5, `cache_dir` par défaut (aucun changement de comportement). Les fichiers
+  étant nommés par position arrondie et par année, un même dossier peut servir
+  à tous les projets, par exemple
+  `file.path(tools::R_user_dir("nemeton", "cache"), "era5")`.
+
+## Changements compatibles
+
+- **Requêtes ERA5 en lot** : les mois manquants de toutes les années (et de
+  tous les points pour BILJOU) sont soumis au CDS sans attendre, suivis
+  ensemble et téléchargés dès qu'ils sont prêts. Au plus 6 requêtes à la fois,
+  réglable par `options(nemeton.era5_max_simultanees = n)`. Le cache par mois,
+  la fusion atomique et la relance (3 essais par requête) sont conservés ; un
+  mois en échec n'arrête plus les autres, l'erreur arrive à la fin.
+- **Limite de file du CDS** : le CDS refuse les requêtes en surnombre (« Number
+  queued requests for this dataset is temporarily limited », observé le
+  2026-10-14 sur 6 requêtes soumises d'un coup). Ce refus ne compte pas comme
+  un essai : le plafond descend au nombre de requêtes acceptées et remonte d'une
+  unité à chaque mois obtenu.
+- Un job CDS `rejected` ou `dismissed` est traité comme un échec : ecmwfr 2.0.3
+  le laissait parmi les requêtes en attente, qui ne se terminaient jamais.
+- **Progression** : `regen_expo:era5_mois` est émis à chaque mois TERMINÉ (ceux
+  en cache d'abord) ; `mois_i` croît jusqu'à `mois_n`, la taille du lot (12 par
+  année manquante). Pour BILJOU, le lot publie `biljou:era5_download` avec
+  `i`/`n` = mois terminés.
+
 # nemeton 2026.10.5 (2026-10-13)
 
 T2 ne recopie plus N2 ni T1 : sans série FORMS-T, il vaut `NA` (spec 060,

@@ -10,6 +10,22 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.6] - 2026-10-14
+
+### Added
+- `era5_cache_dir` argument to `regen_sensibilite()` and `load_biljou_forcing()`
+  (defaults to `cache_dir`): ERA5 files shareable across projects.
+
+### Changed
+- ERA5 monthly requests of all missing years (and points) are submitted to the
+  CDS together and tracked as a batch (at most 6 at once,
+  `nemeton.era5_max_simultanees`), instead of one after the other. A CDS
+  queue-limit rejection lowers the cap instead of burning a try.
+- `regen_expo:era5_mois` is emitted per completed month; `mois_n` is the batch size.
+
+### Fixed
+- A `rejected`/`dismissed` CDS job no longer waits forever (ecmwfr 2.0.3 kept it pending).
+
 ## [2026.10.5] - 2026-10-13
 
 ### Added

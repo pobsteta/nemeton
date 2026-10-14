@@ -472,82 +472,348 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   !is.na(path) && .cache_valid_or_drop(path, .rsen_era5_nc_complet)
 }
 
-# Téléchargement ERA5 mois par mois, avec progression et reprise.
-#
-# Pourquoi découper la boucle que `request_era5()` fait déjà en interne. Deux
-# raisons, et la seconde est un bug :
-#
-#  * PROGRESSION. `request_era5()` n'accepte aucun callback. `emit` n'était donc
-#    appelé qu'une fois par ANNÉE, avant la descente — soit, dans le cas nominal
-#    d'une seule année par catégorie, « 1/1 » suivi de 1 h 36 de silence. Mesuré
-#    sur un run réel : ~8 min par mois, 12 mois, 2 années, 3 h 15 de
-#    téléchargement muet sur 4 h 25 de run.
-#  * REPRISE. `request_era5()` REFUSE de réécrire : `overwrite = FALSE` par
-#    défaut, et il `stop()` dès que le `.zip` cible existe. Un run tué au mois 7
-#    rendait donc l'année entière irrécupérable — au run suivant, aucun combiné
-#    n'existe, le cœur redemande les douze mois, et l'appel échoue immédiatement
-#    sur le mois 1 dont le `.zip` traîne encore. `.rsen_era5_with_retry()`
-#    brûlait alors ses trois tentatives sur une erreur qui ne peut pas guérir.
-#
-# Un mois dont le `.nc` est là est sauté : c'est le `.nc` qui fait foi, pas le
-# `.zip`, un téléchargement coupé en cours laissant le second sans le premier.
-#
-# `requete`/`combiner` sont des points d'injection pour les tests : la logique de
-# reprise et de nommage se vérifie sans réseau ni clé CDS.
-.rsen_era5_telecharger <- function(req, cache_dir, annee, emit = NULL,
-                                   category = NA,
-                                   requete = .rsen_era5_requete,
-                                   combiner = .rsen_era5_combiner,
-                                   lon = NULL, lat = NULL) {
-  n <- length(req)
-  fichiers <- .rsen_era5_mois_nc(req, cache_dir)
-  for (k in seq_len(n)) {
-    # Émis AVANT le test de présence : sur un cache partiel, l'app doit voir la
-    # barre parcourir les douze mois, pas sauter du 6 au 7.
-    if (!is.null(emit)) emit(list(current = "regen_expo:era5_mois",
-                                  category = category, year = annee,
-                                  mois_i = k, mois_n = n))
-    if (.rsen_era5_cache_ok(fichiers[[k]])) next
-    # `req[k]` et non `req[[k]]` : `request_era5()` attend une LISTE de requêtes
-    # et itère dessus.
-    .rsen_era5_with_retry(function() requete(req[k], cache_dir))
+# Plafond de requêtes CDS simultanées pour un même compte. Le CDS ne publie pas
+# de limite par compte (seuls des messages de forum ECMWF, de 2021 à 2024,
+# évoquent 20 requêtes en attente par utilisateur ou 30 par adaptateur). Défaut
+# prudent de 6, réglable par argument ou par `options(nemeton.era5_max_simultanees)`.
+.rsen_era5_max_simultanees <- function(n = NULL) {
+  if (is.null(n)) n <- getOption("nemeton.era5_max_simultanees", 6L)
+  n <- suppressWarnings(as.integer(n))
+  if (length(n) != 1L || is.na(n) || n < 1L) {
+    cli::cli_abort("{.arg era5_max_simultanees} must be a single integer >= 1.")
   }
+  n
+}
+
+# Erreurs de limite du CDS (file du jeu de données pleine, débit) : elles ne
+# disent rien de la requête, seulement qu'il faut en soumettre moins à la fois.
+# Mesuré le 2026-10-14 : 6 requêtes soumises d'un coup, toutes rejetées avec
+# « Number queued requests for this dataset is temporarily limited ».
+.RSEN_ERA5_MOTIF_LIMITE <- "temporarily limited|queued requests|rate limit|too many requests|429"
+
+.rsen_era5_erreur_limite <- function(e) {
+  inherits(e, "rsen_era5_limite") ||
+    grepl(.RSEN_ERA5_MOTIF_LIMITE, conditionMessage(e), ignore.case = TRUE)
+}
+
+# Raison d'un job CDS refusé ou en échec (`/results` porte le `traceback`).
+.rsen_era5_raison_cds <- function(url) {
+  tryCatch({
+    rep <- httr2::request(paste0(url, "/results")) |>
+      httr2::req_headers(`PRIVATE-TOKEN` = ecmwfr::wf_get_key()) |>
+      httr2::req_error(is_error = function(resp) FALSE) |>
+      httr2::req_perform()
+    ct <- httr2::resp_body_json(rep)
+    paste(c(ct$title, ct$traceback), collapse = ": ")
+  }, error = function(e) "no reason given")
+}
+
+# Accès CDS asynchrone (ecmwfr >= 2) : `soumettre` dépose la requête et rend la
+# main, `sonder` interroge son état et télécharge le fichier dès qu'il est prêt,
+# `extraire` produit le `.nc` mensuel attendu, `liberer` retire la requête de la
+# file du compte. Les requêtes sont construites par `mcera5::build_era5_request()`,
+# qui ajoute `dataset_short_name` et `target` au format d'ecmwfr.
+#
+# `sonder` lit l'état du job lui-même : ecmwfr 2.0.3 range un job `rejected` ou
+# `dismissed` parmi les requêtes en attente, qui ne se termineraient donc jamais.
+.rsen_era5_acces_cds <- function() {
+  list(
+    soumettre = function(req_k, cache_dir) {
+      # ecmwfr 2.0.3 émet à chaque requête un avertissement R6 sans portée
+      # (« Superclass ecmwfr_service has cloneable=FALSE… ») ; lui seul est tu.
+      withCallingHandlers(
+        ecmwfr::wf_request(request = req_k, transfer = FALSE, path = cache_dir,
+                           retry = 5, verbose = FALSE),
+        warning = function(w) {
+          if (grepl("cloneable", conditionMessage(w), fixed = TRUE))
+            invokeRestart("muffleWarning")
+        },
+        message = function(m) {
+          if (grepl("cloneable", conditionMessage(m), fixed = TRUE))
+            invokeRestart("muffleMessage")
+        })
+    },
+    sonder = function(h) {
+      h$update_status(fail_is_error = FALSE)
+      etat <- h$get_status()
+      if (identical(etat, "successful")) {
+        h$download()
+        return(if (h$is_success()) "pret" else "en_attente")
+      }
+      if (length(etat) == 1L && etat %in% c("failed", "rejected", "dismissed", "deleted")) {
+        raison <- .rsen_era5_raison_cds(h$get_url())
+        classe <- if (grepl(.RSEN_ERA5_MOTIF_LIMITE, raison, ignore.case = TRUE))
+          "rsen_era5_limite" else "rsen_era5_echec"
+        stop(structure(class = c(classe, "error", "condition"), list(
+          message = sprintf("CDS job %s: %s", etat, raison), call = NULL)))
+      }
+      "en_attente"
+    },
+    extraire = function(h, req_k, cache_dir) {
+      nc <- file.path(cache_dir, sub("\\.zip$", ".nc", req_k$target))
+      recu <- h$get_file()
+      if (grepl("\\.zip$", recu)) {
+        # Même fusion que `request_era5()` (variables instantanées + cumuls).
+        utils::getFromNamespace("bind_zipped_netcdf", "mcera5")(recu, nc)
+      } else if (!identical(normalizePath(recu, mustWork = FALSE),
+                            normalizePath(nc, mustWork = FALSE))) {
+        file.rename(recu, nc)
+      }
+      invisible(nc)
+    },
+    liberer = function(h) {
+      if (is.environment(h)) try(h$delete(), silent = TRUE)
+      invisible(NULL)
+    })
+}
+
+# Accès synchrone : une fonction `requete(list(req_k), cache_dir)` qui télécharge
+# et extrait d'un bloc (`.rsen_era5_requete`, ou une injection de test).
+.rsen_era5_acces_sync <- function(requete) {
+  list(soumettre = function(req_k, cache_dir) { requete(list(req_k), cache_dir); TRUE },
+       sonder    = function(h) "pret",
+       extraire  = function(h, req_k, cache_dir) invisible(NULL),
+       liberer   = function(h) invisible(NULL))
+}
+
+# Exécute un lot de requêtes mensuelles ERA5 : toutes sont soumises d'abord
+# (au plus `max_simultanees` à la fois), puis suivies ensemble, chacune étant
+# téléchargée dès qu'elle est prête. Les attentes dans la file du CDS se
+# chevauchent au lieu de s'additionner : 24 requêtes servies en série prenaient
+# 7 h 40 sur Couchey (brief 2026-10-14), pour ~400 Ko chacune.
+#
+# `taches` : liste de `list(req, nc, year, category)`, une par mois. Un mois
+# dont le `.nc` est en cache et complet n'est pas soumis.
+#
+# Relance : une requête qui échoue (soumission refusée, échec du CDS, fichier
+# incomplet, délai dépassé) est resoumise après `min(90, base_wait * essai)` s,
+# jusqu'à `max_tries` essais. Un refus pour LIMITE (file du jeu de données
+# pleine, débit) ne compte pas comme un essai : le plafond descend au nombre de
+# requêtes acceptées, remonte d'une unité à chaque mois obtenu, et la requête
+# repasse après `attente_limite` s. Les autres continuent ; l'erreur n'est levée qu'à
+# la fin, pour que tous les mois obtenus restent en cache pour la reprise.
+#
+# Progression : un `regen_expo:era5_mois` par mois TERMINÉ (en cache compris,
+# émis d'abord), `mois_i` croissant de 1 à `mois_n` = taille du lot.
+.rsen_era5_lot <- function(taches, cache_dir, emit = NULL,
+                           acces = .rsen_era5_acces_cds(),
+                           max_simultanees = NULL, intervalle = 30,
+                           max_tries = 3L, base_wait = 15,
+                           attente_limite = 60, delai_max = 6 * 3600,
+                           pause = Sys.sleep,
+                           maintenant = Sys.time) {
+  plafond <- .rsen_era5_max_simultanees(max_simultanees)
+  n <- length(taches)
+  fait <- 0L
+  signaler <- function(t) {
+    fait <<- fait + 1L
+    if (!is.null(emit)) emit(list(current = "regen_expo:era5_mois",
+                                  category = t$category, year = t$year,
+                                  mois_i = fait, mois_n = n))
+  }
+  a_faire <- integer(0)
+  for (i in seq_len(n)) {
+    if (.rsen_era5_cache_ok(taches[[i]]$nc)) signaler(taches[[i]]) else a_faire <- c(a_faire, i)
+  }
+  if (!length(a_faire)) return(invisible(character(0)))
+
+  essais   <- integer(n)
+  prochain <- rep(-Inf, n)
+  handles  <- vector("list", n)
+  soumis_a <- rep(NA_real_, n)
+  erreurs  <- list()
+  file_att <- a_faire
+  actifs   <- integer(0)
+  t_num <- function() as.numeric(maintenant())
+
+  plafond_eff <- plafond
+  limite_depuis <- rep(NA_real_, n)
+  echouer <- function(i, e) {
+    acces$liberer(handles[[i]])
+    handles[i] <<- list(NULL)
+    actifs <<- setdiff(actifs, i)
+    if (.rsen_era5_erreur_limite(e)) {
+      # Limite du CDS : pas un essai perdu. On garde le nombre de requêtes que le
+      # CDS a acceptées, et la requête repasse plus tard, tant que la limite ne
+      # dure pas plus de `delai_max`.
+      plafond_eff <<- max(1L, length(actifs))
+      if (is.na(limite_depuis[i])) limite_depuis[i] <<- t_num()
+      if (t_num() - limite_depuis[i] <= delai_max) {
+        prochain[i] <<- t_num() + attente_limite
+        file_att <<- c(file_att, i)
+        return(invisible())
+      }
+    }
+    essais[i] <<- essais[i] + 1L
+    if (essais[i] < max_tries) {
+      prochain[i] <<- t_num() + min(90, base_wait * essais[i])
+      file_att <<- c(file_att, i)
+    } else {
+      erreurs[[as.character(i)]] <<- e
+    }
+  }
+
+  while (length(file_att) || length(actifs)) {
+    # Soumission, dans la limite du plafond.
+    for (i in file_att) {
+      if (length(actifs) >= plafond_eff) break
+      if (prochain[i] > t_num()) next
+      file_att <- setdiff(file_att, i)
+      h <- tryCatch(acces$soumettre(taches[[i]]$req, cache_dir),
+                    error = function(e) e)
+      if (inherits(h, "error")) { echouer(i, h); next }
+      handles[i] <- list(h)
+      soumis_a[i] <- t_num()
+      actifs <- c(actifs, i)
+    }
+    # Suivi des requêtes actives.
+    for (i in actifs) {
+      etat <- tryCatch(acces$sonder(handles[[i]]), error = function(e) e)
+      if (inherits(etat, "error")) { echouer(i, etat); next }
+      if (identical(etat, "pret")) {
+        ok <- tryCatch({
+          acces$extraire(handles[[i]], taches[[i]]$req, cache_dir)
+          if (!.rsen_era5_cache_ok(taches[[i]]$nc)) {
+            stop("ERA5 file missing or incomplete after download: ",
+                 basename(taches[[i]]$nc), ".", call. = FALSE)
+          }
+          TRUE
+        }, error = function(e) e)
+        if (inherits(ok, "error")) { echouer(i, ok); next }
+        acces$liberer(handles[[i]])
+        handles[i] <- list(NULL)
+        actifs <- setdiff(actifs, i)
+        limite_depuis[i] <- NA_real_
+        # Une place se libère : on retente une requête de plus que ce qui passait.
+        plafond_eff <- min(plafond, plafond_eff + 1L)
+        signaler(taches[[i]])
+      } else if (t_num() - soumis_a[i] > delai_max) {
+        echouer(i, simpleError(sprintf(
+          "ERA5 request still queued after %d s: %s.", as.integer(delai_max),
+          basename(taches[[i]]$nc))))
+      }
+    }
+    if (length(file_att) || length(actifs)) pause(intervalle)
+  }
+
+  if (length(erreurs)) {
+    premiere <- erreurs[[1]]
+    stop(simpleError(sprintf(
+      "%d ERA5 monthly request(s) out of %d failed after %d tries. First error: %s",
+      length(erreurs), length(a_faire), max_tries, conditionMessage(premiere))))
+  }
+  invisible(vapply(taches[a_faire], `[[`, "", "nc"))
+}
+
+# Requêtes mensuelles d'une année, en tâches de lot.
+.rsen_era5_taches <- function(req, cache_dir, annee, category = NA) {
+  ncs <- .rsen_era5_mois_nc(req, cache_dir)
+  lapply(seq_along(req), function(k)
+    list(req = req[[k]], nc = ncs[[k]], year = annee, category = category))
+}
+
+# Fusion atomique des douze mensuels d'une année : écrit dans un temporaire (même
+# dossier, extension .nc conservée), promu seulement une fois relisible — jamais
+# de combiné à moitié écrit.
+.rsen_era5_fusionner <- function(fichiers, cache_dir, annee, lon = NULL, lat = NULL,
+                                 combiner = .rsen_era5_combiner) {
   cible <- .rsen_era5_nom_combine(cache_dir, annee, lon, lat)
-  # Fusion dans un temporaire (même dossier, extension .nc conservée), promue
-  # seulement une fois relisible : jamais de combiné à moitié écrit.
   .atomic_write(cible, function(tmp) combiner(fichiers, tmp),
                 validate = .rsen_era5_nc_complet)
   cible
 }
 
+# Téléchargement ERA5 d'une année, avec progression et reprise.
+#
+# Historique : `request_era5()` boucle lui-même sur les mois, mais sans callback
+# (aucune progression) et en refusant de réécrire un `.zip` présent (`stop()` dès
+# le mois 1 après une interruption). La boucle a donc été reprise ici, puis
+# passée en lot (`.rsen_era5_lot`) : les douze requêtes partent ensemble.
+#
+# Un mois dont le `.nc` est là est sauté : c'est le `.nc` qui fait foi, pas le
+# `.zip`, un téléchargement coupé en cours laissant le second sans le premier.
+#
+# `requete` (synchrone) et `combiner` sont des points d'injection pour les tests ;
+# `requete = NULL` passe par l'accès CDS asynchrone.
+.rsen_era5_telecharger <- function(req, cache_dir, annee, emit = NULL,
+                                   category = NA, requete = NULL,
+                                   combiner = .rsen_era5_combiner,
+                                   lon = NULL, lat = NULL,
+                                   max_simultanees = NULL, ...) {
+  acces <- if (is.null(requete)) .rsen_era5_acces_cds() else .rsen_era5_acces_sync(requete)
+  taches <- .rsen_era5_taches(req, cache_dir, annee, category)
+  .rsen_era5_lot(taches, cache_dir, emit = emit, acces = acces,
+                 max_simultanees = max_simultanees, ...)
+  .rsen_era5_fusionner(vapply(taches, `[[`, "", "nc"), cache_dir, annee,
+                       lon, lat, combiner = combiner)
+}
+
+.rsen_era5_requete_annee <- function(lon, lat, annee) {
+  # mcera5 >= 0.4 : build_era5_request() construit les requêtes. by_month = TRUE :
+  # 12 requêtes MENSUELLES. Chaque mensuel (~9 000 champs) reste SOUS la limite de
+  # coût par requête du CDS ; une requête ANNUELLE (~105 000 champs) est rejetée
+  # `403 cost limits exceeded / request too large`.
+  mcera5::build_era5_request(
+    xmin = lon - 0.05, xmax = lon + 0.05, ymin = lat - 0.05, ymax = lat + 0.05,
+    start_time = as.POSIXct(sprintf("%d-01-01 00:00", annee), tz = "UTC"),
+    end_time   = as.POSIXct(sprintf("%d-12-31 23:00", annee), tz = "UTC"),
+    by_month = TRUE, outfile_name = .rsen_era5_radical(annee, lon, lat))
+}
+
+.rsen_era5_abort_mcera5 <- function(cache_dir) {
+  cli::cli_abort(c(
+    "regen_sensibilite() engine needs {.pkg mcera5} to fetch ERA5 forcing.",
+    i = "Install mcera5 (+ CDS key, and accept the ERA5 licence on the CDS site), or pre-populate {.path {cache_dir}}."))
+}
+
+# Garantit en cache les combinés ERA5 de plusieurs points x années, en UN lot :
+# les requêtes mensuelles manquantes de toutes les années (et de tous les
+# points) partent ensemble. `sites` : data.frame(lon, lat) ; `category` : une
+# valeur par année (ou une seule), reprise dans les événements de progression.
+# `construire` : point d'injection des tests (sans mcera5 ni réseau).
+.rsen_era5_assurer <- function(sites, annees, cache_dir, emit = NULL,
+                               category = NA, max_simultanees = NULL,
+                               requete = NULL, combiner = .rsen_era5_combiner,
+                               construire = .rsen_era5_requete_annee, ...) {
+  if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
+  annees <- as.integer(annees)
+  category <- rep_len(category, length(annees))
+  sites <- unique(data.frame(lon = as.numeric(sites$lon), lat = as.numeric(sites$lat)))
+  manquants <- list()
+  taches <- list()
+  for (s in seq_len(nrow(sites))) {
+    for (a in seq_along(annees)) {
+      lon <- sites$lon[s]; lat <- sites$lat[s]; annee <- annees[a]
+      if (.rsen_era5_cache_ok(.rsen_era5_combined(cache_dir, annee, lon, lat))) next
+      if (identical(construire, .rsen_era5_requete_annee) &&
+          !requireNamespace("mcera5", quietly = TRUE)) {
+        .rsen_era5_abort_mcera5(cache_dir)
+      }
+      t_an <- .rsen_era5_taches(construire(lon, lat, annee), cache_dir, annee,
+                                category[[a]])
+      manquants[[length(manquants) + 1L]] <-
+        list(lon = lon, lat = lat, annee = annee,
+             nc = vapply(t_an, `[[`, "", "nc"))
+      taches <- c(taches, t_an)
+    }
+  }
+  if (!length(taches)) return(invisible(character(0)))
+  acces <- if (is.null(requete)) .rsen_era5_acces_cds() else .rsen_era5_acces_sync(requete)
+  .rsen_era5_lot(taches, cache_dir, emit = emit, acces = acces,
+                 max_simultanees = max_simultanees, ...)
+  invisible(vapply(manquants, function(m)
+    .rsen_era5_fusionner(m$nc, cache_dir, m$annee, m$lon, m$lat,
+                         combiner = combiner), ""))
+}
+
 # Forçage ERA5 pour une année (téléchargement mcera5 mis en cache).
 .rsen_forcage_era5 <- function(lon, lat, annee, cache_dir, emit = NULL,
-                               category = NA) {
-  if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
-  # NA si aucun combiné en cache POUR CE POINT (lon/lat arrondis dans le nom).
-  combined <- .rsen_era5_combined(cache_dir, annee, lon, lat)
+                               category = NA, max_simultanees = NULL) {
+  .rsen_era5_assurer(data.frame(lon = lon, lat = lat), annee, cache_dir,
+                     emit = emit, category = category,
+                     max_simultanees = max_simultanees)
   st  <- as.POSIXct(sprintf("%d-01-01 00:00", annee), tz = "UTC")
   en  <- as.POSIXct(sprintf("%d-12-31 23:00", annee), tz = "UTC")
-  if (!.rsen_era5_cache_ok(combined)) {
-    if (!requireNamespace("mcera5", quietly = TRUE)) {
-      cli::cli_abort(c(
-        "regen_sensibilite() engine needs {.pkg mcera5} to fetch ERA5 forcing.",
-        i = "Install mcera5 (+ CDS key, and accept the ERA5 licence on the CDS site), or pre-populate {.path {cache_dir}}."))
-    }
-    # mcera5 >= 0.4 : build_era5_request() construit, request_era5() exécute.
-    # by_month = TRUE : 12 requêtes MENSUELLES que mcera5 fusionne (combine=TRUE)
-    # en un `<radical>_<annee>.nc`. Chaque mensuel (~9 000 champs) reste SOUS la limite
-    # de coût par requête du nouveau CDS. Une requête ANNUELLE (by_month=FALSE,
-    # ~105 000 champs) est rejetée `403 cost limits exceeded / request too large`
-    # → aucun run microclimf n'aboutissait depuis la bascule v0.143.0. Le retry/
-    # back-off (.rsen_era5_with_retry) absorbe le throttle des appels mensuels.
-    req <- mcera5::build_era5_request(
-      xmin = lon - 0.05, xmax = lon + 0.05, ymin = lat - 0.05, ymax = lat + 0.05,
-      start_time = st, end_time = en, by_month = TRUE,
-      outfile_name = .rsen_era5_radical(annee, lon, lat))
-    .rsen_era5_telecharger(req, cache_dir, annee, emit = emit, category = category,
-                           lon = lon, lat = lat)
-  }
   # Combiné si trouvé, sinon repli défensif (nom le plus court = le combiné,
   # indépendant de la locale — cf. .rsen_era5_src).
   src <- .rsen_era5_src(cache_dir, annee, lon, lat)
@@ -616,19 +882,28 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     pai      = unname(pai_empreinte))), 1, 12)
 }
 
+# Chemins des caches microclimat (T°max, VPD) d'une année.
+.rsen_micro_cache_fichiers <- function(annee, lon, lat, dtm, veg, reqhgt,
+                                       mois_ete, cache_dir, pai_source = NA) {
+  cle <- .rsen_micro_cache_key(dtm, reqhgt, mois_ete, lon, lat,
+                               pai = if (is.list(veg)) veg$pai else NULL,
+                               pai_source = pai_source)
+  c(tmax = file.path(cache_dir, sprintf("cache_%d_%s_tmax.tif", annee, cle)),
+    vpd  = file.path(cache_dir, sprintf("cache_%d_%s_vpd.tif", annee, cle)))
+}
+
 # Une année -> rasters d'été (T°max sous couvert, VPD moyen), mis en cache tif.
 # Le nom du cache porte la clé `.rsen_micro_cache_key()` en plus de l'année.
 .rsen_traiter_annee <- function(annee, lon, lat, dtm, veg, soil,
                                 reqhgt, mois_ete, cache_dir, emit = NULL,
-                                category = NA, pai_source = NA) {
-  cle <- .rsen_micro_cache_key(dtm, reqhgt, mois_ete, lon, lat,
-                               pai = if (is.list(veg)) veg$pai else NULL,
-                               pai_source = pai_source)
-  ft <- file.path(cache_dir, sprintf("cache_%d_%s_tmax.tif", annee, cle))
-  fv <- file.path(cache_dir, sprintf("cache_%d_%s_vpd.tif", annee, cle))
+                                category = NA, pai_source = NA,
+                                era5_cache_dir = cache_dir) {
+  f <- .rsen_micro_cache_fichiers(annee, lon, lat, dtm, veg, reqhgt, mois_ete,
+                                  cache_dir, pai_source)
+  ft <- f[["tmax"]]; fv <- f[["vpd"]]
   if (file.exists(ft) && file.exists(fv))
     return(list(tmax = terra::rast(ft), vpd = terra::rast(fv)))
-  meteo <- .rsen_forcage_era5(lon, lat, annee, cache_dir,
+  meteo <- .rsen_forcage_era5(lon, lat, annee, era5_cache_dir,
                               emit = emit, category = category)
   microclimf::checkinputs(meteo, veg, soil, dtm)
   mp  <- microclimf::runpointmodel(meteo, reqhgt, dtm, veg, soil)
@@ -748,13 +1023,21 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #'   reuse expensive runs. Microclimate `.tif` caches are keyed by year AND a
 #'   hash of the grid (extent, resolution, CRS), `reqhgt`, `mois_ete`, the
 #'   ERA5 point and the PAI source, so a shared directory is safe.
+#' @param era5_cache_dir Directory for the ERA5 `.nc` files only. `NULL`
+#'   (default) uses `cache_dir`. ERA5 files are named by rounded position and
+#'   year (`era5_<lon>_<lat>_<year>…`), so one directory can be shared across
+#'   projects (e.g. `file.path(tools::R_user_dir("nemeton", "cache"), "era5")`).
 #' @param progress_callback Optional function called at each step with a
 #'   `list(current = <key>, …)` payload (monitoring pattern). Keys:
 #'   `"regen_expo:pai"` (`source` = `"lidar"`/`"cache"`/`"raster"`, once, when the
 #'   vegetation-structure PAI is built/read), `"regen_expo:microclimf"` (`category`),
 #'   `"regen_expo:era5"` (`category`/`year`/`i`/`n`, once per reference year) and
-#'   `"regen_expo:complete"`. No-op when `NULL`; never fatal. The monthly ERA5
-#'   split is internal to `mcera5`.
+#'   `"regen_expo:era5_mois"` (`category`/`year`/`mois_i`/`mois_n`, once per
+#'   monthly ERA5 file completed, cached ones first; `mois_i` counts up to
+#'   `mois_n`, the size of the batch) and `"regen_expo:complete"`. No-op when
+#'   `NULL`; never fatal. The monthly ERA5 requests of all years are submitted
+#'   together (at most `getOption("nemeton.era5_max_simultanees", 6)` at once)
+#'   so their CDS queue waits overlap.
 #' @param precomputed Optional per-unit microclimf output (`data.frame`/list).
 #' @param ... Reserved (engine parameters).
 #'
@@ -777,7 +1060,7 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
                               mois_ete = 6:8, res = 2, tampon = 150,
                               reqhgt = 0.5, k = 0.5, pai = NULL, pai_cache = NULL,
                               pai_ncores = NULL, micro_max_cells = NULL,
-                              cache_dir = NULL,
+                              cache_dir = NULL, era5_cache_dir = NULL,
                               progress_callback = NULL, precomputed = NULL, ...) {
   validate_sf(units)
   # Budget cellules de la grille microclimf (borne mémoire, cf. bloc plus bas).
@@ -827,6 +1110,7 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   }
   if (is.null(cache_dir)) cache_dir <- tempfile("regen_micro_")
   dir.create(cache_dir, showWarnings = FALSE, recursive = TRUE)
+  if (is.null(era5_cache_dir)) era5_cache_dir <- cache_dir
 
   # 1. Unités en CRS de travail (LiDAR HD = EPSG:2154), emprise tamponnée.
   parc    <- terra::vect(sf::st_transform(units, 2154))
@@ -915,19 +1199,33 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   ll  <- terra::geom(terra::centroids(terra::project(parc, "EPSG:4326")))
   lon <- mean(ll[, "x"]); lat <- mean(ll[, "y"])
 
-  # 2. microclimat par catégorie (moyenne des étés moyens vs canicule).
+  # 2. Forçage ERA5 de toutes les années en UN lot (requêtes mensuelles soumises
+  # ensemble), limité aux années dont le cache microclimat manque.
+  annees <- c(annees_moy, annees_canic)
+  cats <- rep(c("moyenne", "canicule"), c(length(annees_moy), length(annees_canic)))
+  garder <- !duplicated(annees) & vapply(annees, function(a) {
+    f <- .rsen_micro_cache_fichiers(a, lon, lat, dtm, veg, reqhgt, mois_ete,
+                                    cache_dir, pai_source)
+    !all(file.exists(f))
+  }, logical(1))
+  if (any(garder)) {
+    .rsen_era5_assurer(data.frame(lon = lon, lat = lat), annees[garder],
+                       era5_cache_dir, emit = emit, category = cats[garder])
+  }
+
+  # 3. microclimat par catégorie (moyenne des étés moyens vs canicule).
   emit(list(current = "regen_expo:microclimf", category = "moyenne"))
   M <- .rsen_moyenne_categorie(annees_moy, lon = lon, lat = lat, dtm = dtm,
          veg = veg, soil = soil, reqhgt = reqhgt, mois_ete = mois_ete,
          cache_dir = cache_dir, emit = emit, category = "moyenne",
-         pai_source = pai_source)
+         pai_source = pai_source, era5_cache_dir = era5_cache_dir)
   emit(list(current = "regen_expo:microclimf", category = "canicule"))
   C <- .rsen_moyenne_categorie(annees_canic, lon = lon, lat = lat, dtm = dtm,
          veg = veg, soil = soil, reqhgt = reqhgt, mois_ete = mois_ete,
          cache_dir = cache_dir, emit = emit, category = "canicule",
-         pai_source = pai_source)
+         pai_source = pai_source, era5_cache_dir = era5_cache_dir)
 
-  # 3. Écarts et robustesse signal/bruit (si >= 2 années par catégorie).
+  # 4. Écarts et robustesse signal/bruit (si >= 2 années par catégorie).
   d_tmax <- C$tmax_moy - M$tmax_moy
   d_vpd  <- C$vpd_moy  - M$vpd_moy
   robustesse <- NULL
@@ -937,7 +1235,7 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
     robustesse <- (abs(d_tmax) / (sdp_t + 1e-6) + abs(d_vpd) / (sdp_v + 1e-6)) / 2
   }
 
-  # 4. Agrégation par unité + indices. Moyennes pondérées par le RECOUVREMENT
+  # 5. Agrégation par unité + indices. Moyennes pondérées par le RECOUVREMENT
   # cellule/polygone (exactextractr, cohérent avec .micro_extract des
   # indicateurs A3/A4/W4) ; `couverture_pct` = fraction exacte non-NA sur l'UGF.
   moyp <- function(r) .micro_extract(units, r)$mean
