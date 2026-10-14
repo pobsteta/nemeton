@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.5.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,25 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.6" id="nemeton-2026106-2026-10-14">nemeton 2026.10.6 (2026-10-14)<a class="anchor" aria-label="anchor" href="#nemeton-2026106-2026-10-14"></a></h2>
+<p>Le forçage ERA5 de la reGénération ne s’attend plus mois par mois : les requêtes mensuelles de toutes les années partent ensemble (brief nemetonshiny du 2026-10-14). Sur Couchey, les 24 requêtes servies en série prenaient 7 h 40 sur un run de 9 h 04.</p>
+<div class="section level3">
+<h3 id="nouveautés-2026-10-6">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-10-6"></a></h3>
+<ul><li>
+<strong><code>regen_sensibilite(era5_cache_dir = NULL)</code></strong> et <strong><code>load_biljou_forcing(era5_cache_dir = NULL)</code></strong> : dossier des seuls <code>.nc</code> ERA5, <code>cache_dir</code> par défaut (aucun changement de comportement). Les fichiers étant nommés par position arrondie et par année, un même dossier peut servir à tous les projets, par exemple <code>file.path(tools::R_user_dir("nemeton", "cache"), "era5")</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changements-compatibles-2026-10-6">Changements compatibles<a class="anchor" aria-label="anchor" href="#changements-compatibles-2026-10-6"></a></h3>
+<ul><li>
+<strong>Requêtes ERA5 en lot</strong> : les mois manquants de toutes les années (et de tous les points pour BILJOU) sont soumis au CDS sans attendre, suivis ensemble et téléchargés dès qu’ils sont prêts. Au plus 6 requêtes à la fois, réglable par <code>options(nemeton.era5_max_simultanees = n)</code>. Le cache par mois, la fusion atomique et la relance (3 essais par requête) sont conservés ; un mois en échec n’arrête plus les autres, l’erreur arrive à la fin.</li>
+<li>
+<strong>Limite de file du CDS</strong> : le CDS refuse les requêtes en surnombre (« Number queued requests for this dataset is temporarily limited », observé le 2026-10-14 sur 6 requêtes soumises d’un coup). Ce refus ne compte pas comme un essai : le plafond descend au nombre de requêtes acceptées et remonte d’une unité à chaque mois obtenu.</li>
+<li>Un job CDS <code>rejected</code> ou <code>dismissed</code> est traité comme un échec : ecmwfr 2.0.3 le laissait parmi les requêtes en attente, qui ne se terminaient jamais.</li>
+<li>
+<strong>Progression</strong> : <code>regen_expo:era5_mois</code> est émis à chaque mois TERMINÉ (ceux en cache d’abord) ; <code>mois_i</code> croît jusqu’à <code>mois_n</code>, la taille du lot (12 par année manquante). Pour BILJOU, le lot publie <code>biljou:era5_download</code> avec <code>i</code>/<code>n</code> = mois terminés.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.5" id="nemeton-2026105-2026-10-13">nemeton 2026.10.5 (2026-10-13)<a class="anchor" aria-label="anchor" href="#nemeton-2026105-2026-10-13"></a></h2>
 <p>T2 ne recopie plus N2 ni T1 : sans série FORMS-T, il vaut <code>NA</code> (spec 060, release B). L’inventaire vidéo peut renvoyer sur le terrain les arbres à compléter ou à vérifier (spec 061).</p>

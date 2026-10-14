@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.5.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -306,6 +306,34 @@
 <p><strong>Journal</strong> — <em>2026-10-09</em> (<strong>nemetonshiny 2026.10.1</strong>, <code>nemetonshiny@1bd48611</code>) : l’app adopte le même schéma. La dernière version sémantique publiée de l’app est 2.0.1 ; le cycle <code>2.0.1.9003</code> est publié directement en 2026.10.1. <code>version-consistency</code> reprend le bloc du cœur. Le plancher reste <code>nemeton (&gt;= 2.1.0)</code>.</p>
 <p><strong>Retraits possibles</strong> : <code>nemetonshiny</code> v2.0.1 (PR #234, <code>957952de</code>) n’appelle plus <code>create_qfield_project()</code>, remplacée par <code><a href="reference/create_qgis_project.html">create_qgis_project()</a></code> dans <code>mod_sampling.R</code>, et ne mocke plus <code>theia_configure_s3()</code>. Comme plus aucun appelant ne reste, ces deux fonctions peuvent être retirées sans dépréciation (spec 057 § 8). Cela demande l’accord de Pascal, car elles sont stables. La même release app porte le correctif des dalles LiDAR HD vides.</p>
 <p><strong>Journal</strong> — <em>2026-10-10</em> (<strong>2026.10.2</strong>) : <code>create_qfield_project()</code> et <code>theia_configure_s3()</code> sont retirées avec l’accord de Pascal, puisque plus aucun appelant ne reste. C’est le premier usage de la règle « plus aucun appelant » de la spec 057 § 8. NEWS s’ouvre sur « Changements cassants ». Le tutoriel 09 appelle <code><a href="reference/create_qgis_project.html">create_qgis_project()</a></code>. Les notes THEIA de <code>FR.json</code> décrivent l’accès par URL pré-signées. Version <code>nemetonshiny</code> publiée : v2026.10.1.</p>
+<hr></div>
+<div class="section level1">
+<h1 id="chantier--regénération--attente-era5-brief-nemetonshiny-2026-10-14">Chantier — reGénération : attente ERA5 (brief nemetonshiny 2026-10-14)<a class="anchor" aria-label="anchor" href="#chantier--reg%C3%A9n%C3%A9ration--attente-era5-brief-nemetonshiny-2026-10-14"></a></h1>
+<p>Run Couchey du 2026-10-13 : 9 h 04, dont 7 h 40 d’attente dans la file du CDS pour 24 requêtes mensuelles ERA5 servies en série (~400 Ko chacune).</p>
+<table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>Étape</th>
+<th>Contenu</th>
+<th>Release</th>
+<th>État</th>
+</tr></thead><tbody><tr><td>Cœur</td>
+<td>3.1 requêtes mensuelles en lot (<code>.rsen_era5_lot</code>, plafond 6 adaptatif) ; 3.2 <code>era5_cache_dir</code> sur <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> et <code><a href="reference/load_biljou_forcing.html">load_biljou_forcing()</a></code>
+</td>
+<td><strong>2026.10.6</strong></td>
+<td>✅ livré</td>
+</tr><tr><td>Cœur</td>
+<td>3.3 jeu « ERA5 hourly time-series » : écarté, ses variables (T, Td, p, u, v, précip) n’ont pas le rayonnement qu’exige <code>extract_clim(format = "microclimf")</code>
+</td>
+<td>—</td>
+<td>✅ évalué</td>
+</tr><tr><td>Cœur</td>
+<td>mesure réelle d’une année ERA5 en lot</td>
+<td>—</td>
+<td>🟨 en cours</td>
+</tr><tr><td>App</td>
+<td>dossier ERA5 commun, plancher <code>nemeton (&gt;= 2026.10.6)</code>
+</td>
+<td><code>nemetonshiny</code></td>
+<td>⬜ brief de réponse</td>
+</tr></tbody></table><p><strong>Journal</strong> — <em>2026-10-14</em> (<strong>2026.10.6</strong>) : les mois manquants de toutes les années (et de tous les points BILJOU) partent ensemble via ecmwfr (<code>wf_request( transfer = FALSE)</code>), suivis et téléchargés dès qu’ils sont prêts ; cache par mois, fusion atomique et relance conservés. Deux constats du jour sur le vrai CDS : (1) 6 requêtes soumises d’un coup sont toutes rejetées (« Number queued requests for this dataset is temporarily limited ») — un tel refus abaisse le plafond au nombre de requêtes acceptées au lieu de consommer un essai ; (2) ecmwfr 2.0.3 garde un job <code>rejected</code> parmi les requêtes en attente — le suivi lit l’état lui-même. Mesure (Couchey, 2021, cache vide) lancée à 08:01 dans une file très chargée (46 min avant le démarrage d’un job) : 2 requêtes acceptées en parallèle, 3 mois en 120 min ; chiffre final dans la réponse à l’app.</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier--t2-mesuré-sur-forms-t-spec-060">Chantier — T2 mesuré sur FORMS-T (spec 060)<a class="anchor" aria-label="anchor" href="#chantier--t2-mesur%C3%A9-sur-forms-t-spec-060"></a></h1>

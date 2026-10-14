@@ -27,6 +27,7 @@ load_biljou_forcing(
   years,
   source = c("safran", "era5"),
   cache_dir = NULL,
+  era5_cache_dir = NULL,
   raw = NULL,
   points = NULL,
   latitude = NULL,
@@ -57,6 +58,14 @@ load_biljou_forcing(
 
   Directory for the ERA5 downloads (default a tempdir).
 
+- era5_cache_dir:
+
+  Directory for the ERA5 `.nc` files; `NULL` (default) uses `cache_dir`.
+  Same argument as in
+  [`regen_sensibilite`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md):
+  files are named by rounded position and year, so it can be shared
+  across projects.
+
 - raw:
 
   Optional raw SAFRAN `data.frame` to convert instead of downloading
@@ -86,10 +95,11 @@ load_biljou_forcing(
   Optional function called at each step with a
   `list(current = <key>, ...)` payload (monitoring pattern). Keys:
   `"biljou:safran_unit"` (`i`/`n`/`id`), `"biljou:era5_download"`
-  (`i`/`n`/`id`/`year`), `"biljou:complete"` (`n_units`, `missing_ids`),
-  `"biljou:unavailable"` (`reason`, `missing_ids`). The app maps these
-  to bottom-right notifications during the forcing download. A callback
-  error is never fatal.
+  (`i`/`n`/`id`/`year`; while the batched ERA5 requests run, `i`/`n`
+  count the monthly files completed, without `id`), `"biljou:complete"`
+  (`n_units`, `missing_ids`), `"biljou:unavailable"` (`reason`,
+  `missing_ids`). The app maps these to bottom-right notifications
+  during the forcing download. A callback error is never fatal.
 
 - ...:
 

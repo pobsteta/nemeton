@@ -26,6 +26,7 @@ regen_sensibilite(
   pai_ncores = NULL,
   micro_max_cells = NULL,
   cache_dir = NULL,
+  era5_cache_dir = NULL,
   progress_callback = NULL,
   precomputed = NULL,
   ...
@@ -126,6 +127,14 @@ regen_sensibilite(
   a hash of the grid (extent, resolution, CRS), `reqhgt`, `mois_ete`,
   the ERA5 point and the PAI source, so a shared directory is safe.
 
+- era5_cache_dir:
+
+  Directory for the ERA5 `.nc` files only. `NULL` (default) uses
+  `cache_dir`. ERA5 files are named by rounded position and year
+  (`era5_<lon>_<lat>_<year>…`), so one directory can be shared across
+  projects (e.g.
+  `file.path(tools::R_user_dir("nemeton", "cache"), "era5")`).
+
 - progress_callback:
 
   Optional function called at each step with a
@@ -133,9 +142,14 @@ regen_sensibilite(
   `"regen_expo:pai"` (`source` = `"lidar"`/`"cache"`/`"raster"`, once,
   when the vegetation-structure PAI is built/read),
   `"regen_expo:microclimf"` (`category`), `"regen_expo:era5"`
-  (`category`/`year`/`i`/`n`, once per reference year) and
-  `"regen_expo:complete"`. No-op when `NULL`; never fatal. The monthly
-  ERA5 split is internal to `mcera5`.
+  (`category`/`year`/`i`/`n`, once per reference year),
+  `"regen_expo:era5_mois"` (`category`/`year`/`mois_i`/`mois_n`, once
+  per monthly ERA5 file completed, cached ones first; `mois_i` counts up
+  to `mois_n`, the size of the batch) and `"regen_expo:complete"`. No-op
+  when `NULL`; never fatal. The monthly ERA5 requests of all years are
+  submitted together (at most
+  `getOption("nemeton.era5_max_simultanees", 6)` at once) so their CDS
+  queue waits overlap.
 
 - precomputed:
 
