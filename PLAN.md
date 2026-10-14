@@ -7,8 +7,8 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.6**
-> (release du 2026-10-12), relevée le 2026-10-13.
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.7**
+> (release du 2026-10-13), relevée le 2026-10-14.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
@@ -166,8 +166,8 @@ chacune).
 |----|----|----|----|
 | Cœur | 3.1 requêtes mensuelles en lot (`.rsen_era5_lot`, plafond 6 adaptatif) ; 3.2 `era5_cache_dir` sur [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md) et [`load_biljou_forcing()`](https://pobsteta.github.io/nemeton/reference/load_biljou_forcing.md) | **2026.10.6** | ✅ livré |
 | Cœur | 3.3 jeu « ERA5 hourly time-series » : écarté, ses variables (T, Td, p, u, v, précip) n’ont pas le rayonnement qu’exige `extract_clim(format = "microclimf")` | — | ✅ évalué |
-| Cœur | mesure réelle d’une année ERA5 en lot | — | 🟨 en cours |
-| App | dossier ERA5 commun, plancher `nemeton (>= 2026.10.6)` | `nemetonshiny` | ⬜ brief de réponse |
+| Cœur | mesure réelle d’une année ERA5 en lot | — | ✅ mesuré (gain non démontré, CDS saturé) |
+| App | dossier ERA5 commun, plancher `nemeton (>= 2026.10.6)` | `nemetonshiny` | ⬜ brief envoyé |
 
 **Journal** — *2026-10-14* (**2026.10.6**) : les mois manquants de
 toutes les années (et de tous les points BILJOU) partent ensemble via
@@ -183,6 +183,16 @@ suivi lit l’état lui-même. Mesure (Couchey, 2021, cache vide) lancée à
 2 requêtes acceptées en parallèle, 3 mois en 120 min ; chiffre final
 dans la réponse à l’app.
 
+*2026-10-14* : PR \#557 mergée (CI verte sauf Codecov, non requis : sur
+le runner, les tests ERA5 sont ignorés par l’anomalie
+`terra::writeRaster(crs=EPSG)` connue) ; tag `v2026.10.6` posé par
+`release.yml`. Cycle dev `2026.10.6.9000`. Mesure terminée : **2021 en 6
+h 37** (12 mois, fin 14:38, combiné complet), contre 1 h 56 (2023) et 5
+h 44 (2022) en série la veille. Ce n’est pas un gain démontré : file CDS
+saturée ce jour-là, et le CDS n’a laissé que 2 requêtes en file pour le
+compte. Le cache partagé (3.2) reste le levier le plus sûr. Réponse :
+`vers-nemetonshiny/2026-10-14-reponse-regeneration-era5.md`.
+
 ------------------------------------------------------------------------
 
 # Chantier — T2 mesuré sur FORMS-T (spec 060)
@@ -195,7 +205,7 @@ dans la réponse à l’app.
 | Cœur | `indicateur_t2_changement(forms_t = )` : stabilité du couvert (perte durable ≥ 5 m) ; [`charger_forms_t_hauteurs()`](https://pobsteta.github.io/nemeton/reference/charger_forms_t_hauteurs.md) | **2026.10.3** | ✅ livré |
 | App | charger FORMS-T 2019-2024, le passer à T2, afficher `t2_status` et les diagnostics | `nemetonshiny` **v2026.10.5** | ✅ livré |
 | Cœur | retrait du proxy N2/T1 (accord de Pascal du 2026-10-13) | **2026.10.5** | ✅ livré |
-| App | retirer le message `t2_proxy` et l’ordre N2 avant T2, devenus inutiles | `nemetonshiny` | ⬜ brief envoyé |
+| App | retirer le message `t2_proxy` et l’ordre N2 avant T2, devenus inutiles | nemetonshiny **2026.10.7** | ✅ livré |
 
 **Journal** — *2026-10-11* (**2026.10.3**) : T2 recopiait N2 ou T1 et ne
 lisait aucune série. Il mesure maintenant la stabilité du couvert sur la
@@ -252,6 +262,12 @@ ne traite plus T2 comme un composite. `massif_demo_units` est régénérée
 `vers-nemetonshiny/2026-10-13-t2-retrait-proxy.md` (textes et ordre
 N2→T2 devenus inutiles). **Chantier T2 clos côté cœur.**
 
+*2026-10-13* — nemetonshiny **v2026.10.7** (`nemetonshiny@6c6a0399`, PR
+\#241) : brief traité, l’app ne passe plus `N2` / `T1` à T2,
+`.order_indicators_for_dependencies()` et la clé `t2_proxy` sont
+retirées, `t2_no_source` reformulée, tests passés à `"no_source"`.
+**Chantier T2 clos.**
+
 ------------------------------------------------------------------------
 
 # Chantier — Inventaire vidéo Groma (spec 061)
@@ -265,7 +281,7 @@ N2→T2 devenus inutiles). **Chantier T2 clos côté cœur.**
 | Cœur | schéma partagé, GeoPackage + rasters + projet QField, numérotation, hauteurs par houppier, rapprochement, validation, import/fusion, client API Groma ; `validate_field_data(dbh_max_cm, dbh_alerte_cm)`, `tag_field_data_sources(source)` | **2026.10.4** | ✅ livré |
 | Cœur | renvoi sur le terrain des `a_completer`/`a_verifier` : [`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md) | **2026.10.5** | ✅ livré |
 | Cœur | plugin de projet QField `.qml` (contenu à fournir par groma) | — | ⬜ attend groma |
-| App | sous-onglet Terrain \> Inventaire vidéo | `nemetonshiny` | ⬜ brief émis par groma |
+| App | sous-onglet Terrain \> Inventaire vidéo + renvoi terrain | nemetonshiny **2026.10.7** | ✅ livré |
 
 **Journal** — *2026-10-12* (**2026.10.4**) : 9 fonctions exportées
 (experimental) dans `R/inventaire_video.R`. Le schéma, les déclencheurs
@@ -311,6 +327,14 @@ identique. Assemblage du `.qgz` factorisé avec
 posé par `release.yml`. Cycle dev `2026.10.5.9000`. Brief app :
 `vers-nemetonshiny/2026-10-13-t2-retrait-proxy.md`. Dernière release
 `nemetonshiny` vérifiée sur GitHub : **v2026.10.6**.
+
+*2026-10-13* — nemetonshiny **v2026.10.7** (`nemetonshiny@6c6a0399`, PR
+\#241, cycle `2026.10.6.9000` → `2026.10.7`, plancher
+`nemeton (>= 2026.10.5)`) : sous-onglet Terrain \> Inventaire vidéo
+(Préparer, Suivre, Intégrer) et bouton « Renvoyer sur le terrain »
+([`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md),
+rasters repris du premier `.qgz`) ; test d’intégration réelle vert
+contre le cœur 2026.10.5.
 
 ------------------------------------------------------------------------
 
