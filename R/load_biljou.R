@@ -132,6 +132,12 @@
   if (is.null(emit)) emit <- function(payload) NULL
   if (!requireNamespace("mcera5", quietly = TRUE) || is.null(years)) return(NULL)
   n <- nrow(points)
+  # Toutes les requêtes mensuelles (points x années) partent en un lot : leurs
+  # attentes dans la file du CDS se chevauchent.
+  # Progression du lot sous la clé BILJOU : `i`/`n` y comptent les mois terminés.
+  .rsen_era5_assurer(points, years, cache_dir, emit = function(p)
+    emit(list(current = "biljou:era5_download", i = p$mois_i, n = p$mois_n,
+              year = p$year)))
   out <- lapply(seq_len(n), function(i) {
     p <- points[i, ]
     hourly <- do.call(rbind, lapply(years, function(y) {
@@ -167,6 +173,9 @@
 #' @param source `"safran"` (default, France, GéoSAS OGC API-EDR, no key) or
 #'   `"era5"` (fallback, `mcera5`, needs a CDS key).
 #' @param cache_dir Directory for the ERA5 downloads (default a tempdir).
+#' @param era5_cache_dir Directory for the ERA5 `.nc` files; `NULL` (default)
+#'   uses `cache_dir`. Same argument as in [regen_sensibilite()]: files are
+#'   named by rounded position and year, so it can be shared across projects.
 #' @param raw Optional raw SAFRAN `data.frame` to convert instead of downloading
 #'   (via [biljouR::safran_to_meteo()]) — the tested injection path.
 #' @param points Optional pre-built `data.frame(id, lon, lat)` (defaults to the
@@ -178,7 +187,8 @@
 #' @param progress_callback Optional function called at each step with a
 #'   `list(current = <key>, …)` payload (monitoring pattern). Keys:
 #'   `"biljou:safran_unit"` (`i`/`n`/`id`), `"biljou:era5_download"`
-#'   (`i`/`n`/`id`/`year`), `"biljou:complete"` (`n_units`, `missing_ids`),
+#'   (`i`/`n`/`id`/`year`; while the batched ERA5 requests run, `i`/`n` count
+#'   the monthly files completed, without `id`), `"biljou:complete"` (`n_units`, `missing_ids`),
 #'   `"biljou:unavailable"` (`reason`, `missing_ids`). The app maps these to
 #'   bottom-right notifications during the forcing download. A callback error is
 #'   never fatal.
@@ -192,7 +202,8 @@
 #'
 #' @export
 load_biljou_forcing <- function(aoi, years, source = c("safran", "era5"),
-                                cache_dir = NULL, raw = NULL, points = NULL,
+                                cache_dir = NULL, era5_cache_dir = NULL,
+                                raw = NULL, points = NULL,
                                 latitude = NULL, altitude = 0,
                                 compute_pet = FALSE, progress_callback = NULL,
                                 ...) {
@@ -211,6 +222,7 @@ load_biljou_forcing <- function(aoi, years, source = c("safran", "era5"),
     return(NULL)
   }
   if (is.null(cache_dir)) cache_dir <- file.path(tempdir(), "biljou_forcing")
+  if (!is.null(era5_cache_dir)) cache_dir <- era5_cache_dir
   if (is.null(points) && !is.null(aoi)) points <- .biljou_points(aoi)
   if (is.null(latitude) && !is.null(points)) latitude <- stats::median(points$lat)
 

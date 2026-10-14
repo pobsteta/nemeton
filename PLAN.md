@@ -134,6 +134,32 @@ v2026.10.1.
 
 ---
 
+# Chantier — reGénération : attente ERA5 (brief nemetonshiny 2026-10-14)
+
+Run Couchey du 2026-10-13 : 9 h 04, dont 7 h 40 d'attente dans la file du CDS
+pour 24 requêtes mensuelles ERA5 servies en série (~400 Ko chacune).
+
+| Étape | Contenu | Release | État |
+|---|---|---|---|
+| Cœur | 3.1 requêtes mensuelles en lot (`.rsen_era5_lot`, plafond 6 adaptatif) ; 3.2 `era5_cache_dir` sur `regen_sensibilite()` et `load_biljou_forcing()` | **2026.10.6** | ✅ livré |
+| Cœur | 3.3 jeu « ERA5 hourly time-series » : écarté, ses variables (T, Td, p, u, v, précip) n'ont pas le rayonnement qu'exige `extract_clim(format = "microclimf")` | — | ✅ évalué |
+| Cœur | mesure réelle d'une année ERA5 en lot | — | 🟨 en cours |
+| App | dossier ERA5 commun, plancher `nemeton (>= 2026.10.6)` | `nemetonshiny` | ⬜ brief de réponse |
+
+**Journal** — *2026-10-14* (**2026.10.6**) : les mois manquants de toutes les
+années (et de tous les points BILJOU) partent ensemble via ecmwfr (`wf_request(
+transfer = FALSE)`), suivis et téléchargés dès qu'ils sont prêts ; cache par
+mois, fusion atomique et relance conservés. Deux constats du jour sur le vrai
+CDS : (1) 6 requêtes soumises d'un coup sont toutes rejetées (« Number queued
+requests for this dataset is temporarily limited ») — un tel refus abaisse le
+plafond au nombre de requêtes acceptées au lieu de consommer un essai ; (2)
+ecmwfr 2.0.3 garde un job `rejected` parmi les requêtes en attente — le suivi
+lit l'état lui-même. Mesure (Couchey, 2021, cache vide) lancée à 08:01 dans une
+file très chargée (46 min avant le démarrage d'un job) : 2 requêtes acceptées
+en parallèle, 3 mois en 120 min ; chiffre final dans la réponse à l'app.
+
+---
+
 # Chantier — T2 mesuré sur FORMS-T (spec 060)
 
 > Demande de Pascal du 2026-10-11 : « je te laisse faire ce qu'il y a de mieux

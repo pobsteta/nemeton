@@ -184,7 +184,7 @@ test_that(".biljou_forcing_era5 does not hand the first unit's ERA5 file to the 
       list(list(target = paste0(outfile_name, "_2018_6.zip")))
     },
     request_era5 = function(request, out_path, ...)
-      .nc_ok(file.path(out_path, paste0(seen$outfile, "_2018_6.nc"))),
+      .nc_ok(file.path(out_path, sub("\\.zip$", ".nc", request[[1]]$target))),
     combine_netcdf = function(filenames, combined_name) .nc_ok(combined_name),
     # Température horaire = longitude du point lu dans le NOM du fichier.
     extract_clim = function(src, ...) {
@@ -194,6 +194,9 @@ test_that(".biljou_forcing_era5 does not hand the first unit's ERA5 file to the 
                  relhum = 70, precip = 0)
     },
     .package = "mcera5")
+  # Accès CDS remplacé par l'accès synchrone (request_era5 simulé) : aucun réseau.
+  local_mocked_bindings(.rsen_era5_acces_cds = function()
+    nemeton:::.rsen_era5_acces_sync(nemeton:::.rsen_era5_requete))
   pts <- data.frame(id = 1:2, lon = c(5, 12), lat = c(45, 45))
   out <- nemeton:::.biljou_forcing_era5(pts, 2018L, cd)
   expect_named(out, c("1", "2"))

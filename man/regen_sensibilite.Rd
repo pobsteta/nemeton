@@ -21,6 +21,7 @@ regen_sensibilite(
   pai_ncores = NULL,
   micro_max_cells = NULL,
   cache_dir = NULL,
+  era5_cache_dir = NULL,
   progress_callback = NULL,
   precomputed = NULL,
   ...
@@ -86,14 +87,23 @@ keyed by year AND a hash of the grid (extent, resolution, CRS), \code{reqhgt},
 \code{mois_ete}, the ERA5 point and the PAI source, so a shared directory is
 safe.}
 
+\item{era5_cache_dir}{Directory for the ERA5 \code{.nc} files only. \code{NULL}
+(default) uses \code{cache_dir}. ERA5 files are named by rounded position and
+year (\verb{era5_<lon>_<lat>_<year>…}), so one directory can be shared across
+projects (e.g. \code{file.path(tools::R_user_dir("nemeton", "cache"), "era5")}).}
+
 \item{progress_callback}{Optional function called at each step with a
 \code{list(current = <key>, …)} payload (monitoring pattern). Keys:
 \code{"regen_expo:pai"} (\code{source} = \code{"lidar"}/\code{"cache"}/\code{"raster"},
 once, when the vegetation-structure PAI is built/read), \code{"regen_expo:microclimf"}
 (\code{category}), \code{"regen_expo:era5"}
-(\code{category}/\code{year}/\code{i}/\code{n}, once per reference year) and
-\code{"regen_expo:complete"}. No-op when \code{NULL}; never fatal. The monthly
-ERA5 split is internal to \code{mcera5}.}
+(\code{category}/\code{year}/\code{i}/\code{n}, once per reference year),
+\code{"regen_expo:era5_mois"} (\code{category}/\code{year}/\code{mois_i}/\code{mois_n},
+once per monthly ERA5 file completed, cached ones first; \code{mois_i} counts up
+to \code{mois_n}, the size of the batch) and \code{"regen_expo:complete"}. No-op
+when \code{NULL}; never fatal. The monthly ERA5 requests of all years are
+submitted together (at most \code{getOption("nemeton.era5_max_simultanees", 6)}
+at once) so their CDS queue waits overlap.}
 
 \item{precomputed}{Optional per-unit microclimf output (\code{data.frame}/list).}
 

@@ -153,6 +153,7 @@ test_that("regen_sensibilite engine emits regen_expo:pai then :complete", {
   # Mock l'acquisition annuelle : rasters calés sur le `dtm` (via ...), afin que
   # l'agrégation `.micro_extract` tombe juste ; facteur canicule pour un signal.
   testthat::local_mocked_bindings(
+    .rsen_era5_assurer = function(...) invisible(character(0)),
     .rsen_traiter_annee = function(annee, ...) {
       d <- list(...)$dtm
       f <- if (annee >= 2022) 1.2 else 1
@@ -186,6 +187,7 @@ test_that("regen_sensibilite caches the LiDAR PAI (miss writes, hit reuses)", {
   # Mock ERA5 (dtm-calé) et pai_depuis_nuage (compteur d'appels + raster aligné).
   calls <- 0L
   testthat::local_mocked_bindings(
+    .rsen_era5_assurer = function(...) invisible(character(0)),
     .rsen_traiter_annee = function(annee, ...) { d <- list(...)$dtm; list(tmax = d, vpd = d) },
     pai_depuis_nuage = function(dossier_las, grille, ...) {
       calls <<- calls + 1L
@@ -313,6 +315,9 @@ test_that("a truncated combined cache is not reused: it is rebuilt", {
     combine_netcdf = function(filenames, combined_name) .nc_ok(combined_name),
     extract_clim = function(src, ...) data.frame(obs_time = 1),
     .package = "mcera5")
+  # Accès CDS remplacé par l'accès synchrone (request_era5 simulé) : aucun réseau.
+  local_mocked_bindings(.rsen_era5_acces_cds = function()
+    nemeton:::.rsen_era5_acces_sync(nemeton:::.rsen_era5_requete))
   nemeton:::.rsen_forcage_era5(lon = 6, lat = 48, annee = 2019, cache_dir = cd)
   expect_equal(called, 1L)
   expect_true(nemeton:::.rsen_era5_nc_complet(comb))
@@ -338,6 +343,9 @@ test_that(".rsen_forcage_era5 requests monthly (by_month=TRUE) to dodge the CDS 
     combine_netcdf = function(filenames, combined_name) .nc_ok(combined_name),
     extract_clim = function(src, ...) { seen$src <- src; data.frame(obs_time = 1) },
     .package = "mcera5")
+  # Accès CDS remplacé par l'accès synchrone (request_era5 simulé) : aucun réseau.
+  local_mocked_bindings(.rsen_era5_acces_cds = function()
+    nemeton:::.rsen_era5_acces_sync(nemeton:::.rsen_era5_requete))
   out <- nemeton:::.rsen_forcage_era5(lon = 6, lat = 48, annee = 2018, cache_dir = cd)
   expect_true(isTRUE(seen$by_month))                        # mensuel, pas annuel
   expect_equal(basename(seen$src), "era5_6p00_48p00_2018_2018.nc")     # combiné (pas un mensuel)
@@ -354,6 +362,9 @@ test_that(".rsen_forcage_era5 reuses the combined cache without re-downloading",
     request_era5 = function(...) { called <<- called + 1L; NULL },
     extract_clim = function(src, ...) data.frame(obs_time = 1),
     .package = "mcera5")
+  # Accès CDS remplacé par l'accès synchrone (request_era5 simulé) : aucun réseau.
+  local_mocked_bindings(.rsen_era5_acces_cds = function()
+    nemeton:::.rsen_era5_acces_sync(nemeton:::.rsen_era5_requete))
   # 6.001 / 48.004 arrondis à 0.01° -> même point de cache.
   nemeton:::.rsen_forcage_era5(lon = 6.001, lat = 48.004, annee = 2019, cache_dir = cd)
   expect_equal(called, 0L)                                  # pas de re-téléchargement
@@ -389,6 +400,9 @@ test_that("an ERA5 file cached for one point is never read for another point", {
     combine_netcdf = function(filenames, combined_name) .nc_ok(combined_name),
     extract_clim = function(src, ...) { seen$src <- src; data.frame(obs_time = 1) },
     .package = "mcera5")
+  # Accès CDS remplacé par l'accès synchrone (request_era5 simulé) : aucun réseau.
+  local_mocked_bindings(.rsen_era5_acces_cds = function()
+    nemeton:::.rsen_era5_acces_sync(nemeton:::.rsen_era5_requete))
   nemeton:::.rsen_forcage_era5(lon = 2, lat = 45, annee = 2019, cache_dir = cd)
   expect_equal(seen$outfile, "era5_2p00_45p00_2019")
   expect_equal(basename(seen$src), "era5_2p00_45p00_2019_2019.nc")
@@ -820,6 +834,7 @@ test_that("a full cache downloads nothing (CA-2) and a partial one resumes (CA-3
     requete  = function(rk, dir) {
       demandes <<- c(demandes, as.integer(sub(".*_(\\d+)\\.zip$", "\\1",
                                               rk[[1]]$target)))
+      .nc_ok(file.path(dir, sub("\\.zip$", ".nc", rk[[1]]$target)))
     },
     combiner = function(files, cible) .nc_ok(cible))
   expect_equal(demandes, 7:12)
@@ -878,4 +893,239 @@ test_that("emit and category reach the download from .rsen_moyenne_categorie (CA
   expect_true("regen_expo:era5" %in% types)        # l'annuel est conservé
   expect_true("regen_expo:era5_mois" %in% types)   # le mensuel descend
   expect_true(all(vapply(vus, function(p) p$category, "") == "canicule"))
+})
+
+# --- Lot ERA5 : requêtes mensuelles soumises ensemble (brief 2026-10-14) -----
+
+# Faux accès CDS asynchrone. Chaque requête reste `attente[k]` sondages en file
+# puis devient prête ; `rejets` : nombre de refus pour limite avant acceptation ;
+# `limite` : nombre maximal de requêtes que le faux CDS accepte en même temps.
+.acces_factice <- function(attente, limite = Inf, echecs = integer(0)) {
+  st <- new.env()
+  st$actives <- 0L; st$pic <- 0L; st$soumissions <- character(0)
+  st$echecs <- echecs
+  st$acces <- list(
+    soumettre = function(req_k, cache_dir) {
+      st$soumissions <- c(st$soumissions, req_k$target)
+      h <- new.env()
+      h$target <- req_k$target; h$dir <- cache_dir
+      h$reste <- attente[[req_k$target]]
+      if (st$actives >= limite) {
+        h$limite <- TRUE
+      } else {
+        h$limite <- FALSE
+        st$actives <- st$actives + 1L
+        st$pic <- max(st$pic, st$actives)
+      }
+      h
+    },
+    sonder = function(h) {
+      if (isTRUE(h$limite)) {
+        stop(structure(class = c("rsen_era5_limite", "error", "condition"), list(
+          message = "Number queued requests for this dataset is temporarily limited",
+          call = NULL)))
+      }
+      if (h$target %in% names(st$echecs) && st$echecs[[h$target]] > 0L) {
+        st$echecs[[h$target]] <- st$echecs[[h$target]] - 1L
+        stop("CDS job failed: boom")
+      }
+      h$reste <- h$reste - 1L
+      if (h$reste <= 0L) "pret" else "en_attente"
+    },
+    extraire = function(h, req_k, cache_dir)
+      .nc_ok(file.path(cache_dir, sub("\\.zip$", ".nc", req_k$target))),
+    liberer = function(h) {
+      if (is.environment(h) && !isTRUE(h$limite) && !isTRUE(h$libere)) {
+        h$libere <- TRUE
+        st$actives <- st$actives - 1L
+      }
+    })
+  st
+}
+
+test_that("the ERA5 batch submits the missing months together and overlaps waits", {
+  req <- .rsen_req_factice(2023L)
+  cd <- withr::local_tempdir()
+  taches <- nemeton:::.rsen_era5_taches(req, cd, 2023L, "moyenne")
+  # Mois 1 et 2 en cache : seuls les 10 autres partent.
+  for (k in 1:2) .nc_ok(taches[[k]]$nc)
+  attente <- stats::setNames(as.list(rep(3L, 12)), vapply(req, `[[`, "", "target"))
+  f <- .acces_factice(attente)
+  pauses <- 0L
+  vus <- list()
+  nemeton:::.rsen_era5_lot(taches, cd, emit = function(p) vus[[length(vus) + 1L]] <<- p,
+                           acces = f$acces, max_simultanees = 12L,
+                           pause = function(s) pauses <<- pauses + 1L)
+  expect_length(f$soumissions, 10L)
+  expect_equal(f$pic, 10L)                       # tous en file en même temps
+  # Trois sondages chacun, en parallèle : quelques tours, pas 10 x 3.
+  expect_lte(pauses, 3L)
+  expect_true(all(vapply(taches, function(t) nemeton:::.rsen_era5_nc_complet(t$nc), TRUE)))
+  # Un événement par mois terminé, compteur croissant, cache d'abord.
+  expect_equal(vapply(vus, `[[`, 0L, "mois_i"), 1:12)
+  expect_true(all(vapply(vus, `[[`, 0L, "mois_n") == 12L))
+  expect_true(all(vapply(vus, `[[`, "", "category") == "moyenne"))
+})
+
+test_that("the ERA5 batch respects the simultaneous-request cap", {
+  req <- .rsen_req_factice(2023L)
+  cd <- withr::local_tempdir()
+  taches <- nemeton:::.rsen_era5_taches(req, cd, 2023L)
+  attente <- stats::setNames(as.list(rep(2L, 12)), vapply(req, `[[`, "", "target"))
+  f <- .acces_factice(attente)
+  nemeton:::.rsen_era5_lot(taches, cd, acces = f$acces, max_simultanees = 4L,
+                           pause = function(s) NULL)
+  expect_equal(f$pic, 4L)
+  expect_length(f$soumissions, 12L)
+  withr::local_options(nemeton.era5_max_simultanees = 3L)
+  expect_equal(nemeton:::.rsen_era5_max_simultanees(), 3L)
+  expect_error(nemeton:::.rsen_era5_max_simultanees(0), ">= 1")
+})
+
+test_that("a CDS queue limit lowers the cap without burning tries", {
+  req <- .rsen_req_factice(2023L)
+  cd <- withr::local_tempdir()
+  taches <- nemeton:::.rsen_era5_taches(req, cd, 2023L)
+  attente <- stats::setNames(as.list(rep(2L, 12)), vapply(req, `[[`, "", "target"))
+  # Le faux CDS n'accepte que 2 requêtes à la fois ; on en propose 6.
+  f <- .acces_factice(attente, limite = 2L)
+  nemeton:::.rsen_era5_lot(taches, cd, acces = f$acces, max_simultanees = 6L,
+                           max_tries = 1L, attente_limite = 0,
+                           pause = function(s) NULL)
+  expect_true(all(vapply(taches, function(t) nemeton:::.rsen_era5_nc_complet(t$nc), TRUE)))
+  expect_lte(f$pic, 2L)
+  # Une limite qui ne cède jamais finit en erreur une fois `delai_max` passé.
+  cd2 <- withr::local_tempdir()
+  t2 <- nemeton:::.rsen_era5_taches(req[1], cd2, 2023L)
+  f2 <- .acces_factice(attente, limite = 0L)
+  horloge <- 0
+  expect_error(nemeton:::.rsen_era5_lot(t2, cd2, acces = f2$acces,
+                                        attente_limite = 0, delai_max = 100,
+                                        pause = function(s) horloge <<- horloge + 60,
+                                        maintenant = function() horloge),
+               "temporarily limited")
+})
+
+test_that("a failed month is retried, others keep going, the error comes last", {
+  req <- .rsen_req_factice(2023L, n = 3L)
+  cd <- withr::local_tempdir()
+  taches <- nemeton:::.rsen_era5_taches(req, cd, 2023L)
+  cibles <- vapply(req, `[[`, "", "target")
+  attente <- stats::setNames(as.list(rep(1L, 3)), cibles)
+  # Mois 2 échoue une fois puis passe.
+  f <- .acces_factice(attente, echecs = stats::setNames(1L, cibles[2]))
+  nemeton:::.rsen_era5_lot(taches, cd, acces = f$acces, base_wait = 0,
+                           pause = function(s) NULL)
+  expect_equal(sum(f$soumissions == cibles[2]), 2L)
+  # Mois 2 échoue toujours : les mois 1 et 3 restent en cache, erreur à la fin.
+  cd2 <- withr::local_tempdir()
+  t2 <- nemeton:::.rsen_era5_taches(req, cd2, 2023L)
+  f2 <- .acces_factice(attente, echecs = stats::setNames(99L, cibles[2]))
+  expect_error(nemeton:::.rsen_era5_lot(t2, cd2, acces = f2$acces, base_wait = 0,
+                                        max_tries = 3L, pause = function(s) NULL),
+               "1 ERA5 monthly request.*3 tries.*boom")
+  expect_equal(sum(f2$soumissions == cibles[2]), 3L)
+  expect_true(nemeton:::.rsen_era5_nc_complet(t2[[1]]$nc))
+  expect_true(nemeton:::.rsen_era5_nc_complet(t2[[3]]$nc))
+  expect_false(file.exists(t2[[2]]$nc))
+})
+
+test_that("a CDS job still queued past delai_max is resubmitted", {
+  req <- .rsen_req_factice(2023L, n = 1L)
+  cd <- withr::local_tempdir()
+  taches <- nemeton:::.rsen_era5_taches(req, cd, 2023L)
+  f <- .acces_factice(stats::setNames(list(1e6L), req[[1]]$target))
+  horloge <- 0
+  expect_error(nemeton:::.rsen_era5_lot(taches, cd, acces = f$acces, base_wait = 0,
+                                        max_tries = 2L, delai_max = 100,
+                                        pause = function(s) horloge <<- horloge + 60,
+                                        maintenant = function() horloge),
+               "still queued")
+  expect_length(f$soumissions, 2L)
+  expect_equal(f$actives, 0L)                    # libérée de la file à chaque fois
+})
+
+test_that(".rsen_era5_assurer puts every missing year of every point in ONE batch", {
+  cd <- withr::local_tempdir()
+  # 2022 déjà combiné pour le point (6, 48) : ni requête ni refusion.
+  .nc_ok(nemeton:::.rsen_era5_nom_combine(cd, 2022L, 6, 48))
+  lots <- list()
+  local_mocked_bindings(.rsen_era5_lot = function(taches, cache_dir, ...) {
+    lots[[length(lots) + 1L]] <<- taches
+    for (t in taches) .nc_ok(t$nc)
+    invisible(NULL)
+  })
+  construire <- function(lon, lat, annee) lapply(1:12, function(m) list(
+    target = sprintf("%s_%d_%d.zip", nemeton:::.rsen_era5_radical(annee, lon, lat),
+                     annee, m)))
+  out <- nemeton:::.rsen_era5_assurer(
+    data.frame(lon = c(6, 7), lat = c(48, 48)), c(2022L, 2023L), cd,
+    category = c("canicule", "moyenne"), construire = construire,
+    combiner = function(files, cible) .nc_ok(cible))
+  expect_length(lots, 1L)
+  expect_length(lots[[1]], 36L)                  # 3 années-points x 12 mois
+  expect_setequal(unique(vapply(lots[[1]], `[[`, "", "category")),
+                  c("canicule", "moyenne"))
+  expect_setequal(basename(out), c("era5_6p00_48p00_2023_2023.nc",
+                                   "era5_7p00_48p00_2022_2022.nc",
+                                   "era5_7p00_48p00_2023_2023.nc"))
+  # Tout est en cache : aucun lot.
+  lots <- list()
+  nemeton:::.rsen_era5_assurer(data.frame(lon = c(6, 7), lat = c(48, 48)),
+                               c(2022L, 2023L), cd, construire = construire)
+  expect_length(lots, 0L)
+})
+
+test_that("sonder turns a rejected CDS job into an error instead of waiting", {
+  skip_if_not_installed("ecmwfr")
+  local_mocked_bindings(.rsen_era5_raison_cds = function(url)
+    "The job has been rejected: Number queued requests for this dataset is temporarily limited")
+  h <- new.env()
+  h$update_status <- function(fail_is_error = TRUE) invisible(h)
+  h$get_url <- function() "https://cds.example/jobs/1"
+  sonder <- nemeton:::.rsen_era5_acces_cds()$sonder
+  h$get_status <- function() "rejected"
+  e <- tryCatch(sonder(h), error = function(e) e)
+  expect_s3_class(e, "rsen_era5_limite")
+  expect_true(nemeton:::.rsen_era5_erreur_limite(e))
+  h$get_status <- function() "accepted"
+  expect_equal(sonder(h), "en_attente")
+  local_mocked_bindings(.rsen_era5_raison_cds = function(url) "bad request")
+  h$get_status <- function() "failed"
+  e <- tryCatch(sonder(h), error = function(e) e)
+  expect_s3_class(e, "rsen_era5_echec")
+  expect_false(nemeton:::.rsen_era5_erreur_limite(e))
+})
+
+test_that("regen_sensibilite sends ERA5 to era5_cache_dir, only for uncached years", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("microclimf")
+  skip_if_not_installed("exactextractr")
+  u <- .re_units(3)
+  tmpl <- terra::rast(xmin = -200, xmax = 260, ymin = -200, ymax = 260,
+                      resolution = 10, crs = "EPSG:2154")
+  mnt <- terra::init(tmpl, fun = function(n) seq_len(n))
+  mnh <- terra::init(tmpl, fun = 12)
+  pai <- terra::init(tmpl, fun = 3)
+  cd <- withr::local_tempdir(); e5 <- withr::local_tempdir()
+  vu <- new.env()
+  testthat::local_mocked_bindings(
+    .rsen_era5_assurer = function(sites, annees, cache_dir, emit = NULL, category = NA, ...) {
+      vu$annees <- annees; vu$cache <- cache_dir; vu$cat <- category
+      invisible(character(0))
+    },
+    .rsen_traiter_annee = function(annee, ..., era5_cache_dir) {
+      vu$traiter <- era5_cache_dir
+      d <- list(...)$dtm; list(tmax = d, vpd = d)
+    })
+  regen_sensibilite(u, mnt = mnt, mnh = mnh, pai = pai, annees_moy = c(2020L, 2021L),
+                    annees_canic = 2022L, cache_dir = cd, era5_cache_dir = e5)
+  expect_equal(vu$annees, c(2020L, 2021L, 2022L))
+  expect_equal(vu$cat, c("moyenne", "moyenne", "canicule"))
+  expect_equal(vu$cache, e5)
+  expect_equal(vu$traiter, e5)
+  # Défaut : cache_dir.
+  regen_sensibilite(u, mnt = mnt, mnh = mnh, pai = pai, annees_moy = 2020L,
+                    annees_canic = 2022L, cache_dir = cd)
+  expect_equal(vu$cache, cd)
 })
