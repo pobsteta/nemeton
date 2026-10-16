@@ -701,6 +701,8 @@ vers definitif, import et client du serveur Groma
 - [`groma_etat_placettes()`](https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.md)
   [`groma_telecharger_resultats()`](https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.md)
   : Groma server client
+- [`groma_envoyer_projet()`](https://pobsteta.github.io/nemeton/reference/groma_envoyer_projet.md)
+  : Publish the video inventory QField project on the Groma server
 
 ### Tarifs Schaeffer par essence x sylvoecoregion (spec 062)
 

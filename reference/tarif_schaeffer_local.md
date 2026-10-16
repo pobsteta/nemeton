@@ -64,7 +64,8 @@ tarif_schaeffer_local(
 A data.frame as
 [`ifn_tarif_schaeffer_reference`](https://pobsteta.github.io/nemeton/reference/ifn_tarif_schaeffer_reference.md),
 with `niveau_utilise` `"foret"`, `"SER"`, `"GRECO"` or `"FRANCE"` and
-`n_placettes` (forest level only).
+`n_placettes` (forest level only); attributes `ser` (the SER used for
+the fallback), `tampon_m` and `n_placettes_zone`.
 
 ## Details
 

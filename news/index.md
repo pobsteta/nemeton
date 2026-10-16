@@ -1,5 +1,29 @@
 # Changelog
 
+## nemeton 2026.10.10 (2026-10-17)
+
+Le projet QField de l’inventaire vidéo part **directement au téléphone**
+par le serveur Groma (brief groma du 2026-10-17).
+
+### Nouveautés
+
+- **`groma_envoyer_projet(qgz, url, jeton, projet_nom)`** : publie le
+  `.qgz` de
+  [`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md)
+  et son plugin `.qml` (pris à côté s’il existe) sur le serveur Groma —
+  `PUT /projets/{projet_id}/qfield/fichiers/{nom}` pour chaque fichier,
+  puis `POST /projets/{projet_id}/qfield/publier` avec les empreintes
+  SHA-256, les tailles, la date de génération et la version de nemeton.
+  `projet_id` (et `projet_nom` par défaut) est lu dans la table `projet`
+  du GeoPackage contenu dans le `.qgz` ; sans `projet_id` valide, erreur
+  et aucun appel. Messages distincts pour un jeton refusé (401/403), un
+  projet trop gros (413), un fichier altéré pendant l’envoi (422) et un
+  serveur injoignable. `httr2` et `openssl` (déjà installé avec `httr2`)
+  en `Suggests`.
+- [`tarif_schaeffer_local()`](https://pobsteta.github.io/nemeton/reference/tarif_schaeffer_local.md)
+  rend la SER retenue pour le repli en attribut `ser`, à côté de
+  `tampon_m` (suggestion de l’app, brief du 2026-10-16).
+
 ## nemeton 2026.10.9 (2026-10-16)
 
 Deux demandes de Pascal du 2026-10-16 : la **part de houppier** par

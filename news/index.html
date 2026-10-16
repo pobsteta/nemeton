@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.9.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.10</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,6 +110,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.10" id="nemeton-20261010-2026-10-17">nemeton 2026.10.10 (2026-10-17)<a class="anchor" aria-label="anchor" href="#nemeton-20261010-2026-10-17"></a></h2>
+<p>Le projet QField de l’inventaire vidéo part <strong>directement au téléphone</strong> par le serveur Groma (brief groma du 2026-10-17).</p>
+<div class="section level3">
+<h3 id="nouveautés-2026-10-10">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-10-10"></a></h3>
+<ul><li>
+<strong><code>groma_envoyer_projet(qgz, url, jeton, projet_nom)</code></strong> : publie le <code>.qgz</code> de <code><a href="../reference/creer_projet_inventaire_video.html">creer_projet_inventaire_video()</a></code> et son plugin <code>.qml</code> (pris à côté s’il existe) sur le serveur Groma — <code>PUT /projets/{projet_id}/qfield/fichiers/{nom}</code> pour chaque fichier, puis <code>POST /projets/{projet_id}/qfield/publier</code> avec les empreintes SHA-256, les tailles, la date de génération et la version de nemeton. <code>projet_id</code> (et <code>projet_nom</code> par défaut) est lu dans la table <code>projet</code> du GeoPackage contenu dans le <code>.qgz</code> ; sans <code>projet_id</code> valide, erreur et aucun appel. Messages distincts pour un jeton refusé (401/403), un projet trop gros (413), un fichier altéré pendant l’envoi (422) et un serveur injoignable. <code>httr2</code> et <code>openssl</code> (déjà installé avec <code>httr2</code>) en <code>Suggests</code>.</li>
+<li>
+<code><a href="../reference/tarif_schaeffer_local.html">tarif_schaeffer_local()</a></code> rend la SER retenue pour le repli en attribut <code>ser</code>, à côté de <code>tampon_m</code> (suggestion de l’app, brief du 2026-10-16).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.9" id="nemeton-2026109-2026-10-16">nemeton 2026.10.9 (2026-10-16)<a class="anchor" aria-label="anchor" href="#nemeton-2026109-2026-10-16"></a></h2>
 <p>Deux demandes de Pascal du 2026-10-16 : la <strong>part de houppier</strong> par essence × SER dans la table des tarifs Schaeffer, pour Marculus ; dans QField, la <strong>présentation de Marculus</strong> pour l’inventaire vidéo (briefs groma du 2026-10-16 : § 2 bis de l’annexe « plugin QField », complément « fonds et houppiers »).</p>
