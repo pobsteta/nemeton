@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.9] - 2026-10-16
+
+### Added
+- `part_houppier` (crown share, %, EMERGE model) as last column of
+  `ifn_tarif_schaeffer_ser.csv`; `inst/extdata/emerge_coefficients.csv`.
+- Marculus-like symbology and IGN/OSM XYZ base maps in the video-inventory QField project.
+
+### Changed
+- QField layer order as on Groma's map; `houppiers` hidden by default.
+
 ## [2026.10.8] - 2026-10-16
 
 ### Added

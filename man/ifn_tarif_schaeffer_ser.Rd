@@ -20,7 +20,9 @@ ifn_tarif_schaeffer_ser(espar = NULL, code = NULL, niveau = NULL, type = NULL)
 \value{
 A data.frame \code{niveau}, \code{code}, \code{espar},
   \code{essence_libelle}, \code{type}, \code{numero}, \code{n_arbres},
-  \code{cv}, \code{millesime}.
+  \code{cv}, \code{millesime}, \code{part_houppier} (crown share of the
+  merchantable wood, percent, EMERGE model, see
+  \code{\link{calculer_tarifs_schaeffer}}).
 }
 \description{
 Reads \code{inst/extdata/ifn_tarif_schaeffer_ser.csv}, built by

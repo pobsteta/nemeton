@@ -85,6 +85,14 @@ package tiers pour cela.
   inexploitable. La capacité est **réécrite** ici, pas importée — cf. les cinq
   différences documentées dans `?ifn_charger`.
 
+### Part de houppier (spec 062)
+
+- **Projet ANR EMERGE** — équations de volume tige et houppier bois fort,
+  coefficients `ListTarEmerge` (version « mai2 ») du package **gftools**
+  (Pascal Obstétar, GPL-3), extraits dans `inst/extdata/emerge_coefficients.csv` ;
+  mêmes équations que `gftools::TarEmerge()` et que le tarif EMERGE de Marculus.
+  Modèle, pas mesure : l'IFN ne mesure pas les branches.
+
 ### Contours communaux (spec 062)
 
 - **Etalab — contours administratifs 2026**, `communes-100m`

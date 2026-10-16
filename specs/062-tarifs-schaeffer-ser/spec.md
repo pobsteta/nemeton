@@ -164,5 +164,10 @@ Arbitrage de Pascal : **le brief Marculus fait foi pour l'export**.
   négatif sur les tarifs lents (chêne vert, chêne pubescent), numéros gardés.
 - **D10 — Cascade nemeton** sur `n_arbres` (30), comme Marculus : la table au
   format Marculus ne porte pas `n_placettes`.
+- **D11 — Part de houppier** (Pascal, 2026-10-16 : « colonne de plus, EMERGE
+  seul ») : `part_houppier` en dernière colonne, %, rapport des sommes EMERGE
+  houppier / (tige + houppier) bois fort sur les arbres avec `HTOT`,
+  `hdec = 0,8 · htot` ; vide sous 3 arbres. La variante « V IFN + houppier
+  EMERGE » (2 à 4 points plus haute pour les feuillus) est écartée.
 - Les accesseurs nemeton (`ifn_tarif_schaeffer_reference()`,
   `tarif_schaeffer_local()`, cascade et D2) restent, pour nemetonshiny.

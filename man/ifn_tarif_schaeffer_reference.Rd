@@ -21,7 +21,8 @@ threshold Marculus applies to the same table.}
 \value{
 A data.frame \code{espar}, \code{essence_libelle}, \code{type},
   \code{numero}, \code{cv}, \code{n_arbres}, \code{niveau_utilise},
-  \code{code}, \code{type_conseille}; \code{NA} where no level qualifies.
+  \code{code}, \code{type_conseille}, \code{part_houppier} (percent);
+  \code{NA} where no level qualifies.
 }
 \description{
 Cascade SER -> GRECO -> France over \code{\link{ifn_tarif_schaeffer_ser}}:
