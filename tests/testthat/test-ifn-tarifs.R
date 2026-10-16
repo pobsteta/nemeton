@@ -142,6 +142,7 @@ test_that("tarif_schaeffer_local : forêt riche au niveau forêt, forêt pauvre 
   foret <- sf::st_sf(geometry = sf::st_sfc(sf::st_buffer(sf::st_point(c(925000, 6700000)), 300),
                                            crs = 2154))
   r <- tarif_schaeffer_local(foret, especes = "Hêtre", ifn = ifn_synthetique(6), ser = "C20")
+  expect_equal(attr(r, "ser"), "C20")
   r <- r[r$type == "SCHL", ]
   expect_equal(r$niveau_utilise, "foret")
   expect_equal(r$numero, 11)

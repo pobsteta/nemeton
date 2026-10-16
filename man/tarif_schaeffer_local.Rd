@@ -37,7 +37,9 @@ forest.}
 \value{
 A data.frame as \code{\link{ifn_tarif_schaeffer_reference}}, with
   \code{niveau_utilise} \code{"foret"}, \code{"SER"}, \code{"GRECO"} or
-  \code{"FRANCE"} and \code{n_placettes} (forest level only).
+  \code{"FRANCE"} and \code{n_placettes} (forest level only); attributes
+  \code{ser} (the SER used for the fallback), \code{tampon_m} and
+  \code{n_placettes_zone}.
 }
 \description{
 Tariff numbers computed on the IFN plots around the forest: \code{units}

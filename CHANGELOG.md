@@ -10,6 +10,12 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.10] - 2026-10-17
+
+### Added
+- `groma_envoyer_projet()`: publish the video-inventory QField project on the Groma server.
+- `tarif_schaeffer_local()` returns the fallback SER as attribute `ser`.
+
 ## [2026.10.9] - 2026-10-16
 
 ### Added
