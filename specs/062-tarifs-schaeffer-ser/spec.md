@@ -158,5 +158,11 @@ Arbitrage de Pascal : **le brief Marculus fait foi pour l'export**.
   15 392 lignes, 86 SER ; C20 chêne sessile SchL 7,7, hêtre SchL 8,4 ; B70 chêne
   sessile SchR 9,0. Contours communaux Etalab `communes-100m` (dérivé ADMIN
   EXPRESS), parts < 1 % écartées puis renormalisées.
+- **D8 — Fenêtre** : 15 dernières campagnes (2011-2025), confirmée par
+  Pascal le 2026-10-16 (l'essai Marculus prenait 2005-2025).
+- **D9 — CV** rapporté à |moyenne| : essences de faible forme à numéro
+  négatif sur les tarifs lents (chêne vert, chêne pubescent), numéros gardés.
+- **D10 — Cascade nemeton** sur `n_arbres` (30), comme Marculus : la table au
+  format Marculus ne porte pas `n_placettes`.
 - Les accesseurs nemeton (`ifn_tarif_schaeffer_reference()`,
   `tarif_schaeffer_local()`, cascade et D2) restent, pour nemetonshiny.

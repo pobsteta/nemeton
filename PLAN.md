@@ -144,7 +144,8 @@ v2026.10.1.
 |---|---|---|---|
 | Cœur | tâche 1 : exploration, plan, décisions D1-D6 | — | ✅ validé |
 | Cœur | `resoudre_espar()` sur `lib_espar` (brief app) | **2026.10.7** | ✅ livré |
-| Cœur | tables `ifn_tarif_schaeffer_ser.csv`, `communes_ser.csv`, `ser.csv`, accesseurs | — | ⬜ à coder |
+| Cœur | tables `ifn_tarif_schaeffer_ser.csv`, `communes_ser.csv`, `ser.csv`, accesseurs, `tarif_schaeffer_local()`, `exporter_tarifs_marculus()` | **2026.10.8** | ✅ livré |
+| Marculus | embarquer les trois CSV (`data/src/main/assets/tarifs-ifn/`) | `marculus` | ⬜ brief envoyé |
 | App | import Marculus `FormatCsv;5` (houppier, volume compté au lot d'affouage) | nemetonshiny **2026.10.9** | ✅ livré |
 | App | `tarifsProposes` dans les lots | `nemetonshiny` | ⬜ attend le cœur |
 
@@ -153,6 +154,17 @@ v2026.10.1.
 les lignes sans seuil, cascade faite par Marculus) ; la variance pondérée prend
 des poids de fiabilité (dénominateur Σw − Σw²/Σw) au lieu de `Hmisc::wtd.var`,
 négative sous 1 m³.
+
+*2026-10-16* (**2026.10.8**) : `data-raw/build_ifn_tarifs_schaeffer.R` sur
+l'export IGN 2005-2025, fenêtre 2011-2025 (15 campagnes, confirmée par
+Pascal) : 585 824 arbres, 14 752 lignes (86 SER), 41 550 couples commune × SER
+pour 34 791 communes (Etalab `communes-100m` 2026), 0,81 + 1,31 Mo. Contrôles
+face à l'essai Marculus (2005-2025) : C20 chêne sessile SchL 7,8 (7,7), hêtre
+8,5 (8,4), B70 chêne sessile SchR 9,3 (9,0) ; Gevrey-Chambertin C20 55,6 % /
+C51 44,4 %, identique. Trouvé en route : chêne vert, chêne pubescent et saule
+marsault ont des numéros **négatifs** sur les tarifs lents (réels, gardés) ;
+leur CV sortait négatif et aurait été pris pour le meilleur type → CV sur
+|moyenne|. Deux essences sans libellé (`29AF`, `68CE`), gardées.
 
 *2026-10-16* — nemetonshiny **v2026.10.9** (`nemetonshiny@cd58447a`, PR #243,
 cycle `2026.10.8.9000` → `2026.10.9`, plancher inchangé `nemeton (>= 2026.10.6)`) :

@@ -151,6 +151,8 @@ navbar:
         href: articles/site-index-open-canopy_fr.html
       - text: Analyse temporelle
         href: articles/temporal-analysis_fr.html
+      - text: Tarifs Schaeffer par sylvoecoregion
+        href: articles/tarifs-schaeffer-ser_fr.html
 
 reference:
   - title: "API stable"
@@ -573,6 +575,20 @@ reference:
     - importer_inventaire_video
     - renvoyer_inventaire_video
     - groma_etat_placettes
+
+  - subtitle: "Tarifs Schaeffer par essence x sylvoecoregion (spec 062)"
+    desc: >
+      Numeros de tarif Schaeffer calcules depuis les arbres IFN (methode
+      PPtools), par SER, GRECO et France, a l'echelle d'une foret, et export
+      des tables embarquees par Marculus
+    contents:
+    - numero_tarif_schaeffer
+    - calculer_tarifs_schaeffer
+    - ifn_tarif_schaeffer_ser
+    - ifn_tarif_schaeffer_reference
+    - communes_ser
+    - tarif_schaeffer_local
+    - exporter_tarifs_marculus
 
   - subtitle: "Corpus de connaissances et RAG"
     contents:

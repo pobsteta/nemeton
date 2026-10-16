@@ -10,6 +10,15 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.8] - 2026-10-16
+
+### Added
+- Schaeffer tariff numbers by species × SER/GRECO/France (spec 062): tables
+  `ifn_tarif_schaeffer_ser.csv`, `communes_ser.csv`, `ser.csv` (Marculus format),
+  `numero_tarif_schaeffer()`, `volume_tarif_schaeffer()`, `calculer_tarifs_schaeffer()`,
+  `ifn_tarif_schaeffer_ser()`, `ifn_tarif_schaeffer_reference()`, `communes_ser()`,
+  `tarif_schaeffer_local()`, `exporter_tarifs_marculus()`; vignette.
+
 ## [2026.10.7] - 2026-10-16
 
 ### Added
