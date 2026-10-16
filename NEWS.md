@@ -1,3 +1,53 @@
+# nemeton 2026.10.8 (2026-10-16)
+
+Marculus peut proposer, pour chaque essence d'un martelage, le **numéro de
+tarif Schaeffer** de la sylvoécorégion de la commune, hors ligne : nemeton
+calcule les tables depuis les données brutes IFN (spec 062, brief Marculus du
+2026-10-16).
+
+## Nouveautés
+
+- **Tables** `inst/extdata/ifn_tarif_schaeffer_ser.csv` (14 752 lignes :
+  SER, GRECO, France × essence × type, 15 campagnes 2011-2025, 585 824 arbres),
+  `communes_ser.csv` (41 550 couples commune × SER, 34 791 communes) et
+  `ser.csv` (86 SER), au format embarqué par Marculus (`;`, UTF-8 sans BOM).
+  Construction : `data-raw/build_ifn_tarifs_schaeffer.R`, une fois par
+  millésime IFN.
+- **`numero_tarif_schaeffer()`** / **`volume_tarif_schaeffer()`** : les quatre
+  tarifs Schaeffer (rapide, intermédiaire, lent, très lent), conventions de
+  Marculus (`M = 0,8 + 0,1 N`).
+- **`calculer_tarifs_schaeffer()`** : la chaîne de calcul commune, d'après
+  `PPtools::TarifFindSch()` — arbres vifs cubés, `100·C13 ≥ 50 cm` (`C13` est
+  en mètres dans les données brutes), 17,5 ≤ D ≤ 80 cm, moyenne pondérée par le
+  volume, CV en %, essence retenue dès 3 arbres.
+- **`ifn_tarif_schaeffer_ser()`**, **`ifn_tarif_schaeffer_reference()`**
+  (cascade SER → GRECO → France, 30 arbres, `type_conseille` = CV le plus
+  faible), **`communes_ser()`**.
+- **`tarif_schaeffer_local()`** : numéros calculés sur les placettes IFN de la
+  forêt élargie à ~2 000 ha (`PPtools::ExtractPlac()`), niveau « forêt » dès
+  30 arbres sur 5 placettes, sinon repli sur la SER majoritaire.
+- **`exporter_tarifs_marculus()`** : les trois tables et un `LISEZMOI.txt`
+  (millésime, citation IGN Etalab 2.0, crédit Bruciamacchie).
+- Vignette « Numéros de tarif Schaeffer par sylvoécorégion ».
+
+## Écarts à PPtools
+
+- Variance pondérée à **poids de fiabilité** (Σw − Σw²/Σw) : `Hmisc::wtd.var`
+  (Σw − 1) devient négative pour un groupe de moins d'1 m³.
+- CV rapporté à la valeur absolue de la moyenne : les essences de faible forme
+  (chêne vert, chêne pubescent) ont des numéros négatifs sur les tarifs lents,
+  conservés tels quels.
+- Fenêtre des 15 dernières campagnes ; pas de krigeage.
+
+Contrôles (essai Marculus sur 2005-2025 entre parenthèses) : C20 chêne sessile
+SchL 7,8 (7,7), hêtre SchL 8,5 (8,4) ; B70 chêne sessile SchR 9,3 (9,0),
+chêne pédonculé SchR 6,7 (6,5).
+
+Toutes les fonctions sont **experimental** tant que Marculus ne les consomme
+pas. Méthode : Max Bruciamacchie, `PPtools` (GPL-2, reprise sous GPL-3 avec son
+autorisation du 22 juillet 2026). Données : IGN, IFN, Licence Ouverte Etalab
+2.0 ; communes : Etalab, dérivé d'ADMIN EXPRESS.
+
 # nemeton 2026.10.7 (2026-10-16)
 
 Le GeoPackage de l'inventaire vidéo passe au schéma Groma **1.2.0** : il porte

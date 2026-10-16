@@ -1,0 +1,87 @@
+code;nom;greco
+A11;Ouest-Bretagne et Nord-Cotentin;A
+A12;Pays de Saint-Malo;A
+A13;Bocage normand et Pays de Fougères;A
+A21;Bretagne méridionale;A
+A22;Bocage armoricain;A
+A30;Bocage vendéen;A
+B10;Côtes et plateaux de la Manche;B
+B21;Flandres;B
+B22;Plaine picarde;B
+B23;Mosan, Thiérache et Hainaut;B
+B31;Campagne de Caen et Pays d'Auge;B
+B32;Plateaux de l'Eure;B
+B33;Perche;B
+B41;Bassin parisien tertiaire;B
+B42;Brie et Tardenois;B
+B43;Champagne crayeuse;B
+B44;Beauce;B
+B51;Champagne humide;B
+B52;Pays d'Othe et Gatinais oriental;B
+B53;Pays-Fort, Nivernais et plaines prémorvandelles;B
+B61;Baugeois-Maine;B
+B62;Champeigne-Gâtine tourangelle;B
+B70;Sologne-Orléanais;B
+B81;Loudunais et Saumurois;B
+B82;Brenne et Brandes;B
+B91;Boischaut et Champagne berrichonne;B
+B92;Bourbonnais et Charolais;B
+C11;Ardenne primaire;C
+C12;Argonne;C
+C20;Plateaux calcaires du Nord-Est;C
+C30;Plaines et dépressions argileuses du Nord-Est;C
+C41;Plaine d'Alsace;C
+C42;Sundgau alsacien et belfortain;C
+C51;Saône, Bresse et Dombes;C
+C52;Plaines et piémonts alpins;C
+D11;Massif vosgien central;D
+D12;Collines périvosgiennes et Warndt;D
+E10;Premier plateau du Jura;E
+E20;Deuxième plateau et Haut-Jura;E
+F11;Terres rouges;F
+F12;Groies;F
+F13;Marais littoraux;F
+F14;Champagne charentaise;F
+F15;Périgord;F
+F21;Landes de Gascogne;F
+F22;Dunes atlantiques;F
+F23;Bazadais, Double et Landais;F
+F30;Coteaux de la Garonne;F
+F40;Causses du Sud-Ouest;F
+F51;Adour atlantique;F
+F52;Collines de l'Adour;F
+G11;Châtaigneraie du Centre et de l'Ouest;G
+G12;Marches du Massif central;G
+G13;Plateaux limousins;G
+G21;Plateaux granitiques ouest du Massif central;G
+G22;Plateaux granitiques du centre du Massif central;G
+G23;Morvan et Autunois;G
+G30;Massif central volcanique;G
+G41;Bordure Nord-Est du Massif central;G
+G42;Monts du Vivarais et du Pilat;G
+G50;Ségala et Châtaigneraie auvergnate;G
+G60;Grands Causses;G
+G70;Cévennes;G
+G80;Haut-Languedoc et Lévézou;G
+G90;Plaines alluviales et piémonts du Massif central;G
+H10;Préalpes du Nord;H
+H21;Alpes externes du Nord;H
+H22;Alpes internes du Nord;H
+H30;Alpes externes du Sud;H
+H41;Alpes intermédiaires du Sud;H
+H42;Alpes internes du Sud;H
+I11;Marches pyrénéennes;I
+I12;Pyrénées cathares;I
+I13;Corbières;I
+I21;Haute-chaîne pyrénéenne;I
+I22;Pyrénées catalanes;I
+J10;Garrigues;J
+J21;Roussillon;J
+J22;Plaines et collines rhodaniennes et languedociennes;J
+J23;Provence calcaire;J
+J24;Secteurs niçois et préligure;J
+J30;Maures et Esterel;J
+J40;Préalpes du Sud;J
+K11;Corse occidentale;K
+K12;Montagne corse;K
+K13;Corse orientale;K

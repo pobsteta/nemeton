@@ -74,13 +74,23 @@ package tiers pour cela.
   **GPL-2** ; autorisation explicite de reprise sous **GPL-3** donnée **par
   courriel le 22 juillet 2026**. La première version de la table a été
   construite depuis leurs `.rda` (campagnes 2005-2019) avant d'être refaite
-  depuis la source IGN.
+  depuis la source IGN. La même autorisation couvre **tout `PPtools`** : les
+  numéros de tarif Schaeffer par essence × SER (spec 062,
+  `ifn_tarif_schaeffer_ser.csv`) reprennent `TarifFindSch()` et `TarifIFN()`,
+  le tampon forestier `ExtractPlac()`.
 - **Jérémy Borderieux** (AgroParisTech) — `FrenchNFIfindeR`
   (<https://github.com/Jeremy-borderieux/FrenchNFIfindeR>, **GPL-3**) : accès
   programmatique à l'export brut de l'IGN, et le raccord `(IDP, A)` entre ligne
   de revisite et ligne de première visite, sans lequel le prélèvement est
   inexploitable. La capacité est **réécrite** ici, pas importée — cf. les cinq
   différences documentées dans `?ifn_charger`.
+
+### Contours communaux (spec 062)
+
+- **Etalab — contours administratifs 2026**, `communes-100m`
+  (<https://etalab-datasets.geo.data.gouv.fr/contours-administratifs/2026/>),
+  dérivé d'**ADMIN EXPRESS** (IGN), Licence Ouverte : part de chaque commune
+  dans chaque SER (`communes_ser.csv`).
 
 ### Méthode
 
