@@ -37,7 +37,21 @@ calculer_tarifs_schaeffer(arbres, groupes = character(0))
 
 A data.frame with the `groupes` columns, `espar`, `type` (`SCHR`,
 `SCHI`, `SCHL`, `SCHTL`), `numero` (to 0.1), `cv` (percent, to 0.1),
-`n_arbres` and `n_placettes`.
+`n_arbres` and `n_placettes`, and `part_houppier` (percent, to 0.1) when
+`HTOT` is given.
+
+## Details
+
+When `arbres` has a `HTOT` column (total height, m), the **crown share**
+`part_houppier` is added: the share of the merchantable wood (stem +
+branches over 7 cm) that is crown, in percent, \\100 \sum V\_{houp} /
+\sum (V\_{tige} + V\_{houp})\\ over the trees of the group with a
+height, both volumes from the EMERGE equations
+(`gftools::ListTarEmerge`, as Marculus does for its EMERGE tariff;
+`hdec = 0.8 htot`). It is a **model**, not a measurement: the IFN does
+not measure branches. `NA` below 3 trees with a height or without EMERGE
+coefficients for the species. It is the same for the four tariff types
+of a group; Marculus applies it as `houppier = V_tige p / (1 - p)`.
 
 ## Lifecycle
 

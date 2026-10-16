@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.9</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -184,20 +184,36 @@ pondérée par le volume</strong> et coefficient de variation par groupe
 est le plus faible.</p>
 </div>
 <div class="section level2">
+<h2 id="part-de-houppier">Part de houppier<a class="anchor" aria-label="anchor" href="#part-de-houppier"></a>
+</h2>
+<p>La colonne <code>part_houppier</code> donne, en %, la part du bois
+fort (tige et branches de plus de 7 cm) qui est du houppier, par les
+équations <strong>EMERGE</strong> appliquées aux arbres IFN dont la
+hauteur est mesurée. C’est un modèle, pas une mesure : l’IFN ne mesure
+pas les branches.</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/ifn_tarif_schaeffer_ser.html">ifn_tarif_schaeffer_ser</a></span><span class="op">(</span>espar <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"03"</span>, <span class="st">"09"</span>, <span class="st">"62"</span><span class="op">)</span>, code <span class="op">=</span> <span class="st">"FR"</span>, type <span class="op">=</span> <span class="st">"SCHL"</span><span class="op">)</span><span class="op">[</span></span>
+<span>  , <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"essence_libelle"</span>, <span class="st">"n_arbres"</span>, <span class="st">"part_houppier"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt;   essence_libelle n_arbres part_houppier</span></span>
+<span><span class="co">#&gt; 1   Chêne sessile    65712          12.1</span></span>
+<span><span class="co">#&gt; 2           Hêtre    58713          12.5</span></span>
+<span><span class="co">#&gt; 3   Épicéa commun    37627           1.4</span></span></code></pre></div>
+</div>
+<div class="section level2">
 <h2 id="table-de-référence-et-cascade">Table de référence et cascade<a class="anchor" aria-label="anchor" href="#table-de-r%C3%A9f%C3%A9rence-et-cascade"></a>
 </h2>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/ifn_tarif_schaeffer_reference.html">ifn_tarif_schaeffer_reference</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Chêne sessile"</span>, <span class="st">"Hêtre"</span><span class="op">)</span>, ser <span class="op">=</span> <span class="st">"C20"</span>, type <span class="op">=</span> <span class="st">"SCHL"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   espar essence_libelle type numero   cv n_arbres niveau_utilise code</span></span>
 <span><span class="co">#&gt; 1    03   Chêne sessile SCHL    7.8 40.1     8746            SER  C20</span></span>
 <span><span class="co">#&gt; 2    09           Hêtre SCHL    8.5 38.7     7056            SER  C20</span></span>
-<span><span class="co">#&gt;   type_conseille</span></span>
-<span><span class="co">#&gt; 1           SCHI</span></span>
-<span><span class="co">#&gt; 2           SCHL</span></span></code></pre></div>
+<span><span class="co">#&gt;   type_conseille part_houppier</span></span>
+<span><span class="co">#&gt; 1           SCHI          12.7</span></span>
+<span><span class="co">#&gt; 2           SCHL          12.6</span></span></code></pre></div>
 <p>La cascade descend SER → GRECO → France jusqu’au premier échelon qui
 compte au moins 30 arbres de l’essence. La commune donne sa ou ses SER
 :</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/communes_ser.html">communes_ser</a></span><span class="op">(</span><span class="st">"21295"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;   insee               nom departement ser   part greco</span></span>
 <span><span class="co">#&gt; 1 21295 Gevrey-Chambertin          21 C20 0.5563     C</span></span>
@@ -216,7 +232,7 @@ majoritaire prend le relais.</p>
 <div class="section level2">
 <h2 id="pour-marculus">Pour Marculus<a class="anchor" aria-label="anchor" href="#pour-marculus"></a>
 </h2>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/exporter_tarifs_marculus.html">exporter_tarifs_marculus</a></span><span class="op">(</span><span class="st">"tarifs-ifn"</span><span class="op">)</span></span></code></pre></div>
 <p>écrit <code>ifn_tarif_schaeffer_ser.csv</code>,
 <code>communes_ser.csv</code>, <code>ser.csv</code> et un

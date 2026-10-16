@@ -5,7 +5,7 @@ and writes a `LISEZMOI.txt` with the IFN vintage, the date, the IGN
 citation (Licence Ouverte Etalab 2.0) and the method credit:
 
 - `ifn_tarif_schaeffer_ser.csv`
-  (`niveau;code;espar;essence_libelle;type;numero;n_arbres;cv;millesime`);
+  (`niveau;code;espar;essence_libelle;type;numero;n_arbres;cv;millesime;part_houppier`);
 
 - `communes_ser.csv` (`insee;nom;departement;ser;part;greco`);
 

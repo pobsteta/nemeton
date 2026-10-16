@@ -1,5 +1,58 @@
 # Changelog
 
+## nemeton 2026.10.9 (2026-10-16)
+
+Deux demandes de Pascal du 2026-10-16 : la **part de houppier** par
+essence × SER dans la table des tarifs Schaeffer, pour Marculus ; dans
+QField, la **présentation de Marculus** pour l’inventaire vidéo (briefs
+groma du 2026-10-16 : § 2 bis de l’annexe « plugin QField », complément
+« fonds et houppiers »).
+
+### Nouveautés
+
+- **`part_houppier`**, nouvelle dernière colonne de
+  `ifn_tarif_schaeffer_ser.csv` : part du bois fort (tige + branches de
+  plus de 7 cm) qui est du houppier, en %, au dixième. Calculée par les
+  équations **EMERGE** (`gftools::ListTarEmerge`, version « mai2 »,
+  coefficients dans `inst/extdata/emerge_coefficients.csv`, 194 `espar`)
+  sur les arbres IFN dont la hauteur est mesurée, rapport des sommes par
+  groupe ; mêmes équations que le tarif EMERGE de Marculus
+  (`hdec = 0,8 · htot`), vérifiées à 10⁻⁸ près contre
+  `gftools::TarEmerge()`. C’est un **modèle**, pas une mesure : l’IFN ne
+  mesure pas les branches. France, tarif lent : chêne pédonculé 14,5 %,
+  chêne sessile 12,1 %, hêtre 12,5 %, châtaignier 20,5 %, chêne vert
+  23,5 % ; sapin 1,7 %, épicéa 1,4 %, douglas 0,6 %. Vide sous 3 arbres
+  avec hauteur (1 176 lignes sur 14 752). Marculus l’applique comme
+  `houppier = V_tige · p / (1 − p)`.
+- [`calculer_tarifs_schaeffer()`](https://pobsteta.github.io/nemeton/reference/calculer_tarifs_schaeffer.md)
+  calcule `part_houppier` quand les arbres ont une colonne `HTOT` ;
+  [`ifn_tarif_schaeffer_reference()`](https://pobsteta.github.io/nemeton/reference/ifn_tarif_schaeffer_reference.md)
+  et
+  [`tarif_schaeffer_local()`](https://pobsteta.github.io/nemeton/reference/tarif_schaeffer_local.md)
+  la rendent.
+- **Projet QField de l’inventaire vidéo, symbologie de Marculus**
+  (`R/inventaire_video_symbologie.R`, copie de `qfield/symbologie.py` de
+  groma, seul endroit des couleurs) : `arbres` par groupe d’essence
+  (pastille dont la taille suit le diamètre), `ugf` une couleur par
+  forêt (palette « foncier », contour 0,9 mm, fond à 20 %), `placettes`
+  par état de traitement, `parcelles`, `centres_mesures`, `cibles`,
+  `detections`, `houppiers` (contour seul `#2e7d32`, **masqués** par
+  défaut). Remplace la symbologie par `etat_detection` de 2026.10.4.
+- **Fonds de carte**, sous toutes les couches : Cadastre IGN (masqué),
+  **Plan IGN** (affiché), Ortho IGN et OpenStreetMap (masqués), en
+  couches **XYZ** de la Géoplateforme (pas de GetCapabilities, trop
+  lourd : il bloquait l’ouverture du projet), attributions dans les
+  métadonnées.
+
+### Changements compatibles
+
+- `ifn_tarif_schaeffer_ser.csv` gagne une colonne **en dernière
+  position** : un lecteur par position des neuf premières colonnes n’est
+  pas touché.
+- Ordre des couches du projet QField : celui de la carte de Groma
+  (`detections`, `arbres`, `cibles`, `centres_mesures`, `placettes`,
+  `houppiers`, `parcelles`, `ugf`), puis MNT/MNH, puis les fonds.
+
 ## nemeton 2026.10.8 (2026-10-16)
 
 Marculus peut proposer, pour chaque essence d’un martelage, le **numéro

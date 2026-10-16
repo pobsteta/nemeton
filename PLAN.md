@@ -167,6 +167,7 @@ Version `nemetonshiny` publiée : v2026.10.1.
 | Cœur | tâche 1 : exploration, plan, décisions D1-D6 | — | ✅ validé |
 | Cœur | [`resoudre_espar()`](https://pobsteta.github.io/nemeton/reference/resoudre_espar.md) sur `lib_espar` (brief app) | **2026.10.7** | ✅ livré |
 | Cœur | tables `ifn_tarif_schaeffer_ser.csv`, `communes_ser.csv`, `ser.csv`, accesseurs, [`tarif_schaeffer_local()`](https://pobsteta.github.io/nemeton/reference/tarif_schaeffer_local.md), [`exporter_tarifs_marculus()`](https://pobsteta.github.io/nemeton/reference/exporter_tarifs_marculus.md) | **2026.10.8** | ✅ livré |
+| Cœur | colonne `part_houppier` (EMERGE, demande de Pascal) | **2026.10.9** | ✅ livré |
 | Marculus | embarquer les trois CSV (`data/src/main/assets/tarifs-ifn/`) | `marculus` | ⬜ brief envoyé |
 | App | import Marculus `FormatCsv;5` (houppier, volume compté au lot d’affouage) | nemetonshiny **2026.10.9** | ✅ livré |
 | App | `tarifsProposes` dans les lots | `nemetonshiny` | ⬜ attend le cœur |
@@ -188,6 +189,25 @@ route : chêne vert, chêne pubescent et saule marsault ont des numéros
 **négatifs** sur les tarifs lents (réels, gardés) ; leur CV sortait
 négatif et aurait été pris pour le meilleur type → CV sur \|moyenne\|.
 Deux essences sans libellé (`29AF`, `68CE`), gardées.
+
+*2026-10-16* : PR \#560 mergée (R-CMD-check, tests, pkgdown verts) ; tag
+`v2026.10.8` posé par `release.yml`. Cycle dev `2026.10.8.9000`. Brief
+Marculus : `vers-marculus/2026-10-16-tarifs-schaeffer-publies.md`.
+Briefs annexes émis :
+`vers-nemetonshiny/2026-10-16-inventaire-video-plugin-qfield-et-espar.md`,
+`vers-groma/2026-10-16-symbologie-travaux-comme-marculus.md` (symbologie
+QField de `travaux.gpkg` alignée sur Marculus ; fichier introuvable dans
+<groma@3d5f2dd>, à confirmer). `vers-nemeton/` vide.
+
+*2026-10-16* — la symbologie de `travaux.gpkg` relève de **sommieR**
+(`R/travaux_qfield.R`), pas de groma : la session groma a réacheminé le
+brief dans `vers-sommier/`.
+
+*2026-10-16* (**2026.10.9**) : `part_houppier` (EMERGE) en dernière
+colonne de la table des tarifs, demande de Pascal (« colonne de plus,
+EMERGE seul ») ; volumes identiques à `gftools::TarEmerge()` à 10⁻⁸ près
+sur 4 arbres témoins ; 1 176 lignes vides (moins de 3 arbres avec
+hauteur).
 
 *2026-10-16* — nemetonshiny **v2026.10.9** (`nemetonshiny@cd58447a`, PR
 \#243, cycle `2026.10.8.9000` → `2026.10.9`, plancher inchangé
@@ -332,6 +352,7 @@ retirées, `t2_no_source` reformulée, tests passés à `"no_source"`.
 | Cœur | renvoi sur le terrain des `a_completer`/`a_verifier` : [`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md) | **2026.10.5** | ✅ livré |
 | Cœur | schéma 1.2.0 : tables `projet`, `parcelles`, `ugf` depuis le projet nemetonshiny ; centre mesuré le plus récent | **2026.10.7** | ✅ livré |
 | Cœur | plugin de projet QField `.qml` à côté du `.qgz`, couches nommées comme leurs tables, non verrouillées | **2026.10.7** | ✅ livré |
+| Cœur | symbologie Marculus (§ 2 bis), fonds IGN/OSM en XYZ, houppiers masqués | **2026.10.9** | ✅ livré |
 | App | sous-onglet Terrain \> Inventaire vidéo + renvoi terrain | nemetonshiny **2026.10.7** | ✅ livré |
 
 **Journal** — *2026-10-12* (**2026.10.4**) : 9 fonctions exportées

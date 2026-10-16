@@ -31,6 +31,23 @@ et 80 cm ; numéro de chaque arbre, puis **moyenne pondérée par le
 volume** et coefficient de variation par groupe (essence retenue dès 3
 arbres). Le type conseillé est celui dont le CV est le plus faible.
 
+## Part de houppier
+
+La colonne `part_houppier` donne, en %, la part du bois fort (tige et
+branches de plus de 7 cm) qui est du houppier, par les équations
+**EMERGE** appliquées aux arbres IFN dont la hauteur est mesurée. C’est
+un modèle, pas une mesure : l’IFN ne mesure pas les branches.
+
+``` r
+
+ifn_tarif_schaeffer_ser(espar = c("03", "09", "62"), code = "FR", type = "SCHL")[
+  , c("essence_libelle", "n_arbres", "part_houppier")]
+#>   essence_libelle n_arbres part_houppier
+#> 1   Chêne sessile    65712          12.1
+#> 2           Hêtre    58713          12.5
+#> 3   Épicéa commun    37627           1.4
+```
+
 ## Table de référence et cascade
 
 ``` r
@@ -39,9 +56,9 @@ ifn_tarif_schaeffer_reference(c("Chêne sessile", "Hêtre"), ser = "C20", type =
 #>   espar essence_libelle type numero   cv n_arbres niveau_utilise code
 #> 1    03   Chêne sessile SCHL    7.8 40.1     8746            SER  C20
 #> 2    09           Hêtre SCHL    8.5 38.7     7056            SER  C20
-#>   type_conseille
-#> 1           SCHI
-#> 2           SCHL
+#>   type_conseille part_houppier
+#> 1           SCHI          12.7
+#> 2           SCHL          12.6
 ```
 
 La cascade descend SER → GRECO → France jusqu’au premier échelon qui

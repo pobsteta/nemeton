@@ -36,7 +36,9 @@ ifn_tarif_schaeffer_ser(espar = NULL, code = NULL, niveau = NULL, type = NULL)
 ## Value
 
 A data.frame `niveau`, `code`, `espar`, `essence_libelle`, `type`,
-`numero`, `n_arbres`, `cv`, `millesime`.
+`numero`, `n_arbres`, `cv`, `millesime`, `part_houppier` (crown share of
+the merchantable wood, percent, EMERGE model, see
+[`calculer_tarifs_schaeffer`](https://pobsteta.github.io/nemeton/reference/calculer_tarifs_schaeffer.md)).
 
 ## Details
 
@@ -53,4 +55,6 @@ Experimental (spec 062).
 ifn_tarif_schaeffer_ser(espar = "09", code = "C20", type = "SCHL")
 #>   niveau code espar essence_libelle type numero n_arbres   cv millesime
 #> 1    SER  C20    09           Hêtre SCHL    8.5     7056 38.7 2011-2025
+#>   part_houppier
+#> 1          12.6
 ```

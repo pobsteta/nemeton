@@ -29,7 +29,7 @@ PPtools; the coefficient of variation stays positive.'><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.9</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -173,7 +173,22 @@ character, as read by <code><a href="ifn_charger.html">ifn_charger</a></code>.</
     <p>A data.frame with the <code>groupes</code> columns, <code>espar</code>,
   <code>type</code> (<code>SCHR</code>, <code>SCHI</code>, <code>SCHL</code>, <code>SCHTL</code>),
   <code>numero</code> (to 0.1), <code>cv</code> (percent, to 0.1), <code>n_arbres</code> and
-  <code>n_placettes</code>.</p>
+  <code>n_placettes</code>, and <code>part_houppier</code> (percent, to 0.1) when
+  <code>HTOT</code> is given.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>When <code>arbres</code> has a <code>HTOT</code> column (total height, m), the
+<strong>crown share</strong> <code>part_houppier</code> is added: the share of the
+merchantable wood (stem + branches over 7 cm) that is crown, in percent,
+\(100 \sum V_{houp} / \sum (V_{tige} + V_{houp})\) over the trees of the
+group with a height, both volumes from the EMERGE equations
+(<code>gftools::ListTarEmerge</code>, as Marculus does for its EMERGE tariff;
+<code>hdec = 0.8 htot</code>). It is a <strong>model</strong>, not a measurement: the
+IFN does not measure branches. <code>NA</code> below 3 trees with a height or
+without EMERGE coefficients for the species. It is the same for the four
+tariff types of a group; Marculus applies it as
+<code>houppier = V_tige p / (1 - p)</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>

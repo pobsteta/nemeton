@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.8</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.9</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,6 +110,27 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.9" id="nemeton-2026109-2026-10-16">nemeton 2026.10.9 (2026-10-16)<a class="anchor" aria-label="anchor" href="#nemeton-2026109-2026-10-16"></a></h2>
+<p>Deux demandes de Pascal du 2026-10-16 : la <strong>part de houppier</strong> par essence × SER dans la table des tarifs Schaeffer, pour Marculus ; dans QField, la <strong>présentation de Marculus</strong> pour l’inventaire vidéo (briefs groma du 2026-10-16 : § 2 bis de l’annexe « plugin QField », complément « fonds et houppiers »).</p>
+<div class="section level3">
+<h3 id="nouveautés-2026-10-9">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-10-9"></a></h3>
+<ul><li>
+<strong><code>part_houppier</code></strong>, nouvelle dernière colonne de <code>ifn_tarif_schaeffer_ser.csv</code> : part du bois fort (tige + branches de plus de 7 cm) qui est du houppier, en %, au dixième. Calculée par les équations <strong>EMERGE</strong> (<code>gftools::ListTarEmerge</code>, version « mai2 », coefficients dans <code>inst/extdata/emerge_coefficients.csv</code>, 194 <code>espar</code>) sur les arbres IFN dont la hauteur est mesurée, rapport des sommes par groupe ; mêmes équations que le tarif EMERGE de Marculus (<code>hdec = 0,8 · htot</code>), vérifiées à 10⁻⁸ près contre <code>gftools::TarEmerge()</code>. C’est un <strong>modèle</strong>, pas une mesure : l’IFN ne mesure pas les branches. France, tarif lent : chêne pédonculé 14,5 %, chêne sessile 12,1 %, hêtre 12,5 %, châtaignier 20,5 %, chêne vert 23,5 % ; sapin 1,7 %, épicéa 1,4 %, douglas 0,6 %. Vide sous 3 arbres avec hauteur (1 176 lignes sur 14 752). Marculus l’applique comme <code>houppier = V_tige · p / (1 − p)</code>.</li>
+<li>
+<code><a href="../reference/calculer_tarifs_schaeffer.html">calculer_tarifs_schaeffer()</a></code> calcule <code>part_houppier</code> quand les arbres ont une colonne <code>HTOT</code> ; <code><a href="../reference/ifn_tarif_schaeffer_reference.html">ifn_tarif_schaeffer_reference()</a></code> et <code><a href="../reference/tarif_schaeffer_local.html">tarif_schaeffer_local()</a></code> la rendent.</li>
+<li>
+<strong>Projet QField de l’inventaire vidéo, symbologie de Marculus</strong> (<code>R/inventaire_video_symbologie.R</code>, copie de <code>qfield/symbologie.py</code> de groma, seul endroit des couleurs) : <code>arbres</code> par groupe d’essence (pastille dont la taille suit le diamètre), <code>ugf</code> une couleur par forêt (palette « foncier », contour 0,9 mm, fond à 20 %), <code>placettes</code> par état de traitement, <code>parcelles</code>, <code>centres_mesures</code>, <code>cibles</code>, <code>detections</code>, <code>houppiers</code> (contour seul <code>#2e7d32</code>, <strong>masqués</strong> par défaut). Remplace la symbologie par <code>etat_detection</code> de 2026.10.4.</li>
+<li>
+<strong>Fonds de carte</strong>, sous toutes les couches : Cadastre IGN (masqué), <strong>Plan IGN</strong> (affiché), Ortho IGN et OpenStreetMap (masqués), en couches <strong>XYZ</strong> de la Géoplateforme (pas de GetCapabilities, trop lourd : il bloquait l’ouverture du projet), attributions dans les métadonnées.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changements-compatibles-2026-10-9">Changements compatibles<a class="anchor" aria-label="anchor" href="#changements-compatibles-2026-10-9"></a></h3>
+<ul><li>
+<code>ifn_tarif_schaeffer_ser.csv</code> gagne une colonne <strong>en dernière position</strong> : un lecteur par position des neuf premières colonnes n’est pas touché.</li>
+<li>Ordre des couches du projet QField : celui de la carte de Groma (<code>detections</code>, <code>arbres</code>, <code>cibles</code>, <code>centres_mesures</code>, <code>placettes</code>, <code>houppiers</code>, <code>parcelles</code>, <code>ugf</code>), puis MNT/MNH, puis les fonds.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.8" id="nemeton-2026108-2026-10-16">nemeton 2026.10.8 (2026-10-16)<a class="anchor" aria-label="anchor" href="#nemeton-2026108-2026-10-16"></a></h2>
 <p>Marculus peut proposer, pour chaque essence d’un martelage, le <strong>numéro de tarif Schaeffer</strong> de la sylvoécorégion de la commune, hors ligne : nemeton calcule les tables depuis les données brutes IFN (spec 062, brief Marculus du 2026-10-16).</p>

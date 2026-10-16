@@ -36,8 +36,8 @@ ifn_tarif_schaeffer_reference(espar, ser = NULL, type = NULL, min_arbres = 30)
 ## Value
 
 A data.frame `espar`, `essence_libelle`, `type`, `numero`, `cv`,
-`n_arbres`, `niveau_utilise`, `code`, `type_conseille`; `NA` where no
-level qualifies.
+`n_arbres`, `niveau_utilise`, `code`, `type_conseille`, `part_houppier`
+(percent); `NA` where no level qualifies.
 
 ## Lifecycle
 
@@ -50,7 +50,7 @@ ifn_tarif_schaeffer_reference(c("Chêne sessile", "09"), ser = "C20", type = "SC
 #>   espar essence_libelle type numero   cv n_arbres niveau_utilise code
 #> 1    03   Chêne sessile SCHL    7.8 40.1     8746            SER  C20
 #> 2    09           Hêtre SCHL    8.5 38.7     7056            SER  C20
-#>   type_conseille
-#> 1           SCHI
-#> 2           SCHL
+#>   type_conseille part_houppier
+#> 1           SCHI          12.7
+#> 2           SCHL          12.6
 ```
