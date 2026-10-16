@@ -9,8 +9,10 @@ schema_inventaire_video(couche = NULL)
 \arguments{
 \item{couche}{Character or \code{NULL}. A layer name (\code{"placettes"},
 \code{"centres_mesures"}, \code{"cibles"}, \code{"arbres"},
-\code{"detections"}, \code{"houppiers"}). \code{NULL} (default) returns
-every layer.}
+\code{"detections"}, \code{"houppiers"}, and the read-only
+\code{"parcelles"}, \code{"ugf"} and \code{"projet"} of schema 1.2.0;
+\code{"projet"} has no geometry). \code{NULL} (default) returns every
+layer.}
 }
 \value{
 For one layer, a list of field descriptors with the attributes

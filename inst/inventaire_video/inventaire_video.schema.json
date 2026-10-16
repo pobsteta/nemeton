@@ -1,6 +1,6 @@
 {
   "nom": "inventaire_video",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "crs": 2154,
   "description": "Schéma du GeoPackage inventaire_video.gpkg produit par nemeton (sous-onglet Terrain > Inventaire vidéo) et complété sur le terrain par QField (saisie) et Groma (détections). Source unique : Python (groma), Kotlin (application Groma) et brief nemeton.",
   "domaines": {
@@ -136,6 +136,58 @@
         {"nom": "houppier_id", "type": "INTEGER", "requis": true},
         {"nom": "h_max", "type": "REAL"},
         {"nom": "surface_m2", "type": "REAL"}
+      ]
+    },
+    {
+      "nom": "parcelles",
+      "geometrie": "MULTIPOLYGON",
+      "index_spatial": false,
+      "lecture_seule": true,
+      "remarque": "Parcelles cadastrales du projet nemetonshiny (data/parcels.gpkg), copiées par groma-preparer pour la carte de Groma (brief 2026-10-14 carte RTK). Vide quand le plan ne vient pas d'un projet nemetonshiny ; absente des GeoPackages préparés avant le schéma 1.2.0. Pas d'index spatial : le téléphone la lit en entier, sans fonction ST_*.",
+      "colonnes": [
+        {"nom": "idu", "type": "TEXT", "requis": true, "remarque": "Identifiant cadastral : code INSEE, préfixe, section, numéro (« 212000000A0036 »)."},
+        {"nom": "commune", "type": "TEXT", "remarque": "Code INSEE."},
+        {"nom": "section", "type": "TEXT"},
+        {"nom": "numero", "type": "TEXT"},
+        {"nom": "contenance_m2", "type": "REAL", "min": 0, "remarque": "Contenance cadastrale."}
+      ]
+    },
+    {
+      "nom": "ugf",
+      "geometrie": "MULTIPOLYGON",
+      "index_spatial": false,
+      "lecture_seule": true,
+      "remarque": "Parcellaire des unités de gestion forestière (UGF) du projet nemetonshiny : ténements de data/tenements.gpkg fusionnés par ug_id, attributs de data/ugs.json. Copié par groma-preparer pour la carte de Groma. Vide quand le plan ne vient pas d'un projet nemetonshiny ; absente des GeoPackages préparés avant. Pas d'index spatial, comme parcelles.",
+      "colonnes": [
+        {"nom": "ug_id", "type": "TEXT", "requis": true, "remarque": "Identifiant de l'UG dans nemetonshiny."},
+        {"nom": "libelle", "type": "TEXT", "remarque": "« Forêt communale de Couchey — parcelle 10 »."},
+        {"nom": "groupe", "type": "TEXT"},
+        {"nom": "foret", "type": "TEXT", "remarque": "Forêt ONF (onf_foret_nom)."},
+        {"nom": "parcelle_onf", "type": "TEXT", "remarque": "Numéro de parcelle forestière ONF, étiquette sur la carte."},
+        {"nom": "surface_m2", "type": "REAL", "min": 0, "remarque": "Somme des surfaces des ténements."}
+      ]
+    },
+    {
+      "nom": "projet",
+      "geometrie": null,
+      "lecture_seule": true,
+      "remarque": "Table non spatiale d'une ligne : le projet nemetonshiny d'où vient le plan. Affichée par la liste des projets de Groma (brief 2026-10-13). Absente des GeoPackages préparés avant : les lecteurs se replient sur le nom du dossier.",
+      "colonnes": [
+        {"nom": "projet_id", "type": "TEXT", "requis": true, "remarque": "Identifiant du projet nemetonshiny (nom de son dossier), aussi nom du dossier sur le téléphone."},
+        {"nom": "projet_nom", "type": "TEXT", "requis": true},
+        {"nom": "description", "type": "TEXT"},
+        {"nom": "proprietaire", "type": "TEXT"},
+        {"nom": "communes", "type": "TEXT", "remarque": "Libellés et codes INSEE, séparés par des virgules : « Couchey (21200) »."},
+        {"nom": "surface_zone_ha", "type": "REAL", "min": 0, "remarque": "Surface SIG des parcelles du projet."},
+        {"nom": "surface_cadastre_ha", "type": "REAL", "min": 0, "remarque": "Somme des contenances cadastrales."},
+        {"nom": "nb_parcelles", "type": "INTEGER", "min": 0},
+        {"nom": "nb_ug", "type": "INTEGER", "min": 0},
+        {"nom": "nb_placettes_base", "type": "INTEGER", "min": 0},
+        {"nom": "nb_placettes_rempl", "type": "INTEGER", "min": 0, "remarque": "Placettes de remplacement (type Over)."},
+        {"nom": "plan_genere_le", "type": "DATETIME"},
+        {"nom": "prepare_le", "type": "DATETIME", "remarque": "Date de préparation du GeoPackage : une copie plus ancienne sur le téléphone est périmée."},
+        {"nom": "prepare_par", "type": "TEXT", "remarque": "Outil et version : « groma-preparer 0.2.0 »."},
+        {"nom": "emprise", "type": "TEXT", "remarque": "Enveloppe des placettes en WKT, EPSG:4326 (tri par distance sur le téléphone)."}
       ]
     }
   ],

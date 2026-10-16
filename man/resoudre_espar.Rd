@@ -7,7 +7,7 @@
 resoudre_espar(x)
 }
 \arguments{
-\item{x}{Character vector of species codes or Latin names.}
+\item{x}{Character vector of species codes, Latin names or French labels.}
 }
 \value{
 A character vector of \code{espar} codes, same length as \code{x}, \code{NA}
@@ -15,15 +15,17 @@ where no correspondence exists.
 }
 \description{
 Accepts whichever nomenclature the caller happens to hold — IFN \code{espar},
-the four-letter P1 code, the snake-case tolerance code, or a plain Latin
-binomial — and returns the corresponding \code{espar}. This is what lets
+the four-letter P1 code, the snake-case tolerance code, a plain Latin
+binomial, or the French label \code{lib_espar} — and returns the corresponding \code{espar}. This is what lets
 \code{\link{volume_mobilisable}} and \code{\link{completer_volume_ifn}} take a
 \code{species} column as it exists in the caller's data, rather than demanding
 IFN codes.
 
 Resolution is tried in that order and is \strong{case-insensitive} for the
-non-\code{espar} forms. Unresolved entries come back as \code{NA} — never
-guessed.
+non-\code{espar} forms; the French label also ignores accents
+(\code{"Epicea commun"} is \code{"Épicéa commun"}). A label matching several
+\code{espar} (a genus name such as \code{"Frêne"}) is not resolved.
+Unresolved entries come back as \code{NA} — never guessed.
 }
 \section{Lifecycle}{
 
@@ -32,7 +34,7 @@ Stable: covered by the 1.0 API contract (spec 057).
 
 \examples{
 \dontrun{
-resoudre_espar(c("09", "FASY", "fagus_sylvatica", "Fagus sylvatica"))
+resoudre_espar(c("09", "FASY", "fagus_sylvatica", "Fagus sylvatica", "Hêtre"))
 # -> tous "09"
 }
 }

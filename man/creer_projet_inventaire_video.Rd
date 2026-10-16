@@ -35,8 +35,9 @@ creer_projet_inventaire_video(
 \item{unite_azimut}{\code{"deg"} or \code{"gr"}.}
 
 \item{declinaison_deg}{Magnetic declination (degrees, positive towards
-east), to be entered by the user: no geomagnetic model is embedded.
-\code{NULL} leaves it empty.}
+east). \code{NULL} (default) leaves it empty (\code{NA}, never 0):
+Groma then computes it with WMM2025 at the plot; a value given here
+takes precedence.}
 
 \item{avec_lidar}{Logical. Clip DTM/CHM and segment crowns. Default
 \code{TRUE}; without any DTM/CHM available, a warning is raised and the
@@ -46,8 +47,16 @@ project is built without rasters.}
 \code{project_path} with \code{\link{resolve_project_dem}} and
 \code{\link{resolve_project_chm}}.}
 
-\item{project_path}{Optional nemeton project directory, used to resolve
-\code{dem} and \code{chm}.}
+\item{project_path}{Optional nemetonshiny project directory, used to
+resolve \code{dem} and \code{chm}, and read (never written) to fill the
+tables shown by the Groma map and project list: \code{projet} (one row,
+from \code{metadata.json}, \code{data/parcels.gpkg},
+\code{data/commune.gpkg} and the written plots; \code{emprise} is the
+plots' envelope in EPSG:4326 WKT), \code{parcelles} (copy of
+\code{data/parcels.gpkg}) and \code{ugf} (\code{data/tenements.gpkg}
+merged by \code{ug_id}, attributes from \code{data/ugs.json}). Without
+it, or when a source cannot be read (warning), those tables are created
+empty.}
 
 \item{marge_m}{Margin around the plot for rasters and crowns (m). Default
 10.}
@@ -65,12 +74,17 @@ the BD Foret V2 reference); kept for symmetry with
 \code{TRUE}.}
 }
 \value{
-Absolute path to the \code{.qgz} (invisibly).
+Absolute path to the \code{.qgz} (invisibly). The Groma QField
+project plugin is written next to it as \code{<project_name>.qml}
+(copy of \code{inst/inventaire_video/inventaire_video.qml}, not inside the
+archive): ship both files to the phone.
 }
 \description{
 Builds \code{inventaire_video.gpkg} (layers \code{placettes},
 \code{centres_mesures}, \code{cibles}, \code{arbres}, \code{detections},
-\code{houppiers}, schema \code{\link{schema_inventaire_video}}), the per-plot
+\code{houppiers}, and the read-only \code{parcelles}, \code{ugf} and
+\code{projet} of schema 1.2.0, see \code{\link{schema_inventaire_video}}),
+the per-plot
 DTM and CHM GeoTIFFs (\code{rasters/<plot_id>_mnt.tif},
 \code{rasters/<plot_id>_mnh.tif}: Float32, 0.5 m, strips, DEFLATE without
 predictor, nodata -9999) and the QField project, packaged as a \code{.qgz}

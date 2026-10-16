@@ -27,6 +27,12 @@ the trees that are not \code{faux_positif}, then the video-specific checks:
 domains of \code{etat_detection}, \code{h_source}, \code{methode} and
 \code{essence_arbre}, and, when \code{plan} is given, sampling-design
 columns and plot positions identical to the original plan.
+
+The read-only layers \code{parcelles}, \code{ugf} and \code{projet}
+(schema 1.2.0) are not checked. A plot may have several rows in
+\code{centres_mesures} (Groma never rewrites a centre): this is reported
+as an information (\code{severity = "info"} in \code{warnings}), the most
+recent centre being the one used.
 }
 \section{Lifecycle}{
 
