@@ -23,18 +23,18 @@
 )
 
 .IV_ETATS_PLACETTE <- list(
-  a_faire = c("#ffffff", "À faire"), provisoire = c("#f57c00", "Provisoire"),
-  envoye = c("#1976d2", "Envoyée"), definitif = c("#2e7d32", "Définitive")
+  a_faire = c("#ffffff", "\u00c0 faire"), provisoire = c("#f57c00", "Provisoire"),
+  envoye = c("#1976d2", "Envoy\u00e9e"), definitif = c("#2e7d32", "D\u00e9finitive")
 )
 
 # Couleur Marculus d'une essence du référentiel essences_bdforet_v2.json.
 .iv_groupe_essence <- function(code, bdforet) {
-  if (startsWith(bdforet, "Chênes")) return(.IV_COULEURS$chene)
-  if (identical(bdforet, "Hêtre")) return(.IV_COULEURS$hetre)
+  if (startsWith(bdforet, "Ch\u00eanes")) return(.IV_COULEURS$chene)
+  if (identical(bdforet, "H\u00eatre")) return(.IV_COULEURS$hetre)
   if (identical(code, "sapin_pectine")) return(.IV_COULEURS$sapin)
   if (identical(code, "epicea_commun")) return(.IV_COULEURS$epicea)
   if (bdforet %in% c("NC", "")) return(.IV_COULEURS$inconnue)
-  if (bdforet %in% c("Châtaignier", "Robinier", "Peuplier", "Feuillus")) {
+  if (bdforet %in% c("Ch\u00e2taignier", "Robinier", "Peuplier", "Feuillus")) {
     return(.IV_COULEURS$feuillu)
   }
   .IV_COULEURS$resineux
@@ -152,10 +152,10 @@
         list(valeur = ess$code[i], libelle = ess$libelle[i],
              symbole = function(n) .iv_marqueur(n, col, taille_expr = taille))
       })
-      cats <- c(cats, list(list(valeur = "", libelle = "Essence à saisir",
+      cats <- c(cats, list(list(valeur = "", libelle = "Essence \u00e0 saisir",
         symbole = function(n) .iv_marqueur(n, .IV_COULEURS$inconnue, taille_expr = taille))))
       list(renderer = .iv_renderer_categories("essence_arbre", cats),
-           labeling = .iv_etiquette("\"tree_id\" || ' – ' || format_number(\"dbh_cm\", 0)",
+           labeling = .iv_etiquette("\"tree_id\" || ' \u2013 ' || format_number(\"dbh_cm\", 0)",
                                     8, 1000))
     },
     ugf = {
@@ -164,7 +164,7 @@
         list(valeur = forets[i], libelle = forets[i],
              symbole = function(n) .iv_surface(n, col, 0.9, 0x33))
       })
-      cats <- c(cats, list(list(valeur = "", libelle = "Sans forêt",
+      cats <- c(cats, list(list(valeur = "", libelle = "Sans for\u00eat",
         symbole = function(n) .iv_surface(n, .IV_COULEURS$sans_foret, 0.9, 0x33))))
       list(renderer = .iv_renderer_categories("foret", cats),
            labeling = .iv_etiquette("coalesce(\"parcelle_onf\", \"libelle\", \"ug_id\")", 10))
@@ -179,7 +179,7 @@
           .iv_marqueur(n, e[1], 3.5, .IV_COULEURS$contour_placette, taille_expr = taille)
         })
       })
-      cats <- c(cats, list(list(valeur = "", libelle = "À faire", symbole = function(n) {
+      cats <- c(cats, list(list(valeur = "", libelle = "\u00c0 faire", symbole = function(n) {
         .iv_marqueur(n, "#ffffff", 3.5, .IV_COULEURS$contour_placette, taille_expr = taille)
       })))
       list(renderer = .iv_renderer_categories("etat_traitement", cats),
@@ -210,15 +210,15 @@
 
 # Fonds de carte, du haut vers le bas, sous toutes les couches du projet.
 .iv_fonds <- function() {
-  ign <- "© IGN Géoplateforme, Licence Ouverte Etalab 2.0"
+  ign <- "\u00a9 IGN G\u00e9oplateforme, Licence Ouverte Etalab 2.0"
   list(
-    list(nom = "Cadastre IGN", visible = FALSE, attribution = "cadastre © IGN",
+    list(nom = "Cadastre IGN", visible = FALSE, attribution = "cadastre \u00a9 IGN",
          source = .iv_tuiles_ign("CADASTRALPARCELS.PARCELLAIRE_EXPRESS", "PCI vecteur", "image/png")),
     list(nom = "Plan IGN", visible = TRUE, attribution = ign,
          source = .iv_tuiles_ign("GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2", "normal", "image/png")),
     list(nom = "Ortho IGN", visible = FALSE, attribution = ign,
          source = .iv_tuiles_ign("ORTHOIMAGERY.ORTHOPHOTOS", "normal", "image/jpeg")),
-    list(nom = "OpenStreetMap", visible = FALSE, attribution = "© contributeurs OpenStreetMap",
+    list(nom = "OpenStreetMap", visible = FALSE, attribution = "\u00a9 contributeurs OpenStreetMap",
          source = paste0("type=xyz&url=",
                          utils::URLencode("https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                                           reserved = TRUE), "&zmin=0&zmax=19"))
