@@ -462,7 +462,9 @@ communes_ser <- function(insee = NULL) {
 #'
 #' @return A data.frame as \code{\link{ifn_tarif_schaeffer_reference}}, with
 #'   \code{niveau_utilise} \code{"foret"}, \code{"SER"}, \code{"GRECO"} or
-#'   \code{"FRANCE"} and \code{n_placettes} (forest level only).
+#'   \code{"FRANCE"} and \code{n_placettes} (forest level only); attributes
+#'   \code{ser} (the SER used for the fallback), \code{tampon_m} and
+#'   \code{n_placettes_zone}.
 #'
 #' @section Lifecycle:
 #' Experimental (spec 062).
@@ -522,6 +524,7 @@ tarif_schaeffer_local <- function(units, especes = NULL, ifn = NULL, campagnes =
   rownames(out) <- NULL
   attr(out, "tampon_m") <- tampon
   attr(out, "n_placettes_zone") <- length(dedans)
+  attr(out, "ser") <- ser %||% NA_character_
   out
 }
 

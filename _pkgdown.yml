@@ -575,6 +575,7 @@ reference:
     - importer_inventaire_video
     - renvoyer_inventaire_video
     - groma_etat_placettes
+    - groma_envoyer_projet
 
   - subtitle: "Tarifs Schaeffer par essence x sylvoecoregion (spec 062)"
     desc: >

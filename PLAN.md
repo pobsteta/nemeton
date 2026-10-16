@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.9** (release du 2026-10-16), relevée le 2026-10-16.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.10** (release du 2026-10-16), relevée le 2026-10-17.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -148,7 +148,7 @@ v2026.10.1.
 | Cœur | colonne `part_houppier` (EMERGE, demande de Pascal) | **2026.10.9** | ✅ livré |
 | Marculus | embarquer les trois CSV (`data/src/main/assets/tarifs-ifn/`) | `marculus` | ⬜ brief envoyé |
 | App | import Marculus `FormatCsv;5` (houppier, volume compté au lot d'affouage) | nemetonshiny **2026.10.9** | ✅ livré |
-| App | `tarifsProposes` dans les lots | `nemetonshiny` | ⬜ attend le cœur |
+| App | `tarifsProposes` dans les lots Marculus (cache en tâche de fond) | nemetonshiny **2026.10.10** | ✅ livré |
 
 **Journal** — *2026-10-16* : tâche 1 close. Le format de l'export suit le
 **brief Marculus** (numéro au dixième, CV en %, `espar` sans code ONF, toutes
@@ -188,6 +188,18 @@ témoins ; 1 176 lignes vides (moins de 3 arbres avec hauteur).
 `\u` des chaînes accentuées de la symbologie) ; tag `v2026.10.9` posé par
 `release.yml`. Cycle dev `2026.10.9.9000`. Brief Marculus complété
 (`part_houppier`, CSV au tag `v2026.10.9`).
+
+*2026-10-16* — nemetonshiny **v2026.10.10** (`nemetonshiny@826760c7`, PR #244,
+cycle `2026.10.9.9000` → `2026.10.10`, plancher `nemeton (>= 2026.10.8)`) :
+`tarif_schaeffer_local()` une fois par projet dans le worker Marculus (cache
+`cache/marculus_tarifs.json`), `tarifsProposes` par contexte ; Couchey : 33 s,
+SER C20, 9 essences sur 10 au niveau SER (« Frêne », nom de genre, `NA`).
+Inventaire vidéo : zip `.qgz` + `.qml`, déclinaison facultative. Reste : la
+réception de `tarifsProposes` côté Marculus.
+
+*2026-10-17* (**2026.10.10**) : `groma_envoyer_projet()` (brief groma
+2026-10-17, préalable au brief app « envoyer le projet au téléphone ») ;
+attribut `ser` de `tarif_schaeffer_local()`.
 
 *2026-10-16* — nemetonshiny **v2026.10.9** (`nemetonshiny@cd58447a`, PR #243,
 cycle `2026.10.8.9000` → `2026.10.9`, plancher inchangé `nemeton (>= 2026.10.6)`) :

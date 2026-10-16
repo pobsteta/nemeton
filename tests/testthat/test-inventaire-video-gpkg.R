@@ -574,3 +574,69 @@ test_that("projet QField : symbologie Marculus, fonds IGN/OSM, houppiers masqué
                  "46,125,50,255")
   })
 })
+
+# ---- Publication sur le serveur Groma (brief groma 2026-10-17) ----
+
+test_that("groma_envoyer_projet publie le .qgz puis le .qml, avec leurs empreintes", {
+  skip_if_not_installed("httr2")
+  skip_if_not_installed("openssl")
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    racine <- iv_projet_nemetonshiny("projet")
+    qgz <- creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE,
+                                         project_path = racine, output_dir = "s")
+    appels <- list()
+    httr2::local_mocked_responses(function(req) {
+      appels[[length(appels) + 1L]] <<- list(methode = req$method %||% "GET", url = req$url,
+                                              corps = req$body)
+      expect_true("Authorization" %in% names(req$headers))
+      if (grepl("/publier$", req$url)) return(httr2::response_json(body = list(version = 3L)))
+      httr2::response(status_code = 201)
+    })
+    res <- groma_envoyer_projet(qgz, "https://groma.example/api/", "jeton")
+    expect_equal(res$projet_id, "20261015_120000_test")
+    expect_equal(res$version, 3L)
+    expect_equal(res$taille, sum(file.size(c(qgz, sub("qgz$", "qml", qgz)))))
+    expect_equal(vapply(appels, `[[`, "", "methode"), c("PUT", "PUT", "POST"))
+    base <- "https://groma.example/api/projets/20261015_120000_test/qfield/"
+    expect_equal(vapply(appels, `[[`, "", "url"),
+                 paste0(base, c("fichiers/inventaire_video.qgz", "fichiers/inventaire_video.qml",
+                                "publier")))
+    corps <- appels[[3]]$corps$data
+    expect_equal(corps$projet_nom, "Couchey test")
+    expect_equal(vapply(corps$fichiers, `[[`, "", "nom"),
+                 c("inventaire_video.qgz", "inventaire_video.qml"))
+    expect_equal(corps$fichiers[[1]]$sha256, nemeton:::.groma_sha256(qgz))
+    expect_equal(nchar(corps$fichiers[[1]]$sha256), 64L)
+    expect_match(corps$nemeton_version, "^[0-9]{4}\\.")
+
+    # Sans .qml : seul le .qgz part et est publié.
+    file.remove(sub("qgz$", "qml", qgz))
+    appels <- list()
+    groma_envoyer_projet(qgz, "https://groma.example/api", "jeton", projet_nom = "Autre")
+    expect_length(appels, 2L)
+    expect_equal(length(appels[[2]]$corps$data$fichiers), 1L)
+    expect_equal(appels[[2]]$corps$data$projet_nom, "Autre")
+  })
+})
+
+test_that("groma_envoyer_projet : sans projet_id, erreur et aucun appel ; 401 lisible", {
+  skip_if_not_installed("httr2")
+  skip_if_not_installed("openssl")
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    sans <- creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE, output_dir = "a")
+    n <- 0L
+    httr2::local_mocked_responses(function(req) {
+      n <<- n + 1L
+      httr2::response(status_code = 401)
+    })
+    expect_error(groma_envoyer_projet(sans, "https://groma.example"), "projet_id")
+    expect_equal(n, 0L)
+    racine <- iv_projet_nemetonshiny("projet")
+    avec <- creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE,
+                                          project_path = racine, output_dir = "b")
+    expect_error(groma_envoyer_projet(avec, "https://groma.example", "mauvais"), "refused the token")
+    expect_equal(n, 1L)
+  })
+})

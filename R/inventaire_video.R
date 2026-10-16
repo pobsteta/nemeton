@@ -1832,3 +1832,109 @@ groma_telecharger_resultats <- function(url, jeton = NULL, plot_ids, dossier,
   attr(chemins, "detail") <- detail
   chemins
 }
+
+# Empreinte SHA-256 d'un fichier (openssl, installé avec httr2).
+.groma_sha256 <- function(chemin) {
+  con <- file(chemin, "rb")
+  on.exit(close(con), add = TRUE)
+  as.character(openssl::sha256(con))
+}
+
+# Erreur HTTP du serveur Groma, message selon le statut.
+.groma_verifier <- function(resp, quoi) {
+  statut <- httr2::resp_status(resp)
+  if (statut < 300) return(invisible(resp))
+  msg <- switch(as.character(statut),
+    "401" = "Groma server refused the token (HTTP 401).",
+    "403" = "Groma server refused the token (HTTP 403).",
+    "413" = "Project too large for the Groma server (HTTP 413).",
+    "422" = "A file was altered during the upload: the server's checksum differs (HTTP 422).",
+    sprintf("Groma server error on %s (HTTP %d).", quoi, statut))
+  cli::cli_abort(msg)
+}
+
+#' Publish the video inventory QField project on the Groma server
+#'
+#' Sends the \code{.qgz} built by \code{\link{creer_projet_inventaire_video}}
+#' (and its plugin \code{<same name>.qml} when present next to it) to the
+#' Groma server, which offers it to the phone (\dQuote{Projets du
+#' serveur}). The project is identified by \code{projet_id}, read from the
+#' \code{projet} table of the GeoPackage inside the \code{.qgz}.
+#'
+#' Calls, with the bearer token: \code{PUT
+#' {url}/projets/{projet_id}/qfield/fichiers/{nom}} (raw body) for the
+#' \code{.qgz}, then the \code{.qml}; then \code{POST
+#' {url}/projets/{projet_id}/qfield/publier} with \code{projet_nom},
+#' \code{fichiers} (\code{nom}, \code{sha256}, \code{taille}),
+#' \code{genere_le} and \code{nemeton_version}. Requires \pkg{httr2} and
+#' \pkg{openssl}.
+#'
+#' @param qgz Path to the \code{.qgz}.
+#' @param url Base URL of the Groma server.
+#' @param jeton Bearer token (\code{NULL} for none).
+#' @param projet_nom Optional display name; default \code{projet_nom} of the
+#'   \code{projet} table.
+#'
+#' @return Invisibly, a list \code{projet_id}, \code{version} (as returned by
+#'   the server, \code{NA} when absent) and \code{taille} (bytes sent).
+#'
+#' @section Lifecycle:
+#' Experimental (spec 061).
+#'
+#' @export
+groma_envoyer_projet <- function(qgz, url, jeton = NULL, projet_nom = NULL) {
+  rlang::check_installed(c("httr2", "openssl"), reason = "to publish on the Groma server.")
+  if (!is.character(qgz) || length(qgz) != 1L || !file.exists(qgz)) {
+    cli::cli_abort("{.arg qgz} must be the path of an existing {.file .qgz}.")
+  }
+  # projet_id / projet_nom : table `projet` du GeoPackage du .qgz.
+  tmp <- tempfile("groma_envoi_")
+  dir.create(tmp)
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  contenu <- utils::unzip(qgz, list = TRUE)$Name
+  gpkg <- grep("\\.gpkg$", contenu, value = TRUE)[1]
+  projet <- if (!is.na(gpkg)) tryCatch({
+    utils::unzip(qgz, files = gpkg, exdir = tmp)
+    suppressWarnings(sf::st_read(file.path(tmp, gpkg), layer = "projet", quiet = TRUE))
+  }, error = function(e) NULL)
+  pid <- if (!is.null(projet) && nrow(projet)) as.character(projet$projet_id[1]) else NA_character_
+  if (is.na(pid) || !grepl("^[A-Za-z0-9_.-]{1,64}$", pid)) {
+    cli::cli_abort(c(
+      "No valid {.field projet_id} in the {.val projet} table of {.path {basename(qgz)}}.",
+      i = "Build the project with {.fn creer_projet_inventaire_video} and {.arg project_path}."
+    ))
+  }
+  if (is.null(projet_nom)) projet_nom <- as.character(projet$projet_nom[1])
+
+  qml <- sub("\\.qgz$", ".qml", qgz)
+  fichiers <- c(qgz, if (file.exists(qml)) qml)
+  decrit <- lapply(fichiers, function(f) {
+    list(nom = basename(f), sha256 = .groma_sha256(f), taille = unname(file.size(f)))
+  })
+  for (f in fichiers) {
+    req <- .groma_requete(url, jeton, c("projets", pid, "qfield", "fichiers", basename(f)))
+    req <- httr2::req_method(req, "PUT")
+    req <- httr2::req_body_file(req, f, type = "application/octet-stream")
+    req <- httr2::req_error(req, is_error = function(resp) FALSE)
+    resp <- tryCatch(httr2::req_perform(req), error = function(e) {
+      cli::cli_abort("Groma server unreachable at {.url {url}}.", parent = e)
+    })
+    .groma_verifier(resp, basename(f))
+  }
+  req <- .groma_requete(url, jeton, c("projets", pid, "qfield", "publier"))
+  req <- httr2::req_method(req, "POST")
+  req <- httr2::req_body_json(req, list(
+    projet_nom = projet_nom, fichiers = decrit,
+    genere_le = format(as.POSIXct(file.mtime(qgz)), "%Y-%m-%dT%H:%M:%S%z"),
+    nemeton_version = as.character(utils::packageVersion("nemeton"))
+  ), auto_unbox = TRUE)
+  req <- httr2::req_error(req, is_error = function(resp) FALSE)
+  resp <- tryCatch(httr2::req_perform(req), error = function(e) {
+    cli::cli_abort("Groma server unreachable at {.url {url}}.", parent = e)
+  })
+  .groma_verifier(resp, "publier")
+  corps <- tryCatch(httr2::resp_body_json(resp), error = function(e) list())
+  cli::cli_alert_success("Project {.val {pid}} published on the Groma server.")
+  invisible(list(projet_id = pid, version = corps$version %||% NA,
+                 taille = sum(vapply(decrit, `[[`, numeric(1), "taille"))))
+}
