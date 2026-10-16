@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.9</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.9.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -354,6 +354,7 @@
 <p><em>2026-10-16</em> : PR #560 mergée (R-CMD-check, tests, pkgdown verts) ; tag <code>v2026.10.8</code> posé par <code>release.yml</code>. Cycle dev <code>2026.10.8.9000</code>. Brief Marculus : <code>vers-marculus/2026-10-16-tarifs-schaeffer-publies.md</code>. Briefs annexes émis : <code>vers-nemetonshiny/2026-10-16-inventaire-video-plugin-qfield-et-espar.md</code>, <code>vers-groma/2026-10-16-symbologie-travaux-comme-marculus.md</code> (symbologie QField de <code>travaux.gpkg</code> alignée sur Marculus ; fichier introuvable dans <a href="mailto:groma@3d5f2dd" class="email">groma@3d5f2dd</a>, à confirmer). <code>vers-nemeton/</code> vide.</p>
 <p><em>2026-10-16</em> — la symbologie de <code>travaux.gpkg</code> relève de <strong>sommieR</strong> (<code>R/travaux_qfield.R</code>), pas de groma : la session groma a réacheminé le brief dans <code>vers-sommier/</code>.</p>
 <p><em>2026-10-16</em> (<strong>2026.10.9</strong>) : <code>part_houppier</code> (EMERGE) en dernière colonne de la table des tarifs, demande de Pascal (« colonne de plus, EMERGE seul ») ; volumes identiques à <code>gftools::TarEmerge()</code> à 10⁻⁸ près sur 4 arbres témoins ; 1 176 lignes vides (moins de 3 arbres avec hauteur).</p>
+<p><em>2026-10-17</em> : PR #561 mergée (R-CMD-check repassé vert après échappement <code>\u</code> des chaînes accentuées de la symbologie) ; tag <code>v2026.10.9</code> posé par <code>release.yml</code>. Cycle dev <code>2026.10.9.9000</code>. Brief Marculus complété (<code>part_houppier</code>, CSV au tag <code>v2026.10.9</code>).</p>
 <p><em>2026-10-16</em> — nemetonshiny <strong>v2026.10.9</strong> (<code>nemetonshiny@cd58447a</code>, PR #243, cycle <code>2026.10.8.9000</code> → <code>2026.10.9</code>, plancher inchangé <code>nemeton (&gt;= 2026.10.6)</code>) : import Marculus <code>FormatCsv;5</code> (part de houppier Schaeffer, volume compté au lot d’affouage <code>AffouageLotM3 × Quantite</code>). En attente côté cœur : spec 062 et <code><a href="reference/resoudre_espar.html">resoudre_espar()</a></code> sur le libellé français, dont dépend <code>tarifsProposes</code>.</p>
 <hr></div>
 <div class="section level1">

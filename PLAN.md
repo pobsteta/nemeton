@@ -209,6 +209,11 @@ EMERGE seul ») ; volumes identiques à `gftools::TarEmerge()` à 10⁻⁸ près
 sur 4 arbres témoins ; 1 176 lignes vides (moins de 3 arbres avec
 hauteur).
 
+*2026-10-17* : PR \#561 mergée (R-CMD-check repassé vert après
+échappement `\u` des chaînes accentuées de la symbologie) ; tag
+`v2026.10.9` posé par `release.yml`. Cycle dev `2026.10.9.9000`. Brief
+Marculus complété (`part_houppier`, CSV au tag `v2026.10.9`).
+
 *2026-10-16* — nemetonshiny **v2026.10.9** (`nemetonshiny@cd58447a`, PR
 \#243, cycle `2026.10.8.9000` → `2026.10.9`, plancher inchangé
 `nemeton (>= 2026.10.6)`) : import Marculus `FormatCsv;5` (part de
