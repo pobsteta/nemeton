@@ -207,6 +207,11 @@ non sérialisable en JSON — le `POST publier` ne partait jamais, et le
 `tryCatch` le déguisait en « serveur injoignable ». Empreinte nue, seules les
 `httr2_failure` disent « injoignable », test qui sérialise le corps.
 
+*2026-10-17* : PR #563 et #564 mergées (CI verte) ; tags `v2026.10.10` et
+`v2026.10.11` posés par `release.yml`. Cycle dev `2026.10.11.9000`. Réponse
+app : `vers-nemetonshiny/2026-10-17-reponse-groma-sha256-json.md` (plancher
+`nemeton (>= 2026.10.11)`). `vers-nemeton/` vide.
+
 *2026-10-16* — nemetonshiny **v2026.10.9** (`nemetonshiny@cd58447a`, PR #243,
 cycle `2026.10.8.9000` → `2026.10.9`, plancher inchangé `nemeton (>= 2026.10.6)`) :
 import Marculus `FormatCsv;5` (part de houppier Schaeffer, volume compté au lot
