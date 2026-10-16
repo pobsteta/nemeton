@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.10</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.11</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,6 +110,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.11" id="nemeton-20261011-2026-10-17">nemeton 2026.10.11 (2026-10-17)<a class="anchor" aria-label="anchor" href="#nemeton-20261011-2026-10-17"></a></h2>
+<div class="section level3">
+<h3 id="corrections-2026-10-11">Corrections<a class="anchor" aria-label="anchor" href="#corrections-2026-10-11"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/groma_envoyer_projet.html">groma_envoyer_projet()</a></code> n’envoyait jamais le <code>POST publier</code></strong> (brief nemetonshiny du 2026-10-17, essai de bout en bout contre un faux serveur <code>httpuv</code>) : l’empreinte SHA-256 gardait la classe <code>c("hash", "sha256")</code> d’openssl, que <code>jsonlite</code> ne sait pas sérialiser, et l’erreur arrivait au moment de l’envoi. Les empreintes sont maintenant des chaînes nues (hexadécimal, 64 caractères).</li>
+<li>Seule une <strong>erreur de connexion</strong> (<code>httr2_failure</code>) donne « Groma server unreachable » ; toute autre erreur remonte telle quelle (le message trompeur masquait la cause).</li>
+<li>Le test sérialise désormais le corps JSON comme à l’envoi : les tests à réponses simulées ne le faisaient pas et laissaient passer le défaut.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.10" id="nemeton-20261010-2026-10-17">nemeton 2026.10.10 (2026-10-17)<a class="anchor" aria-label="anchor" href="#nemeton-20261010-2026-10-17"></a></h2>
 <p>Le projet QField de l’inventaire vidéo part <strong>directement au téléphone</strong> par le serveur Groma (brief groma du 2026-10-17).</p>

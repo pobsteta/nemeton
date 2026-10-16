@@ -230,6 +230,13 @@ Reste : la réception de `tarifsProposes` côté Marculus.
 téléphone ») ; attribut `ser` de
 [`tarif_schaeffer_local()`](https://pobsteta.github.io/nemeton/reference/tarif_schaeffer_local.md).
 
+*2026-10-17* (**2026.10.11**) : correctif signalé par l’app (essai de
+bout en bout, faux serveur `httpuv`) : l’empreinte openssl gardait sa
+classe `hash`, non sérialisable en JSON — le `POST publier` ne partait
+jamais, et le `tryCatch` le déguisait en « serveur injoignable ».
+Empreinte nue, seules les `httr2_failure` disent « injoignable », test
+qui sérialise le corps.
+
 *2026-10-16* — nemetonshiny **v2026.10.9** (`nemetonshiny@cd58447a`, PR
 \#243, cycle `2026.10.8.9000` → `2026.10.9`, plancher inchangé
 `nemeton (>= 2026.10.6)`) : import Marculus `FormatCsv;5` (part de

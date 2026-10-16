@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.10</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.11</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -358,6 +358,7 @@
 <p><em>2026-10-17</em> : PR #561 mergée (R-CMD-check repassé vert après échappement <code>\u</code> des chaînes accentuées de la symbologie) ; tag <code>v2026.10.9</code> posé par <code>release.yml</code>. Cycle dev <code>2026.10.9.9000</code>. Brief Marculus complété (<code>part_houppier</code>, CSV au tag <code>v2026.10.9</code>).</p>
 <p><em>2026-10-16</em> — nemetonshiny <strong>v2026.10.10</strong> (<code>nemetonshiny@826760c7</code>, PR #244, cycle <code>2026.10.9.9000</code> → <code>2026.10.10</code>, plancher <code>nemeton (&gt;= 2026.10.8)</code>) : <code><a href="reference/tarif_schaeffer_local.html">tarif_schaeffer_local()</a></code> une fois par projet dans le worker Marculus (cache <code>cache/marculus_tarifs.json</code>), <code>tarifsProposes</code> par contexte ; Couchey : 33 s, SER C20, 9 essences sur 10 au niveau SER (« Frêne », nom de genre, <code>NA</code>). Inventaire vidéo : zip <code>.qgz</code> + <code>.qml</code>, déclinaison facultative. Reste : la réception de <code>tarifsProposes</code> côté Marculus.</p>
 <p><em>2026-10-17</em> (<strong>2026.10.10</strong>) : <code><a href="reference/groma_envoyer_projet.html">groma_envoyer_projet()</a></code> (brief groma 2026-10-17, préalable au brief app « envoyer le projet au téléphone ») ; attribut <code>ser</code> de <code><a href="reference/tarif_schaeffer_local.html">tarif_schaeffer_local()</a></code>.</p>
+<p><em>2026-10-17</em> (<strong>2026.10.11</strong>) : correctif signalé par l’app (essai de bout en bout, faux serveur <code>httpuv</code>) : l’empreinte openssl gardait sa classe <code>hash</code>, non sérialisable en JSON — le <code>POST publier</code> ne partait jamais, et le <code>tryCatch</code> le déguisait en « serveur injoignable ». Empreinte nue, seules les <code>httr2_failure</code> disent « injoignable », test qui sérialise le corps.</p>
 <p><em>2026-10-16</em> — nemetonshiny <strong>v2026.10.9</strong> (<code>nemetonshiny@cd58447a</code>, PR #243, cycle <code>2026.10.8.9000</code> → <code>2026.10.9</code>, plancher inchangé <code>nemeton (&gt;= 2026.10.6)</code>) : import Marculus <code>FormatCsv;5</code> (part de houppier Schaeffer, volume compté au lot d’affouage <code>AffouageLotM3 × Quantite</code>). En attente côté cœur : spec 062 et <code><a href="reference/resoudre_espar.html">resoudre_espar()</a></code> sur le libellé français, dont dépend <code>tarifsProposes</code>.</p>
 <hr></div>
 <div class="section level1">
