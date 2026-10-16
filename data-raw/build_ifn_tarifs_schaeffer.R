@@ -4,7 +4,8 @@
 # (brief Marculus du 2026-10-16 : séparateur `;`, UTF-8 sans BOM, champ vide
 # pour une valeur absente) :
 #   - ifn_tarif_schaeffer_ser.csv  niveau;code;espar;essence_libelle;type;
-#                                  numero;n_arbres;cv;millesime
+#                                  numero;n_arbres;cv;millesime;part_houppier
+#   - emerge_coefficients.csv      coefficients EMERGE par espar (part de houppier)
 #   - communes_ser.csv             insee;nom;departement;ser;part;greco
 #   - ser.csv                      code;nom;greco
 #
@@ -34,12 +35,29 @@ library(data.table)
 devtools::load_all(quiet = TRUE)
 
 src_dir <- Sys.getenv("NEMETON_IFN_SRC", unset = "data-raw/ifn")
+
+# --- 0. Coefficients EMERGE (part de houppier) ---------------------------
+# gftools::ListTarEmerge (version « mai2 », projet ANR EMERGE ; gftools,
+# Pascal Obstétar, GPL-3), lu depuis le .rda : gftools n'est pas publié.
+# Mêmes équations que Marculus (Cubage.kt) : tige et houppier bois fort,
+# découpe 7 cm, hdec = 0,8 · htot.
+gft_dir <- Sys.getenv("NEMETON_GFTOOLS_DIR", unset = "/media/pascal/data2/digital_ocean/gftools")
+e <- new.env()
+load(file.path(gft_dir, "data", "ListTarEmerge.rda"), envir = e)
+em <- as.data.table(e$ListTarEmerge)[!is.na(espar) & !is.na(Vtot_a)]
+em <- unique(em[, .(espar, nom_lat, a = Vtot_a, b = Vtot_b_hdn, c = Vtot_c_hsurd,
+                    d = Vtige_d, e = Vtige_e_logis, f = Vtige_f_hdn, g = Vtige_g_invc130,
+                    alpha = Vhoup_Alpha, beta = Vhoup_B)])
+em <- em[!duplicated(espar)]
+setorder(em, espar)
+fwrite(em, "inst/extdata/emerge_coefficients.csv", sep = ";", na = "", bom = FALSE)
+message("emerge_coefficients.csv : ", nrow(em), " espar")
 n_campagnes <- as.integer(Sys.getenv("NEMETON_TARIF_CAMPAGNES", unset = "15"))
 
 # --- 1. Arbres IFN cubés, SER de leur placette ---------------------------
 dat <- ifn_charger(c("ARBRE", "PLACETTE"), dest_dir = src_dir)
 pl <- as.data.table(dat$PLACETTE)[, .(CAMPAGNE, IDP, SER, GRECO)]
-ar <- as.data.table(dat$ARBRE)[, .(CAMPAGNE, IDP, A, ESPAR, VEGET, C13, V)]
+ar <- as.data.table(dat$ARBRE)[, .(CAMPAGNE, IDP, A, ESPAR, VEGET, C13, V, HTOT)]
 rm(dat)
 derniere <- max(as.integer(ar$CAMPAGNE))
 premiere <- derniere - n_campagnes + 1L
@@ -69,7 +87,8 @@ tab[, millesime := millesime]
 tab[, niveau := factor(niveau, c("SER", "GRECO", "FRANCE"))]
 setorder(tab, niveau, code, espar, type)
 tab[, niveau := as.character(niveau)]
-tab <- tab[, .(niveau, code, espar, essence_libelle, type, numero, n_arbres, cv, millesime)]
+tab <- tab[, .(niveau, code, espar, essence_libelle, type, numero, n_arbres, cv, millesime,
+                part_houppier)]
 message(nrow(tab), " lignes de tarifs, ", uniqueN(tab[niveau == "SER", code]), " SER, ",
         sum(fr_t$n_arbres[fr_t$type == "SCHR"]), " arbres retenus (France)")
 

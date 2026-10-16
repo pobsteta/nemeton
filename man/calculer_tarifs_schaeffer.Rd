@@ -18,7 +18,8 @@ character, as read by \code{\link{ifn_charger}}.}
 A data.frame with the \code{groupes} columns, \code{espar},
   \code{type} (\code{SCHR}, \code{SCHI}, \code{SCHL}, \code{SCHTL}),
   \code{numero} (to 0.1), \code{cv} (percent, to 0.1), \code{n_arbres} and
-  \code{n_placettes}.
+  \code{n_placettes}, and \code{part_houppier} (percent, to 0.1) when
+  \code{HTOT} is given.
 }
 \description{
 The computing chain shared by the reference table
@@ -33,6 +34,19 @@ species, mean weighted by the tree volume and coefficient of variation
 kept in a group from 3 trees on. Low-form species (holm oak, downy oak)
 can get a negative number on the slower tariffs: it is kept, as in
 PPtools; the coefficient of variation stays positive.
+}
+\details{
+When \code{arbres} has a \code{HTOT} column (total height, m), the
+\strong{crown share} \code{part_houppier} is added: the share of the
+merchantable wood (stem + branches over 7 cm) that is crown, in percent,
+\eqn{100 \sum V_{houp} / \sum (V_{tige} + V_{houp})} over the trees of the
+group with a height, both volumes from the EMERGE equations
+(\code{gftools::ListTarEmerge}, as Marculus does for its EMERGE tariff;
+\code{hdec = 0.8 htot}). It is a \strong{model}, not a measurement: the
+IFN does not measure branches. \code{NA} below 3 trees with a height or
+without EMERGE coefficients for the species. It is the same for the four
+tariff types of a group; Marculus applies it as
+\code{houppier = V_tige p / (1 - p)}.
 }
 \section{Lifecycle}{
 

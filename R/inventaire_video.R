@@ -1125,46 +1125,6 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
   invisible(gpkg)
 }
 
-# Symbologie catégorisée de `arbres` selon etat_detection.
-.iv_renderer_etat <- function() {
-  couleurs <- c(provisoire = "#f2a541", definitif = "#2e8b57", a_completer = "#3a7bd5",
-                a_verifier = "#d7263d", faux_positif = "#8c8c8c")
-  cats <- vapply(seq_along(couleurs), function(k) {
-    .xml_tag("category", attrs = list(value = names(couleurs)[k], symbol = k - 1L,
-                                      label = names(couleurs)[k], render = "true"))
-  }, character(1))
-  syms <- vapply(seq_along(couleurs), function(k) {
-    opts <- c(
-      .xml_tag("Option", attrs = list(name = "color", type = "QString",
-                                      value = paste0(col2rgb_str(couleurs[k]), ",255"))),
-      .xml_tag("Option", attrs = list(name = "name", type = "QString", value = "circle")),
-      .xml_tag("Option", attrs = list(name = "size", type = "QString", value = "2.6"))
-    )
-    .xml_tag("symbol", attrs = list(type = "marker", name = k - 1L, alpha = "1",
-                                    clip_to_extent = "1", force_rhr = "0"),
-             children = .xml_tag("layer", attrs = list(class = "SimpleMarker", enabled = "1",
-                                                        locked = "0", pass = "0"),
-                                 children = .xml_tag("Option", attrs = list(type = "Map"),
-                                                     children = opts)))
-  }, character(1))
-  .xml_tag("renderer-v2", attrs = list(type = "categorizedSymbol", attr = "etat_detection",
-                                        forceraster = "0", symbollevels = "0",
-                                        enableorderby = "0"),
-           children = c(.xml_tag("categories", children = cats),
-                        .xml_tag("symbols", children = syms)))
-}
-
-# Étiquette "tree_id – dbh_cm" sur `arbres`.
-.iv_etiquette_arbres <- function() {
-  .xml_tag("labeling", attrs = list(type = "simple"),
-           children = .xml_tag("settings", attrs = list(calloutType = "simple"), children = c(
-             .xml_tag("text-style", attrs = list(
-               fieldName = "\"tree_id\" || ' \u2013 ' || \"dbh_cm\"", isExpression = "1",
-               fontSize = "9", textColor = "0,0,0,255", fontFamily = "Sans Serif")),
-             .xml_tag("placement", attrs = list(placement = "1", dist = "1"))
-           )))
-}
-
 # Projet QGIS / QField écrit dans `stage`, puis zippé en `.qgz` avec le
 # GeoPackage et les rasters. `subset_arbres` filtre l'affichage de la couche
 # `arbres` (expression QGIS), sans toucher aux données du GeoPackage.
@@ -1176,21 +1136,36 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
   # et lit `projet` : aucune n'est verrouillée au niveau du projet (les
   # champs de `detections` restent en lecture seule dans les formulaires).
   ajout_plugin <- c("projet", "detections", "centres_mesures", "arbres")
-  couches <- lapply(names(schema), function(couche) {
+  # Symbologie Marculus (R/inventaire_video_symbologie.R) : une couleur par
+  # forêt de `ugf`, lue dans le GeoPackage.
+  forets <- tryCatch({
+    u <- sf::st_read(file.path(stage, gpkg_rel), layer = "ugf", quiet = TRUE)
+    sort(unique(stats::na.omit(as.character(u$foret))))
+  }, error = function(e) character(0))
+  # Ordre d'affichage, du haut vers le bas (celui de la carte de Groma).
+  ordre <- c("detections", "arbres", "cibles", "centres_mesures", "placettes",
+             "houppiers", "parcelles", "ugf", "projet")
+  noms <- c(intersect(ordre, names(schema)), setdiff(names(schema), ordre))
+  couches <- lapply(noms, function(couche) {
     champs <- schema[[couche]]
     g <- attr(champs, "geometrie")
+    style <- .iv_style_couche(couche, forets)
     list(id = paste0(couche, "_01"), name = couche,
          gpkg_rel = gpkg_rel, layername = couche,
          geometry = if (is.null(g)) "No geometry" else unname(geoms[g]), schema = champs,
-         bbox = bbox,
-         renderer = if (couche == "arbres") .iv_renderer_etat() else NULL,
-         labeling = if (couche == "arbres") .iv_etiquette_arbres() else NULL,
+         bbox = bbox, renderer = style$renderer, labeling = style$labeling,
          readonly = attr(champs, "lecture_seule") && !couche %in% ajout_plugin,
-         subset = if (couche == "arbres") subset_arbres else NULL)
+         subset = if (couche == "arbres") subset_arbres else NULL,
+         checked = !couche %in% .IV_MASQUEES)
   })
   couches <- c(couches, lapply(rasters, function(f) {
     list(type = "raster", id = gsub("[^A-Za-z0-9_]", "_", tools::file_path_sans_ext(basename(f))),
          name = tools::file_path_sans_ext(basename(f)), source = f, bbox = bbox)
+  }))
+  # Fonds de carte sous toutes les couches : Plan IGN seul affiché.
+  couches <- c(couches, lapply(.iv_fonds(), function(f) {
+    list(type = "raster", provider = "wms", id = gsub("[^A-Za-z0-9]", "_", f$nom),
+         name = f$nom, source = f$source, checked = f$visible, attribution = f$attribution)
   }))
   qgs_rel <- paste0(project_name, ".qgs")
   titre <- if (is.na(projet_nom) || !nzchar(projet_nom)) "Inventaire vid\u00e9o" else

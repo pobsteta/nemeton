@@ -42,6 +42,18 @@ numéro de chaque arbre, puis **moyenne pondérée par le volume** et coefficien
 de variation par groupe (essence retenue dès 3 arbres). Le type conseillé est
 celui dont le CV est le plus faible.
 
+## Part de houppier
+
+La colonne `part_houppier` donne, en %, la part du bois fort (tige et
+branches de plus de 7 cm) qui est du houppier, par les équations **EMERGE**
+appliquées aux arbres IFN dont la hauteur est mesurée. C'est un modèle, pas
+une mesure : l'IFN ne mesure pas les branches.
+
+```{r}
+ifn_tarif_schaeffer_ser(espar = c("03", "09", "62"), code = "FR", type = "SCHL")[
+  , c("essence_libelle", "n_arbres", "part_houppier")]
+```
+
 ## Table de référence et cascade
 
 ```{r}

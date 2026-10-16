@@ -87,7 +87,7 @@ test_that("regroupement par SER", {
 test_that("la table embarquée a le format Marculus et les essences attendues", {
   f <- system.file("extdata", "ifn_tarif_schaeffer_ser.csv", package = "nemeton")
   expect_identical(readLines(f, n = 1),
-                   "niveau;code;espar;essence_libelle;type;numero;n_arbres;cv;millesime")
+                   "niveau;code;espar;essence_libelle;type;numero;n_arbres;cv;millesime;part_houppier")
   expect_false(identical(readBin(f, "raw", 3), as.raw(c(0xef, 0xbb, 0xbf))))
   d <- ifn_tarif_schaeffer_ser()
   expect_setequal(unique(d$niveau), c("SER", "GRECO", "FRANCE"))
@@ -190,4 +190,47 @@ test_that("exporter_tarifs_marculus écrit les fichiers attendus, moins de 3 Mo"
       expect_false(any(grepl("(^|;)NA(;|$)", readLines(fi, encoding = "UTF-8"))))
     }
   })
+})
+
+test_that("volumes EMERGE identiques à gftools::TarEmerge()", {
+  # Valeurs de gftools::TarEmerge(typevol = "tige" / "houp"), relevées le
+  # 2026-10-16 sur gftools 1.2.8.9000 (ListTarEmerge « mai2 »).
+  k <- nemeton:::.emerge_coefs()
+  k <- k[match(c("03", "09", "02", "62"), k$espar), ]
+  v <- nemeton:::.emerge_volumes(c(120, 200, 95, 160) / 100, c(24, 31, 19, 35), k)
+  expect_equal(v$tige, c(1.39258336, 4.659722406, 0.6896933264, 2.908964994), tolerance = 1e-8)
+  expect_equal(v$houppier, c(0.1388242593, 0.6817647169, 0.07608547808, 0.03289204223),
+               tolerance = 1e-8)
+  # Sans hauteur ou sans coefficient : NA, jamais deviné.
+  v <- nemeton:::.emerge_volumes(c(1.2, 1.2), c(NA, 24), k[c(1, NA), ])
+  expect_true(all(is.na(v$tige)))
+})
+
+test_that("part de houppier : rapport des sommes, arbres avec hauteur seulement", {
+  a <- rbind(arbre_tarif(10, 30, "SCHL", espar = "03"), arbre_tarif(10, 40, "SCHL", espar = "03"),
+             arbre_tarif(10, 50, "SCHL", espar = "03"), arbre_tarif(10, 45, "SCHL", espar = "03"))
+  a$HTOT <- c("22", "26", "29", "")
+  r <- calculer_tarifs_schaeffer(a)
+  k <- nemeton:::.emerge_coefs()
+  k <- k[rep(match("03", k$espar), 3), ]
+  v <- nemeton:::.emerge_volumes(a$C13[1:3], c(22, 26, 29), k)
+  expect_equal(unique(r$part_houppier), round(100 * sum(v$houppier) / sum(v$tige + v$houppier), 1))
+  expect_equal(r$n_arbres[1], 4L)            # le tarif garde les 4 arbres
+  # Moins de 3 arbres avec hauteur : NA.
+  a$HTOT <- c("22", "", "", "")
+  expect_true(all(is.na(calculer_tarifs_schaeffer(a)$part_houppier)))
+  # Sans colonne HTOT : pas de colonne part_houppier.
+  a$HTOT <- NULL
+  expect_false("part_houppier" %in% names(calculer_tarifs_schaeffer(a)))
+})
+
+test_that("la table porte une part de houppier plausible (feuillus > résineux)", {
+  d <- ifn_tarif_schaeffer_ser(niveau = "FRANCE", type = "SCHL")
+  p <- stats::setNames(d$part_houppier, d$espar)
+  expect_true(all(p[c("02", "03", "09")] > 8 & p[c("02", "03", "09")] < 30))
+  expect_true(all(p[c("61", "62", "64")] < 5))
+  expect_true(all(d$part_houppier >= 0 & d$part_houppier < 95, na.rm = TRUE))
+  # Même valeur pour les 4 types d'un groupe.
+  t <- ifn_tarif_schaeffer_ser(espar = "09", code = "C20")
+  expect_length(unique(t$part_houppier), 1L)
 })

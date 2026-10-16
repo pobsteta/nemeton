@@ -514,3 +514,63 @@ test_that("le plugin QField est livré à côté du projet, couches non verrouil
     expect_true(all(is.na(p$declinaison_deg)))
   })
 })
+
+# ---- Symbologie Marculus, fonds et houppiers (briefs groma 2026-10-16) ----
+
+test_that("projet QField : symbologie Marculus, fonds IGN/OSM, houppiers masqués", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    racine <- iv_projet_nemetonshiny("projet")
+    qgz <- creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE,
+                                         project_path = racine, output_dir = "s")
+    utils::unzip(qgz, exdir = "x")
+    qgs <- xml2::read_xml(file.path("x", "inventaire_video.qgs"))
+    arbre <- xml2::xml_find_all(qgs, "//layer-tree-group/layer-tree-layer")
+    noms <- xml2::xml_attr(arbre, "name")
+    fonds <- c("Cadastre IGN", "Plan IGN", "Ortho IGN", "OpenStreetMap")
+    # Les quatre fonds, dans cet ordre, sous toutes les couches vectorielles.
+    expect_identical(utils::tail(noms, 4), fonds)
+    expect_true(all(match(c("arbres", "ugf", "houppiers"), noms) < match("Cadastre IGN", noms)))
+    coche <- stats::setNames(xml2::xml_attr(arbre, "checked"), noms)
+    expect_identical(unname(coche[fonds]), c("Qt::Unchecked", "Qt::Checked", "Qt::Unchecked", "Qt::Unchecked"))
+    expect_identical(unname(coche["houppiers"]), "Qt::Unchecked")
+    expect_identical(unname(coche["arbres"]), "Qt::Checked")
+
+    couches <- xml2::xml_find_all(qgs, "//projectlayers/maplayer")
+    ln <- xml2::xml_text(xml2::xml_find_first(couches, "layername"))
+    plan <- couches[[match("Plan IGN", ln)]]
+    src <- utils::URLdecode(xml2::xml_text(xml2::xml_find_first(plan, "datasource")))
+    expect_match(src, "^type=xyz&url=https://data.geopf.fr/wmts")
+    expect_match(src, "LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2", fixed = TRUE)
+    expect_match(src, "TILEMATRIX={z}&TILEROW={y}&TILECOL={x}", fixed = TRUE)
+    expect_false(grepl("GetCapabilities", src))
+    expect_equal(xml2::xml_text(xml2::xml_find_first(plan, "provider")), "wms")
+    expect_equal(xml2::xml_text(xml2::xml_find_first(plan, "resourceMetadata/rights")),
+                 "\u00a9 IGN G\u00e9oplateforme, Licence Ouverte Etalab 2.0")
+    cad <- couches[[match("Cadastre IGN", ln)]]
+    expect_match(utils::URLdecode(xml2::xml_text(xml2::xml_find_first(cad, "datasource"))),
+                 "STYLE=PCI%20vecteur", fixed = TRUE)
+    expect_equal(xml2::xml_text(xml2::xml_find_first(cad, "resourceMetadata/rights")), "cadastre \u00a9 IGN")
+
+    # arbres : catégorisé sur essence_arbre, couleurs des groupes Marculus.
+    ar <- couches[[match("arbres", ln)]]
+    r <- xml2::xml_find_first(ar, "renderer-v2")
+    expect_equal(xml2::xml_attr(r, "attr"), "essence_arbre")
+    cats <- xml2::xml_find_all(r, "categories/category")
+    i <- match("hetre", xml2::xml_attr(cats, "value"))
+    sym <- xml2::xml_find_all(r, "symbols/symbol")[[i]]
+    opt <- xml2::xml_find_all(sym, ".//Option[@name='color']")
+    expect_equal(xml2::xml_attr(opt[[1]], "value"), "80,97,184,255")      # #5061b8
+    expect_match(as.character(sym), "scale_linear", fixed = TRUE)
+    # ugf : une couleur par forêt (aucune ici : catégorie « Sans forêt »), contour 0,9 mm.
+    u <- couches[[match("ugf", ln)]]
+    expect_equal(xml2::xml_attr(xml2::xml_find_first(u, "renderer-v2"), "attr"), "foret")
+    w <- xml2::xml_find_all(u, ".//Option[@name='outline_width']")
+    expect_true(all(xml2::xml_attr(w, "value") == "0.9"))
+    # houppiers : contour seul #2e7d32.
+    h <- couches[[match("houppiers", ln)]]
+    expect_equal(xml2::xml_attr(xml2::xml_find_first(h, ".//Option[@name='style']"), "value"), "no")
+    expect_equal(xml2::xml_attr(xml2::xml_find_first(h, ".//Option[@name='outline_color']"), "value"),
+                 "46,125,50,255")
+  })
+})

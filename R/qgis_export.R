@@ -244,16 +244,22 @@ col2rgb_str <- function(hex) {
 }
 
 
-.raster_maplayer_xml <- function(id, name, source, crs, bbox = NULL) {
+.raster_maplayer_xml <- function(id, name, source, crs, bbox = NULL,
+                                 provider = "gdal", attribution = NULL) {
+  # `provider = "wms"` : fond de tuiles XYZ en ligne (source = URI XYZ,
+  # EPSG:3857), sans chemin relatif.
   .xml_tag("maplayer",
     attrs = list(type = "raster", hasScaleBasedVisibilityFlag = "0"),
     children = c(
-      .extent_xml(bbox),
+      if (identical(provider, "gdal")) .extent_xml(bbox) else "",
       .xml_tag("id", text = id),
-      .xml_tag("datasource", text = paste0("./", source)),
+      .xml_tag("datasource", text = if (identical(provider, "gdal")) paste0("./", source) else source),
       .xml_tag("layername", text = name),
-      .xml_tag("provider", text = "gdal"),
-      .srs_xml(crs)
+      .xml_tag("provider", text = provider),
+      .srs_xml(if (identical(provider, "gdal")) crs else 3857),
+      if (!is.null(attribution)) {
+        .xml_tag("resourceMetadata", children = .xml_tag("rights", text = attribution))
+      } else ""
     ))
 }
 
@@ -296,10 +302,11 @@ col2rgb_str <- function(hex) {
 }
 
 
-.layer_tree_node <- function(id, name, source, provider = "ogr") {
+.layer_tree_node <- function(id, name, source, provider = "ogr", checked = TRUE) {
   .xml_tag("layer-tree-layer",
     attrs = list(id = id, name = name, source = source,
-                 checked = "Qt::Checked", expanded = "1",
+                 checked = if (isFALSE(checked)) "Qt::Unchecked" else "Qt::Checked",
+                 expanded = "1",
                  providerKey = provider, patch_size = "-1,-1"))
 }
 
@@ -312,16 +319,24 @@ col2rgb_str <- function(hex) {
   #                     source, bbox)
   est_raster <- function(l) identical(l$type, "raster")
   maplayers <- vapply(layers, function(l) {
-    if (est_raster(l)) return(.raster_maplayer_xml(l$id, l$name, l$source, crs, l$bbox))
+    if (est_raster(l)) {
+      return(.raster_maplayer_xml(l$id, l$name, l$source, crs, l$bbox,
+                                  provider = l$provider %||% "gdal",
+                                  attribution = l$attribution))
+    }
     .maplayer_xml(l$id, l$name, l$gpkg_rel, l$layername, l$geometry,
                   l$schema, crs, l$bbox, l$renderer, isTRUE(l$readonly),
                   l$labeling, l$subset)
   }, character(1))
   tree_nodes <- vapply(layers, function(l) {
     if (est_raster(l)) {
-      return(.layer_tree_node(l$id, l$name, paste0("./", l$source), provider = "gdal"))
+      prov <- l$provider %||% "gdal"
+      return(.layer_tree_node(l$id, l$name,
+                              if (identical(prov, "gdal")) paste0("./", l$source) else l$source,
+                              provider = prov, checked = l$checked))
     }
-    .layer_tree_node(l$id, l$name, .ogr_source(l$gpkg_rel, l$layername, l$subset))
+    .layer_tree_node(l$id, l$name, .ogr_source(l$gpkg_rel, l$layername, l$subset),
+                     checked = l$checked)
   }, character(1))
 
   empty_map <- .xml_tag("Option", attrs = list(type = "Map"))

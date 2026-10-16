@@ -114,6 +114,49 @@ volume_tarif_schaeffer <- function(numero, diametre_cm, type) {
 }
 
 
+# ---- Part de houppier (EMERGE) ----------------------------------------
+
+# Coefficients EMERGE par espar (gftools::ListTarEmerge, version « mai2 »,
+# extraits par data-raw/build_ifn_tarifs_schaeffer.R).
+.emerge_coefs <- function() {
+  .tarif_lire("emerge_coefficients.csv", c("espar", "nom_lat"))
+}
+
+# Volumes EMERGE bois fort (découpe 7 cm) de la tige et du houppier, en m3,
+# hdec = 0,8 · htot : mêmes équations que gftools::TarEmerge() et que
+# Marculus (Cubage.kt). `c13` en mètres, `htot` en mètres, `k` une
+# data.frame de coefficients alignée sur les arbres.
+.emerge_volumes <- function(c13, htot, k) {
+  cdec <- 7 * pi / 100
+  ok <- !is.na(c13) & !is.na(htot) & htot > 1.4 & c13 > 0 & !is.na(k$a)
+  tige <- houp <- rep(NA_real_, length(c13))
+  if (!any(ok)) return(list(tige = tige, houppier = houp))
+  c13 <- c13[ok]; h <- htot[ok]; k <- k[ok, , drop = FALSE]
+  corr <- 1 - 1.3 / h
+  hdn <- sqrt(c13) / h
+  volcyl <- c13^2 * h / (4 * pi * corr^2)
+  formtot <- k$a + k$b * hdn + k$c * h / c13
+  fct <- k$d + k$e * log(0.8 / 0.2) + k$f * hdn + k$g / c13
+  fct[fct > 0.95] <- 0.8
+  formtige <- formtot * fct
+  t_ok <- pmax(formtige * volcyl * ifelse(c13 > cdec, 1 - (cdec * corr / c13)^3, 0), 0)
+  u <- 1 / fct - 1
+  h_ok <- rep(0, length(c13))
+  pos <- u > 0 & k$alpha > 0
+  if (any(pos)) {
+    r <- ((3 - k$beta[pos]) * u[pos] / (3 * k$alpha[pos]))
+    cmax <- (c13[pos] / corr[pos]) * r^(1 / 3)
+    dec <- ifelse(cmax > cdec,
+                  1 - ((cdec / c13[pos] * corr[pos]) * r^(-1 / 3))^(3 - k$beta[pos]), 0)
+    h_ok[pos] <- (formtot[pos] - formtige[pos]) * volcyl[pos] * dec
+  }
+  h_ok[!is.finite(h_ok) | h_ok < 0] <- 0
+  tige[ok] <- t_ok
+  houp[ok] <- h_ok
+  list(tige = tige, houppier = houp)
+}
+
+
 #' Schaeffer tariff numbers from IFN trees
 #'
 #' The computing chain shared by the reference table
@@ -129,6 +172,18 @@ volume_tarif_schaeffer <- function(numero, diametre_cm, type) {
 #' can get a negative number on the slower tariffs: it is kept, as in
 #' PPtools; the coefficient of variation stays positive.
 #'
+#' When \code{arbres} has a \code{HTOT} column (total height, m), the
+#' \strong{crown share} \code{part_houppier} is added: the share of the
+#' merchantable wood (stem + branches over 7 cm) that is crown, in percent,
+#' \eqn{100 \sum V_{houp} / \sum (V_{tige} + V_{houp})} over the trees of the
+#' group with a height, both volumes from the EMERGE equations
+#' (\code{gftools::ListTarEmerge}, as Marculus does for its EMERGE tariff;
+#' \code{hdec = 0.8 htot}). It is a \strong{model}, not a measurement: the
+#' IFN does not measure branches. \code{NA} below 3 trees with a height or
+#' without EMERGE coefficients for the species. It is the same for the four
+#' tariff types of a group; Marculus applies it as
+#' \code{houppier = V_tige p / (1 - p)}.
+#'
 #' @param arbres data.frame of IFN trees with \code{ESPAR}, \code{C13} (m),
 #'   \code{V} (m3), \code{VEGET} and \code{IDP}, plus the \code{groupes}
 #'   columns (e.g. \code{SER}, joined from \code{PLACETTE}). Columns may be
@@ -138,7 +193,8 @@ volume_tarif_schaeffer <- function(numero, diametre_cm, type) {
 #' @return A data.frame with the \code{groupes} columns, \code{espar},
 #'   \code{type} (\code{SCHR}, \code{SCHI}, \code{SCHL}, \code{SCHTL}),
 #'   \code{numero} (to 0.1), \code{cv} (percent, to 0.1), \code{n_arbres} and
-#'   \code{n_placettes}.
+#'   \code{n_placettes}, and \code{part_houppier} (percent, to 0.1) when
+#'   \code{HTOT} is given.
 #'
 #' @section Lifecycle:
 #' Experimental (spec 062).
@@ -148,7 +204,8 @@ calculer_tarifs_schaeffer <- function(arbres, groupes = character(0)) {
   besoin <- c("ESPAR", "C13", "V", "VEGET", "IDP", groupes)
   manque <- setdiff(besoin, names(arbres))
   if (length(manque)) cli::cli_abort("{.arg arbres} lacks column{?s} {.val {manque}}.")
-  a <- as.data.frame(arbres)[, besoin, drop = FALSE]
+  avec_h <- "HTOT" %in% names(arbres)
+  a <- as.data.frame(arbres)[, c(besoin, if (avec_h) "HTOT"), drop = FALSE]
   a$V <- suppressWarnings(as.numeric(a$V))
   a$C13 <- suppressWarnings(as.numeric(a$C13))
   a <- a[!is.na(a$VEGET) & as.character(a$VEGET) == "0" & !is.na(a$V) & a$V > 0 &
@@ -156,11 +213,21 @@ calculer_tarifs_schaeffer <- function(arbres, groupes = character(0)) {
   a$D <- 100 * a$C13 / pi
   a <- a[a$D >= 17.5 & a$D <= 80, , drop = FALSE]
   a$espar <- as.character(a$ESPAR)
+  if (avec_h) {
+    # Volumes EMERGE des arbres qui ont une hauteur (sous-échantillon IFN).
+    k <- .emerge_coefs()
+    depad <- function(v) sub("^0([0-9])$", "\\1", v)
+    k <- k[match(depad(a$espar), depad(k$espar)), , drop = FALSE]
+    vol <- .emerge_volumes(a$C13, suppressWarnings(as.numeric(a$HTOT)), k)
+    a$v_tige_em <- vol$tige
+    a$v_houp_em <- vol$houppier
+  }
   vide <- data.frame(matrix(nrow = 0, ncol = length(groupes)))
   names(vide) <- groupes
   vide <- cbind(vide, data.frame(espar = character(0), type = character(0),
                                  numero = numeric(0), cv = numeric(0),
                                  n_arbres = integer(0), n_placettes = integer(0)))
+  if (avec_h) vide$part_houppier <- numeric(0)
   if (!nrow(a)) return(vide)
   cle <- interaction(a[, c(groupes, "espar"), drop = FALSE], drop = TRUE, sep = "\r")
   morceaux <- split(seq_len(nrow(a)), cle)
@@ -176,9 +243,17 @@ calculer_tarifs_schaeffer <- function(arbres, groupes = character(0)) {
                  stringsAsFactors = FALSE)
     })
     tete <- a[i[1], c(groupes, "espar"), drop = FALSE]
-    cbind(tete[rep(1, 4), , drop = FALSE], do.call(rbind, lignes),
-          n_arbres = length(i), n_placettes = length(unique(a$IDP[i])),
-          row.names = NULL)
+    res <- cbind(tete[rep(1, 4), , drop = FALSE], do.call(rbind, lignes),
+                 n_arbres = length(i), n_placettes = length(unique(a$IDP[i])),
+                 row.names = NULL)
+    if (avec_h) {
+      j <- i[!is.na(a$v_tige_em[i])]
+      tot <- sum(a$v_tige_em[j] + a$v_houp_em[j])
+      res$part_houppier <- if (length(j) > 2L && tot > 0) {
+        round(100 * sum(a$v_houp_em[j]) / tot, 1)
+      } else NA_real_
+    }
+    res
   })
   out <- do.call(rbind, out)
   rownames(out) <- NULL
@@ -228,7 +303,9 @@ calculer_tarifs_schaeffer <- function(arbres, groupes = character(0)) {
 #'
 #' @return A data.frame \code{niveau}, \code{code}, \code{espar},
 #'   \code{essence_libelle}, \code{type}, \code{numero}, \code{n_arbres},
-#'   \code{cv}, \code{millesime}.
+#'   \code{cv}, \code{millesime}, \code{part_houppier} (crown share of the
+#'   merchantable wood, percent, EMERGE model, see
+#'   \code{\link{calculer_tarifs_schaeffer}}).
 #'
 #' @section Lifecycle:
 #' Experimental (spec 062).
@@ -272,7 +349,8 @@ ifn_tarif_schaeffer_ser <- function(espar = NULL, code = NULL, niveau = NULL, ty
 #'
 #' @return A data.frame \code{espar}, \code{essence_libelle}, \code{type},
 #'   \code{numero}, \code{cv}, \code{n_arbres}, \code{niveau_utilise},
-#'   \code{code}, \code{type_conseille}; \code{NA} where no level qualifies.
+#'   \code{code}, \code{type_conseille}, \code{part_houppier} (percent);
+#'   \code{NA} where no level qualifies.
 #'
 #' @section Lifecycle:
 #' Experimental (spec 062).
@@ -303,13 +381,15 @@ ifn_tarif_schaeffer_reference <- function(espar, ser = NULL, type = NULL, min_ar
                           type = cand$type, numero = cand$numero, cv = cand$cv,
                           n_arbres = cand$n_arbres, niveau_utilise = ech[1],
                           code = ech[2], type_conseille = conseil,
+                          part_houppier = cand$part_houppier %||% NA_real_,
                           stringsAsFactors = FALSE))
       }
     }
     data.frame(espar = e, essence_libelle = NA_character_, type = types,
                numero = NA_real_, cv = NA_real_, n_arbres = NA_integer_,
                niveau_utilise = NA_character_, code = NA_character_,
-               type_conseille = NA_character_, stringsAsFactors = FALSE)
+               type_conseille = NA_character_, part_houppier = NA_real_,
+               stringsAsFactors = FALSE)
   }
   out <- do.call(rbind, lapply(as.character(espar), une))
   rownames(out) <- NULL
@@ -427,6 +507,7 @@ tarif_schaeffer_local <- function(units, especes = NULL, ifn = NULL, campagnes =
                         type = l$type, numero = l$numero, cv = l$cv,
                         n_arbres = l$n_arbres, niveau_utilise = "foret", code = NA_character_,
                         type_conseille = l$type[which.min(ifelse(is.na(l$cv), Inf, l$cv))],
+                        part_houppier = l$part_houppier %||% NA_real_,
                         n_placettes = l$n_placettes, stringsAsFactors = FALSE))
     }
     r <- ifn_tarif_schaeffer_reference(e, ser = ser)
@@ -454,7 +535,7 @@ tarif_schaeffer_local <- function(units, especes = NULL, ifn = NULL, campagnes =
 #' the IGN citation (Licence Ouverte Etalab 2.0) and the method credit:
 #' \itemize{
 #'   \item \code{ifn_tarif_schaeffer_ser.csv}
-#'     (\code{niveau;code;espar;essence_libelle;type;numero;n_arbres;cv;millesime});
+#'     (\code{niveau;code;espar;essence_libelle;type;numero;n_arbres;cv;millesime;part_houppier});
 #'   \item \code{communes_ser.csv} (\code{insee;nom;departement;ser;part;greco});
 #'   \item \code{ser.csv} (\code{code;nom;greco}).
 #' }
@@ -498,6 +579,8 @@ exporter_tarifs_marculus <- function(dossier) {
     "(derive d'ADMIN EXPRESS, Licence Ouverte).",
     "Methode : PPtools::TarifFindSch() et TarifIFN() de Max Bruciamacchie",
     "(AgroParisTech Nancy), GPL-2, reprise sous GPL-3 avec son autorisation.",
+    "Part de houppier : equations EMERGE (projet ANR EMERGE, gftools::ListTarEmerge,",
+    "version mai2), modele et non mesure : l'IFN ne mesure pas les branches.",
     "",
     "Valeur par defaut pour le marteleur, pas une prescription."
   )), lis, useBytes = TRUE)
