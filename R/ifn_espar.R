@@ -56,15 +56,19 @@ ifn_espar_correspondance <- function(espar = NULL, code_p1 = NULL) {
 #'
 #' @description
 #' Accepts whichever nomenclature the caller happens to hold — IFN `espar`,
-#' the four-letter P1 code, the snake-case tolerance code, or a plain Latin
-#' binomial — and returns the corresponding `espar`. This is what lets
+#' the four-letter P1 code, the snake-case tolerance code, a plain Latin
+#' binomial, or the French label `lib_espar` — and returns the corresponding
+#' `espar`. This is what lets
 #' [volume_mobilisable()] and [completer_volume_ifn()] take a `species` column
 #' as it exists in the caller's data, rather than demanding IFN codes.
 #'
 #' Resolution is tried in that order and is **case-insensitive** for the
-#' non-`espar` forms. Unresolved entries come back as `NA` — never guessed.
+#' non-`espar` forms; the French label also ignores accents
+#' (`"Epicea commun"` is `"Épicéa commun"`). A label matching several `espar`
+#' (a genus name such as `"Frêne"`) is not resolved. Unresolved entries come
+#' back as `NA` — never guessed.
 #'
-#' @param x Character vector of species codes or Latin names.
+#' @param x Character vector of species codes, Latin names or French labels.
 #'
 #' @return A character vector of `espar` codes, same length as `x`, `NA` where
 #'   no correspondence exists.
@@ -76,7 +80,7 @@ ifn_espar_correspondance <- function(espar = NULL, code_p1 = NULL) {
 #' @export
 #' @examples
 #' \dontrun{
-#' resoudre_espar(c("09", "FASY", "fagus_sylvatica", "Fagus sylvatica"))
+#' resoudre_espar(c("09", "FASY", "fagus_sylvatica", "Fagus sylvatica", "Hêtre"))
 #' # -> tous "09"
 #' }
 resoudre_espar <- function(x) {
@@ -108,6 +112,21 @@ resoudre_espar <- function(x) {
     ok <- !is.na(cle) & nzchar(cle)
     idx <- match(xn[reste], cle[ok])
     out[reste] <- d$espar[ok][idx]
+  }
+
+  # 5. Libellé français, accents ignorés. Un libellé partagé par plusieurs
+  #    espar (nom de genre) ne se résout pas : jamais deviné.
+  reste <- is.na(out)
+  if (any(reste)) {
+    sans_accent <- function(v) {
+      v <- iconv(enc2utf8(norm(v)), "UTF-8", "ASCII//TRANSLIT", sub = "")
+      gsub("[^a-z0-9 ]", "", v)
+    }
+    cle <- sans_accent(d$lib_espar)
+    ok <- !is.na(cle) & nzchar(cle)
+    uniques <- cle[ok][!cle[ok] %in% cle[ok][duplicated(cle[ok])]]
+    idx <- match(sans_accent(x[reste]), uniques)
+    out[reste] <- d$espar[ok][match(uniques, cle[ok])][idx]
   }
   out
 }

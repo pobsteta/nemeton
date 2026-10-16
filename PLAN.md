@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.8** (release du 2026-10-15), relevée le 2026-10-16.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.9** (release du 2026-10-16), relevée le 2026-10-16.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -134,6 +134,34 @@ v2026.10.1.
 
 ---
 
+# Chantier — Marculus : tarifs Schaeffer par SER (spec 062) et affouage
+
+> Spec Pascal du 2026-10-16 (`specs/062-tarifs-schaeffer-ser/spec.md`), brief
+> Marculus du même jour (format de l'export), brief app
+> `resoudre-espar-libelle-francais`. Décisions D1-D6 dans la spec.
+
+| Étape | Contenu | Release | État |
+|---|---|---|---|
+| Cœur | tâche 1 : exploration, plan, décisions D1-D6 | — | ✅ validé |
+| Cœur | `resoudre_espar()` sur `lib_espar` (brief app) | **2026.10.7** | ✅ livré |
+| Cœur | tables `ifn_tarif_schaeffer_ser.csv`, `communes_ser.csv`, `ser.csv`, accesseurs | — | ⬜ à coder |
+| App | import Marculus `FormatCsv;5` (houppier, volume compté au lot d'affouage) | nemetonshiny **2026.10.9** | ✅ livré |
+| App | `tarifsProposes` dans les lots | `nemetonshiny` | ⬜ attend le cœur |
+
+**Journal** — *2026-10-16* : tâche 1 close. Le format de l'export suit le
+**brief Marculus** (numéro au dixième, CV en %, `espar` sans code ONF, toutes
+les lignes sans seuil, cascade faite par Marculus) ; la variance pondérée prend
+des poids de fiabilité (dénominateur Σw − Σw²/Σw) au lieu de `Hmisc::wtd.var`,
+négative sous 1 m³.
+
+*2026-10-16* — nemetonshiny **v2026.10.9** (`nemetonshiny@cd58447a`, PR #243,
+cycle `2026.10.8.9000` → `2026.10.9`, plancher inchangé `nemeton (>= 2026.10.6)`) :
+import Marculus `FormatCsv;5` (part de houppier Schaeffer, volume compté au lot
+d'affouage `AffouageLotM3 × Quantite`). En attente côté cœur : spec 062 et
+`resoudre_espar()` sur le libellé français, dont dépend `tarifsProposes`.
+
+---
+
 # Chantier — reGénération : attente ERA5 (brief nemetonshiny 2026-10-14)
 
 Run Couchey du 2026-10-13 : 9 h 04, dont 7 h 40 d'attente dans la file du CDS
@@ -255,7 +283,7 @@ brief traité, l'app ne passe plus `N2` / `T1` à T2,
 | Cœur | schéma partagé, GeoPackage + rasters + projet QField, numérotation, hauteurs par houppier, rapprochement, validation, import/fusion, client API Groma ; `validate_field_data(dbh_max_cm, dbh_alerte_cm)`, `tag_field_data_sources(source)` | **2026.10.4** | ✅ livré |
 | Cœur | renvoi sur le terrain des `a_completer`/`a_verifier` : `renvoyer_inventaire_video()` | **2026.10.5** | ✅ livré |
 | Cœur | schéma 1.2.0 : tables `projet`, `parcelles`, `ugf` depuis le projet nemetonshiny ; centre mesuré le plus récent | **2026.10.7** | ✅ livré |
-| Cœur | plugin de projet QField `.qml` (contenu à fournir par groma) | — | ⬜ attend groma |
+| Cœur | plugin de projet QField `.qml` à côté du `.qgz`, couches nommées comme leurs tables, non verrouillées | **2026.10.7** | ✅ livré |
 | App | sous-onglet Terrain > Inventaire vidéo + renvoi terrain | nemetonshiny **2026.10.7** | ✅ livré |
 
 **Journal** — *2026-10-12* (**2026.10.4**) : 9 fonctions exportées
@@ -315,7 +343,12 @@ nemetonshiny (MNT/MNH) — un seul argument pour un seul dossier.
 `rapprocher_arbres(centre =)` accepte les lignes de `centres_mesures` et prend
 la plus récente (plus grand `fid`) ; `importer_inventaire_video()` aussi ;
 `valider_inventaire_video()` le signale en `severity = "info"`.
-`renvoyer_inventaire_video()` recopie les trois tables.
+`renvoyer_inventaire_video()` recopie les trois tables. Même release : brief
+groma du 2026-10-16, plugin QField `inventaire_video.qml` (copie conforme)
+écrit à côté du `.qgz` sous `<project_name>.qml` ; couches QGIS nommées comme
+leurs tables (le plugin les cherche par nom), `projet` chargée sans géométrie,
+`projet`/`detections`/`centres_mesures`/`arbres` non verrouillées ;
+`declinaison_deg` vide par défaut (Groma calcule le WMM2025).
 
 ---
 

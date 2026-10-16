@@ -1169,22 +1169,23 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 # GeoPackage et les rasters. `subset_arbres` filtre l'affichage de la couche
 # `arbres` (expression QGIS), sans toucher aux données du GeoPackage.
 .iv_empaqueter <- function(stage, gpkg_rel, rasters, schema, bbox, project_name,
-                           qgz_path, subset_arbres = NULL) {
-  noms_couches <- c(placettes = "Placettes", centres_mesures = "Centres mesur\u00e9s",
-                    cibles = "Cibles", arbres = "Arbres", detections = "D\u00e9tections Groma",
-                    houppiers = "Houppiers", parcelles = "Parcelles", ugf = "UGF")
+                           qgz_path, subset_arbres = NULL, projet_nom = NA_character_) {
   geoms <- c(POINT = "Point", POLYGON = "Polygon", MULTIPOLYGON = "Polygon")
-  # La table `projet` (sans géométrie) reste dans le GeoPackage, hors carte.
-  spatiales <- names(schema)[!vapply(schema, function(ch) is.null(attr(ch, "geometrie")), logical(1))]
-  couches <- lapply(spatiales, function(couche) {
+  # Le plugin Groma trouve les couches par leur nom : nom de couche QGIS =
+  # nom de table. Il ajoute des entités à `detections` et `centres_mesures`
+  # et lit `projet` : aucune n'est verrouillée au niveau du projet (les
+  # champs de `detections` restent en lecture seule dans les formulaires).
+  ajout_plugin <- c("projet", "detections", "centres_mesures", "arbres")
+  couches <- lapply(names(schema), function(couche) {
     champs <- schema[[couche]]
-    list(id = paste0(couche, "_01"), name = unname(noms_couches[couche]),
+    g <- attr(champs, "geometrie")
+    list(id = paste0(couche, "_01"), name = couche,
          gpkg_rel = gpkg_rel, layername = couche,
-         geometry = unname(geoms[attr(champs, "geometrie")]), schema = champs,
+         geometry = if (is.null(g)) "No geometry" else unname(geoms[g]), schema = champs,
          bbox = bbox,
          renderer = if (couche == "arbres") .iv_renderer_etat() else NULL,
          labeling = if (couche == "arbres") .iv_etiquette_arbres() else NULL,
-         readonly = attr(champs, "lecture_seule"),
+         readonly = attr(champs, "lecture_seule") && !couche %in% ajout_plugin,
          subset = if (couche == "arbres") subset_arbres else NULL)
   })
   couches <- c(couches, lapply(rasters, function(f) {
@@ -1192,7 +1193,10 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
          name = tools::file_path_sans_ext(basename(f)), source = f, bbox = bbox)
   }))
   qgs_rel <- paste0(project_name, ".qgs")
-  writeLines(.build_qgs_xml(couches, crs = 2154, project_name = project_name),
+  titre <- if (is.na(projet_nom) || !nzchar(projet_nom)) "Inventaire vid\u00e9o" else
+    paste("Inventaire vid\u00e9o \u2014", projet_nom)
+  writeLines(enc2utf8(.build_qgs_xml(couches, crs = 2154, project_name = project_name,
+                                     title = titre)),
              file.path(stage, qgs_rel), useBytes = TRUE)
 
   fichiers <- c(qgs_rel, gpkg_rel, rasters)
@@ -1210,6 +1214,12 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
                      parent = e)
     }
   )
+  # Plugin de projet Groma : à côté du .qgz, jamais dedans (QField le cherche
+  # sur le disque sous le nom du projet). Copie conforme, propriété de groma.
+  plugin <- sub("\\.qgz$", ".qml", qgz_path)
+  if (!file.copy(.iv_fichier("inventaire_video.qml"), plugin, overwrite = TRUE)) {
+    cli::cli_abort("Failed to write the QField plugin {.path {plugin}}.")
+  }
   invisible(qgz_path)
 }
 
@@ -1244,8 +1254,9 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #' @param seuil_diam_cm Minimal diameter (cm). Default 7.5.
 #' @param unite_azimut \code{"deg"} or \code{"gr"}.
 #' @param declinaison_deg Magnetic declination (degrees, positive towards
-#'   east), to be entered by the user: no geomagnetic model is embedded.
-#'   \code{NULL} leaves it empty.
+#'   east). \code{NULL} (default) leaves it empty (\code{NA}, never 0):
+#'   Groma then computes it with WMM2025 at the plot; a value given here
+#'   takes precedence.
 #' @param avec_lidar Logical. Clip DTM/CHM and segment crowns. Default
 #'   \code{TRUE}; without any DTM/CHM available, a warning is raised and the
 #'   project is built without rasters.
@@ -1273,7 +1284,10 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #' @param overwrite Logical. Overwrite an existing \code{.qgz}. Default
 #'   \code{TRUE}.
 #'
-#' @return Absolute path to the \code{.qgz} (invisibly).
+#' @return Absolute path to the \code{.qgz} (invisibly). The Groma QField
+#'   project plugin is written next to it as \code{<project_name>.qml}
+#'   (copy of \code{inst/inventaire_video/inventaire_video.qml}, not inside the
+#'   archive): ship both files to the phone.
 #'
 #' @section Lifecycle:
 #' Experimental (spec 061).
@@ -1393,7 +1407,8 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
 
   bbox <- tryCatch(sf::st_bbox(sf::st_buffer(placettes, rayon_m + marge_m)),
                    error = function(e) NULL)
-  .iv_empaqueter(stage, gpkg_rel, rasters, schema, bbox, project_name, qgz_path)
+  .iv_empaqueter(stage, gpkg_rel, rasters, schema, bbox, project_name, qgz_path,
+                 projet_nom = sources$projet$projet_nom[1] %||% NA_character_)
   cli::cli_alert_success("Video inventory project created: {.path {qgz_path}}")
   invisible(qgz_path)
 }
@@ -1659,9 +1674,11 @@ renvoyer_inventaire_video <- function(import, gpkg = NULL, rasters = NULL,
     if (!nrow(x) || !"plot_id" %in% names(x)) return(NULL)
     sf::st_transform(x[x$plot_id %in% plot_ids, ], 2154)
   }
+  projet_nom <- NA_character_
   for (couche in names(schema)) {
     champs <- schema[[couche]]
     x <- switch(couche, placettes = placettes, arbres = arbres, annexe(couche))
+    if (couche == "projet" && !is.null(x) && nrow(x)) projet_nom <- as.character(x$projet_nom[1])
     x <- .iv_conformer(x, champs, attr(champs, "geometrie"))
     .iv_ecrire_couche(x, sortie, couche, attr(champs, "index_spatial"))
   }
@@ -1687,7 +1704,7 @@ renvoyer_inventaire_video <- function(import, gpkg = NULL, rasters = NULL,
   bbox <- tryCatch(sf::st_bbox(sf::st_buffer(placettes, rayon + 10)),
                    error = function(e) NULL)
   .iv_empaqueter(stage, gpkg_rel, fichiers_r, schema, bbox, project_name,
-                 qgz_path, subset_arbres = subset)
+                 qgz_path, subset_arbres = subset, projet_nom = projet_nom)
   cli::cli_alert_success(
     "Field return project created: {.path {qgz_path}} ({sum(cibles)} tree{?s}, {length(plot_ids)} plot{?s})"
   )

@@ -477,3 +477,40 @@ test_that("l'exemple Groma au schéma 1.2.0 passe la validation", {
   expect_true(all(c("projet", "parcelles", "ugf") %in% sf::st_layers(gpkg)$name))
   expect_true(valider_inventaire_video(gpkg)$ok)
 })
+
+# ---- Plugin de projet QField (brief Groma 2026-10-16) ----
+
+test_that("le plugin QField est livré à côté du projet, couches non verrouillées", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    racine <- iv_projet_nemetonshiny("projet")
+    qgz <- creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE,
+                                         project_path = racine, output_dir = "s",
+                                         project_name = "couchey")
+    qml <- file.path("s", "couchey.qml")
+    expect_true(file.exists(qml))
+    ref <- system.file("inventaire_video", "inventaire_video.qml", package = "nemeton")
+    expect_identical(unname(tools::md5sum(qml)), unname(tools::md5sum(ref)))
+    expect_false(any(grepl("\\.qml$", utils::unzip(qgz, list = TRUE)$Name)))
+
+    utils::unzip(qgz, exdir = "x")
+    qgs <- xml2::read_xml(file.path("x", "couchey.qgs"))
+    couches <- xml2::xml_find_all(qgs, "//projectlayers/maplayer")
+    noms <- xml2::xml_text(xml2::xml_find_first(couches, "layername"))
+    expect_true(all(c("projet", "detections", "centres_mesures", "arbres") %in% noms))
+    for (n in c("projet", "detections", "centres_mesures", "arbres")) {
+      l <- couches[[match(n, noms)]]
+      expect_equal(xml2::xml_attr(l, "readOnly"), "0")
+      expect_length(xml2::xml_find_all(l, "flags"), 0)
+    }
+    expect_equal(xml2::xml_attr(couches[[match("projet", noms)]], "wkbType"), "NoGeometry")
+    # Champs de detections non éditables dans les formulaires.
+    det <- couches[[match("detections", noms)]]
+    expect_true(all(xml2::xml_attr(xml2::xml_find_all(det, "editable/field"), "editable") == "0"))
+    expect_equal(xml2::xml_text(xml2::xml_find_first(qgs, "/qgis/title")),
+                 "Inventaire vidéo — Couchey test")
+
+    p <- sf::st_read(file.path("x", "inventaire_video.gpkg"), layer = "placettes", quiet = TRUE)
+    expect_true(all(is.na(p$declinaison_deg)))
+  })
+})

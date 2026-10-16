@@ -17,8 +17,12 @@ For a narrative, per-feature description of each release, see
   read-only `projet`, `parcelles` and `ugf` tables from the nemetonshiny project
   (`project_path`), empty without it.
 - `rapprocher_arbres(centre =)` accepts the plot's `centres_mesures` rows (most recent wins).
+- Groma QField project plugin written next to the `.qgz` as `<project_name>.qml`.
+- `resoudre_espar()` resolves French labels (`lib_espar`, accents ignored; ambiguous → `NA`).
 
 ### Changed
+- QField layers named after their table; `projet`, `detections`, `centres_mesures`, `arbres`
+  no longer locked at project level; project title « Inventaire vidéo — <name> ».
 - `importer_inventaire_video()` uses the most recent measured centre; `valider_inventaire_video()`
   reports several centres per plot as an information.
 

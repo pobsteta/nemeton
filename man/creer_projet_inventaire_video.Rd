@@ -35,8 +35,9 @@ creer_projet_inventaire_video(
 \item{unite_azimut}{\code{"deg"} or \code{"gr"}.}
 
 \item{declinaison_deg}{Magnetic declination (degrees, positive towards
-east), to be entered by the user: no geomagnetic model is embedded.
-\code{NULL} leaves it empty.}
+east). \code{NULL} (default) leaves it empty (\code{NA}, never 0):
+Groma then computes it with WMM2025 at the plot; a value given here
+takes precedence.}
 
 \item{avec_lidar}{Logical. Clip DTM/CHM and segment crowns. Default
 \code{TRUE}; without any DTM/CHM available, a warning is raised and the
@@ -73,7 +74,10 @@ the BD Foret V2 reference); kept for symmetry with
 \code{TRUE}.}
 }
 \value{
-Absolute path to the \code{.qgz} (invisibly).
+Absolute path to the \code{.qgz} (invisibly). The Groma QField
+project plugin is written next to it as \code{<project_name>.qml}
+(copy of \code{inst/inventaire_video/inventaire_video.qml}, not inside the
+archive): ship both files to the phone.
 }
 \description{
 Builds \code{inventaire_video.gpkg} (layers \code{placettes},

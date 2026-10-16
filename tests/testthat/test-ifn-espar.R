@@ -82,3 +82,20 @@ test_that("resolution is vectorised and order-preserving", {
   r <- resoudre_espar(c("FASY", "ZZZZ", "PIAB"))
   expect_identical(r, c("09", NA, "62"))
 })
+
+test_that("resoudre_espar accepte le libellé français, accents ignorés", {
+  expect_identical(resoudre_espar(c("Hêtre", "Chêne sessile", "Epicea commun", "Frêne")),
+                   c("09", "03", "62", NA))
+  expect_identical(resoudre_espar(c("  hetre ", "ÉPICÉA COMMUN")), c("09", "62"))
+  # Libellé partagé par deux espar : jamais deviné.
+  expect_true(is.na(resoudre_espar("Tamaris de France")))
+  # Étapes 1 à 4 inchangées.
+  x <- c("09", "9", "FASY", "fagus_sylvatica", "Fagus sylvatica", "21C", NA, "")
+  d <- ifn_espar_correspondance()
+  avant <- vapply(x, function(v) {
+    i <- match(sub("^0([0-9])$", "\\1", v), sub("^0([0-9])$", "\\1", d$espar))
+    if (is.na(i)) NA_character_ else d$espar[i]
+  }, "", USE.NAMES = FALSE)
+  expect_identical(resoudre_espar(x)[!is.na(avant)], avant[!is.na(avant)])
+  expect_identical(resoudre_espar(c("FASY", "Fagus sylvatica")), c("09", "09"))
+})

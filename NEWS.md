@@ -2,9 +2,23 @@
 
 Le GeoPackage de l'inventaire vidéo passe au schéma Groma **1.2.0** : il porte
 la carte du téléphone (parcelles, UGF) et la fiche du projet (brief groma du
-2026-10-15, annexe au brief du 2026-10-12).
+2026-10-15, annexe au brief du 2026-10-12). Le projet QField est livré avec le
+plugin Groma qui y rapatrie les détections et les centres mesurés (brief du
+2026-10-16).
 
 ## Nouveautés
+
+- **Plugin de projet QField** : `creer_projet_inventaire_video()` et
+  `renvoyer_inventaire_video()` écrivent `<project_name>.qml` **à côté** du
+  `.qgz` (jamais dedans : QField le cherche sur le disque), copie conforme de
+  `inst/inventaire_video/inventaire_video.qml`, propriété de groma. Livrer les
+  deux fichiers au téléphone.
+- Les couches du projet QField portent le nom exact de leur table
+  (`placettes`, `detections`, `centres_mesures`…) : le plugin les trouve par
+  ce nom. `projet` y est chargée (table sans géométrie). `projet`,
+  `detections`, `centres_mesures` et `arbres` ne sont plus verrouillées au
+  niveau du projet ; les champs de `detections` restent non éditables dans
+  les formulaires. Titre du projet : « Inventaire vidéo — <nom du projet> ».
 
 - **`creer_projet_inventaire_video()`** écrit trois tables en lecture seule,
   sans index spatial : `projet` (non spatiale, une ligne : identifiant et nom
@@ -20,6 +34,13 @@ la carte du téléphone (parcelles, UGF) et la fiche du projet (brief groma du
   `centres_mesures` de la placette : Groma ajoute une ligne à chaque mesure du
   centre et n'en réécrit jamais, la plus récente (plus grand `fid`) compte.
 
+- **`resoudre_espar()`** reconnaît aussi le libellé français `lib_espar`,
+  accents, casse et tirets ignorés (`"Epicea commun"` → `"62"`), en 5ᵉ étape
+  après le nom latin (brief nemetonshiny du 2026-10-16, pour les essences des
+  profils de groupe envoyées à Marculus). Un libellé partagé par plusieurs
+  `espar` (nom de genre : `"Frêne"`, `"Peuplier"`…) reste `NA`. Ajout couvert
+  par le contrat 1.0, sans rupture.
+
 ## Changements compatibles
 
 - `importer_inventaire_video()` rapproche sur le centre mesuré le plus récent
@@ -28,6 +49,9 @@ la carte du téléphone (parcelles, UGF) et la fiche du projet (brief groma du
   plusieurs centres pour une placette en information (`severity = "info"`),
   jamais en erreur.
 - `renvoyer_inventaire_video()` recopie les trois nouvelles tables.
+- `declinaison_deg = NULL` laisse la colonne vide (`NA`, jamais 0) : Groma la
+  calcule au point de la placette avec le WMM2025 ; une valeur saisie reste
+  prioritaire.
 - `schema_inventaire_video()` lit la version 1.2.0 (`projet` sans géométrie :
   attribut `geometrie` `NULL`) ; `empty_sf_from_schema()` sait créer une couche
   `MULTIPOLYGON` vide.

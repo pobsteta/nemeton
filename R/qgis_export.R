@@ -280,6 +280,8 @@ col2rgb_str <- function(hex) {
   attrs <- list(type = "vector", geometry = geometry,
                 hasScaleBasedVisibilityFlag = "0",
                 readOnly = if (readonly) "1" else "0")
+  # Table sans géométrie (GeoPackage « attributes »).
+  if (identical(geometry, "No geometry")) attrs$wkbType <- "NoGeometry"
   if (!is.null(labeling_xml)) attrs$labelsEnabled <- "1"
   .xml_tag("maplayer", attrs = attrs, children = children)
 }
@@ -302,7 +304,8 @@ col2rgb_str <- function(hex) {
 }
 
 
-.build_qgs_xml <- function(layers, crs = 2154, project_name = "Nemeton sampling") {
+.build_qgs_xml <- function(layers, crs = 2154, project_name = "Nemeton sampling",
+                           title = project_name) {
   # layers: list of list(id, name, gpkg_rel, layername, geometry, schema,
   #                     renderer, readonly, bbox, labeling), ou, pour un
   #                     raster GeoTIFF, list(type = "raster", id, name,
@@ -330,7 +333,7 @@ col2rgb_str <- function(hex) {
     attrs = list(version = "3.34.0-Prizren", projectname = project_name),
     children = c(
       .xml_tag("homePath", attrs = list(path = "")),
-      .xml_tag("title", text = project_name),
+      .xml_tag("title", text = title),
       .xml_tag("projectCrs",
         children = .spatialrefsys_xml(crs)),
       .xml_tag("layer-tree-group",
