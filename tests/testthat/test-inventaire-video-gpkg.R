@@ -587,8 +587,13 @@ test_that("groma_envoyer_projet publie le .qgz puis le .qml, avec leurs empreint
                                          project_path = racine, output_dir = "s")
     appels <- list()
     httr2::local_mocked_responses(function(req) {
+      # Sérialisation réelle du corps JSON, comme au moment de l'envoi.
+      json <- if (identical(req$body$type, "json")) {
+        jsonlite::fromJSON(jsonlite::toJSON(req$body$data, auto_unbox = TRUE),
+                           simplifyVector = FALSE)
+      }
       appels[[length(appels) + 1L]] <<- list(methode = req$method %||% "GET", url = req$url,
-                                              corps = req$body)
+                                              corps = req$body, json = json)
       expect_true("Authorization" %in% names(req$headers))
       if (grepl("/publier$", req$url)) return(httr2::response_json(body = list(version = 3L)))
       httr2::response(status_code = 201)
@@ -608,6 +613,10 @@ test_that("groma_envoyer_projet publie le .qgz puis le .qml, avec leurs empreint
                  c("inventaire_video.qgz", "inventaire_video.qml"))
     expect_equal(corps$fichiers[[1]]$sha256, nemeton:::.groma_sha256(qgz))
     expect_equal(nchar(corps$fichiers[[1]]$sha256), 64L)
+    # Le corps passe en JSON : empreintes en hexadécimal, chaînes nues.
+    j <- appels[[3]]$json
+    expect_true(all(vapply(j$fichiers, function(f) grepl("^[0-9a-f]{64}$", f$sha256), logical(1))))
+    expect_null(attr(corps$fichiers[[1]]$sha256, "class"))
     expect_match(corps$nemeton_version, "^[0-9]{4}\\.")
 
     # Sans .qml : seul le .qgz part et est publié.
@@ -638,5 +647,21 @@ test_that("groma_envoyer_projet : sans projet_id, erreur et aucun appel ; 401 li
                                           project_path = racine, output_dir = "b")
     expect_error(groma_envoyer_projet(avec, "https://groma.example", "mauvais"), "refused the token")
     expect_equal(n, 1L)
+  })
+})
+
+test_that("groma_envoyer_projet : seule une erreur de connexion dit « injoignable »", {
+  skip_if_not_installed("httr2")
+  skip_if_not_installed("openssl")
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    racine <- iv_projet_nemetonshiny("projet")
+    qgz <- creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE,
+                                         project_path = racine, output_dir = "s")
+    # Port fermé : vraie erreur de connexion.
+    expect_error(groma_envoyer_projet(qgz, "http://127.0.0.1:9"), "unreachable")
+    # Autre erreur pendant l'envoi : remonte telle quelle.
+    httr2::local_mocked_responses(function(req) stop("panne interne du test"))
+    expect_error(groma_envoyer_projet(qgz, "https://groma.example"), "panne interne du test")
   })
 })

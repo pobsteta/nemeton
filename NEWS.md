@@ -1,3 +1,19 @@
+# nemeton 2026.10.11 (2026-10-17)
+
+## Corrections
+
+- **`groma_envoyer_projet()` n'envoyait jamais le `POST publier`** (brief
+  nemetonshiny du 2026-10-17, essai de bout en bout contre un faux serveur
+  `httpuv`) : l'empreinte SHA-256 gardait la classe `c("hash", "sha256")`
+  d'openssl, que `jsonlite` ne sait pas sérialiser, et l'erreur arrivait au
+  moment de l'envoi. Les empreintes sont maintenant des chaînes nues
+  (hexadécimal, 64 caractères).
+- Seule une **erreur de connexion** (`httr2_failure`) donne « Groma server
+  unreachable » ; toute autre erreur remonte telle quelle (le message trompeur
+  masquait la cause).
+- Le test sérialise désormais le corps JSON comme à l'envoi : les tests à
+  réponses simulées ne le faisaient pas et laissaient passer le défaut.
+
 # nemeton 2026.10.10 (2026-10-17)
 
 Le projet QField de l'inventaire vidéo part **directement au téléphone** par

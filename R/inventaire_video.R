@@ -1837,7 +1837,16 @@ groma_telecharger_resultats <- function(url, jeton = NULL, plot_ids, dossier,
 .groma_sha256 <- function(chemin) {
   con <- file(chemin, "rb")
   on.exit(close(con), add = TRUE)
-  as.character(openssl::sha256(con))
+  # unclass : la classe c("hash", "sha256") n'est pas sérialisable en JSON.
+  unclass(as.character(openssl::sha256(con)))
+}
+
+# Envoi d'une requête : seule une erreur de connexion devient « serveur
+# injoignable » ; toute autre erreur remonte telle quelle.
+.groma_envoyer <- function(req, url) {
+  tryCatch(httr2::req_perform(req), httr2_failure = function(e) {
+    cli::cli_abort("Groma server unreachable at {.url {url}}.", parent = e)
+  })
 }
 
 # Erreur HTTP du serveur Groma, message selon le statut.
@@ -1916,9 +1925,7 @@ groma_envoyer_projet <- function(qgz, url, jeton = NULL, projet_nom = NULL) {
     req <- httr2::req_method(req, "PUT")
     req <- httr2::req_body_file(req, f, type = "application/octet-stream")
     req <- httr2::req_error(req, is_error = function(resp) FALSE)
-    resp <- tryCatch(httr2::req_perform(req), error = function(e) {
-      cli::cli_abort("Groma server unreachable at {.url {url}}.", parent = e)
-    })
+    resp <- .groma_envoyer(req, url)
     .groma_verifier(resp, basename(f))
   }
   req <- .groma_requete(url, jeton, c("projets", pid, "qfield", "publier"))
@@ -1929,9 +1936,7 @@ groma_envoyer_projet <- function(qgz, url, jeton = NULL, projet_nom = NULL) {
     nemeton_version = as.character(utils::packageVersion("nemeton"))
   ), auto_unbox = TRUE)
   req <- httr2::req_error(req, is_error = function(resp) FALSE)
-  resp <- tryCatch(httr2::req_perform(req), error = function(e) {
-    cli::cli_abort("Groma server unreachable at {.url {url}}.", parent = e)
-  })
+  resp <- .groma_envoyer(req, url)
   .groma_verifier(resp, "publier")
   corps <- tryCatch(httr2::resp_body_json(resp), error = function(e) list())
   cli::cli_alert_success("Project {.val {pid}} published on the Groma server.")

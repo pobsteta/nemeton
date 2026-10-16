@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.11] - 2026-10-17
+
+### Fixed
+- `groma_envoyer_projet()`: SHA-256 sent as plain hex strings (the openssl `hash` class broke the JSON body, so `POST publier` never left); only connection failures are reported as "server unreachable".
+
 ## [2026.10.10] - 2026-10-17
 
 ### Added
