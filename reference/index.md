@@ -702,6 +702,28 @@ vers definitif, import et client du serveur Groma
   [`groma_telecharger_resultats()`](https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.md)
   : Groma server client
 
+### Tarifs Schaeffer par essence x sylvoecoregion (spec 062)
+
+Numeros de tarif Schaeffer calcules depuis les arbres IFN (methode
+PPtools), par SER, GRECO et France, a l’echelle d’une foret, et export
+des tables embarquees par Marculus
+
+- [`numero_tarif_schaeffer()`](https://pobsteta.github.io/nemeton/reference/numero_tarif_schaeffer.md)
+  [`volume_tarif_schaeffer()`](https://pobsteta.github.io/nemeton/reference/numero_tarif_schaeffer.md)
+  : Schaeffer tariff number of a tree, and volume of a tariff
+- [`calculer_tarifs_schaeffer()`](https://pobsteta.github.io/nemeton/reference/calculer_tarifs_schaeffer.md)
+  : Schaeffer tariff numbers from IFN trees
+- [`ifn_tarif_schaeffer_ser()`](https://pobsteta.github.io/nemeton/reference/ifn_tarif_schaeffer_ser.md)
+  : IFN Schaeffer tariff numbers by species and ecoregion
+- [`ifn_tarif_schaeffer_reference()`](https://pobsteta.github.io/nemeton/reference/ifn_tarif_schaeffer_reference.md)
+  : Reference Schaeffer tariff number of a species (SER, GRECO, France)
+- [`communes_ser()`](https://pobsteta.github.io/nemeton/reference/communes_ser.md)
+  : Communes and their ecoregions
+- [`tarif_schaeffer_local()`](https://pobsteta.github.io/nemeton/reference/tarif_schaeffer_local.md)
+  : Schaeffer tariff numbers of a forest
+- [`exporter_tarifs_marculus()`](https://pobsteta.github.io/nemeton/reference/exporter_tarifs_marculus.md)
+  : Export the Schaeffer tariff tables for Marculus
+
 ### Corpus de connaissances et RAG
 
 - [`rag`](https://pobsteta.github.io/nemeton/reference/rag.md) : RAG

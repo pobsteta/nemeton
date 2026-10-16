@@ -13,6 +13,23 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.10.8\] - 2026-10-16
+
+### Added
+
+- Schaeffer tariff numbers by species × SER/GRECO/France (spec 062):
+  tables `ifn_tarif_schaeffer_ser.csv`, `communes_ser.csv`, `ser.csv`
+  (Marculus format),
+  [`numero_tarif_schaeffer()`](https://pobsteta.github.io/nemeton/reference/numero_tarif_schaeffer.md),
+  [`volume_tarif_schaeffer()`](https://pobsteta.github.io/nemeton/reference/numero_tarif_schaeffer.md),
+  [`calculer_tarifs_schaeffer()`](https://pobsteta.github.io/nemeton/reference/calculer_tarifs_schaeffer.md),
+  [`ifn_tarif_schaeffer_ser()`](https://pobsteta.github.io/nemeton/reference/ifn_tarif_schaeffer_ser.md),
+  [`ifn_tarif_schaeffer_reference()`](https://pobsteta.github.io/nemeton/reference/ifn_tarif_schaeffer_reference.md),
+  [`communes_ser()`](https://pobsteta.github.io/nemeton/reference/communes_ser.md),
+  [`tarif_schaeffer_local()`](https://pobsteta.github.io/nemeton/reference/tarif_schaeffer_local.md),
+  [`exporter_tarifs_marculus()`](https://pobsteta.github.io/nemeton/reference/exporter_tarifs_marculus.md);
+  vignette.
+
 ## \[2026.10.7\] - 2026-10-16
 
 ### Added

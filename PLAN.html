@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,6 +26,7 @@
     <li><a class="dropdown-item" href="articles/biodiversity-resilience-v030_fr.html">Biodiversite et resilience</a></li>
     <li><a class="dropdown-item" href="articles/site-index-open-canopy_fr.html">Indicateurs P1/P2/C1/B2/R2 via CHM Open-Canopy</a></li>
     <li><a class="dropdown-item" href="articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
+    <li><a class="dropdown-item" href="articles/tarifs-schaeffer-ser_fr.html">Tarifs Schaeffer par sylvoecoregion</a></li>
   </ul></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-fiches-indicateurs" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Fiches indicateurs</button>
@@ -326,9 +327,14 @@
 <td><strong>2026.10.7</strong></td>
 <td>✅ livré</td>
 </tr><tr><td>Cœur</td>
-<td>tables <code>ifn_tarif_schaeffer_ser.csv</code>, <code>communes_ser.csv</code>, <code>ser.csv</code>, accesseurs</td>
-<td>—</td>
-<td>⬜ à coder</td>
+<td>tables <code>ifn_tarif_schaeffer_ser.csv</code>, <code>communes_ser.csv</code>, <code>ser.csv</code>, accesseurs, <code><a href="reference/tarif_schaeffer_local.html">tarif_schaeffer_local()</a></code>, <code><a href="reference/exporter_tarifs_marculus.html">exporter_tarifs_marculus()</a></code>
+</td>
+<td><strong>2026.10.8</strong></td>
+<td>✅ livré</td>
+</tr><tr><td>Marculus</td>
+<td>embarquer les trois CSV (<code>data/src/main/assets/tarifs-ifn/</code>)</td>
+<td><code>marculus</code></td>
+<td>⬜ brief envoyé</td>
 </tr><tr><td>App</td>
 <td>import Marculus <code>FormatCsv;5</code> (houppier, volume compté au lot d’affouage)</td>
 <td>nemetonshiny <strong>2026.10.9</strong>
@@ -340,6 +346,7 @@
 <td><code>nemetonshiny</code></td>
 <td>⬜ attend le cœur</td>
 </tr></tbody></table><p><strong>Journal</strong> — <em>2026-10-16</em> : tâche 1 close. Le format de l’export suit le <strong>brief Marculus</strong> (numéro au dixième, CV en %, <code>espar</code> sans code ONF, toutes les lignes sans seuil, cascade faite par Marculus) ; la variance pondérée prend des poids de fiabilité (dénominateur Σw − Σw²/Σw) au lieu de <code>Hmisc::wtd.var</code>, négative sous 1 m³.</p>
+<p><em>2026-10-16</em> (<strong>2026.10.8</strong>) : <code>data-raw/build_ifn_tarifs_schaeffer.R</code> sur l’export IGN 2005-2025, fenêtre 2011-2025 (15 campagnes, confirmée par Pascal) : 585 824 arbres, 14 752 lignes (86 SER), 41 550 couples commune × SER pour 34 791 communes (Etalab <code>communes-100m</code> 2026), 0,81 + 1,31 Mo. Contrôles face à l’essai Marculus (2005-2025) : C20 chêne sessile SchL 7,8 (7,7), hêtre 8,5 (8,4), B70 chêne sessile SchR 9,3 (9,0) ; Gevrey-Chambertin C20 55,6 % / C51 44,4 %, identique. Trouvé en route : chêne vert, chêne pubescent et saule marsault ont des numéros <strong>négatifs</strong> sur les tarifs lents (réels, gardés) ; leur CV sortait négatif et aurait été pris pour le meilleur type → CV sur |moyenne|. Deux essences sans libellé (<code>29AF</code>, <code>68CE</code>), gardées.</p>
 <p><em>2026-10-16</em> — nemetonshiny <strong>v2026.10.9</strong> (<code>nemetonshiny@cd58447a</code>, PR #243, cycle <code>2026.10.8.9000</code> → <code>2026.10.9</code>, plancher inchangé <code>nemeton (&gt;= 2026.10.6)</code>) : import Marculus <code>FormatCsv;5</code> (part de houppier Schaeffer, volume compté au lot d’affouage <code>AffouageLotM3 × Quantite</code>). En attente côté cœur : spec 062 et <code><a href="reference/resoudre_espar.html">resoudre_espar()</a></code> sur le libellé français, dont dépend <code>tarifsProposes</code>.</p>
 <hr></div>
 <div class="section level1">

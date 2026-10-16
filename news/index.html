@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.7</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.8</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,6 +26,7 @@
     <li><a class="dropdown-item" href="../articles/biodiversity-resilience-v030_fr.html">Biodiversite et resilience</a></li>
     <li><a class="dropdown-item" href="../articles/site-index-open-canopy_fr.html">Indicateurs P1/P2/C1/B2/R2 via CHM Open-Canopy</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
+    <li><a class="dropdown-item" href="../articles/tarifs-schaeffer-ser_fr.html">Tarifs Schaeffer par sylvoecoregion</a></li>
   </ul></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-fiches-indicateurs" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Fiches indicateurs</button>
@@ -109,6 +110,34 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.8" id="nemeton-2026108-2026-10-16">nemeton 2026.10.8 (2026-10-16)<a class="anchor" aria-label="anchor" href="#nemeton-2026108-2026-10-16"></a></h2>
+<p>Marculus peut proposer, pour chaque essence d’un martelage, le <strong>numéro de tarif Schaeffer</strong> de la sylvoécorégion de la commune, hors ligne : nemeton calcule les tables depuis les données brutes IFN (spec 062, brief Marculus du 2026-10-16).</p>
+<div class="section level3">
+<h3 id="nouveautés-2026-10-8">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-10-8"></a></h3>
+<ul><li>
+<strong>Tables</strong> <code>inst/extdata/ifn_tarif_schaeffer_ser.csv</code> (14 752 lignes : SER, GRECO, France × essence × type, 15 campagnes 2011-2025, 585 824 arbres), <code>communes_ser.csv</code> (41 550 couples commune × SER, 34 791 communes) et <code>ser.csv</code> (86 SER), au format embarqué par Marculus (<code>;</code>, UTF-8 sans BOM). Construction : <code>data-raw/build_ifn_tarifs_schaeffer.R</code>, une fois par millésime IFN.</li>
+<li>
+<strong><code><a href="../reference/numero_tarif_schaeffer.html">numero_tarif_schaeffer()</a></code></strong> / <strong><code><a href="../reference/numero_tarif_schaeffer.html">volume_tarif_schaeffer()</a></code></strong> : les quatre tarifs Schaeffer (rapide, intermédiaire, lent, très lent), conventions de Marculus (<code>M = 0,8 + 0,1 N</code>).</li>
+<li>
+<strong><code><a href="../reference/calculer_tarifs_schaeffer.html">calculer_tarifs_schaeffer()</a></code></strong> : la chaîne de calcul commune, d’après <code>PPtools::TarifFindSch()</code> — arbres vifs cubés, <code>100·C13 ≥ 50 cm</code> (<code>C13</code> est en mètres dans les données brutes), 17,5 ≤ D ≤ 80 cm, moyenne pondérée par le volume, CV en %, essence retenue dès 3 arbres.</li>
+<li>
+<strong><code><a href="../reference/ifn_tarif_schaeffer_ser.html">ifn_tarif_schaeffer_ser()</a></code></strong>, <strong><code><a href="../reference/ifn_tarif_schaeffer_reference.html">ifn_tarif_schaeffer_reference()</a></code></strong> (cascade SER → GRECO → France, 30 arbres, <code>type_conseille</code> = CV le plus faible), <strong><code><a href="../reference/communes_ser.html">communes_ser()</a></code></strong>.</li>
+<li>
+<strong><code><a href="../reference/tarif_schaeffer_local.html">tarif_schaeffer_local()</a></code></strong> : numéros calculés sur les placettes IFN de la forêt élargie à ~2 000 ha (<code>PPtools::ExtractPlac()</code>), niveau « forêt » dès 30 arbres sur 5 placettes, sinon repli sur la SER majoritaire.</li>
+<li>
+<strong><code><a href="../reference/exporter_tarifs_marculus.html">exporter_tarifs_marculus()</a></code></strong> : les trois tables et un <code>LISEZMOI.txt</code> (millésime, citation IGN Etalab 2.0, crédit Bruciamacchie).</li>
+<li>Vignette « Numéros de tarif Schaeffer par sylvoécorégion ».</li>
+</ul></div>
+<div class="section level3">
+<h3 id="écarts-à-pptools-2026-10-8">Écarts à PPtools<a class="anchor" aria-label="anchor" href="#%C3%A9carts-%C3%A0-pptools-2026-10-8"></a></h3>
+<ul><li>Variance pondérée à <strong>poids de fiabilité</strong> (Σw − Σw²/Σw) : <code>Hmisc::wtd.var</code> (Σw − 1) devient négative pour un groupe de moins d’1 m³.</li>
+<li>CV rapporté à la valeur absolue de la moyenne : les essences de faible forme (chêne vert, chêne pubescent) ont des numéros négatifs sur les tarifs lents, conservés tels quels.</li>
+<li>Fenêtre des 15 dernières campagnes ; pas de krigeage.</li>
+</ul><p>Contrôles (essai Marculus sur 2005-2025 entre parenthèses) : C20 chêne sessile SchL 7,8 (7,7), hêtre SchL 8,5 (8,4) ; B70 chêne sessile SchR 9,3 (9,0), chêne pédonculé SchR 6,7 (6,5).</p>
+<p>Toutes les fonctions sont <strong>experimental</strong> tant que Marculus ne les consomme pas. Méthode : Max Bruciamacchie, <code>PPtools</code> (GPL-2, reprise sous GPL-3 avec son autorisation du 22 juillet 2026). Données : IGN, IFN, Licence Ouverte Etalab 2.0 ; communes : Etalab, dérivé d’ADMIN EXPRESS.</p>
+</div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.7" id="nemeton-2026107-2026-10-16">nemeton 2026.10.7 (2026-10-16)<a class="anchor" aria-label="anchor" href="#nemeton-2026107-2026-10-16"></a></h2>
 <p>Le GeoPackage de l’inventaire vidéo passe au schéma Groma <strong>1.2.0</strong> : il porte la carte du téléphone (parcelles, UGF) et la fiche du projet (brief groma du 2026-10-15, annexe au brief du 2026-10-12). Le projet QField est livré avec le plugin Groma qui y rapatrie les détections et les centres mesurés (brief du 2026-10-16).</p>

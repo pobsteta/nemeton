@@ -57,6 +57,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/articles/internationalization.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/multi-criteria-optimization_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/site-index-open-canopy_fr.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/articles/tarifs-schaeffer-ser_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/temporal-analysis_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/tutorial-guide.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/authors.html</loc></url>
@@ -95,6 +96,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/build_project_monitoring_zones.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/build_safran_stations.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/calculate_change_rate.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/calculer_tarifs_schaeffer.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/caler_onf_sur_cadastre.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/canopy_provenance.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/cec_to_fertility_score.html</loc></url>
@@ -107,6 +109,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/classify_disturbance.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/climate_ombrothermic_indices.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/cluster_parcels.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/communes_ser.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/completer_volume_ifn.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_family_correlations.html</loc></url>
@@ -192,6 +195,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/estimer_fay_herriot.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/european_species_tolerances.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ewm_depuis_soilgrids.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/exporter_tarifs_marculus.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/extract_h_dom.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/extract_indicator_value.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/extract_pixel_timeseries.html</loc></url>
@@ -244,6 +248,8 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_production_domaines.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_production_reference.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_production_ser.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/ifn_tarif_schaeffer_reference.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/ifn_tarif_schaeffer_ser.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_taux_prelevement.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_taux_prelevement_production.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_telecharger.html</loc></url>
@@ -352,6 +358,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/nemeton_units.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/normalize_indicator.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/normalize_indicators.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/numero_tarif_schaeffer.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/numeroter_arbres.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/pai_depuis_nuage.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/plot_comparison_map.html</loc></url>
@@ -424,6 +431,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/summary.nemeton_units.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/synthetic_inventory.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/tag_field_data_sources.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/tarif_schaeffer_local.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/temporal.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/texture_to_erosion_resistance.html</loc></url>
