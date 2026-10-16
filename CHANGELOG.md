@@ -13,6 +13,32 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.10.7\] - 2026-10-16
+
+### Added
+
+- Video inventory GeoPackage schema 1.2.0:
+  [`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md)
+  writes the read-only `projet`, `parcelles` and `ugf` tables from the
+  nemetonshiny project (`project_path`), empty without it.
+- `rapprocher_arbres(centre =)` accepts the plot’s `centres_mesures`
+  rows (most recent wins).
+- Groma QField project plugin written next to the `.qgz` as
+  `<project_name>.qml`.
+- [`resoudre_espar()`](https://pobsteta.github.io/nemeton/reference/resoudre_espar.md)
+  resolves French labels (`lib_espar`, accents ignored; ambiguous →
+  `NA`).
+
+### Changed
+
+- QField layers named after their table; `projet`, `detections`,
+  `centres_mesures`, `arbres` no longer locked at project level; project
+  title « Inventaire vidéo — ».
+- [`importer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/importer_inventaire_video.md)
+  uses the most recent measured centre;
+  [`valider_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/valider_inventaire_video.md)
+  reports several centres per plot as an information.
+
 ## \[2026.10.6\] - 2026-10-14
 
 ### Added

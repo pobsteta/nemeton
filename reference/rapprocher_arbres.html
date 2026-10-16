@@ -17,7 +17,7 @@ between close candidates (a greedy match would lose trees)."><meta property="og:
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.6.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -165,7 +165,11 @@ definitive detections (<code>dbh_cm</code>, optional <code>h_m</code>,
 
 
 <dt id="arg-centre">centre<a class="anchor" aria-label="anchor" href="#arg-centre"></a></dt>
-<dd><p>Numeric <code>c(x, y)</code>: measured plot centre (Lambert-93).</p></dd>
+<dd><p>Numeric <code>c(x, y)</code>: measured plot centre (Lambert-93).
+Or the <code>centres_mesures</code> rows of the plot (sf POINT, or data.frame
+with <code>x</code>, <code>y</code>): Groma adds a row at each measurement and never
+rewrites one, so the most recent (largest <code>fid</code>, else last row)
+is used.</p></dd>
 
 
 <dt id="arg-convergence-deg">convergence_deg<a class="anchor" aria-label="anchor" href="#arg-convergence-deg"></a></dt>

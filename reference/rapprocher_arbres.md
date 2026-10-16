@@ -42,7 +42,10 @@ rapprocher_arbres(
 
 - centre:
 
-  Numeric `c(x, y)`: measured plot centre (Lambert-93).
+  Numeric `c(x, y)`: measured plot centre (Lambert-93). Or the
+  `centres_mesures` rows of the plot (sf POINT, or data.frame with `x`,
+  `y`): Groma adds a row at each measurement and never rewrites one, so
+  the most recent (largest `fid`, else last row) is used.
 
 - convergence_deg:
 

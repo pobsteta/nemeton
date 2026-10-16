@@ -7,8 +7,8 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.7**
-> (release du 2026-10-13), relevée le 2026-10-14.
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.9**
+> (release du 2026-10-16), relevée le 2026-10-16.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
@@ -156,6 +156,36 @@ Version `nemetonshiny` publiée : v2026.10.1.
 
 ------------------------------------------------------------------------
 
+# Chantier — Marculus : tarifs Schaeffer par SER (spec 062) et affouage
+
+> Spec Pascal du 2026-10-16 (`specs/062-tarifs-schaeffer-ser/spec.md`),
+> brief Marculus du même jour (format de l’export), brief app
+> `resoudre-espar-libelle-francais`. Décisions D1-D6 dans la spec.
+
+| Étape | Contenu | Release | État |
+|----|----|----|----|
+| Cœur | tâche 1 : exploration, plan, décisions D1-D6 | — | ✅ validé |
+| Cœur | [`resoudre_espar()`](https://pobsteta.github.io/nemeton/reference/resoudre_espar.md) sur `lib_espar` (brief app) | **2026.10.7** | ✅ livré |
+| Cœur | tables `ifn_tarif_schaeffer_ser.csv`, `communes_ser.csv`, `ser.csv`, accesseurs | — | ⬜ à coder |
+| App | import Marculus `FormatCsv;5` (houppier, volume compté au lot d’affouage) | nemetonshiny **2026.10.9** | ✅ livré |
+| App | `tarifsProposes` dans les lots | `nemetonshiny` | ⬜ attend le cœur |
+
+**Journal** — *2026-10-16* : tâche 1 close. Le format de l’export suit
+le **brief Marculus** (numéro au dixième, CV en %, `espar` sans code
+ONF, toutes les lignes sans seuil, cascade faite par Marculus) ; la
+variance pondérée prend des poids de fiabilité (dénominateur Σw −
+Σw²/Σw) au lieu de `Hmisc::wtd.var`, négative sous 1 m³.
+
+*2026-10-16* — nemetonshiny **v2026.10.9** (`nemetonshiny@cd58447a`, PR
+\#243, cycle `2026.10.8.9000` → `2026.10.9`, plancher inchangé
+`nemeton (>= 2026.10.6)`) : import Marculus `FormatCsv;5` (part de
+houppier Schaeffer, volume compté au lot d’affouage
+`AffouageLotM3 × Quantite`). En attente côté cœur : spec 062 et
+[`resoudre_espar()`](https://pobsteta.github.io/nemeton/reference/resoudre_espar.md)
+sur le libellé français, dont dépend `tarifsProposes`.
+
+------------------------------------------------------------------------
+
 # Chantier — reGénération : attente ERA5 (brief nemetonshiny 2026-10-14)
 
 Run Couchey du 2026-10-13 : 9 h 04, dont 7 h 40 d’attente dans la file
@@ -167,7 +197,7 @@ chacune).
 | Cœur | 3.1 requêtes mensuelles en lot (`.rsen_era5_lot`, plafond 6 adaptatif) ; 3.2 `era5_cache_dir` sur [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md) et [`load_biljou_forcing()`](https://pobsteta.github.io/nemeton/reference/load_biljou_forcing.md) | **2026.10.6** | ✅ livré |
 | Cœur | 3.3 jeu « ERA5 hourly time-series » : écarté, ses variables (T, Td, p, u, v, précip) n’ont pas le rayonnement qu’exige `extract_clim(format = "microclimf")` | — | ✅ évalué |
 | Cœur | mesure réelle d’une année ERA5 en lot | — | ✅ mesuré (gain non démontré, CDS saturé) |
-| App | dossier ERA5 commun, plancher `nemeton (>= 2026.10.6)` | `nemetonshiny` | ⬜ brief envoyé |
+| App | dossier ERA5 commun, phase du lot ERA5, plancher `nemeton (>= 2026.10.6)` | nemetonshiny **2026.10.8** | ✅ livré |
 
 **Journal** — *2026-10-14* (**2026.10.6**) : les mois manquants de
 toutes les années (et de tous les points BILJOU) partent ensemble via
@@ -192,6 +222,13 @@ h 44 (2022) en série la veille. Ce n’est pas un gain démontré : file CDS
 saturée ce jour-là, et le CDS n’a laissé que 2 requêtes en file pour le
 compte. Le cache partagé (3.2) reste le levier le plus sûr. Réponse :
 `vers-nemetonshiny/2026-10-14-reponse-regeneration-era5.md`.
+
+*2026-10-15* — nemetonshiny **v2026.10.8** (`nemetonshiny@9144139b`, PR
+\#242, cycle `2026.10.7.9000` → `2026.10.8`, plancher
+`nemeton (>= 2026.10.6)`) : cache ERA5 partagé entre projets
+(`R_user_dir("nemeton", "cache")/era5`) et phase « Téléchargement ERA5
+(Copernicus) — mois i/n » du lot ERA5. Reste : mesurer le gain réel au
+deuxième projet d’une même zone.
 
 ------------------------------------------------------------------------
 
@@ -280,7 +317,8 @@ retirées, `t2_no_source` reformulée, tests passés à `"no_source"`.
 |----|----|----|----|
 | Cœur | schéma partagé, GeoPackage + rasters + projet QField, numérotation, hauteurs par houppier, rapprochement, validation, import/fusion, client API Groma ; `validate_field_data(dbh_max_cm, dbh_alerte_cm)`, `tag_field_data_sources(source)` | **2026.10.4** | ✅ livré |
 | Cœur | renvoi sur le terrain des `a_completer`/`a_verifier` : [`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md) | **2026.10.5** | ✅ livré |
-| Cœur | plugin de projet QField `.qml` (contenu à fournir par groma) | — | ⬜ attend groma |
+| Cœur | schéma 1.2.0 : tables `projet`, `parcelles`, `ugf` depuis le projet nemetonshiny ; centre mesuré le plus récent | **2026.10.7** | ✅ livré |
+| Cœur | plugin de projet QField `.qml` à côté du `.qgz`, couches nommées comme leurs tables, non verrouillées | **2026.10.7** | ✅ livré |
 | App | sous-onglet Terrain \> Inventaire vidéo + renvoi terrain | nemetonshiny **2026.10.7** | ✅ livré |
 
 **Journal** — *2026-10-12* (**2026.10.4**) : 9 fonctions exportées
@@ -335,6 +373,30 @@ posé par `release.yml`. Cycle dev `2026.10.5.9000`. Brief app :
 ([`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md),
 rasters repris du premier `.qgz`) ; test d’intégration réelle vert
 contre le cœur 2026.10.5.
+
+*2026-10-16* (**2026.10.7**) : annexe groma du 2026-10-15 (carte de
+Groma). Schéma recopié en 1.2.0 et exemple groma remplacé dans les
+fixtures.
+[`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md)
+remplit `projet` (une ligne, `emprise` WKT EPSG:4326), `parcelles` et
+`ugf` (ténements fusionnés par `ug_id`, ordre naturel) depuis
+`project_path`, sans index spatial ; vides sans projet ou si une source
+est illisible (avertissement). Écart au brief : **pas de nouvel argument
+`project_dir`**, `project_path` désignait déjà le dossier du projet
+nemetonshiny (MNT/MNH) — un seul argument pour un seul dossier.
+`rapprocher_arbres(centre =)` accepte les lignes de `centres_mesures` et
+prend la plus récente (plus grand `fid`) ;
+[`importer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/importer_inventaire_video.md)
+aussi ;
+[`valider_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/valider_inventaire_video.md)
+le signale en `severity = "info"`.
+[`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md)
+recopie les trois tables. Même release : brief groma du 2026-10-16,
+plugin QField `inventaire_video.qml` (copie conforme) écrit à côté du
+`.qgz` sous `<project_name>.qml` ; couches QGIS nommées comme leurs
+tables (le plugin les cherche par nom), `projet` chargée sans géométrie,
+`projet`/`detections`/`centres_mesures`/`arbres` non verrouillées ;
+`declinaison_deg` vide par défaut (Groma calcule le WMM2025).
 
 ------------------------------------------------------------------------
 

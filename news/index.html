@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.6.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,31 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.7" id="nemeton-2026107-2026-10-16">nemeton 2026.10.7 (2026-10-16)<a class="anchor" aria-label="anchor" href="#nemeton-2026107-2026-10-16"></a></h2>
+<p>Le GeoPackage de l’inventaire vidéo passe au schéma Groma <strong>1.2.0</strong> : il porte la carte du téléphone (parcelles, UGF) et la fiche du projet (brief groma du 2026-10-15, annexe au brief du 2026-10-12). Le projet QField est livré avec le plugin Groma qui y rapatrie les détections et les centres mesurés (brief du 2026-10-16).</p>
+<div class="section level3">
+<h3 id="nouveautés-2026-10-7">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-10-7"></a></h3>
+<ul><li><p><strong>Plugin de projet QField</strong> : <code><a href="../reference/creer_projet_inventaire_video.html">creer_projet_inventaire_video()</a></code> et <code><a href="../reference/renvoyer_inventaire_video.html">renvoyer_inventaire_video()</a></code> écrivent <code>&lt;project_name&gt;.qml</code> <strong>à côté</strong> du <code>.qgz</code> (jamais dedans : QField le cherche sur le disque), copie conforme de <code>inst/inventaire_video/inventaire_video.qml</code>, propriété de groma. Livrer les deux fichiers au téléphone.</p></li>
+<li><p>Les couches du projet QField portent le nom exact de leur table (<code>placettes</code>, <code>detections</code>, <code>centres_mesures</code>…) : le plugin les trouve par ce nom. <code>projet</code> y est chargée (table sans géométrie). <code>projet</code>, <code>detections</code>, <code>centres_mesures</code> et <code>arbres</code> ne sont plus verrouillées au niveau du projet ; les champs de <code>detections</code> restent non éditables dans les formulaires. Titre du projet : « Inventaire vidéo — <nom du projet> ».</nom></p></li>
+<li><p><strong><code><a href="../reference/creer_projet_inventaire_video.html">creer_projet_inventaire_video()</a></code></strong> écrit trois tables en lecture seule, sans index spatial : <code>projet</code> (non spatiale, une ligne : identifiant et nom du projet, communes, surfaces SIG et cadastrale, nombre de parcelles, d’UG et de placettes Base/Over, dates, <code>emprise</code> des placettes en WKT EPSG:4326), <code>parcelles</code> (copie de <code>data/parcels.gpkg</code>) et <code>ugf</code> (ténements fusionnés par <code>ug_id</code>, surfaces sommées, attributs de <code>data/ugs.json</code>, ordre naturel des numéros). Elles sont lues dans le dossier du projet nemetonshiny passé en <code>project_path</code> (déjà utilisé pour le MNT et le MNH), jamais écrites ; sans ce dossier, ou si une source est illisible (avertissement), elles sont créées vides.</p></li>
+<li><p><strong><code>rapprocher_arbres(centre =)</code></strong> accepte aussi les lignes de <code>centres_mesures</code> de la placette : Groma ajoute une ligne à chaque mesure du centre et n’en réécrit jamais, la plus récente (plus grand <code>fid</code>) compte.</p></li>
+<li><p><strong><code><a href="../reference/resoudre_espar.html">resoudre_espar()</a></code></strong> reconnaît aussi le libellé français <code>lib_espar</code>, accents, casse et tirets ignorés (<code>"Epicea commun"</code> → <code>"62"</code>), en 5ᵉ étape après le nom latin (brief nemetonshiny du 2026-10-16, pour les essences des profils de groupe envoyées à Marculus). Un libellé partagé par plusieurs <code>espar</code> (nom de genre : <code>"Frêne"</code>, <code>"Peuplier"</code>…) reste <code>NA</code>. Ajout couvert par le contrat 1.0, sans rupture.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="changements-compatibles-2026-10-7">Changements compatibles<a class="anchor" aria-label="anchor" href="#changements-compatibles-2026-10-7"></a></h3>
+<ul><li>
+<code><a href="../reference/importer_inventaire_video.html">importer_inventaire_video()</a></code> rapproche sur le centre mesuré le plus récent (il prenait le premier).</li>
+<li>
+<code><a href="../reference/valider_inventaire_video.html">valider_inventaire_video()</a></code> ignore <code>projet</code>, <code>parcelles</code> et <code>ugf</code>, et signale plusieurs centres pour une placette en information (<code>severity = "info"</code>), jamais en erreur.</li>
+<li>
+<code><a href="../reference/renvoyer_inventaire_video.html">renvoyer_inventaire_video()</a></code> recopie les trois nouvelles tables.</li>
+<li>
+<code>declinaison_deg = NULL</code> laisse la colonne vide (<code>NA</code>, jamais 0) : Groma la calcule au point de la placette avec le WMM2025 ; une valeur saisie reste prioritaire.</li>
+<li>
+<code><a href="../reference/schema_inventaire_video.html">schema_inventaire_video()</a></code> lit la version 1.2.0 (<code>projet</code> sans géométrie : attribut <code>geometrie</code> <code>NULL</code>) ; <code><a href="../reference/empty_sf_from_schema.html">empty_sf_from_schema()</a></code> sait créer une couche <code>MULTIPOLYGON</code> vide.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.6" id="nemeton-2026106-2026-10-14">nemeton 2026.10.6 (2026-10-14)<a class="anchor" aria-label="anchor" href="#nemeton-2026106-2026-10-14"></a></h2>
 <p>Le forçage ERA5 de la reGénération ne s’attend plus mois par mois : les requêtes mensuelles de toutes les années partent ensemble (brief nemetonshiny du 2026-10-14). Sur Couchey, les 24 requêtes servies en série prenaient 7 h 40 sur un run de 9 h 04.</p>

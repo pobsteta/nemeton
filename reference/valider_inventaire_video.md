@@ -9,6 +9,12 @@ unique and non-empty, domains of `etat_detection`, `h_source`, `methode`
 and `essence_arbre`, and, when `plan` is given, sampling-design columns
 and plot positions identical to the original plan.
 
+The read-only layers `parcelles`, `ugf` and `projet` (schema 1.2.0) are
+not checked. A plot may have several rows in `centres_mesures` (Groma
+never rewrites a centre): this is reported as an information
+(`severity = "info"` in `warnings`), the most recent centre being the
+one used.
+
 ## Usage
 
 ``` r

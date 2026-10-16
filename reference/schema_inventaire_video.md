@@ -19,8 +19,9 @@ schema_inventaire_video(couche = NULL)
 - couche:
 
   Character or `NULL`. A layer name (`"placettes"`, `"centres_mesures"`,
-  `"cibles"`, `"arbres"`, `"detections"`, `"houppiers"`). `NULL`
-  (default) returns every layer.
+  `"cibles"`, `"arbres"`, `"detections"`, `"houppiers"`, and the
+  read-only `"parcelles"`, `"ugf"` and `"projet"` of schema 1.2.0;
+  `"projet"` has no geometry). `NULL` (default) returns every layer.
 
 ## Value
 

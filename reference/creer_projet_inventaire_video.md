@@ -1,7 +1,8 @@
 # Create the video inventory field project
 
 Builds `inventaire_video.gpkg` (layers `placettes`, `centres_mesures`,
-`cibles`, `arbres`, `detections`, `houppiers`, schema
+`cibles`, `arbres`, `detections`, `houppiers`, and the read-only
+`parcelles`, `ugf` and `projet` of schema 1.2.0, see
 [`schema_inventaire_video`](https://pobsteta.github.io/nemeton/reference/schema_inventaire_video.md)),
 the per-plot DTM and CHM GeoTIFFs (`rasters/<plot_id>_mnt.tif`,
 `rasters/<plot_id>_mnh.tif`: Float32, 0.5 m, strips, DEFLATE without
@@ -56,8 +57,9 @@ creer_projet_inventaire_video(
 
 - declinaison_deg:
 
-  Magnetic declination (degrees, positive towards east), to be entered
-  by the user: no geomagnetic model is embedded. `NULL` leaves it empty.
+  Magnetic declination (degrees, positive towards east). `NULL`
+  (default) leaves it empty (`NA`, never 0): Groma then computes it with
+  WMM2025 at the plot; a value given here takes precedence.
 
 - avec_lidar:
 
@@ -74,7 +76,14 @@ creer_projet_inventaire_video(
 
 - project_path:
 
-  Optional nemeton project directory, used to resolve `dem` and `chm`.
+  Optional nemetonshiny project directory, used to resolve `dem` and
+  `chm`, and read (never written) to fill the tables shown by the Groma
+  map and project list: `projet` (one row, from `metadata.json`,
+  `data/parcels.gpkg`, `data/commune.gpkg` and the written plots;
+  `emprise` is the plots' envelope in EPSG:4326 WKT), `parcelles` (copy
+  of `data/parcels.gpkg`) and `ugf` (`data/tenements.gpkg` merged by
+  `ug_id`, attributes from `data/ugs.json`). Without it, or when a
+  source cannot be read (warning), those tables are created empty.
 
 - marge_m:
 
@@ -101,7 +110,10 @@ creer_projet_inventaire_video(
 
 ## Value
 
-Absolute path to the `.qgz` (invisibly).
+Absolute path to the `.qgz` (invisibly). The Groma QField project plugin
+is written next to it as `<project_name>.qml` (copy of
+`inst/inventaire_video/inventaire_video.qml`, not inside the archive):
+ship both files to the phone.
 
 ## Details
 
