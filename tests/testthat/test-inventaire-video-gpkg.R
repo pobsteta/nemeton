@@ -26,7 +26,13 @@ test_that("le GeoPackage d'exemple passe la chaîne de données terrain", {
 test_that("schema_inventaire_video lit le schéma partagé", {
   s <- schema_inventaire_video()
   expect_setequal(names(s), c("placettes", "centres_mesures", "cibles", "arbres",
-                              "detections", "houppiers"))
+                              "detections", "houppiers", "parcelles", "ugf", "projet"))
+  expect_equal(attr(s, "version"), "1.2.0")
+  for (couche in c("parcelles", "ugf", "projet")) {
+    expect_true(attr(s[[couche]], "lecture_seule"))
+  }
+  expect_null(attr(s$projet, "geometrie"))
+  expect_equal(attr(s$ugf, "geometrie"), "MULTIPOLYGON")
   for (couche in c("placettes", "arbres", "detections")) {
     expect_false(attr(s[[couche]], "index_spatial"))
   }
@@ -303,4 +309,171 @@ test_that("detect_ndp : inventaire vidéo = palier 3 dès qu'il porte des arbres
   expect_equal(detect_ndp(tag_field_data_sources(df, pl, ar))$level, 2L)
   expect_equal(detect_ndp(tag_field_data_sources(df, pl, ar, source = "inventaire_video"))$level, 3L)
   expect_equal(detect_ndp(tag_field_data_sources(df, pl, NULL, source = "inventaire_video"))$level, 2L)
+})
+
+
+# ---- Schéma 1.2.0 : tables projet, parcelles, ugf (brief Groma 2026-10-15) ----
+
+# Projet nemetonshiny minimal : 2 parcelles, 3 ténements pour 2 UG.
+iv_projet_nemetonshiny <- function(racine) {
+  data <- file.path(racine, "data")
+  dir.create(data, recursive = TRUE)
+  carre <- function(x0, y0, l) {
+    sf::st_polygon(list(rbind(c(x0, y0), c(x0 + l, y0), c(x0 + l, y0 + l),
+                              c(x0, y0 + l), c(x0, y0))))
+  }
+  parcelles <- sf::st_sf(
+    id = c("212000000A0001", "212000000A0002"), section = "A", numero = c("1", "2"),
+    contenance = c(41000, 39000), commune = "21200",
+    geometry = sf::st_sfc(carre(925000, 6700000, 200), carre(925200, 6700000, 200), crs = 2154))
+  sf::st_write(sf::st_transform(parcelles, 4326), file.path(data, "parcels.gpkg"),
+               layer = "parcels", quiet = TRUE)
+  sf::st_write(sf::st_sf(code = "21200", nom = "Couchey",
+                         geometry = sf::st_sfc(carre(924000, 6699000, 3000), crs = 2154)),
+               file.path(data, "commune.gpkg"), layer = "commune", quiet = TRUE)
+  ten <- sf::st_sf(
+    tenement_id = c("tnm_1", "tnm_2", "tnm_3"), ug_id = c("ug_10", "ug_2", "ug_2"),
+    surface_m2 = c(40000, 20000, 19000),
+    geometry = sf::st_sfc(carre(925000, 6700000, 200), carre(925200, 6700000, 100),
+                          carre(925300, 6700000, 100), crs = 2154))
+  sf::st_write(sf::st_transform(ten, 4326), file.path(data, "tenements.gpkg"),
+               layer = "tenements", quiet = TRUE)
+  jsonlite::write_json(list(ug_id = c("ug_2", "ug_10"), label = c("UG deux", "UG dix"),
+                            groupe = c(NA, "G1")),
+                       file.path(data, "ugs.json"), auto_unbox = FALSE)
+  jsonlite::write_json(list(id = "20261015_120000_test", name = "Couchey test",
+                            description = "Fixture", owner = "", parcels_count = 2,
+                            ug_count = 2, samples_generated_at = "2026-10-15 10:00:00"),
+                       file.path(racine, "metadata.json"), auto_unbox = TRUE)
+  racine
+}
+
+iv_plan_test <- function() {
+  sf::st_sf(plot_id = c("P1", "P2", "P3"), type = c("Base", "Base", "Over"), wgt = 10,
+            geometry = sf::st_sfc(sf::st_point(c(925050, 6700050)),
+                                  sf::st_point(c(925250, 6700150)),
+                                  sf::st_point(c(925350, 6700020)), crs = 2154))
+}
+
+test_that("creer_projet_inventaire_video remplit projet, parcelles et ugf depuis le projet", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    racine <- iv_projet_nemetonshiny("projet")
+    qgz <- creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE,
+                                         project_path = racine, output_dir = "sortie")
+    utils::unzip(qgz, exdir = "x")
+    gpkg <- file.path("x", "inventaire_video.gpkg")
+    pr <- suppressWarnings(sf::st_read(gpkg, layer = "projet", quiet = TRUE))
+    expect_equal(nrow(pr), 1L)
+    expect_equal(pr$projet_id, "20261015_120000_test")
+    expect_equal(pr$projet_nom, "Couchey test")
+    expect_true(is.na(pr$proprietaire))
+    expect_equal(pr$communes, "Couchey (21200)")
+    expect_equal(pr$surface_zone_ha, 8)
+    expect_equal(pr$surface_cadastre_ha, 8)
+    expect_equal(c(pr$nb_placettes_base, pr$nb_placettes_rempl), c(2L, 1L))
+    expect_equal(pr$plan_genere_le, "2026-10-15 10:00:00")
+    expect_match(pr$prepare_par, "^nemeton ")
+    # Emprise en EPSG:4326 contenant toutes les placettes.
+    emprise <- sf::st_as_sfc(pr$emprise, crs = 4326)
+    pts <- sf::st_transform(iv_plan_test(), 4326)
+    expect_true(all(sf::st_covers(sf::st_buffer(emprise, 1e-7), pts, sparse = FALSE)))
+
+    pa <- sf::st_read(gpkg, layer = "parcelles", quiet = TRUE)
+    expect_equal(nrow(pa), 2L)
+    expect_equal(pa$idu, c("212000000A0001", "212000000A0002"))
+    expect_equal(pa$contenance_m2, c(41000, 39000))
+    expect_equal(sf::st_crs(pa)$epsg, 2154L)
+
+    ug <- sf::st_read(gpkg, layer = "ugf", quiet = TRUE)
+    expect_equal(ug$ug_id, c("ug_2", "ug_10"))          # ordre naturel
+    expect_equal(ug$surface_m2, c(39000, 40000))         # somme des ténements
+    expect_equal(ug$libelle, c("UG deux", "UG dix"))
+    expect_equal(as.character(sf::st_geometry_type(ug)), rep("MULTIPOLYGON", 2))
+    expect_equal(as.numeric(sf::st_area(ug)), c(20000, 40000), tolerance = 1e-3)
+
+    # Aucun index spatial sur les tables lues par le téléphone.
+    con <- DBI::dbConnect(RSQLite::SQLite(), gpkg)
+    on.exit(DBI::dbDisconnect(con), add = TRUE)
+    trg <- DBI::dbGetQuery(con, "SELECT name FROM sqlite_master WHERE type = 'trigger'")$name
+    expect_false(any(grepl("^rtree_(parcelles|ugf)_", trg)))
+    ct <- DBI::dbGetQuery(con, "SELECT table_name, data_type FROM gpkg_contents")
+    expect_equal(ct$data_type[ct$table_name == "projet"], "attributes")
+    qgs <- paste(readLines(file.path("x", "inventaire_video.qgs"), warn = FALSE), collapse = "")
+    expect_match(qgs, "layername=ugf", fixed = TRUE)
+  })
+})
+
+test_that("sans project_path, projet, parcelles et ugf existent vides", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    qgz <- creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE, output_dir = "s")
+    utils::unzip(qgz, exdir = "x")
+    l <- sf::st_layers(file.path("x", "inventaire_video.gpkg"))
+    n <- stats::setNames(l$features, l$name)
+    expect_true(all(c("projet", "parcelles", "ugf") %in% names(n)))
+    expect_equal(unname(n[c("projet", "parcelles", "ugf")]), c(0, 0, 0))
+    expect_true(valider_inventaire_video(file.path("x", "inventaire_video.gpkg"))$ok)
+  })
+})
+
+test_that("une source illisible n'empêche pas la création", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    racine <- iv_projet_nemetonshiny("projet")
+    writeLines("pas un geopackage", file.path(racine, "data", "tenements.gpkg"))
+    expect_warning(
+      qgz <- creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE,
+                                           project_path = racine, output_dir = "s"),
+      "Management units")
+    utils::unzip(qgz, exdir = "x")
+    l <- sf::st_layers(file.path("x", "inventaire_video.gpkg"))
+    n <- stats::setNames(l$features, l$name)
+    expect_equal(unname(n[c("projet", "parcelles", "ugf")]), c(1, 2, 0))
+  })
+})
+
+test_that("plusieurs centres mesurés : le plus récent compte", {
+  prov <- data.frame(uuid = "u1", plot_id = "P1", tree_id = "1", dbh_cm = 30,
+                     x = 1000, y = 2005)
+  def <- data.frame(x = 1000, y = 2005, dbh_cm = 30, methode = "classique")
+  centres <- sf::st_sf(plot_id = "P1", fid = c(1, 3, 2),
+                       geometry = sf::st_sfc(sf::st_point(c(1000, 2000)),
+                                             sf::st_point(c(1005, 2005)),
+                                             sf::st_point(c(990, 1990)), crs = 2154))
+  r <- rapprocher_arbres(prov, def, centre = centres)
+  # Centre retenu = fid 3 (1005, 2005) : arbre à 5 m plein ouest.
+  expect_equal(r$arbres$distance_m, 5)
+  expect_equal(r$arbres$azimut, 270)
+  # Sans fid : la dernière ligne.
+  r2 <- rapprocher_arbres(prov, def, centre = sf::st_drop_geometry(
+    transform(centres[, "plot_id"], x = c(1000, 1000, 1000), y = c(2000, 2000, 2001))))
+  expect_equal(r2$arbres$distance_m, 4)
+})
+
+test_that("importer et valider : plusieurs centres par placette, sans erreur", {
+  skip_if_not_installed("RSQLite")
+  src <- iv_fixture("inventaire_video.gpkg")
+  withr::with_tempdir({
+    file.copy(src, "iv.gpkg")
+    c1 <- sf::st_read("iv.gpkg", layer = "centres_mesures", quiet = TRUE)
+    nouveau <- c1[c1$plot_id == "P001", ]
+    sf::st_geometry(nouveau) <- sf::st_geometry(nouveau) + c(3, 0)
+    sf::st_crs(nouveau) <- 2154
+    sf::st_write(nouveau, "iv.gpkg", layer = "centres_mesures", append = TRUE, quiet = TRUE)
+    g <- nemeton:::.iv_lire("iv.gpkg")
+    der <- nemeton:::.iv_derniers_centres(g$centres_mesures)
+    expect_equal(unname(sf::st_coordinates(der[der$plot_id == "P001", ])[1, "X"]), 925003)
+    v <- valider_inventaire_video("iv.gpkg")
+    expect_true(v$ok)
+    info <- v$warnings[v$warnings$field == "centres_mesures", ]
+    expect_equal(info$plot_id, "P001")
+    expect_equal(info$severity, "info")
+  })
+})
+
+test_that("l'exemple Groma au schéma 1.2.0 passe la validation", {
+  gpkg <- iv_fixture("inventaire_video.gpkg")
+  expect_true(all(c("projet", "parcelles", "ugf") %in% sf::st_layers(gpkg)$name))
+  expect_true(valider_inventaire_video(gpkg)$ok)
 })

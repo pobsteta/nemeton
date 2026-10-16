@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.7] - 2026-10-16
+
+### Added
+- Video inventory GeoPackage schema 1.2.0: `creer_projet_inventaire_video()` writes the
+  read-only `projet`, `parcelles` and `ugf` tables from the nemetonshiny project
+  (`project_path`), empty without it.
+- `rapprocher_arbres(centre =)` accepts the plot's `centres_mesures` rows (most recent wins).
+
+### Changed
+- `importer_inventaire_video()` uses the most recent measured centre; `valider_inventaire_video()`
+  reports several centres per plot as an information.
+
 ## [2026.10.6] - 2026-10-14
 
 ### Added

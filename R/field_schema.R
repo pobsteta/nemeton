@@ -235,6 +235,7 @@ empty_sf_from_schema <- function(schema, crs = 2154, geometry_type = "POINT") {
     POINT      = sf::st_point(),
     LINESTRING = sf::st_linestring(matrix(numeric(0), ncol = 2)),
     POLYGON    = sf::st_polygon(),
+    MULTIPOLYGON = sf::st_multipolygon(),
     sf::st_point()
   )
   sfc <- sf::st_sfc(empty_geom, crs = crs)[0]

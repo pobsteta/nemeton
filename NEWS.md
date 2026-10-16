@@ -1,3 +1,37 @@
+# nemeton 2026.10.7 (2026-10-16)
+
+Le GeoPackage de l'inventaire vidéo passe au schéma Groma **1.2.0** : il porte
+la carte du téléphone (parcelles, UGF) et la fiche du projet (brief groma du
+2026-10-15, annexe au brief du 2026-10-12).
+
+## Nouveautés
+
+- **`creer_projet_inventaire_video()`** écrit trois tables en lecture seule,
+  sans index spatial : `projet` (non spatiale, une ligne : identifiant et nom
+  du projet, communes, surfaces SIG et cadastrale, nombre de parcelles, d'UG et
+  de placettes Base/Over, dates, `emprise` des placettes en WKT EPSG:4326),
+  `parcelles` (copie de `data/parcels.gpkg`) et `ugf` (ténements fusionnés par
+  `ug_id`, surfaces sommées, attributs de `data/ugs.json`, ordre naturel des
+  numéros). Elles sont lues dans le dossier du projet nemetonshiny passé en
+  `project_path` (déjà utilisé pour le MNT et le MNH), jamais écrites ; sans
+  ce dossier, ou si une source est illisible (avertissement), elles sont
+  créées vides.
+- **`rapprocher_arbres(centre =)`** accepte aussi les lignes de
+  `centres_mesures` de la placette : Groma ajoute une ligne à chaque mesure du
+  centre et n'en réécrit jamais, la plus récente (plus grand `fid`) compte.
+
+## Changements compatibles
+
+- `importer_inventaire_video()` rapproche sur le centre mesuré le plus récent
+  (il prenait le premier).
+- `valider_inventaire_video()` ignore `projet`, `parcelles` et `ugf`, et signale
+  plusieurs centres pour une placette en information (`severity = "info"`),
+  jamais en erreur.
+- `renvoyer_inventaire_video()` recopie les trois nouvelles tables.
+- `schema_inventaire_video()` lit la version 1.2.0 (`projet` sans géométrie :
+  attribut `geometrie` `NULL`) ; `empty_sf_from_schema()` sait créer une couche
+  `MULTIPOLYGON` vide.
+
 # nemeton 2026.10.6 (2026-10-14)
 
 Le forçage ERA5 de la reGénération ne s'attend plus mois par mois : les

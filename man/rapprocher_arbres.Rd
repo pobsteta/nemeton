@@ -29,7 +29,11 @@ rapprocher_arbres(
 definitive detections (\code{dbh_cm}, optional \code{h_m},
 \code{h_source}, \code{houppier_id}, \code{methode}).}
 
-\item{centre}{Numeric \code{c(x, y)}: measured plot centre (Lambert-93).}
+\item{centre}{Numeric \code{c(x, y)}: measured plot centre (Lambert-93).
+Or the \code{centres_mesures} rows of the plot (sf POINT, or data.frame
+with \code{x}, \code{y}): Groma adds a row at each measurement and never
+rewrites one, so the most recent (largest \code{fid}, else last row)
+is used.}
 
 \item{convergence_deg}{Meridian convergence at the plot (degrees).}
 

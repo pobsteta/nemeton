@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.7** (release du 2026-10-13), relevée le 2026-10-14.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.8** (release du 2026-10-15), relevée le 2026-10-16.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -144,7 +144,7 @@ pour 24 requêtes mensuelles ERA5 servies en série (~400 Ko chacune).
 | Cœur | 3.1 requêtes mensuelles en lot (`.rsen_era5_lot`, plafond 6 adaptatif) ; 3.2 `era5_cache_dir` sur `regen_sensibilite()` et `load_biljou_forcing()` | **2026.10.6** | ✅ livré |
 | Cœur | 3.3 jeu « ERA5 hourly time-series » : écarté, ses variables (T, Td, p, u, v, précip) n'ont pas le rayonnement qu'exige `extract_clim(format = "microclimf")` | — | ✅ évalué |
 | Cœur | mesure réelle d'une année ERA5 en lot | — | ✅ mesuré (gain non démontré, CDS saturé) |
-| App | dossier ERA5 commun, plancher `nemeton (>= 2026.10.6)` | `nemetonshiny` | ⬜ brief envoyé |
+| App | dossier ERA5 commun, phase du lot ERA5, plancher `nemeton (>= 2026.10.6)` | nemetonshiny **2026.10.8** | ✅ livré |
 
 **Journal** — *2026-10-14* (**2026.10.6**) : les mois manquants de toutes les
 années (et de tous les points BILJOU) partent ensemble via ecmwfr (`wf_request(
@@ -166,6 +166,12 @@ contre 1 h 56 (2023) et 5 h 44 (2022) en série la veille. Ce n'est pas un gain
 démontré : file CDS saturée ce jour-là, et le CDS n'a laissé que 2 requêtes en
 file pour le compte. Le cache partagé (3.2) reste le levier le plus sûr.
 Réponse : `vers-nemetonshiny/2026-10-14-reponse-regeneration-era5.md`.
+
+*2026-10-15* — nemetonshiny **v2026.10.8** (`nemetonshiny@9144139b`, PR #242,
+cycle `2026.10.7.9000` → `2026.10.8`, plancher `nemeton (>= 2026.10.6)`) :
+cache ERA5 partagé entre projets (`R_user_dir("nemeton", "cache")/era5`) et
+phase « Téléchargement ERA5 (Copernicus) — mois i/n » du lot ERA5. Reste :
+mesurer le gain réel au deuxième projet d'une même zone.
 
 ---
 
@@ -248,6 +254,7 @@ brief traité, l'app ne passe plus `N2` / `T1` à T2,
 |---|---|---|---|
 | Cœur | schéma partagé, GeoPackage + rasters + projet QField, numérotation, hauteurs par houppier, rapprochement, validation, import/fusion, client API Groma ; `validate_field_data(dbh_max_cm, dbh_alerte_cm)`, `tag_field_data_sources(source)` | **2026.10.4** | ✅ livré |
 | Cœur | renvoi sur le terrain des `a_completer`/`a_verifier` : `renvoyer_inventaire_video()` | **2026.10.5** | ✅ livré |
+| Cœur | schéma 1.2.0 : tables `projet`, `parcelles`, `ugf` depuis le projet nemetonshiny ; centre mesuré le plus récent | **2026.10.7** | ✅ livré |
 | Cœur | plugin de projet QField `.qml` (contenu à fournir par groma) | — | ⬜ attend groma |
 | App | sous-onglet Terrain > Inventaire vidéo + renvoi terrain | nemetonshiny **2026.10.7** | ✅ livré |
 
@@ -296,6 +303,19 @@ cycle `2026.10.6.9000` → `2026.10.7`, plancher `nemeton (>= 2026.10.5)`) :
 sous-onglet Terrain > Inventaire vidéo (Préparer, Suivre, Intégrer) et bouton
 « Renvoyer sur le terrain » (`renvoyer_inventaire_video()`, rasters repris du
 premier `.qgz`) ; test d'intégration réelle vert contre le cœur 2026.10.5.
+
+*2026-10-16* (**2026.10.7**) : annexe groma du 2026-10-15 (carte de Groma).
+Schéma recopié en 1.2.0 et exemple groma remplacé dans les fixtures.
+`creer_projet_inventaire_video()` remplit `projet` (une ligne, `emprise` WKT
+EPSG:4326), `parcelles` et `ugf` (ténements fusionnés par `ug_id`, ordre
+naturel) depuis `project_path`, sans index spatial ; vides sans projet ou si
+une source est illisible (avertissement). Écart au brief : **pas de nouvel
+argument `project_dir`**, `project_path` désignait déjà le dossier du projet
+nemetonshiny (MNT/MNH) — un seul argument pour un seul dossier.
+`rapprocher_arbres(centre =)` accepte les lignes de `centres_mesures` et prend
+la plus récente (plus grand `fid`) ; `importer_inventaire_video()` aussi ;
+`valider_inventaire_video()` le signale en `severity = "info"`.
+`renvoyer_inventaire_video()` recopie les trois tables.
 
 ---
 

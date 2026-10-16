@@ -79,8 +79,10 @@ NULL
 #'
 #' @param couche Character or \code{NULL}. A layer name (\code{"placettes"},
 #'   \code{"centres_mesures"}, \code{"cibles"}, \code{"arbres"},
-#'   \code{"detections"}, \code{"houppiers"}). \code{NULL} (default) returns
-#'   every layer.
+#'   \code{"detections"}, \code{"houppiers"}, and the read-only
+#'   \code{"parcelles"}, \code{"ugf"} and \code{"projet"} of schema 1.2.0;
+#'   \code{"projet"} has no geometry). \code{NULL} (default) returns every
+#'   layer.
 #'
 #' @return For one layer, a list of field descriptors with the attributes
 #'   \code{geometrie}, \code{index_spatial} and \code{lecture_seule}. Without
@@ -502,6 +504,10 @@ affecter_hauteur_houppier <- function(arbres, houppiers, h_min = 1, h_max = 70) 
 #'   definitive detections (\code{dbh_cm}, optional \code{h_m},
 #'   \code{h_source}, \code{houppier_id}, \code{methode}).
 #' @param centre Numeric \code{c(x, y)}: measured plot centre (Lambert-93).
+#'   Or the \code{centres_mesures} rows of the plot (sf POINT, or data.frame
+#'   with \code{x}, \code{y}): Groma adds a row at each measurement and never
+#'   rewrites one, so the most recent (largest \code{fid}, else last row)
+#'   is used.
 #' @param convergence_deg Meridian convergence at the plot (degrees).
 #' @param tolerance_m Maximal matching distance (m). Default 0.5.
 #' @param rayon_m,seuil_diam_cm,unite_azimut,tolerance_deg Numbering
@@ -541,6 +547,19 @@ rapprocher_arbres <- function(provisoires, definitifs, centre,
                               ecart_dbh_alerte_cm = 10, ecart_dbh_alerte_rel = 0.5,
                               generer_uuid = .uuid_v4) {
   unite_azimut <- match.arg(unite_azimut)
+  if (is.data.frame(centre)) {
+    if (!nrow(centre)) cli::cli_abort("{.arg centre} has no row.")
+    if (inherits(centre, "sf") && inherits(provisoires, "sf")) {
+      centre <- sf::st_transform(centre, sf::st_crs(provisoires))
+    }
+    rang <- if ("fid" %in% names(centre)) as.numeric(centre$fid) else seq_len(nrow(centre))
+    rang[is.na(rang)] <- -Inf
+    dernier <- .iv_en_xy(centre, "centre")[order(rang, seq_len(nrow(centre)))[nrow(centre)], ]
+    centre <- c(dernier$x, dernier$y)
+  }
+  if (!is.numeric(centre) || length(centre) < 2L) {
+    cli::cli_abort("{.arg centre} must be {.code c(x, y)} or the measured-centre rows of the plot.")
+  }
   crs <- if (inherits(provisoires, "sf")) sf::st_crs(provisoires) else
     if (inherits(definitifs, "sf")) sf::st_crs(definitifs) else NULL
   rendre_sf <- inherits(provisoires, "sf")
@@ -715,9 +734,24 @@ rapprocher_arbres <- function(provisoires, definitifs, centre,
   g <- import_qgis_gpkg(gpkg)
   couches <- sf::st_layers(gpkg)$name
   for (l in c("centres_mesures", "detections")) {
-    g[[l]] <- if (l %in% couches) sf::st_read(gpkg, layer = l, quiet = TRUE) else NULL
+    # fid lu : un centre n'est jamais réécrit, la plus grande valeur compte.
+    g[[l]] <- if (l %in% couches) {
+      sf::st_read(gpkg, layer = l, quiet = TRUE, fid_column_name = "fid")
+    } else NULL
   }
   g
+}
+
+# Centre mesuré le plus récent de chaque placette : Groma ajoute une ligne à
+# chaque mesure (plus grand fid, sinon dernière ligne). Renvoie les lignes
+# retenues, une par plot_id.
+.iv_derniers_centres <- function(centres) {
+  if (is.null(centres) || !nrow(centres) || !"plot_id" %in% names(centres)) return(centres)
+  rang <- if ("fid" %in% names(centres)) as.numeric(centres$fid) else seq_len(nrow(centres))
+  rang[is.na(rang)] <- -Inf
+  ordre <- order(as.character(centres$plot_id), rang, seq_len(nrow(centres)))
+  ordre <- ordre[!duplicated(as.character(centres$plot_id[ordre]), fromLast = TRUE)]
+  centres[sort(ordre), ]
 }
 
 #' Validate a video inventory
@@ -729,6 +763,12 @@ rapprocher_arbres <- function(provisoires, definitifs, centre,
 #' domains of \code{etat_detection}, \code{h_source}, \code{methode} and
 #' \code{essence_arbre}, and, when \code{plan} is given, sampling-design
 #' columns and plot positions identical to the original plan.
+#'
+#' The read-only layers \code{parcelles}, \code{ugf} and \code{projet}
+#' (schema 1.2.0) are not checked. A plot may have several rows in
+#' \code{centres_mesures} (Groma never rewrites a centre): this is reported
+#' as an information (\code{severity = "info"} in \code{warnings}), the most
+#' recent centre being the one used.
 #'
 #' @param gpkg Path to \code{inventaire_video.gpkg}, or a list with
 #'   \code{placettes} and \code{arbres} (as returned by
@@ -818,8 +858,21 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
     }
   }
 
+  warnings <- v$warnings
+  centres <- g$centres_mesures
+  if (!is.null(centres) && nrow(centres) && "plot_id" %in% names(centres)) {
+    n <- table(as.character(centres$plot_id))
+    multi <- names(n)[n > 1]
+    if (length(multi)) {
+      warnings <- rbind(warnings, .mk_issue(
+        plot_id = multi, field = "centres_mesures",
+        issue = sprintf("%d measured centres; the most recent is used.", as.integer(n[multi])),
+        severity = "info"))
+    }
+  }
+
   errors <- if (length(issues)) rbind(v$errors, do.call(rbind, issues)) else v$errors
-  list(ok = nrow(errors) == 0, errors = errors, warnings = v$warnings)
+  list(ok = nrow(errors) == 0, errors = errors, warnings = warnings)
 }
 
 
@@ -872,10 +925,26 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
                      gdal = c("COMPRESS=DEFLATE", "PREDICTOR=1", "TILED=NO"))
 }
 
-# Couche sf (éventuellement vide) conforme aux descripteurs du schéma.
+# Couche sf (éventuellement vide) conforme aux descripteurs du schéma ;
+# data.frame pour une table sans géométrie (`projet`), dont les dates restent
+# en texte comme chez Groma.
 .iv_conformer <- function(x, champs, geometrie, crs = 2154) {
+  if (is.null(geometrie)) {
+    noms <- vapply(champs, `[[`, character(1), "name")
+    df <- if (is.null(x)) list() else as.list(x)
+    n <- if (is.null(x)) 0L else nrow(as.data.frame(x))
+    out <- lapply(champs, function(f) {
+      v <- df[[f$name]] %||% rep(NA, n)
+      switch(f$type, integer = as.integer(v), double = as.numeric(v), as.character(v))
+    })
+    names(out) <- noms
+    return(as.data.frame(out, stringsAsFactors = FALSE))
+  }
   if (is.null(x) || !nrow(x)) {
     return(empty_sf_from_schema(champs, crs = crs, geometry_type = geometrie))
+  }
+  if (identical(geometrie, "MULTIPOLYGON")) {
+    x <- sf::st_cast(sf::st_transform(x, crs), "MULTIPOLYGON", warn = FALSE)
   }
   typer <- function(v, type) {
     switch(type,
@@ -898,10 +967,145 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 }
 
 .iv_ecrire_couche <- function(x, gpkg, couche, index_spatial) {
+  if (!inherits(x, "sf")) {
+    # Table GeoPackage « attributes » (non spatiale).
+    sf::st_write(x, gpkg, layer = couche, layer_options = "FID=fid",
+                 quiet = TRUE, append = FALSE, delete_layer = TRUE)
+    return(invisible(gpkg))
+  }
   opts <- c(paste0("SPATIAL_INDEX=", if (index_spatial) "YES" else "NO"),
             "GEOMETRY_NAME=geom", "FID=fid")
   sf::st_write(x, gpkg, layer = couche, layer_options = opts,
                quiet = TRUE, append = FALSE, delete_layer = TRUE)
+}
+
+# ---- Projet nemetonshiny -> tables projet, parcelles, ugf (schéma 1.2.0) --
+
+# Lecture d'une source facultative : une erreur n'empêche jamais la création.
+.iv_essayer <- function(quoi, expr) {
+  tryCatch(expr, error = function(e) {
+    cli::cli_warn("{quoi} not read from the project: {conditionMessage(e)}")
+    NULL
+  })
+}
+
+# Couche `parcelles` : copie de data/parcels.gpkg.
+.iv_parcelles_projet <- function(data) {
+  f <- file.path(data, "parcels.gpkg")
+  if (!file.exists(f)) return(NULL)
+  p <- sf::st_read(f, quiet = TRUE)
+  if (!nrow(p) || is.na(sf::st_crs(p)) || !"id" %in% names(p)) return(NULL)
+  p <- sf::st_transform(p, 2154)
+  out <- data.frame(idu = as.character(p$id),
+                    commune = as.character(.iv_col(p, "commune", NA_character_)),
+                    section = as.character(.iv_col(p, "section", NA_character_)),
+                    numero = as.character(.iv_col(p, "numero", NA_character_)),
+                    contenance_m2 = as.numeric(.iv_col(p, "contenance", NA_real_)),
+                    stringsAsFactors = FALSE)
+  sf::st_sf(out, geometry = sf::st_geometry(p))
+}
+
+# Couche `ugf` : ténements fusionnés par ug_id, attributs de data/ugs.json.
+.iv_ugf_projet <- function(data) {
+  f <- file.path(data, "tenements.gpkg")
+  if (!file.exists(f)) return(NULL)
+  t <- sf::st_read(f, quiet = TRUE)
+  if (!nrow(t) || is.na(sf::st_crs(t)) || !"ug_id" %in% names(t)) return(NULL)
+  t <- t[!is.na(t$ug_id), ]
+  # Reprojection puis make_valid (make_valid sur 4326 déplace les sommets).
+  t <- sf::st_make_valid(sf::st_transform(t, 2154))
+  ids <- unique(as.character(t$ug_id))
+  surf <- as.numeric(.iv_col(t, "surface_m2", NA_real_))
+  geom <- do.call(c, lapply(ids, function(id) {
+    sf::st_union(sf::st_geometry(t)[as.character(t$ug_id) == id])
+  }))
+  ug <- data.frame(ug_id = ids, stringsAsFactors = FALSE)
+  ug$surface_m2 <- vapply(ids, function(id) {
+    v <- surf[as.character(t$ug_id) == id]
+    if (all(is.na(v))) NA_real_ else sum(v, na.rm = TRUE)
+  }, numeric(1), USE.NAMES = FALSE)
+  fj <- file.path(data, "ugs.json")
+  a <- if (file.exists(fj)) as.data.frame(jsonlite::fromJSON(fj), stringsAsFactors = FALSE) else NULL
+  noms <- c(label = "libelle", groupe = "groupe", onf_foret_nom = "foret",
+            onf_parcelle = "parcelle_onf")
+  idx <- if (!is.null(a) && "ug_id" %in% names(a)) match(ug$ug_id, as.character(a$ug_id)) else NA
+  for (k in names(noms)) {
+    ug[[noms[[k]]]] <- if (!is.null(a) && k %in% names(a)) as.character(a[[k]])[idx] else NA_character_
+  }
+  # Ordre naturel des numéros ONF, sinon du suffixe numérique de ug_id.
+  onf <- suppressWarnings(as.numeric(ug$parcelle_onf))
+  rang <- suppressWarnings(as.numeric(sub(".*?(\\d+)$", "\\1",
+                                          ifelse(grepl("\\d$", ug$ug_id), ug$ug_id, NA))))
+  ordre <- order(onf, rang, ug$ug_id, na.last = TRUE)
+  sf::st_sf(ug[ordre, , drop = FALSE], geometry = sf::st_sfc(geom[ordre], crs = 2154))
+}
+
+# Ligne de la table `projet`.
+.iv_ligne_projet <- function(project_path, placettes, parcelles) {
+  data <- file.path(project_path, "data")
+  fm <- file.path(project_path, "metadata.json")
+  m <- if (file.exists(fm)) jsonlite::fromJSON(fm, simplifyVector = TRUE) else list()
+  texte <- function(v) if (is.null(v) || !length(v) || is.na(v[1]) || !nzchar(v[1])) NA_character_ else as.character(v[1])
+  entier <- function(v) if (is.null(v) || !length(v)) NA_integer_ else as.integer(v[1])
+  type <- as.character(.iv_col(placettes, "type", NA_character_))
+  rempl <- sum(!is.na(type) & type == "Over")
+  bb <- sf::st_bbox(sf::st_transform(placettes, 4326))
+  nb <- function(v) as.character(round(unname(v), 6))
+  coin <- function(x, y) paste(nb(x), nb(y))
+  emprise <- sprintf("POLYGON ((%s, %s, %s, %s, %s))",
+                     coin(bb["xmax"], bb["ymin"]), coin(bb["xmax"], bb["ymax"]),
+                     coin(bb["xmin"], bb["ymax"]), coin(bb["xmin"], bb["ymin"]),
+                     coin(bb["xmax"], bb["ymin"]))
+  ligne <- list(
+    projet_id = texte(m$id),
+    projet_nom = texte(m$name),
+    description = texte(m$description),
+    proprietaire = texte(m$owner),
+    communes = NA_character_,
+    surface_zone_ha = NA_real_,
+    surface_cadastre_ha = NA_real_,
+    nb_parcelles = entier(m$parcels_count),
+    nb_ug = entier(m$ug_count),
+    nb_placettes_base = nrow(placettes) - rempl,
+    nb_placettes_rempl = rempl,
+    plan_genere_le = texte(m$samples_generated_at),
+    prepare_le = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+    prepare_par = paste("nemeton", as.character(utils::packageVersion("nemeton"))),
+    emprise = emprise
+  )
+  if (is.na(ligne$projet_id)) ligne$projet_id <- basename(normalizePath(project_path, mustWork = FALSE))
+  if (is.na(ligne$projet_nom)) ligne$projet_nom <- ligne$projet_id
+  if (!is.null(parcelles) && nrow(parcelles)) {
+    ligne$surface_zone_ha <- round(sum(as.numeric(sf::st_area(parcelles))) / 1e4, 2)
+    if (any(!is.na(parcelles$contenance_m2))) {
+      ligne$surface_cadastre_ha <- round(sum(parcelles$contenance_m2, na.rm = TRUE) / 1e4, 2)
+    }
+    codes <- sort(unique(stats::na.omit(parcelles$commune)))
+    if (length(codes)) {
+      fc <- file.path(data, "commune.gpkg")
+      noms <- if (file.exists(fc)) .iv_essayer("Commune names", {
+        cm <- sf::st_drop_geometry(sf::st_read(fc, quiet = TRUE))
+        if (all(c("code", "nom") %in% names(cm))) stats::setNames(as.character(cm$nom), as.character(cm$code))
+      }) else NULL
+      lib <- ifelse(codes %in% names(noms), sprintf("%s (%s)", noms[codes], codes), codes)
+      ligne$communes <- paste(lib, collapse = ", ")
+    }
+  }
+  as.data.frame(ligne, stringsAsFactors = FALSE)
+}
+
+# Les trois tables de la carte et de la liste des projets de Groma, depuis le
+# dossier d'un projet nemetonshiny ; NULL (tables vides) sans dossier.
+.iv_sources_projet <- function(project_path, placettes) {
+  if (is.null(project_path) || !dir.exists(project_path)) {
+    return(list(projet = NULL, parcelles = NULL, ugf = NULL))
+  }
+  data <- file.path(project_path, "data")
+  parcelles <- .iv_essayer("Parcels (data/parcels.gpkg)", .iv_parcelles_projet(data))
+  ugf <- .iv_essayer("Management units (data/tenements.gpkg)", .iv_ugf_projet(data))
+  projet <- .iv_essayer("Project row (metadata.json)",
+                        .iv_ligne_projet(project_path, placettes, parcelles))
+  list(projet = projet, parcelles = parcelles, ugf = ugf)
 }
 
 # Instructions de declencheurs.sql, une à la fois (les corps BEGIN ... END
@@ -968,9 +1172,11 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
                            qgz_path, subset_arbres = NULL) {
   noms_couches <- c(placettes = "Placettes", centres_mesures = "Centres mesur\u00e9s",
                     cibles = "Cibles", arbres = "Arbres", detections = "D\u00e9tections Groma",
-                    houppiers = "Houppiers")
-  geoms <- c(POINT = "Point", POLYGON = "Polygon")
-  couches <- lapply(names(schema), function(couche) {
+                    houppiers = "Houppiers", parcelles = "Parcelles", ugf = "UGF")
+  geoms <- c(POINT = "Point", POLYGON = "Polygon", MULTIPOLYGON = "Polygon")
+  # La table `projet` (sans géométrie) reste dans le GeoPackage, hors carte.
+  spatiales <- names(schema)[!vapply(schema, function(ch) is.null(attr(ch, "geometrie")), logical(1))]
+  couches <- lapply(spatiales, function(couche) {
     champs <- schema[[couche]]
     list(id = paste0(couche, "_01"), name = unname(noms_couches[couche]),
          gpkg_rel = gpkg_rel, layername = couche,
@@ -1011,7 +1217,9 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #'
 #' Builds \code{inventaire_video.gpkg} (layers \code{placettes},
 #' \code{centres_mesures}, \code{cibles}, \code{arbres}, \code{detections},
-#' \code{houppiers}, schema \code{\link{schema_inventaire_video}}), the per-plot
+#' \code{houppiers}, and the read-only \code{parcelles}, \code{ugf} and
+#' \code{projet} of schema 1.2.0, see \code{\link{schema_inventaire_video}}),
+#' the per-plot
 #' DTM and CHM GeoTIFFs (\code{rasters/<plot_id>_mnt.tif},
 #' \code{rasters/<plot_id>_mnh.tif}: Float32, 0.5 m, strips, DEFLATE without
 #' predictor, nodata -9999) and the QField project, packaged as a \code{.qgz}
@@ -1044,8 +1252,16 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #' @param dem,chm \code{SpatRaster} or path. When \code{NULL}, resolved from
 #'   \code{project_path} with \code{\link{resolve_project_dem}} and
 #'   \code{\link{resolve_project_chm}}.
-#' @param project_path Optional nemeton project directory, used to resolve
-#'   \code{dem} and \code{chm}.
+#' @param project_path Optional nemetonshiny project directory, used to
+#'   resolve \code{dem} and \code{chm}, and read (never written) to fill the
+#'   tables shown by the Groma map and project list: \code{projet} (one row,
+#'   from \code{metadata.json}, \code{data/parcels.gpkg},
+#'   \code{data/commune.gpkg} and the written plots; \code{emprise} is the
+#'   plots' envelope in EPSG:4326 WKT), \code{parcelles} (copy of
+#'   \code{data/parcels.gpkg}) and \code{ugf} (\code{data/tenements.gpkg}
+#'   merged by \code{ug_id}, attributes from \code{data/ugs.json}). Without
+#'   it, or when a source cannot be read (warning), those tables are created
+#'   empty.
 #' @param marge_m Margin around the plot for rasters and crowns (m). Default
 #'   10.
 #' @param output_dir Destination directory.
@@ -1159,14 +1375,16 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
     }
   }
 
+  # Tables de la carte et de la liste des projets de Groma (schéma 1.2.0).
+  sources <- .iv_sources_projet(project_path, placettes)
+
   # Écriture des couches (géométrie `geom`, fid `fid`, index selon schéma).
-  champs_p <- schema$placettes
-  noms_p <- vapply(champs_p, `[[`, character(1), "name")
   for (couche in names(schema)) {
     champs <- schema[[couche]]
     x <- switch(couche,
       placettes = placettes,
       houppiers = if (!is.null(houppiers)) sf::st_transform(houppiers, 2154) else NULL,
+      projet = sources$projet, parcelles = sources$parcelles, ugf = sources$ugf,
       NULL)
     x <- .iv_conformer(x, champs, attr(champs, "geometrie"))
     .iv_ecrire_couche(x, gpkg, couche, attr(champs, "index_spatial"))
@@ -1268,7 +1486,7 @@ importer_inventaire_video <- function(gpkg, resultats = NULL, field_data_gpkg = 
   for (pid in intersect(names(par_plot), placettes$plot_id)) {
     p <- placettes[placettes$plot_id == pid, ][1, ]
     centre <- if (!is.null(centres) && pid %in% centres$plot_id) {
-      sf::st_coordinates(sf::st_transform(centres[centres$plot_id == pid, ][1, ], 2154))[1, 1:2]
+      centres[centres$plot_id == pid, ]   # le plus récent : rapprocher_arbres()
     } else {
       sf::st_coordinates(p)[1, 1:2]
     }
@@ -1434,7 +1652,10 @@ renvoyer_inventaire_video <- function(import, gpkg = NULL, rasters = NULL,
   # Couches annexes des mêmes placettes, depuis le GeoPackage de terrain.
   annexe <- function(couche) {
     if (is.null(gpkg) || !couche %in% sf::st_layers(gpkg)$name) return(NULL)
-    x <- sf::st_read(gpkg, layer = couche, quiet = TRUE)
+    # Table `projet` sans géométrie : st_read prévient qu'il rend un data.frame.
+    x <- suppressWarnings(sf::st_read(gpkg, layer = couche, quiet = TRUE))
+    # projet, parcelles, ugf : copiées telles quelles (carte de Groma).
+    if (couche %in% c("projet", "parcelles", "ugf")) return(if (nrow(x)) x)
     if (!nrow(x) || !"plot_id" %in% names(x)) return(NULL)
     sf::st_transform(x[x$plot_id %in% plot_ids, ], 2154)
   }
