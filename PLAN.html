@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.14</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.14.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -511,6 +511,7 @@
 <p><em>2026-10-17</em> : PR #568 mergée (R-CMD-check, tests, pkgdown, version-consistency verts) ; tag <code>v2026.10.13</code> posé par <code>release.yml</code>. Cycle dev <code>2026.10.13.9000</code>. Réponse : <code>vers-groma/2026-10-17-reponse-projet-qgs-ids-couches.md</code> (plancher <code>nemeton (&gt;= 2026.10.13)</code>).</p>
 <p><em>2026-10-17</em> — nemetonshiny <strong>v2026.10.13</strong> (<code>nemetonshiny@8bb0f342</code>, PR #247, cycle 2026.10.12.9000 → 2026.10.13, plancher inchangé <code>nemeton (&gt;= 2026.10.11)</code>, aucun changement cœur requis) : plan d’action ↔︎ tournée de travaux Surculus. « Programme de travaux (sommieR) » = <code>export_action_plan_gpkg()</code> restreint aux actions validées ou planifiées, hors coupes rases, éclaircies et observations ; « Relire le réalisé (sommieR) » lit le CSV de <code>sommier_actions_realisees()</code>, passage en <em>réalisée</em> confirmé et audité. Reste : <code>sommier_actions_realisees()</code> côté sommieR (brief travaux-3).</p>
 <p><em>2026-10-17</em> (<strong>2026.10.14</strong>) : question laissée ouverte en 2026.10.12, accord de Pascal : <code><a href="reference/create_qgis_project.html">create_qgis_project()</a></code> (fonction stable) écrit aussi le dossier <code>&lt;project_name&gt;/</code> (<code>.qgs</code> + <code>.gpkg</code>). C’est un ajout : le <code>.qgz</code> et la valeur renvoyée ne changent pas. PyQGIS : 2 couches invalides dans le <code>.qgz</code> seul, 2 valides dans le dossier. En reprenant l’aide, un risque est apparu : avec <code>overwrite = TRUE</code>, un dossier de l’utilisateur au nom du projet aurait été effacé. D’où un garde-fou commun : le remplacement n’a lieu que si le dossier est vide ou contient <code>&lt;nom&gt;.qgs</code>, et le contrôle se fait avant tout calcul. L’app appelle la fonction dans un <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile()</a></code> et n’en copie que le <code>.qgz</code> (lecture seule de <code>mod_sampling.R</code>, <code>mod_validation_sampling.R</code>), donc rien ne casse ; brief app : <code>vers-nemetonshiny/2026-10-17-plan-echantillonnage-dossier-projet.md</code>.</p>
+<p><em>2026-10-17</em> : PR #570 mergée (R-CMD-check, tests, pkgdown, version-consistency verts ; suite locale sans échec) ; tag <code>v2026.10.14</code> posé par <code>release.yml</code>. Cycle dev <code>2026.10.14.9000</code>. <code>vers-nemeton/</code> vide (doublon de <code>groma-envoyer-projet.md</code> classé).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="ci--dépendances-et-actions-github">CI — dépendances et actions GitHub<a class="anchor" aria-label="anchor" href="#ci--d%C3%A9pendances-et-actions-github"></a></h1>
