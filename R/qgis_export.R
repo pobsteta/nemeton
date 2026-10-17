@@ -348,6 +348,20 @@ col2rgb_str <- function(hex) {
     ))
 }
 
+# Identifiant de couche unique à chaque génération : nom assaini + 32
+# caractères hexadécimaux. QField marquait invalides des couches dont
+# l'identifiant fixe (`arbres_01`, `Plan_IGN`) se retrouvait d'un projet à
+# l'autre (brief Groma 2026-10-17) ; QGIS tire lui aussi un identifiant
+# unique par couche. Le jeton n'utilise pas `.Random.seed` (un `set.seed()`
+# de l'appelant redonnerait les mêmes) : empreinte de l'heure à la
+# microseconde, du processus et d'un `tempfile()` (suffixe tiré hors de
+# `.Random.seed`).
+.layer_uid <- function(id) {
+  jeton <- rlang::hash(list(id, format(Sys.time(), "%Y%m%d%H%M%OS6"),
+                            Sys.getpid(), tempfile()))
+  paste0(gsub("[^A-Za-z0-9_]", "_", id), "_", jeton)
+}
+
 # Emprise englobant des bbox (NULL ignorées) ; NULL si aucune.
 .union_bbox <- function(bboxes) {
   bboxes <- Filter(Negate(is.null), bboxes)
@@ -368,6 +382,12 @@ col2rgb_str <- function(hex) {
   #         légende ; NULL pour un arbre à plat. Seule la légende est
   #         regroupée, les <maplayer> ne changent pas.
   est_raster <- function(l) identical(l$type, "raster")
+  # Seuls les noms (<layername>) restent fixes : le plugin Groma cherche les
+  # couches par leur nom. Le même identifiant sert à <maplayer> et à la légende.
+  layers <- lapply(layers, function(l) {
+    l$id <- .layer_uid(l$id)
+    l
+  })
   maplayers <- vapply(layers, function(l) {
     if (est_raster(l)) {
       return(.raster_maplayer_xml(l$id, l$name, l$source, crs, l$bbox,

@@ -651,6 +651,33 @@ test_that("le dossier du projet est remplacé avec le .qgz, jamais sans overwrit
   })
 })
 
+test_that("identifiants de couches uniques, neufs à chaque projet, noms inchangés", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    racine <- iv_projet_nemetonshiny("projet")
+    ids <- function(dossier) {
+      set.seed(1)   # un set.seed() de l'appelant ne doit pas redonner les mêmes
+      qgz <- creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE,
+                                           project_path = racine, output_dir = dossier)
+      utils::unzip(qgz, exdir = file.path(dossier, "x"))
+      doc <- xml2::read_xml(file.path(dossier, "x", "inventaire_video.qgs"))
+      couches <- xml2::xml_find_all(doc, "//projectlayers/maplayer")
+      id <- xml2::xml_text(xml2::xml_find_first(couches, "id"))
+      arbre <- xml2::xml_find_all(doc, "//layer-tree-layer")
+      expect_equal(anyDuplicated(id), 0L)
+      expect_true(all(xml2::xml_attr(arbre, "id") %in% id))
+      # Chaque nœud de légende désigne la couche de même nom.
+      nom <- xml2::xml_text(xml2::xml_find_first(couches, "layername"))
+      expect_identical(nom[match(xml2::xml_attr(arbre, "id"), id)], xml2::xml_attr(arbre, "name"))
+      expect_true(all(c("projet", "arbres", "detections", "centres_mesures") %in% nom))
+      expect_true(all(grepl("_[0-9a-f]{32}$", id)))
+      expect_match(id[match("arbres", nom)], "^arbres_01_[0-9a-f]{32}$")
+      id
+    }
+    expect_length(intersect(ids("a"), ids("b")), 0)
+  })
+})
+
 # ---- Publication sur le serveur Groma (brief groma 2026-10-17) ----
 
 test_that("groma_envoyer_projet publie le .qgz puis le .qml, avec leurs empreintes", {
