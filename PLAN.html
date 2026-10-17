@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.13.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -504,6 +504,7 @@
 <p><em>2026-10-17</em> : PR #566 mergée (R-CMD-check, tests, pkgdown, version-consistency verts ; codecov patch à 0 %, comme #564 : le job de couverture ne passe pas par ces tests) ; tag <code>v2026.10.12</code> posé par <code>release.yml</code>. Cycle dev <code>2026.10.12.9000</code>. Réponses : <code>vers-groma/2026-10-17-reponse-projet-qgs-crs-groupes-chemins.md</code>, <code>vers-nemetonshiny/2026-10-17-inventaire-video-dossier-projet.md</code> (zipper le dossier dans <code>video_zip_livraison()</code>). <code>vers-nemeton/</code> vide.</p>
 <p><em>2026-10-17</em> — nemetonshiny <strong>v2026.10.12</strong> (<code>nemetonshiny@52fc4ff0</code>, PR #246, cycle 2026.10.11.9000 → 2026.10.12, plancher inchangé <code>nemeton (&gt;= 2026.10.11)</code>) : le zip de livraison de l’inventaire vidéo contient le dossier ouvrable du projet quand le cœur l’écrit (≥ 2026.10.12), <code>.qgz</code> + <code>.qml</code> à plat sinon ; création et renvoi. Actif dès la publication de nemeton 2026.10.12.</p>
 <p><em>2026-10-17</em> (<strong>2026.10.13</strong>) : brief groma (essai QField 4.3.6 du projet régénéré en 2026.10.12) : projection, échelle et groupes bons, mais <code>arbres</code>, <code>cibles</code>, <code>ugf</code>, <code>projet</code>, <code>Plan IGN</code> et <code>Ortho IGN</code> marquées invalides. Groma a isolé la cause sur l’appareil : les identifiants de couches fixes (<code>arbres_01</code>, <code>Plan_IGN</code>), identiques d’un projet à l’autre ; noms changés = toujours invalides, identifiants changés = toutes valides. Pourquoi ceux-là et pas <code>detections_01</code> reste inexpliqué (état gardé par QField d’un import à l’autre, vraisemblablement). <code>.build_qgs_xml()</code> suffixe chaque identifiant de 32 caractères hexadécimaux (<code><a href="https://rlang.r-lib.org/reference/hash.html" class="external-link">rlang::hash</a></code> de l’heure, du processus et d’un <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile()</a></code>, hors <code>.Random.seed</code>) ; noms inchangés. Assertions du brief vertes sur deux projets successifs (aucun identifiant commun), 17 couches valides sous PyQGIS. Reste l’essai sur le téléphone.</p>
+<p><em>2026-10-17</em> : PR #568 mergée (R-CMD-check, tests, pkgdown, version-consistency verts) ; tag <code>v2026.10.13</code> posé par <code>release.yml</code>. Cycle dev <code>2026.10.13.9000</code>. Réponse : <code>vers-groma/2026-10-17-reponse-projet-qgs-ids-couches.md</code> (plancher <code>nemeton (&gt;= 2026.10.13)</code>).</p>
 <hr></div>
 <div class="section level1">
 <h1 id="ci--dépendances-et-actions-github">CI — dépendances et actions GitHub<a class="anchor" aria-label="anchor" href="#ci--d%C3%A9pendances-et-actions-github"></a></h1>
