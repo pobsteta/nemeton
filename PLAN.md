@@ -496,6 +496,11 @@ calcul. L'app appelle la fonction dans un `tempfile()` et n'en copie que le
 rien ne casse ; brief app :
 `vers-nemetonshiny/2026-10-17-plan-echantillonnage-dossier-projet.md`.
 
+*2026-10-17* : PR #570 mergée (R-CMD-check, tests, pkgdown, version-consistency
+verts ; suite locale sans échec) ; tag `v2026.10.14` posé par `release.yml`.
+Cycle dev `2026.10.14.9000`. `vers-nemeton/` vide (doublon de
+`groma-envoyer-projet.md` classé).
+
 ---
 
 # CI — dépendances et actions GitHub
