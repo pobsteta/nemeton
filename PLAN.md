@@ -500,6 +500,14 @@ invalides, comme le brief l’annonçait. **Même défaut non traité sur
 (plan d’échantillonnage, fonction stable) : son `.qgz` ouvert seul a
 aussi ses couches introuvables — à décider avec Pascal.
 
+*2026-10-17* : PR \#566 mergée (R-CMD-check, tests, pkgdown,
+version-consistency verts ; codecov patch à 0 %, comme \#564 : le job de
+couverture ne passe pas par ces tests) ; tag `v2026.10.12` posé par
+`release.yml`. Cycle dev `2026.10.12.9000`. Réponses :
+`vers-groma/2026-10-17-reponse-projet-qgs-crs-groupes-chemins.md`,
+`vers-nemetonshiny/2026-10-17-inventaire-video-dossier-projet.md`
+(zipper le dossier dans `video_zip_livraison()`). `vers-nemeton/` vide.
+
 ------------------------------------------------------------------------
 
 # CI — dépendances et actions GitHub
