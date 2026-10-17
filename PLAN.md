@@ -468,6 +468,11 @@ l'autre, vraisemblablement). `.build_qgs_xml()` suffixe chaque identifiant de
 vertes sur deux projets successifs (aucun identifiant commun), 17 couches
 valides sous PyQGIS. Reste l'essai sur le téléphone.
 
+*2026-10-17* : PR #568 mergée (R-CMD-check, tests, pkgdown, version-consistency
+verts) ; tag `v2026.10.13` posé par `release.yml`. Cycle dev `2026.10.13.9000`.
+Réponse : `vers-groma/2026-10-17-reponse-projet-qgs-ids-couches.md` (plancher
+`nemeton (>= 2026.10.13)`).
+
 ---
 
 # CI — dépendances et actions GitHub
