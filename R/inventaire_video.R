@@ -1156,22 +1156,31 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
          bbox = bbox, renderer = style$renderer, labeling = style$labeling,
          readonly = attr(champs, "lecture_seule") && !couche %in% ajout_plugin,
          subset = if (couche == "arbres") subset_arbres else NULL,
-         checked = !couche %in% .IV_MASQUEES)
+         checked = !couche %in% .IV_MASQUEES, group = "Inventaire")
   })
   couches <- c(couches, lapply(rasters, function(f) {
     list(type = "raster", id = gsub("[^A-Za-z0-9_]", "_", tools::file_path_sans_ext(basename(f))),
-         name = tools::file_path_sans_ext(basename(f)), source = f, bbox = bbox)
+         name = tools::file_path_sans_ext(basename(f)), source = f, bbox = bbox,
+         group = "Rasters des placettes")
   }))
   # Fonds de carte sous toutes les couches : Plan IGN seul affiché.
   couches <- c(couches, lapply(.iv_fonds(), function(f) {
     list(type = "raster", provider = "wms", id = gsub("[^A-Za-z0-9]", "_", f$nom),
-         name = f$nom, source = f$source, checked = f$visible, attribution = f$attribution)
+         name = f$nom, source = f$source, checked = f$visible, attribution = f$attribution,
+         group = "Fonds de carte")
   }))
+  # Légende en trois groupes (brief Groma 2026-10-17) : les centaines de
+  # rasters MNT/MNH des placettes, repliés et décochés, ne noient plus la
+  # légende. Un groupe décoché masque ses couches sans changer leur état.
+  groupes <- list(
+    list(name = "Inventaire", checked = TRUE, expanded = TRUE),
+    list(name = "Rasters des placettes", checked = FALSE, expanded = FALSE),
+    list(name = "Fonds de carte", checked = TRUE, expanded = FALSE))
   qgs_rel <- paste0(project_name, ".qgs")
   titre <- if (is.na(projet_nom) || !nzchar(projet_nom)) "Inventaire vid\u00e9o" else
     paste("Inventaire vid\u00e9o \u2014", projet_nom)
   writeLines(enc2utf8(.build_qgs_xml(couches, crs = 2154, project_name = project_name,
-                                     title = titre)),
+                                     title = titre, view_extent = bbox, groups = groupes)),
              file.path(stage, qgs_rel), useBytes = TRUE)
 
   fichiers <- c(qgs_rel, gpkg_rel, rasters)
@@ -1195,7 +1204,45 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
   if (!file.copy(.iv_fichier("inventaire_video.qml"), plugin, overwrite = TRUE)) {
     cli::cli_abort("Failed to write the QField plugin {.path {plugin}}.")
   }
+  .iv_dossier_projet(stage, c(qgs_rel, gpkg_rel, rasters), .iv_dossier_de(qgz_path), plugin)
   invisible(qgz_path)
+}
+
+# Dossier `<project_name>/` à côté du `.qgz` : le même projet, ouvrable tel
+# quel. QGIS résout `./inventaire_video.gpkg` depuis le dossier du `.qgz`, pas
+# dans l'archive : un `.qgz` ouvert seul a toutes ses couches introuvables
+# (brief Groma 2026-10-17). Les chemins `attachment:` rendraient le `.qgz`
+# autonome, mais les saisies iraient dans sa copie décompressée ; le dossier
+# porte le GeoPackage que QGIS et QField éditent. Le `.qgz` reste inchangé
+# (le serveur Groma et l'application y lisent `inventaire_video.gpkg`).
+.iv_dossier_de <- function(qgz_path) sub("\\.qgz$", "", qgz_path)
+
+.iv_dossier_projet <- function(stage, fichiers, dossier, plugin) {
+  # Construit à côté puis substitué, pour ne pas laisser un dossier à moitié
+  # copié si une copie échoue.
+  tmp <- tempfile(paste0(basename(dossier), "_"), tmpdir = dirname(dossier))
+  on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
+  for (f in c(fichiers, basename(plugin))) {
+    src <- if (identical(f, basename(plugin))) plugin else file.path(stage, f)
+    dir.create(file.path(tmp, dirname(f)), showWarnings = FALSE, recursive = TRUE)
+    if (!file.copy(src, file.path(tmp, f))) {
+      cli::cli_abort("Failed to write {.path {file.path(dossier, f)}}.")
+    }
+  }
+  unlink(dossier, recursive = TRUE)
+  if (!file.rename(tmp, dossier)) {
+    cli::cli_abort("Failed to write the project folder {.path {dossier}}.")
+  }
+  invisible(dossier)
+}
+
+# Refus d'écraser le `.qgz` ou son dossier sans `overwrite`.
+.iv_verifier_sortie <- function(qgz_path, overwrite) {
+  dossier <- .iv_dossier_de(qgz_path)
+  if (!overwrite && (file.exists(qgz_path) || dir.exists(dossier))) {
+    cli::cli_abort("{.path {qgz_path}} or {.path {dossier}} already exists (overwrite = FALSE).")
+  }
+  invisible(TRUE)
 }
 
 #' Create the video inventory field project
@@ -1262,7 +1309,14 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #' @return Absolute path to the \code{.qgz} (invisibly). The Groma QField
 #'   project plugin is written next to it as \code{<project_name>.qml}
 #'   (copy of \code{inst/inventaire_video/inventaire_video.qml}, not inside the
-#'   archive): ship both files to the phone.
+#'   archive): ship both files to the phone. A folder \code{<project_name>/}
+#'   is also written next to the \code{.qgz}, holding the same project ready
+#'   to open (\code{<project_name>.qgs}, \code{inventaire_video.gpkg},
+#'   \code{rasters/}, \code{<project_name>.qml}): QGIS resolves the
+#'   \code{./} paths of the project from the folder of the \code{.qgz}, so a
+#'   \code{.qgz} opened alone finds none of its layers. The folder is
+#'   replaced like the \code{.qgz} (\code{overwrite}), edits made in it
+#'   included.
 #'
 #' @section Lifecycle:
 #' Experimental (spec 061).
@@ -1303,9 +1357,7 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
   qgz_path <- file.path(output_dir, paste0(project_name, ".qgz"))
-  if (file.exists(qgz_path) && !overwrite) {
-    cli::cli_abort("File {.path {qgz_path}} already exists (overwrite = FALSE).")
-  }
+  .iv_verifier_sortie(qgz_path, overwrite)
   stage <- tempfile("inventaire_video_")
   dir.create(file.path(stage, "rasters"), recursive = TRUE)
   on.exit(unlink(stage, recursive = TRUE), add = TRUE)
@@ -1586,7 +1638,9 @@ importer_inventaire_video <- function(gpkg, resultats = NULL, field_data_gpkg = 
 #'
 #' @return Absolute path to the \code{.qgz} (invisibly), with attribute
 #'   \code{plot_ids} (plots sent back) and \code{n_arbres} (trees in
-#'   \code{etats}).
+#'   \code{etats}). As with \code{\link{creer_projet_inventaire_video}}, the
+#'   \code{.qml} plugin and a ready-to-open \code{<project_name>/} folder are
+#'   written next to it.
 #'
 #' @section Lifecycle:
 #' Experimental (spec 061).
@@ -1629,9 +1683,7 @@ renvoyer_inventaire_video <- function(import, gpkg = NULL, rasters = NULL,
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
   qgz_path <- file.path(output_dir, paste0(project_name, ".qgz"))
-  if (file.exists(qgz_path) && !overwrite) {
-    cli::cli_abort("File {.path {qgz_path}} already exists (overwrite = FALSE).")
-  }
+  .iv_verifier_sortie(qgz_path, overwrite)
   stage <- tempfile("inventaire_video_retour_")
   dir.create(file.path(stage, "rasters"), recursive = TRUE)
   on.exit(unlink(stage, recursive = TRUE), add = TRUE)

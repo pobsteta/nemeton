@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.10** (release du 2026-10-16), relevée le 2026-10-17.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.11** (release du 2026-10-17), relevée le 2026-10-17.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -344,6 +344,9 @@ brief traité, l'app ne passe plus `N2` / `T1` à T2,
 | Cœur | plugin de projet QField `.qml` à côté du `.qgz`, couches nommées comme leurs tables, non verrouillées | **2026.10.7** | ✅ livré |
 | Cœur | symbologie Marculus (§ 2 bis), fonds IGN/OSM en XYZ, houppiers masqués | **2026.10.9** | ✅ livré |
 | App | sous-onglet Terrain > Inventaire vidéo + renvoi terrain | nemetonshiny **2026.10.7** | ✅ livré |
+| Cœur | `groma_envoyer_projet()` : publication du projet QField sur le serveur Groma | **2026.10.10**, **2026.10.11** | ✅ livré |
+| App | bouton « Envoyer au téléphone » | nemetonshiny **2026.10.11** | ✅ livré (reste le vrai serveur Groma) |
+| Cœur | projet QGIS : projection active, ellipsoïde, emprise d'ouverture, légende en trois groupes ; dossier ouvrable à côté du `.qgz` | **2026.10.12** | ✅ livré |
 
 **Journal** — *2026-10-12* (**2026.10.4**) : 9 fonctions exportées
 (experimental) dans `R/inventaire_video.R`. Le schéma, les déclencheurs et le
@@ -408,6 +411,34 @@ groma du 2026-10-16, plugin QField `inventaire_video.qml` (copie conforme)
 leurs tables (le plugin les cherche par nom), `projet` chargée sans géométrie,
 `projet`/`detections`/`centres_mesures`/`arbres` non verrouillées ;
 `declinaison_deg` vide par défaut (Groma calcule le WMM2025).
+
+*2026-10-17* — nemetonshiny **v2026.10.11** (`nemetonshiny@5ea449ec`, PR #245,
+cycle 2026.10.10.9000 → 2026.10.11, plancher `nemeton (>= 2026.10.11)`) : envoi
+du projet QField au téléphone via le serveur Groma (`groma_envoyer_projet()`,
+en tâche de fond, version publiée affichée) ; erreurs du cœur traduites par
+leur texte stable (`refused the token`, `too large`, `altered during the
+upload`, `unreachable`), **à garder stables ou à signaler à l'app**. Essai de
+bout en bout contre un faux serveur Groma. Reste : les routes
+`/projets/…/qfield` du vrai serveur Groma.
+
+*2026-10-17* (**2026.10.12**) : deux briefs groma (essai QField 4.3.6, projet
+`20261015_194200_yzoh`). (1) `.build_qgs_xml()` écrivait des `<properties>`
+vides : sans `SpatialRefSys/ProjectionsEnabled = 1`, QGIS ignore
+`<projectCrs>`, d'où fonds XYZ absents et barre d'échelle à 50 000 km ; la
+propriété est posée avec l'ellipsoïde `EPSG:7019`, plus l'emprise d'ouverture,
+et la légende de l'inventaire vidéo passe en trois groupes (Inventaire,
+Rasters des placettes décochés et repliés, Fonds de carte). (2) Chemins
+`./` résolus depuis le dossier du `.qgz`, pas dans l'archive : option
+« fichiers à côté » retenue, sous la forme d'un dossier `<project_name>/`
+(`.qgs`, GeoPackage, `rasters/`, `.qml`) ; un dossier par projet plutôt qu'un
+`inventaire_video.gpkg` à côté du `.qgz`, que la création et le renvoi
+(même `output_dir` dans l'app) se seraient disputé. Variante VRT écartée
+(change le contenu lu par l'extraction Groma). Vérifié avec PyQGIS : dossier
+= EPSG:2154, GRS80, emprise, trois groupes, 17 couches valides ; `.qgz` seul =
+13 couches invalides, comme le brief l'annonçait. **Même défaut non traité
+sur `create_qgis_project()`** (plan d'échantillonnage, fonction stable) :
+son `.qgz` ouvert seul a aussi ses couches introuvables — à décider avec
+Pascal.
 
 ---
 

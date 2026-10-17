@@ -164,6 +164,27 @@ test_that("creer_projet_inventaire_video produit un GeoPackage utilisable par Gr
     expect_match(qgs, "name=\"H\u00eatre\" value=\"hetre\"", fixed = TRUE)
     expect_match(qgs, "./rasters/P1_mnh.tif", fixed = TRUE)
     expect_match(qgs, "<field name=\"espece\" editable=\"0\"/>", fixed = TRUE)
+
+    # Légende en trois groupes : rasters des placettes repliés et décochés
+    # (brief groma 2026-10-17).
+    doc <- xml2::read_xml(file.path("x", "inventaire_video.qgs"))
+    grp <- xml2::xml_find_all(doc, "/qgis/layer-tree-group/layer-tree-group")
+    expect_identical(xml2::xml_attr(grp, "name"),
+                     c("Inventaire", "Rasters des placettes", "Fonds de carte"))
+    expect_identical(xml2::xml_attr(grp, "checked"),
+                     c("Qt::Checked", "Qt::Unchecked", "Qt::Checked"))
+    expect_identical(xml2::xml_attr(grp, "expanded"), c("1", "0", "0"))
+    expect_setequal(xml2::xml_attr(xml2::xml_find_all(grp[[2]], "layer-tree-layer"), "name"),
+                    c("P1_mnt", "P1_mnh", "P2_mnt", "P2_mnh"))
+    expect_length(xml2::xml_find_all(doc, "/qgis/layer-tree-group/layer-tree-layer"), 0)
+
+    # Dossier ouvrable à côté du .qgz : mêmes fichiers, chemins ./ résolus.
+    d <- file.path("sortie", "inventaire_video")
+    expect_true(all(file.exists(file.path(d, c("inventaire_video.qgs", "inventaire_video.gpkg",
+                                               "inventaire_video.qml", "rasters/P1_mnt.tif",
+                                               "rasters/P2_mnh.tif")))))
+    expect_identical(unname(tools::md5sum(file.path(d, "inventaire_video.qgs"))),
+                     unname(tools::md5sum(file.path("x", "inventaire_video.qgs"))))
   })
 })
 
@@ -572,6 +593,61 @@ test_that("projet QField : symbologie Marculus, fonds IGN/OSM, houppiers masqué
     expect_equal(xml2::xml_attr(xml2::xml_find_first(h, ".//Option[@name='style']"), "value"), "no")
     expect_equal(xml2::xml_attr(xml2::xml_find_first(h, ".//Option[@name='outline_color']"), "value"),
                  "46,125,50,255")
+  })
+})
+
+# ---- Projection, emprise et dossier du projet (briefs groma 2026-10-17) ----
+
+test_that("projet QField : projection active, ellipsoïde, emprise d'ouverture", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    racine <- iv_projet_nemetonshiny("projet")
+    pl <- iv_plan_test()
+    qgz <- creer_projet_inventaire_video(pl, avec_lidar = FALSE,
+                                         project_path = racine, output_dir = "s")
+    utils::unzip(qgz, exdir = "x")
+    doc <- xml2::read_xml(file.path("x", "inventaire_video.qgs"))
+    expect_equal(xml2::xml_text(xml2::xml_find_first(doc,
+      "/qgis/properties/SpatialRefSys/ProjectionsEnabled")), "1")
+    expect_equal(xml2::xml_text(xml2::xml_find_first(doc,
+      "/qgis/properties/Measure/Ellipsoid")), "EPSG:7019")
+    ext <- xml2::xml_find_first(doc, "/qgis/ProjectViewSettings/DefaultViewExtent")
+    v <- vapply(c("xmin", "ymin", "xmax", "ymax"), function(a) as.numeric(xml2::xml_attr(ext, a)), numeric(1))
+    bb <- sf::st_bbox(sf::st_transform(pl, 2154))
+    # L'emprise contient les placettes et leur rayon, marge comprise.
+    expect_true(v[1] < bb[["xmin"]] - 20 && v[3] > bb[["xmax"]] + 20)
+    expect_true(v[2] < bb[["ymin"]] - 20 && v[4] > bb[["ymax"]] + 20)
+    expect_equal(xml2::xml_text(xml2::xml_find_first(ext, "spatialrefsys/authid")), "EPSG:2154")
+    # Sans raster, le groupe des rasters n'est pas écrit.
+    expect_identical(xml2::xml_attr(xml2::xml_find_all(doc, "/qgis/layer-tree-group/layer-tree-group"),
+                                    "name"), c("Inventaire", "Fonds de carte"))
+  })
+})
+
+test_that("le dossier du projet est remplacé avec le .qgz, jamais sans overwrite", {
+  skip_if_not_installed("RSQLite")
+  withr::with_tempdir({
+    racine <- iv_projet_nemetonshiny("projet")
+    qgz <- creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE,
+                                         project_path = racine, output_dir = "s",
+                                         project_name = "couchey")
+    d <- file.path("s", "couchey")
+    expect_true(all(file.exists(file.path(d, c("couchey.qgs", "inventaire_video.gpkg",
+                                               "couchey.qml")))))
+    # Le .qgz garde son contenu (serveur Groma, extraction de l'application).
+    expect_true(all(c("couchey.qgs", "inventaire_video.gpkg") %in%
+                    utils::unzip(qgz, list = TRUE)$Name))
+    writeLines("ancien", file.path(d, "reste.txt"))
+    creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE,
+                                  project_path = racine, output_dir = "s",
+                                  project_name = "couchey")
+    expect_false(file.exists(file.path(d, "reste.txt")))
+    expect_length(list.files("s", pattern = "^couchey_"), 0)   # pas de reste temporaire
+    unlink(qgz)
+    expect_error(creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE,
+                                               output_dir = "s", project_name = "couchey",
+                                               overwrite = FALSE),
+                 "already exists")
   })
 })
 

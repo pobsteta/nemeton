@@ -44,7 +44,9 @@ Default \code{"inventaire_video_retour"}.}
 \value{
 Absolute path to the \code{.qgz} (invisibly), with attribute
 \code{plot_ids} (plots sent back) and \code{n_arbres} (trees in
-\code{etats}).
+\code{etats}). As with \code{\link{creer_projet_inventaire_video}}, the
+\code{.qml} plugin and a ready-to-open \code{<project_name>/} folder are
+written next to it.
 }
 \description{
 Builds a new QField project (\code{.qgz}) for the plots that still hold
