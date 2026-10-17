@@ -68,7 +68,10 @@ renvoyer_inventaire_video(
 ## Value
 
 Absolute path to the `.qgz` (invisibly), with attribute `plot_ids`
-(plots sent back) and `n_arbres` (trees in `etats`).
+(plots sent back) and `n_arbres` (trees in `etats`). As with
+[`creer_projet_inventaire_video`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md),
+the `.qml` plugin and a ready-to-open `<project_name>/` folder are
+written next to it.
 
 ## Details
 

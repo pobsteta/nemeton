@@ -1,5 +1,48 @@
 # Changelog
 
+## nemeton 2026.10.12 (2026-10-17)
+
+Deux briefs groma du 2026-10-17, après un essai de l’inventaire vidéo
+sur un téléphone (QField 4.3.6, projet de Marsannay-la-Côte) : fonds de
+carte absents, barre d’échelle à « 50000 km », légende de 225 couches à
+plat, et couches introuvables quand on ouvre le `.qgz` seul.
+
+### Corrections
+
+- **Le projet QGIS avait une projection invalide** (`.build_qgs_xml()`,
+  donc
+  [`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md),
+  [`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md)
+  et
+  [`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md))
+  : QGIS ne lit `<projectCrs>` qu’avec la propriété
+  `SpatialRefSys/ProjectionsEnabled = 1`, qui manquait. Sans elle, le
+  canevas n’a pas de SCR : les fonds XYZ en EPSG:3857 ne sont pas
+  reprojetés et les distances sont fausses. La propriété est écrite,
+  avec l’ellipsoïde GRS 1980 (`EPSG:7019`, mesures ellipsoïdales dans
+  QField) quand le SCR le porte (RGF93, ETRS89), `NONE` sinon.
+- **Emprise d’ouverture** (`ProjectViewSettings/DefaultViewExtent`) :
+  les placettes et leur rayon (inventaire vidéo), ou toutes les couches
+  (plan d’échantillonnage), plus 5 % de marge.
+
+### Nouveautés
+
+- **Légende de l’inventaire vidéo en trois groupes** : « Inventaire »
+  (les couches du GeoPackage, cochées, dépliées), « Rasters des
+  placettes » (les MNT/MNH de chaque placette, décochés, repliés), «
+  Fonds de carte » (cochés, repliés). Les couches elles-mêmes ne
+  changent pas.
+- **Dossier `<project_name>/` à côté du `.qgz`** de l’inventaire vidéo,
+  prêt à ouvrir : `<project_name>.qgs`, `inventaire_video.gpkg`,
+  `rasters/`, `<project_name>.qml`. QGIS résout les chemins `./` depuis
+  le dossier du `.qgz`, pas dans l’archive : un `.qgz` ouvert seul ne
+  trouve aucune de ses couches (vérifié avec PyQGIS). Les chemins
+  `attachment:` ont été écartés : les saisies iraient dans la copie
+  décompressée de l’archive. Le contenu du `.qgz` ne change pas (le
+  serveur Groma et l’application y lisent `inventaire_video.gpkg`). Le
+  dossier est remplacé avec le `.qgz` ; avec `overwrite = FALSE`, un
+  dossier existant fait refuser la création.
+
 ## nemeton 2026.10.11 (2026-10-17)
 
 ### Corrections

@@ -113,7 +113,13 @@ creer_projet_inventaire_video(
 Absolute path to the `.qgz` (invisibly). The Groma QField project plugin
 is written next to it as `<project_name>.qml` (copy of
 `inst/inventaire_video/inventaire_video.qml`, not inside the archive):
-ship both files to the phone.
+ship both files to the phone. A folder `<project_name>/` is also written
+next to the `.qgz`, holding the same project ready to open
+(`<project_name>.qgs`, `inventaire_video.gpkg`, `rasters/`,
+`<project_name>.qml`): QGIS resolves the `./` paths of the project from
+the folder of the `.qgz`, so a `.qgz` opened alone finds none of its
+layers. The folder is replaced like the `.qgz` (`overwrite`), edits made
+in it included.
 
 ## Details
 

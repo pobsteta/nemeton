@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.11.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.12</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,6 +110,24 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.12" id="nemeton-20261012-2026-10-17">nemeton 2026.10.12 (2026-10-17)<a class="anchor" aria-label="anchor" href="#nemeton-20261012-2026-10-17"></a></h2>
+<p>Deux briefs groma du 2026-10-17, après un essai de l’inventaire vidéo sur un téléphone (QField 4.3.6, projet de Marsannay-la-Côte) : fonds de carte absents, barre d’échelle à « 50000 km », légende de 225 couches à plat, et couches introuvables quand on ouvre le <code>.qgz</code> seul.</p>
+<div class="section level3">
+<h3 id="corrections-2026-10-12">Corrections<a class="anchor" aria-label="anchor" href="#corrections-2026-10-12"></a></h3>
+<ul><li>
+<strong>Le projet QGIS avait une projection invalide</strong> (<code>.build_qgs_xml()</code>, donc <code><a href="../reference/creer_projet_inventaire_video.html">creer_projet_inventaire_video()</a></code>, <code><a href="../reference/renvoyer_inventaire_video.html">renvoyer_inventaire_video()</a></code> et <code><a href="../reference/create_qgis_project.html">create_qgis_project()</a></code>) : QGIS ne lit <code>&lt;projectCrs&gt;</code> qu’avec la propriété <code>SpatialRefSys/ProjectionsEnabled = 1</code>, qui manquait. Sans elle, le canevas n’a pas de SCR : les fonds XYZ en EPSG:3857 ne sont pas reprojetés et les distances sont fausses. La propriété est écrite, avec l’ellipsoïde GRS 1980 (<code>EPSG:7019</code>, mesures ellipsoïdales dans QField) quand le SCR le porte (RGF93, ETRS89), <code>NONE</code> sinon.</li>
+<li>
+<strong>Emprise d’ouverture</strong> (<code>ProjectViewSettings/DefaultViewExtent</code>) : les placettes et leur rayon (inventaire vidéo), ou toutes les couches (plan d’échantillonnage), plus 5 % de marge.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="nouveautés-2026-10-12">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-10-12"></a></h3>
+<ul><li>
+<strong>Légende de l’inventaire vidéo en trois groupes</strong> : « Inventaire » (les couches du GeoPackage, cochées, dépliées), « Rasters des placettes » (les MNT/MNH de chaque placette, décochés, repliés), « Fonds de carte » (cochés, repliés). Les couches elles-mêmes ne changent pas.</li>
+<li>
+<strong>Dossier <code>&lt;project_name&gt;/</code> à côté du <code>.qgz</code></strong> de l’inventaire vidéo, prêt à ouvrir : <code>&lt;project_name&gt;.qgs</code>, <code>inventaire_video.gpkg</code>, <code>rasters/</code>, <code>&lt;project_name&gt;.qml</code>. QGIS résout les chemins <code>./</code> depuis le dossier du <code>.qgz</code>, pas dans l’archive : un <code>.qgz</code> ouvert seul ne trouve aucune de ses couches (vérifié avec PyQGIS). Les chemins <code>attachment:</code> ont été écartés : les saisies iraient dans la copie décompressée de l’archive. Le contenu du <code>.qgz</code> ne change pas (le serveur Groma et l’application y lisent <code>inventaire_video.gpkg</code>). Le dossier est remplacé avec le <code>.qgz</code> ; avec <code>overwrite = FALSE</code>, un dossier existant fait refuser la création.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.11" id="nemeton-20261011-2026-10-17">nemeton 2026.10.11 (2026-10-17)<a class="anchor" aria-label="anchor" href="#nemeton-20261011-2026-10-17"></a></h2>
 <div class="section level3">

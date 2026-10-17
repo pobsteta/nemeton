@@ -23,7 +23,7 @@ like create_qgis_project."><meta property="og:image" content="https://pobsteta.g
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.11.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.12</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -247,7 +247,14 @@ the BD Foret V2 reference); kept for symmetry with
     <p>Absolute path to the <code>.qgz</code> (invisibly). The Groma QField
 project plugin is written next to it as <code>&lt;project_name&gt;.qml</code>
 (copy of <code>inst/inventaire_video/inventaire_video.qml</code>, not inside the
-archive): ship both files to the phone.</p>
+archive): ship both files to the phone. A folder <code>&lt;project_name&gt;/</code>
+is also written next to the <code>.qgz</code>, holding the same project ready
+to open (<code>&lt;project_name&gt;.qgs</code>, <code>inventaire_video.gpkg</code>,
+<code>rasters/</code>, <code>&lt;project_name&gt;.qml</code>): QGIS resolves the
+<code>./</code> paths of the project from the folder of the <code>.qgz</code>, so a
+<code>.qgz</code> opened alone finds none of its layers. The folder is
+replaced like the <code>.qgz</code> (<code>overwrite</code>), edits made in it
+included.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
