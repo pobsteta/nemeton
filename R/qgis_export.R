@@ -490,7 +490,14 @@ col2rgb_str <- function(hex) {
 #' @param overwrite Logical. Overwrite an existing \code{.qgz}. Default
 #'   \code{TRUE}.
 #'
-#' @return Absolute path to the \code{.qgz} file that was created.
+#' @return Absolute path to the \code{.qgz} file that was created. A folder
+#'   \code{<project_name>/} is also written next to it, holding the same
+#'   project ready to open (\code{<project_name>.qgs} and
+#'   \code{<project_name>.gpkg}): QGIS resolves the \code{./} paths of the
+#'   project from the folder of the \code{.qgz}, so a \code{.qgz} opened alone
+#'   finds none of its layers. The folder is replaced like the \code{.qgz}
+#'   (\code{overwrite}); an existing folder of that name that does not hold
+#'   \code{<project_name>.qgs} is never replaced (error).
 #'
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
@@ -553,10 +560,8 @@ create_qgis_project <- function(placettes,
   qgz_path <- file.path(output_dir, paste0(project_name, ".qgz"))
   # Le .qgz existant n'est PAS supprimé ici : il n'est remplacé qu'une fois
   # le nouveau construit (cf. .atomic_write plus bas), pour ne rien perdre
-  # si la construction échoue.
-  if (file.exists(qgz_path) && !overwrite) {
-    cli::cli_abort("File {.path {qgz_path}} already exists (overwrite = FALSE).")
-  }
+  # si la construction échoue. Même contrôle pour le dossier du projet.
+  .iv_verifier_sortie(qgz_path, overwrite)
 
   # Stage in a temp dir, then zip into .qgz with relative paths.
   stage <- tempfile("qgis_stage_")
@@ -683,6 +688,10 @@ create_qgis_project <- function(placettes,
                      parent = e)
     }
   )
+
+  # Dossier ouvrable à côté du .qgz : QGIS résout les chemins ./ depuis le
+  # dossier du .qgz, pas dans l'archive (cf. .iv_dossier_projet).
+  .iv_dossier_projet(stage, basename(files_abs), .iv_dossier_de(qgz_path))
 
   cli::cli_alert_success("QGIS project created: {.path {qgz_path}}")
   invisible(qgz_path)

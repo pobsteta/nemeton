@@ -10,6 +10,12 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.14] - 2026-10-17
+
+### Added
+- `create_qgis_project()` also writes a ready-to-open `<project_name>/` folder next to the `.qgz`.
+- A same-name folder is only replaced when empty or holding `<project_name>.qgs` (never a user folder).
+
 ## [2026.10.13] - 2026-10-17
 
 ### Fixed
