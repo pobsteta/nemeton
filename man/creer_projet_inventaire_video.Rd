@@ -77,7 +77,14 @@ the BD Foret V2 reference); kept for symmetry with
 Absolute path to the \code{.qgz} (invisibly). The Groma QField
 project plugin is written next to it as \code{<project_name>.qml}
 (copy of \code{inst/inventaire_video/inventaire_video.qml}, not inside the
-archive): ship both files to the phone.
+archive): ship both files to the phone. A folder \code{<project_name>/}
+is also written next to the \code{.qgz}, holding the same project ready
+to open (\code{<project_name>.qgs}, \code{inventaire_video.gpkg},
+\code{rasters/}, \code{<project_name>.qml}): QGIS resolves the
+\code{./} paths of the project from the folder of the \code{.qgz}, so a
+\code{.qgz} opened alone finds none of its layers. The folder is
+replaced like the \code{.qgz} (\code{overwrite}), edits made in it
+included.
 }
 \description{
 Builds \code{inventaire_video.gpkg} (layers \code{placettes},

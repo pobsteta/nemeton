@@ -311,12 +311,62 @@ col2rgb_str <- function(hex) {
 }
 
 
+# Propriétés du projet. Sans `SpatialRefSys/ProjectionsEnabled = 1`, QGIS
+# ignore <projectCrs> : projet sans SCR, fonds XYZ (EPSG:3857) non
+# reprojetés, barre d'échelle fausse (brief Groma 2026-10-17). Ellipsoïde
+# GRS 1980 (EPSG:7019) pour les SCR qui le portent (RGF93, ETRS89) :
+# mesures ellipsoïdales dans QField ; sinon mesures planes (NONE).
+.project_properties_xml <- function(crs = 2154) {
+  proj4 <- tryCatch(sf::st_crs(crs)$proj4string, error = function(e) NA_character_)
+  ellipsoide <- if (!is.na(proj4 %||% NA) && grepl("+ellps=GRS80", proj4, fixed = TRUE)) {
+    "EPSG:7019"
+  } else "NONE"
+  .xml_tag("properties", children = c(
+    .xml_tag("SpatialRefSys", children = .xml_tag("ProjectionsEnabled",
+                                                  attrs = list(type = "int"), text = "1")),
+    .xml_tag("Measure", children = .xml_tag("Ellipsoid",
+                                            attrs = list(type = "QString"), text = ellipsoide))
+  ))
+}
+
+# Emprise d'ouverture du projet (dans le SCR du projet), avec une marge de
+# `marge` fois la plus grande dimension ; rien sans emprise valide.
+.view_settings_xml <- function(bbox, crs = 2154, marge = 0.05) {
+  if (is.null(bbox) || any(!is.finite(unlist(bbox[c("xmin", "ymin", "xmax", "ymax")])))) {
+    return("")
+  }
+  d <- marge * max(bbox[["xmax"]] - bbox[["xmin"]], bbox[["ymax"]] - bbox[["ymin"]], 1)
+  fmt <- function(x) formatC(x, format = "f", digits = 3)
+  .xml_tag("ProjectViewSettings",
+    attrs = list(UseProjectScales = "0", rotation = "0"),
+    children = c(
+      .xml_tag("Scales"),
+      .xml_tag("DefaultViewExtent",
+        attrs = list(xmin = fmt(bbox[["xmin"]] - d), ymin = fmt(bbox[["ymin"]] - d),
+                     xmax = fmt(bbox[["xmax"]] + d), ymax = fmt(bbox[["ymax"]] + d)),
+        children = .spatialrefsys_xml(crs))
+    ))
+}
+
+# Emprise englobant des bbox (NULL ignorées) ; NULL si aucune.
+.union_bbox <- function(bboxes) {
+  bboxes <- Filter(Negate(is.null), bboxes)
+  if (!length(bboxes)) return(NULL)
+  m <- do.call(rbind, lapply(bboxes, function(b) unlist(b[c("xmin", "ymin", "xmax", "ymax")])))
+  c(xmin = min(m[, 1]), ymin = min(m[, 2]), xmax = max(m[, 3]), ymax = max(m[, 4]))
+}
+
 .build_qgs_xml <- function(layers, crs = 2154, project_name = "Nemeton sampling",
-                           title = project_name) {
+                           title = project_name, view_extent = NULL, groups = NULL) {
   # layers: list of list(id, name, gpkg_rel, layername, geometry, schema,
   #                     renderer, readonly, bbox, labeling), ou, pour un
   #                     raster GeoTIFF, list(type = "raster", id, name,
-  #                     source, bbox)
+  #                     source, bbox). Champ optionnel `group` : nom d'un
+  #                     groupe de `groups`.
+  # view_extent: bbox d'ouverture (SCR du projet), NULL pour aucune.
+  # groups: list of list(name, checked, expanded), dans l'ordre de la
+  #         légende ; NULL pour un arbre à plat. Seule la légende est
+  #         regroupée, les <maplayer> ne changent pas.
   est_raster <- function(l) identical(l$type, "raster")
   maplayers <- vapply(layers, function(l) {
     if (est_raster(l)) {
@@ -343,6 +393,24 @@ col2rgb_str <- function(hex) {
   customprops <- .xml_tag("customproperties", children = empty_map)
   custom_order <- .xml_tag("custom-order", attrs = list(enabled = "0"))
 
+  if (length(groups)) {
+    groupe_de <- vapply(layers, function(l) l$group %||% NA_character_, character(1))
+    noms_groupes <- vapply(groups, `[[`, character(1), "name")
+    orphelins <- setdiff(stats::na.omit(groupe_de), noms_groupes)
+    if (length(orphelins) || anyNA(groupe_de)) {
+      cli::cli_abort("Every layer must belong to one of {.arg groups}.")
+    }
+    tree_nodes <- vapply(groups, function(g) {
+      membres <- tree_nodes[groupe_de == g$name]
+      if (!length(membres)) return("")
+      .xml_tag("layer-tree-group",
+        attrs = list(name = g$name,
+                     checked = if (isFALSE(g$checked)) "Qt::Unchecked" else "Qt::Checked",
+                     expanded = if (isFALSE(g$expanded)) "0" else "1"),
+        children = c(customprops, membres))
+    }, character(1))
+  }
+
   header <- '<?xml version="1.0" encoding="UTF-8"?>'
   body <- .xml_tag("qgis",
     attrs = list(version = "3.34.0-Prizren", projectname = project_name),
@@ -355,7 +423,8 @@ col2rgb_str <- function(hex) {
         attrs = list(checked = "Qt::Checked", expanded = "1"),
         children = c(customprops, tree_nodes, custom_order)),
       .xml_tag("projectlayers", children = maplayers),
-      .xml_tag("properties", children = empty_map)
+      .project_properties_xml(crs),
+      .view_settings_xml(view_extent, crs)
     )
   )
   paste0(header, "\n", body, "\n")
@@ -572,7 +641,8 @@ create_qgis_project <- function(placettes,
     )))
   }
 
-  qgs_xml <- .build_qgs_xml(layers_meta, crs = crs, project_name = project_name)
+  qgs_xml <- .build_qgs_xml(layers_meta, crs = crs, project_name = project_name,
+                            view_extent = .union_bbox(lapply(layers_meta, `[[`, "bbox")))
   qgs_path <- file.path(stage, paste0(project_name, ".qgs"))
   writeLines(qgs_xml, qgs_path, useBytes = TRUE)
 

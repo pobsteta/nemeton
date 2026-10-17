@@ -170,6 +170,17 @@ test_that("create_qgis_project .qgs XML is well-formed and wires field constrain
     crs_authid <- xml2::xml_text(xml2::xml_find_first(doc,
       ".//projectCrs/spatialrefsys/authid"))
     expect_equal(crs_authid, "EPSG:2154")
+    # QGIS ne lit <projectCrs> qu'avec ProjectionsEnabled = 1 (brief groma
+    # 2026-10-17) ; emprise d'ouverture sur les placettes.
+    expect_equal(xml2::xml_text(xml2::xml_find_first(doc,
+      "/qgis/properties/SpatialRefSys/ProjectionsEnabled")), "1")
+    expect_equal(xml2::xml_text(xml2::xml_find_first(doc,
+      "/qgis/properties/Measure/Ellipsoid")), "EPSG:7019")
+    ext <- xml2::xml_find_first(doc, "/qgis/ProjectViewSettings/DefaultViewExtent")
+    v <- vapply(c("xmin", "ymin", "xmax", "ymax"), function(a) as.numeric(xml2::xml_attr(ext, a)), numeric(1))
+    bb <- sf::st_bbox(pts)
+    expect_true(v[1] < bb[["xmin"]] && v[2] < bb[["ymin"]] &&
+                v[3] > bb[["xmax"]] && v[4] > bb[["ymax"]])
 
     layer_names <- xml2::xml_text(xml2::xml_find_all(doc, ".//maplayer/layername"))
     expect_true(all(c("Placettes", "Arbres") %in% layer_names))

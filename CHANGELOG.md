@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.12] - 2026-10-17
+
+### Fixed
+- QGIS projects (`.build_qgs_xml()`): `SpatialRefSys/ProjectionsEnabled = 1` so QGIS reads the project CRS (XYZ base maps and scale bar were broken); GRS 1980 ellipsoid; default view extent.
+
+### Added
+- Video-inventory QField project: legend in three groups (inventory, plot rasters, base maps) and a ready-to-open `<project_name>/` folder next to the `.qgz`.
+
 ## [2026.10.11] - 2026-10-17
 
 ### Fixed
