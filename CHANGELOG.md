@@ -13,6 +13,14 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.10.13\] - 2026-10-17
+
+### Fixed
+
+- QGIS projects: layer ids are unique for each generated project (QField
+  marked layers with recurring fixed ids invalid); layer names
+  unchanged.
+
 ## \[2026.10.12\] - 2026-10-17
 
 ### Fixed

@@ -1,5 +1,26 @@
 # Changelog
 
+## nemeton 2026.10.13 (2026-10-17)
+
+### Corrections
+
+- **Identifiants de couches uniques dans le `.qgs`**
+  (`.build_qgs_xml()`, donc
+  [`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md),
+  [`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md)
+  et
+  [`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)),
+  brief groma du 2026-10-17 : QField 4.3.6 marquait invalides `arbres`,
+  `cibles`, `ugf`, `projet`, `Plan IGN` et `Ortho IGN`, dont les
+  identifiants fixes (`arbres_01`, `Plan_IGN`…) revenaient d’un projet à
+  l’autre ; avec d’autres identifiants, toutes les couches étaient
+  valides. Chaque couche reçoit désormais, à chaque génération, son
+  identifiant de base suivi de 32 caractères hexadécimaux
+  (`arbres_01_6f1c…`), le même dans `<maplayer>` et dans la légende. Un
+  [`set.seed()`](https://rdrr.io/r/base/Random.html) de l’appelant ne
+  les fait pas revenir. Les noms de couches (`<layername>`) ne changent
+  pas : le plugin Groma cherche les couches par leur nom.
+
 ## nemeton 2026.10.12 (2026-10-17)
 
 Deux briefs groma du 2026-10-17, après un essai de l’inventaire vidéo

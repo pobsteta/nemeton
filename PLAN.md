@@ -7,7 +7,7 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.11**
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.12**
 > (release du 2026-10-17), relevée le 2026-10-17.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
@@ -391,6 +391,8 @@ retirées, `t2_no_source` reformulée, tests passés à `"no_source"`.
 | Cœur | [`groma_envoyer_projet()`](https://pobsteta.github.io/nemeton/reference/groma_envoyer_projet.md) : publication du projet QField sur le serveur Groma | **2026.10.10**, **2026.10.11** | ✅ livré |
 | App | bouton « Envoyer au téléphone » | nemetonshiny **2026.10.11** | ✅ livré (reste le vrai serveur Groma) |
 | Cœur | projet QGIS : projection active, ellipsoïde, emprise d’ouverture, légende en trois groupes ; dossier ouvrable à côté du `.qgz` | **2026.10.12** | ✅ livré |
+| App | zip de livraison = dossier ouvrable du projet | nemetonshiny **2026.10.12** | ✅ livré |
+| Cœur | identifiants de couches uniques à chaque projet (QField marquait des couches invalides) | **2026.10.13** | ✅ livré |
 
 **Journal** — *2026-10-12* (**2026.10.4**) : 9 fonctions exportées
 (experimental) dans `R/inventaire_video.R`. Le schéma, les déclencheurs
@@ -507,6 +509,30 @@ couverture ne passe pas par ces tests) ; tag `v2026.10.12` posé par
 `vers-groma/2026-10-17-reponse-projet-qgs-crs-groupes-chemins.md`,
 `vers-nemetonshiny/2026-10-17-inventaire-video-dossier-projet.md`
 (zipper le dossier dans `video_zip_livraison()`). `vers-nemeton/` vide.
+
+*2026-10-17* — nemetonshiny **v2026.10.12** (`nemetonshiny@52fc4ff0`, PR
+\#246, cycle 2026.10.11.9000 → 2026.10.12, plancher inchangé
+`nemeton (>= 2026.10.11)`) : le zip de livraison de l’inventaire vidéo
+contient le dossier ouvrable du projet quand le cœur l’écrit (≥
+2026.10.12), `.qgz` + `.qml` à plat sinon ; création et renvoi. Actif
+dès la publication de nemeton 2026.10.12.
+
+*2026-10-17* (**2026.10.13**) : brief groma (essai QField 4.3.6 du
+projet régénéré en 2026.10.12) : projection, échelle et groupes bons,
+mais `arbres`, `cibles`, `ugf`, `projet`, `Plan IGN` et `Ortho IGN`
+marquées invalides. Groma a isolé la cause sur l’appareil : les
+identifiants de couches fixes (`arbres_01`, `Plan_IGN`), identiques d’un
+projet à l’autre ; noms changés = toujours invalides, identifiants
+changés = toutes valides. Pourquoi ceux-là et pas `detections_01` reste
+inexpliqué (état gardé par QField d’un import à l’autre,
+vraisemblablement). `.build_qgs_xml()` suffixe chaque identifiant de 32
+caractères hexadécimaux
+([`rlang::hash`](https://rlang.r-lib.org/reference/hash.html) de
+l’heure, du processus et d’un
+[`tempfile()`](https://rdrr.io/r/base/tempfile.html), hors
+`.Random.seed`) ; noms inchangés. Assertions du brief vertes sur deux
+projets successifs (aucun identifiant commun), 17 couches valides sous
+PyQGIS. Reste l’essai sur le téléphone.
 
 ------------------------------------------------------------------------
 
