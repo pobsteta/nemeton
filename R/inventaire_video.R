@@ -1215,15 +1215,17 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 # autonome, mais les saisies iraient dans sa copie décompressée ; le dossier
 # porte le GeoPackage que QGIS et QField éditent. Le `.qgz` reste inchangé
 # (le serveur Groma et l'application y lisent `inventaire_video.gpkg`).
+# Sert aussi à create_qgis_project() (sans plugin).
 .iv_dossier_de <- function(qgz_path) sub("\\.qgz$", "", qgz_path)
 
-.iv_dossier_projet <- function(stage, fichiers, dossier, plugin) {
+.iv_dossier_projet <- function(stage, fichiers, dossier, plugin = NULL) {
+  .iv_dossier_remplacable(dossier)
   # Construit à côté puis substitué, pour ne pas laisser un dossier à moitié
   # copié si une copie échoue.
   tmp <- tempfile(paste0(basename(dossier), "_"), tmpdir = dirname(dossier))
   on.exit(unlink(tmp, recursive = TRUE), add = TRUE)
-  for (f in c(fichiers, basename(plugin))) {
-    src <- if (identical(f, basename(plugin))) plugin else file.path(stage, f)
+  for (f in c(fichiers, if (!is.null(plugin)) basename(plugin))) {
+    src <- if (!is.null(plugin) && identical(f, basename(plugin))) plugin else file.path(stage, f)
     dir.create(file.path(tmp, dirname(f)), showWarnings = FALSE, recursive = TRUE)
     if (!file.copy(src, file.path(tmp, f))) {
       cli::cli_abort("Failed to write {.path {file.path(dossier, f)}}.")
@@ -1236,12 +1238,27 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
   invisible(dossier)
 }
 
-# Refus d'écraser le `.qgz` ou son dossier sans `overwrite`.
+# Un dossier homonyme n'est remplacé que s'il est vide ou porte déjà
+# `<nom>.qgs` (un projet écrit ici) : jamais un dossier de l'utilisateur qui
+# aurait le nom du projet.
+.iv_dossier_remplacable <- function(dossier) {
+  if (!dir.exists(dossier)) return(invisible(TRUE))
+  contenu <- list.files(dossier, all.files = TRUE, no.. = TRUE)
+  if (length(contenu) && !file.exists(file.path(dossier, paste0(basename(dossier), ".qgs")))) {
+    cli::cli_abort(c("{.path {dossier}} exists and is not a project folder written by nemeton.",
+                     i = "Move it, or choose another {.arg output_dir} or {.arg project_name}."))
+  }
+  invisible(TRUE)
+}
+
+# Refus d'écraser le `.qgz` ou son dossier sans `overwrite`, ou un dossier
+# homonyme qui n'est pas un projet (vérifié avant tout calcul).
 .iv_verifier_sortie <- function(qgz_path, overwrite) {
   dossier <- .iv_dossier_de(qgz_path)
   if (!overwrite && (file.exists(qgz_path) || dir.exists(dossier))) {
     cli::cli_abort("{.path {qgz_path}} or {.path {dossier}} already exists (overwrite = FALSE).")
   }
+  .iv_dossier_remplacable(dossier)
   invisible(TRUE)
 }
 

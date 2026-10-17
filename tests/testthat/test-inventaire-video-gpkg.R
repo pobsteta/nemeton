@@ -648,6 +648,13 @@ test_that("le dossier du projet est remplacé avec le .qgz, jamais sans overwrit
                                                output_dir = "s", project_name = "couchey",
                                                overwrite = FALSE),
                  "already exists")
+    # Un dossier de l'utilisateur au nom du projet n'est jamais remplacé.
+    dir.create(file.path("s", "autre"))
+    writeLines("a moi", file.path("s", "autre", "notes.txt"))
+    expect_error(creer_projet_inventaire_video(iv_plan_test(), avec_lidar = FALSE,
+                                               output_dir = "s", project_name = "autre"),
+                 "not\\s+a\\s+project\\s+folder")
+    expect_true(file.exists(file.path("s", "autre", "notes.txt")))
   })
 })
 

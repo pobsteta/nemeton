@@ -50,7 +50,14 @@ Default 2154 (Lambert-93).}
 \code{TRUE}.}
 }
 \value{
-Absolute path to the \code{.qgz} file that was created.
+Absolute path to the \code{.qgz} file that was created. A folder
+\code{<project_name>/} is also written next to it, holding the same
+project ready to open (\code{<project_name>.qgs} and
+\code{<project_name>.gpkg}): QGIS resolves the \code{./} paths of the
+project from the folder of the \code{.qgz}, so a \code{.qgz} opened alone
+finds none of its layers. The folder is replaced like the \code{.qgz}
+(\code{overwrite}); an existing folder of that name that does not hold
+\code{<project_name>.qgs} is never replaced (error).
 }
 \description{
 Packages sampling plots, study area, and (optionally) the TSP route

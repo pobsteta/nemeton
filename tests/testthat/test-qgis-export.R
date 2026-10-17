@@ -234,6 +234,36 @@ test_that("create_qgis_project refuses overwriting when overwrite=FALSE", {
   )
 })
 
+test_that("create_qgis_project writes an openable folder next to the .qgz", {
+  skip_if_no_sf()
+  pts <- make_sample_plots()
+  out <- withr::local_tempdir()
+  qgz <- create_qgis_project(pts, output_dir = out, project_name = "plan")
+  d <- file.path(out, "plan")
+  expect_true(all(file.exists(file.path(d, c("plan.qgs", "plan.gpkg")))))
+  # Le .qgz garde son contenu.
+  expect_setequal(utils::unzip(qgz, list = TRUE)$Name, c("plan.qgs", "plan.gpkg"))
+  doc <- xml2::read_xml(file.path(d, "plan.qgs"))
+  src <- xml2::xml_text(xml2::xml_find_all(doc, ".//maplayer/datasource"))
+  expect_true(all(file.exists(file.path(d, sub("\\|.*$", "", src)))))
+  # Reconstruction : le dossier est remplacé.
+  writeLines("x", file.path(d, "reste.txt"))
+  create_qgis_project(pts, output_dir = out, project_name = "plan")
+  expect_false(file.exists(file.path(d, "reste.txt")))
+})
+
+test_that("create_qgis_project never replaces a user folder with the project name", {
+  skip_if_no_sf()
+  pts <- make_sample_plots()
+  out <- withr::local_tempdir()
+  dir.create(file.path(out, "plan"))
+  writeLines("a moi", file.path(out, "plan", "notes.txt"))
+  expect_error(create_qgis_project(pts, output_dir = out, project_name = "plan"),
+               "not\\s+a\\s+project\\s+folder")
+  expect_true(file.exists(file.path(out, "plan", "notes.txt")))
+  expect_false(file.exists(file.path(out, "plan.qgz")))
+})
+
 test_that("a failed rebuild keeps the existing .qgz intact (audit 1.0)", {
   skip_if_no_sf()
   pts <- make_sample_plots()
@@ -250,8 +280,8 @@ test_that("a failed rebuild keeps the existing .qgz intact (audit 1.0)", {
   expect_true(file.exists(qgz))
   expect_identical(unname(tools::md5sum(qgz)), avant)
   expect_identical(getwd(), owd)
-  # aucun temporaire laissé dans output_dir
-  expect_identical(list.files(out, all.files = TRUE, no.. = TRUE), "garde.qgz")
+  # aucun temporaire laissé dans output_dir ; le dossier du premier projet reste
+  expect_identical(list.files(out, all.files = TRUE, no.. = TRUE), c("garde", "garde.qgz"))
 })
 
 test_that("create_qgis_project rejects non-sf placettes", {
