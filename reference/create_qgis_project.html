@@ -13,7 +13,7 @@ open in QGIS Desktop and to push to QField via QFieldSync."><meta property="og:i
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.13.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.14</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -195,7 +195,14 @@ Default 2154 (Lambert-93).</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Absolute path to the <code>.qgz</code> file that was created.</p>
+    <p>Absolute path to the <code>.qgz</code> file that was created. A folder
+<code>&lt;project_name&gt;/</code> is also written next to it, holding the same
+project ready to open (<code>&lt;project_name&gt;.qgs</code> and
+<code>&lt;project_name&gt;.gpkg</code>): QGIS resolves the <code>./</code> paths of the
+project from the folder of the <code>.qgz</code>, so a <code>.qgz</code> opened alone
+finds none of its layers. The folder is replaced like the <code>.qgz</code>
+(<code>overwrite</code>); an existing folder of that name that does not hold
+<code>&lt;project_name&gt;.qgs</code> is never replaced (error).</p>
     </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>

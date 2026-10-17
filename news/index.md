@@ -1,5 +1,28 @@
 # Changelog
 
+## nemeton 2026.10.14 (2026-10-17)
+
+### Nouveautés
+
+- **[`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
+  écrit aussi un dossier `<project_name>/`** ouvrable à côté du `.qgz`
+  (`<project_name>.qgs` + `<project_name>.gpkg`), comme l’inventaire
+  vidéo depuis 2026.10.12 (accord de Pascal du 2026-10-17). Le `.qgz` du
+  plan d’échantillonnage, ouvert seul, ne trouvait aucune de ses couches
+  : QGIS résout les chemins `./` depuis le dossier du `.qgz`, pas dans
+  l’archive (vérifié avec PyQGIS : 2 couches invalides dans le `.qgz`
+  seul, 2 valides dans le dossier). Le `.qgz` et la valeur renvoyée ne
+  changent pas.
+- **Garde-fou sur le dossier du projet**
+  ([`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md),
+  [`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md),
+  [`renvoyer_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/renvoyer_inventaire_video.md))
+  : un dossier existant au nom du projet n’est remplacé que s’il est
+  vide ou contient `<project_name>.qgs`. Sinon, la fonction s’arrête
+  avant tout calcul, pour ne jamais effacer un dossier de l’utilisateur.
+  Avec `overwrite = FALSE`, un dossier existant fait aussi refuser la
+  création.
+
 ## nemeton 2026.10.13 (2026-10-17)
 
 ### Corrections

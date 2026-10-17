@@ -7,7 +7,7 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.12**
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.13**
 > (release du 2026-10-17), relevée le 2026-10-17.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
@@ -393,6 +393,7 @@ retirées, `t2_no_source` reformulée, tests passés à `"no_source"`.
 | Cœur | projet QGIS : projection active, ellipsoïde, emprise d’ouverture, légende en trois groupes ; dossier ouvrable à côté du `.qgz` | **2026.10.12** | ✅ livré |
 | App | zip de livraison = dossier ouvrable du projet | nemetonshiny **2026.10.12** | ✅ livré |
 | Cœur | identifiants de couches uniques à chaque projet (QField marquait des couches invalides) | **2026.10.13** | ✅ livré |
+| Cœur | dossier ouvrable aussi pour [`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md) ; garde-fou contre le remplacement d’un dossier utilisateur | **2026.10.14** | ✅ livré |
 
 **Journal** — *2026-10-12* (**2026.10.4**) : 9 fonctions exportées
 (experimental) dans `R/inventaire_video.R`. Le schéma, les déclencheurs
@@ -539,6 +540,32 @@ version-consistency verts) ; tag `v2026.10.13` posé par `release.yml`.
 Cycle dev `2026.10.13.9000`. Réponse :
 `vers-groma/2026-10-17-reponse-projet-qgs-ids-couches.md` (plancher
 `nemeton (>= 2026.10.13)`).
+
+*2026-10-17* — nemetonshiny **v2026.10.13** (`nemetonshiny@8bb0f342`, PR
+\#247, cycle 2026.10.12.9000 → 2026.10.13, plancher inchangé
+`nemeton (>= 2026.10.11)`, aucun changement cœur requis) : plan d’action
+↔︎ tournée de travaux Surculus. « Programme de travaux (sommieR) » =
+`export_action_plan_gpkg()` restreint aux actions validées ou
+planifiées, hors coupes rases, éclaircies et observations ; « Relire le
+réalisé (sommieR) » lit le CSV de `sommier_actions_realisees()`, passage
+en *réalisée* confirmé et audité. Reste : `sommier_actions_realisees()`
+côté sommieR (brief travaux-3).
+
+*2026-10-17* (**2026.10.14**) : question laissée ouverte en 2026.10.12,
+accord de Pascal :
+[`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md)
+(fonction stable) écrit aussi le dossier `<project_name>/` (`.qgs` +
+`.gpkg`). C’est un ajout : le `.qgz` et la valeur renvoyée ne changent
+pas. PyQGIS : 2 couches invalides dans le `.qgz` seul, 2 valides dans le
+dossier. En reprenant l’aide, un risque est apparu : avec
+`overwrite = TRUE`, un dossier de l’utilisateur au nom du projet aurait
+été effacé. D’où un garde-fou commun : le remplacement n’a lieu que si
+le dossier est vide ou contient `<nom>.qgs`, et le contrôle se fait
+avant tout calcul. L’app appelle la fonction dans un
+[`tempfile()`](https://rdrr.io/r/base/tempfile.html) et n’en copie que
+le `.qgz` (lecture seule de `mod_sampling.R`,
+`mod_validation_sampling.R`), donc rien ne casse ; brief app :
+`vers-nemetonshiny/2026-10-17-plan-echantillonnage-dossier-projet.md`.
 
 ------------------------------------------------------------------------
 

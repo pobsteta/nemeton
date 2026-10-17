@@ -71,7 +71,13 @@ create_qgis_project(
 
 ## Value
 
-Absolute path to the `.qgz` file that was created.
+Absolute path to the `.qgz` file that was created. A folder
+`<project_name>/` is also written next to it, holding the same project
+ready to open (`<project_name>.qgs` and `<project_name>.gpkg`): QGIS
+resolves the `./` paths of the project from the folder of the `.qgz`, so
+a `.qgz` opened alone finds none of its layers. The folder is replaced
+like the `.qgz` (`overwrite`); an existing folder of that name that does
+not hold `<project_name>.qgs` is never replaced (error).
 
 ## Lifecycle
 

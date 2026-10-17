@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.13.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.14</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,6 +110,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.14" id="nemeton-20261014-2026-10-17">nemeton 2026.10.14 (2026-10-17)<a class="anchor" aria-label="anchor" href="#nemeton-20261014-2026-10-17"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-10-14">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-10-14"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/create_qgis_project.html">create_qgis_project()</a></code> écrit aussi un dossier <code>&lt;project_name&gt;/</code></strong> ouvrable à côté du <code>.qgz</code> (<code>&lt;project_name&gt;.qgs</code> + <code>&lt;project_name&gt;.gpkg</code>), comme l’inventaire vidéo depuis 2026.10.12 (accord de Pascal du 2026-10-17). Le <code>.qgz</code> du plan d’échantillonnage, ouvert seul, ne trouvait aucune de ses couches : QGIS résout les chemins <code>./</code> depuis le dossier du <code>.qgz</code>, pas dans l’archive (vérifié avec PyQGIS : 2 couches invalides dans le <code>.qgz</code> seul, 2 valides dans le dossier). Le <code>.qgz</code> et la valeur renvoyée ne changent pas.</li>
+<li>
+<strong>Garde-fou sur le dossier du projet</strong> (<code><a href="../reference/create_qgis_project.html">create_qgis_project()</a></code>, <code><a href="../reference/creer_projet_inventaire_video.html">creer_projet_inventaire_video()</a></code>, <code><a href="../reference/renvoyer_inventaire_video.html">renvoyer_inventaire_video()</a></code>) : un dossier existant au nom du projet n’est remplacé que s’il est vide ou contient <code>&lt;project_name&gt;.qgs</code>. Sinon, la fonction s’arrête avant tout calcul, pour ne jamais effacer un dossier de l’utilisateur. Avec <code>overwrite = FALSE</code>, un dossier existant fait aussi refuser la création.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.13" id="nemeton-20261013-2026-10-17">nemeton 2026.10.13 (2026-10-17)<a class="anchor" aria-label="anchor" href="#nemeton-20261013-2026-10-17"></a></h2>
 <div class="section level3">
