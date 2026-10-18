@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.16</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.16.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -1964,7 +1964,7 @@
 <h2 id="id_0570---2026-06-02">[0.57.0] - 2026-06-02<a class="anchor" aria-label="anchor" href="#id_0570---2026-06-02"></a></h2>
 <div class="section level3">
 <h3 id="added-108">Added<a class="anchor" aria-label="anchor" href="#added-108"></a></h3>
-<ul><li>Opt-in multi-core scene processing (spec 017 D4). <code><a href="reference/build_index_stack.html">build_index_stack()</a></code> and <code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> / <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> gain a <code>parallel = FALSE</code> argument; when <code>TRUE</code> and <code>furrr</code> is installed the per-scene index compute runs in <code><a href="https://furrr.futureverse.org/reference/future_map.html" class="external-link">furrr::future_map()</a></code> (caller sets the <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code>). Workers return <code><a href="https://rspatial.github.io/terra/reference/wrap.html" class="external-link">terra::wrap()</a></code>-ed rasters that the main process unwraps; results are identical to sequential. Falls back to sequential when <code>furrr</code> is absent. Closes spec 017.</li>
+<ul><li>Opt-in multi-core scene processing (spec 017 D4). <code><a href="reference/build_index_stack.html">build_index_stack()</a></code> and <code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> / <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> gain a <code>parallel = FALSE</code> argument; when <code>TRUE</code> and <code>furrr</code> is installed the per-scene index compute runs in <code><a href="https://furrr.futureverse.org/reference/future_map.html" class="external-link">furrr::future_map()</a></code> (caller sets the <code><a href="https://rdrr.io/pkg/future/man/plan.html" class="external-link">future::plan()</a></code>). Workers return <code><a href="https://rspatial.github.io/terra/reference/wrap.html" class="external-link">terra::wrap()</a></code>-ed rasters that the main process unwraps; results are identical to sequential. Falls back to sequential when <code>furrr</code> is absent. Closes spec 017.</li>
 </ul></div>
 </div>
 <div class="section level2">

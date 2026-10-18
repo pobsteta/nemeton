@@ -3053,8 +3053,8 @@ concise, categorised trail.
   installed the per-scene index compute runs in
   [`furrr::future_map()`](https://furrr.futureverse.org/reference/future_map.html)
   (caller sets the
-  [`future::plan()`](https://future.futureverse.org/reference/plan.html)).
-  Workers return
+  [`future::plan()`](https://rdrr.io/pkg/future/man/plan.html)). Workers
+  return
   [`terra::wrap()`](https://rspatial.github.io/terra/reference/wrap.html)-ed
   rasters that the main process unwraps; results are identical to
   sequential. Falls back to sequential when `furrr` is absent. Closes
