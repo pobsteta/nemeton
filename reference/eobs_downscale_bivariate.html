@@ -31,7 +31,7 @@ Reliability is &quot;low&quot; (bounded by the noisy precipitation downscaling).
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.15.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.16</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -232,7 +232,10 @@ the two component <code><a href="eobs_downscale.html">eobs_downscale</a></code> 
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
 
 
-<p>Experimental: may change in any release, without deprecation (spec 057).</p>
+<p>Deprecated since nemeton 2026.10.16 (spec 063): the reGénération context map
+now uses <code><a href="climat_ete_series.html">climat_ete_series()</a></code> and <code><a href="climat_tendance_bivariee.html">climat_tendance_bivariee()</a></code> (total change
+over the period, native resolution, L'IF n° 49 palette). A warning is shown
+once per session; removal is planned once no caller remains (spec 057).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

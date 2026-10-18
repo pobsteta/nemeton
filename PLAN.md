@@ -609,6 +609,27 @@ puis quelques secondes ; 1950-2025 = +2,7 °C / −15 mm, 2006-2020 = +2,4
 °C / −176 mm (détail : spec 063 § *Validation*). Cache machine prêt dans
 `~/.local/share/nemeton/cache/eobs/`. `vers-nemeton/` vide.
 
+*2026-10-18* (**2026.10.16**) : accord de Pascal pour déprécier
+[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md),
+[`eobs_downscale_bivariate()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale_bivariate.md)
+et
+[`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
+(remplacées par la spec 063 pour la carte de contexte). Avertissement
+une fois par session (`.avertir_depreciation()`, `R/deprecation.R`,
+classe `nemeton_deprecated`), comportement inchangé. Appels restants
+vérifiés en lecture seule : app `origin/main` v2026.10.13 seulement (la
+branche `claude/cycle-2026.10.13` n’en a plus), aucun dans
+`nemetonclaude`. Retrait dès la release de l’app sans ces appels, au
+plus tard le 2027-01-18 ;
+[`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
+/
+[`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
+(gel R7) seront alors déplacés dans `R/meteoland_grid.R`. Question
+ouverte au retrait : garder ou non le moteur `engine = "meteoland"`
+d’[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
+(aucun appelant). Brief app :
+`vers-nemetonshiny/2026-10-18-depreciation-eobs-downscale.md`.
+
 ------------------------------------------------------------------------
 
 # CI — dépendances et actions GitHub

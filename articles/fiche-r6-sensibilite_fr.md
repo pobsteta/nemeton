@@ -89,6 +89,7 @@ que le peuplement encaisserait, pas ce qu’il a subi.
 | Sujet | Fichier |
 |----|----|
 | Fonction R6 | `R/indicators-microclimate.R:217` |
-| Détection des années | [`microclimate_detect_years()`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md), [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md) |
+| Détection des années | [`microclimate_detect_years()`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md) |
+| Contexte climatique estival | [`climat_ete_series()`](https://pobsteta.github.io/nemeton/reference/climat_ete_series.md), [`climat_tendance_bivariee()`](https://pobsteta.github.io/nemeton/reference/climat_tendance_bivariee.md) (spec 063) |
 | Normalisation | `R/normalization.R`, branche R6 (spec 038) |
 | Spécification | `specs/027-regeneration-microclimat/` L2, ADR-014 |

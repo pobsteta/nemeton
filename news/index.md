@@ -1,5 +1,35 @@
 # Changelog
 
+## nemeton 2026.10.16 (2026-10-18)
+
+### Dépréciations
+
+- **[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md),
+  [`eobs_downscale_bivariate()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale_bivariate.md)
+  et
+  [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
+  sont dépréciées** (accord de Pascal du 2026-10-18, spec 063). La carte
+  de contexte de reGénération passe à
+  [`climat_ete_series()`](https://pobsteta.github.io/nemeton/reference/climat_ete_series.md) +
+  [`climat_tendance_bivariee()`](https://pobsteta.github.io/nemeton/reference/climat_tendance_bivariee.md)
+  (variation totale, résolution native, palette de L’IF n° 49). Un
+  avertissement (`nemeton_deprecated`, `deprecatedWarning`) est émis une
+  fois par session et par fonction ; le comportement ne change pas.
+  L’option `nemeton.deprecation_silencieuse = TRUE` le coupe.
+- Retrait prévu au premier terme de la spec 057 : le 2027-01-18, ou dès
+  que l’app publiée n’appelle plus ces fonctions (sa branche en cours ne
+  les appelle déjà plus).
+  [`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
+  et
+  [`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
+  (moteur gel R7),
+  [`load_eobs_source()`](https://pobsteta.github.io/nemeton/reference/load_eobs_source.md)
+  et les accesseurs du clic
+  ([`eobs_summer_series()`](https://pobsteta.github.io/nemeton/reference/eobs_summer_series.md),
+  [`eobs_trend_fit()`](https://pobsteta.github.io/nemeton/reference/eobs_trend_fit.md),
+  [`eobs_monthly_climatology()`](https://pobsteta.github.io/nemeton/reference/eobs_monthly_climatology.md))
+  ne sont pas concernés.
+
 ## nemeton 2026.10.15 (2026-10-18)
 
 ### Nouveautés

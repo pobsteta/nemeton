@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.15.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.16</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,6 +110,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.16" id="nemeton-20261016-2026-10-18">nemeton 2026.10.16 (2026-10-18)<a class="anchor" aria-label="anchor" href="#nemeton-20261016-2026-10-18"></a></h2>
+<div class="section level3">
+<h3 id="dépréciations-2026-10-16">Dépréciations<a class="anchor" aria-label="anchor" href="#d%C3%A9pr%C3%A9ciations-2026-10-16"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/eobs_downscale.html">eobs_downscale()</a></code>, <code><a href="../reference/eobs_downscale_bivariate.html">eobs_downscale_bivariate()</a></code> et <code><a href="../reference/tendances_estivales_eobs.html">tendances_estivales_eobs()</a></code> sont dépréciées</strong> (accord de Pascal du 2026-10-18, spec 063). La carte de contexte de reGénération passe à <code><a href="../reference/climat_ete_series.html">climat_ete_series()</a></code> + <code><a href="../reference/climat_tendance_bivariee.html">climat_tendance_bivariee()</a></code> (variation totale, résolution native, palette de L’IF n° 49). Un avertissement (<code>nemeton_deprecated</code>, <code>deprecatedWarning</code>) est émis une fois par session et par fonction ; le comportement ne change pas. L’option <code>nemeton.deprecation_silencieuse = TRUE</code> le coupe.</li>
+<li>Retrait prévu au premier terme de la spec 057 : le 2027-01-18, ou dès que l’app publiée n’appelle plus ces fonctions (sa branche en cours ne les appelle déjà plus). <code><a href="../reference/meteoland_daily_grid.html">meteoland_daily_grid()</a></code> et <code><a href="../reference/build_safran_stations.html">build_safran_stations()</a></code> (moteur gel R7), <code><a href="../reference/load_eobs_source.html">load_eobs_source()</a></code> et les accesseurs du clic (<code><a href="../reference/eobs_summer_series.html">eobs_summer_series()</a></code>, <code><a href="../reference/eobs_trend_fit.html">eobs_trend_fit()</a></code>, <code><a href="../reference/eobs_monthly_climatology.html">eobs_monthly_climatology()</a></code>) ne sont pas concernés.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.15" id="nemeton-20261015-2026-10-18">nemeton 2026.10.15 (2026-10-18)<a class="anchor" aria-label="anchor" href="#nemeton-20261015-2026-10-18"></a></h2>
 <div class="section level3">

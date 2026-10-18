@@ -88,7 +88,14 @@ With neither, the function fails cleanly.
 
 ## Lifecycle
 
-Experimental: may change in any release, without deprecation (spec 057).
+Deprecated since nemeton 2026.10.16 (spec 063): the reGénération context
+map now uses
+[`climat_ete_series()`](https://pobsteta.github.io/nemeton/reference/climat_ete_series.md)
+and
+[`climat_tendance_bivariee()`](https://pobsteta.github.io/nemeton/reference/climat_tendance_bivariee.md)
+(total change over the period, native resolution, L'IF n° 49 palette). A
+warning is shown once per session; removal is planned once no caller
+remains (spec 057).
 
 ## See also
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.15.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.16</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,6 +117,14 @@
 <p>For a narrative, per-feature description of each release, see <a href="NEWS.html">NEWS.md</a>. This file is the concise, categorised trail.</p>
 <div class="section level2">
 <h2 id="unreleased"><a href="https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD" class="external-link">Unreleased</a><a class="anchor" aria-label="anchor" href="#unreleased"></a></h2>
+</div>
+<div class="section level2">
+<h2 id="id_20261016---2026-10-18">[2026.10.16] - 2026-10-18<a class="anchor" aria-label="anchor" href="#id_20261016---2026-10-18"></a></h2>
+<div class="section level3">
+<h3 id="deprecated">Deprecated<a class="anchor" aria-label="anchor" href="#deprecated"></a></h3>
+<ul><li>
+<code><a href="reference/eobs_downscale.html">eobs_downscale()</a></code>, <code><a href="reference/eobs_downscale_bivariate.html">eobs_downscale_bivariate()</a></code>, <code><a href="reference/tendances_estivales_eobs.html">tendances_estivales_eobs()</a></code>: superseded by <code><a href="reference/climat_ete_series.html">climat_ete_series()</a></code> + <code><a href="reference/climat_tendance_bivariee.html">climat_tendance_bivariee()</a></code>; warning once per session; removal planned once no caller remains (by 2027-01-18 at the latest).</li>
+</ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_20261015---2026-10-18">[2026.10.15] - 2026-10-18<a class="anchor" aria-label="anchor" href="#id_20261015---2026-10-18"></a></h2>
@@ -346,7 +354,7 @@
 <div class="section level2">
 <h2 id="id_120---2026-10-08">[1.2.0] - 2026-10-08<a class="anchor" aria-label="anchor" href="#id_120---2026-10-08"></a></h2>
 <div class="section level3">
-<h3 id="deprecated">Deprecated<a class="anchor" aria-label="anchor" href="#deprecated"></a></h3>
+<h3 id="deprecated-1">Deprecated<a class="anchor" aria-label="anchor" href="#deprecated-1"></a></h3>
 <ul><li>
 <code>croiser_parcelles_onf()</code> : remplacée par <code>construire_ugf_onf(selection = "toutes")</code> ; reste jusqu’en 2.0, avertit une fois par session (<code>deprecatedWarning</code>, option <code>nemeton.deprecation_verbosity</code>).</li>
 </ul></div>
@@ -1046,7 +1054,7 @@
 <code>theia_signed_href()</code> rewritten in pure R on top of <code>theia_sign_urls()</code> — drops the reticulate / Python <code>teledetection</code> dependency for this function.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="deprecated-1">Deprecated<a class="anchor" aria-label="anchor" href="#deprecated-1"></a></h3>
+<h3 id="deprecated-2">Deprecated<a class="anchor" aria-label="anchor" href="#deprecated-2"></a></h3>
 <ul><li>
 <code>theia_configure_s3()</code> — the <a href="mailto:MESO@UM" class="email">MESO@UM</a> store rejects portal keys for direct S3 access; assets are read via pre-signed URLs. Kept for back-compat (now warns).</li>
 </ul></div>
@@ -1947,7 +1955,7 @@
 <ul><li>Migration <code>0004_drop_obs_pixel.sql</code> (PG + SQLite) drops the <code>obs_pixel</code> table (idempotent). The pure per-pixel FAST diagnostic (<code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code>, spec 017) has been its only path since v0.55.0.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="deprecated-2">Deprecated<a class="anchor" aria-label="anchor" href="#deprecated-2"></a></h3>
+<h3 id="deprecated-3">Deprecated<a class="anchor" aria-label="anchor" href="#deprecated-3"></a></h3>
 <ul><li>
 <code>read_obs_pixel()</code>, <code>list_fast_alerts_for_zone()</code> and <code>detect_alerts()</code> (all legacy <code>obs_pixel</code> consumers) are deprecated and emit a <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_warn</a></code>; scheduled for removal in v0.60.0. Use the per-pixel COG cache (<code><a href="reference/build_index_stack.html">build_index_stack()</a></code> / <code><a href="reference/extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code>) and <code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> / <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> instead.</li>
 </ul></div>

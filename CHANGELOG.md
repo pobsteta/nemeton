@@ -13,6 +13,19 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.10.16\] - 2026-10-18
+
+### Deprecated
+
+- [`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md),
+  [`eobs_downscale_bivariate()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale_bivariate.md),
+  [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md):
+  superseded by
+  [`climat_ete_series()`](https://pobsteta.github.io/nemeton/reference/climat_ete_series.md) +
+  [`climat_tendance_bivariee()`](https://pobsteta.github.io/nemeton/reference/climat_tendance_bivariee.md);
+  warning once per session; removal planned once no caller remains (by
+  2027-01-18 at the latest).
+
 ## \[2026.10.15\] - 2026-10-18
 
 ### Added
