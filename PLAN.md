@@ -501,6 +501,29 @@ verts ; suite locale sans échec) ; tag `v2026.10.14` posé par `release.yml`.
 Cycle dev `2026.10.14.9000`. `vers-nemeton/` vide (doublon de
 `groma-envoyer-projet.md` classé).
 
+*2026-10-18* — dernière release nemetonshiny vérifiée sur GitHub
+(`gh release list`) : **v2026.10.13**.
+
+*2026-10-18* (**2026.10.15**, spec 063) : brief nemetonshiny
+`2026-10-18-contexte-climatique-cercle-projet.md` — la carte « Contexte
+régional (E-OBS) » de reGénération est fausse (12 ans, KED des pluies, unité
+par décennie, juin-août, palette 5 × 5). Portage des scripts de Pascal
+(`carte_bivariee_tmax_precip.zip`) dans `R/climat_cercle.R` :
+`climat_ete_series()` (E-OBS KNMI v33.0e en cache machine + repli CDS,
+CHELSA v2.1 en COG distants, SAFRAN par l'API EDR GéoSAS ; cercle de
+`rayon_km` autour du centroïde, mailles natives, `touches = TRUE`),
+`climat_tendance_bivariee()` (variation totale, palette 10 × 10 de la
+Figure 1, bornes `if49` / `france` / `emprise`) et `climat_nuages_annuels()`
+(anomalie 1981-2010, tendance cumulée), toutes `experimental`. Écart
+validé par Pascal le 2026-10-18 : les bornes « france » viennent d'E-OBS France pour
+toutes les sources (mêmes années et mois), pour ne pas télécharger CHELSA et
+SAFRAN sur toute la France ; contour France = union des SER INRAE. Tests
+synthétiques (82 assertions) ; smoke réel SAFRAN et CHELSA sur 25 km près de
+Dijon OK ; chaîne E-OBS réelle non lancée (8 Go KNMI à télécharger). Brief
+app : `vers-nemetonshiny/2026-10-18-contexte-climatique-cercle-cablage.md`
+(copie de référence dans `specs/063-contexte-climatique-cercle/`). À proposer
+ensuite : dépréciation d'`eobs_downscale*()` pour la carte de contexte.
+
 ---
 
 # CI — dépendances et actions GitHub

@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.15] - 2026-10-18
+
+### Added
+- `climat_ete_series()`, `climat_tendance_bivariee()`, `climat_nuages_annuels()` (spec 063, experimental): summer Tmax × precipitation context on a circle around the project — E-OBS (KNMI, machine cache), CHELSA v2.1, SAFRAN (GéoSAS EDR) at native resolution; total change over the period, L'IF n° 49 10 × 10 palette; yearly point clouds.
+
 ## [2026.10.14] - 2026-10-17
 
 ### Added
