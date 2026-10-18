@@ -46,9 +46,9 @@
 
 .CLIMAT_RESOLUTION <- c(eobs = "0.1deg", chelsa = "30arcsec", safran = "8km")
 .CLIMAT_ATTRIBUTION <- c(
-  eobs = "Copernicus C3S / ECA&D, E-OBS (0,1°), usage non commercial",
-  chelsa = "CHELSA v2.1 (Karger et al.), 30″ (~1 km)",
-  safran = "Météo-France SAFRAN (8 km), API OGC-EDR GéoSAS (INRAE)")
+  eobs = "Copernicus C3S / ECA&D, E-OBS (0,1\u00b0), usage non commercial",
+  chelsa = "CHELSA v2.1 (Karger et al.), 30\u2033 (~1 km)",
+  safran = "M\u00e9t\u00e9o-France SAFRAN (8 km), API OGC-EDR G\u00e9oSAS (INRAE)")
 
 .SAFRAN_EDR_URL <- "https://api.geosas.fr/edr/collections/safran-isba/cube"
 # France métropolitaine + Corse en Lambert-93 (SAFRAN_BBOX des scripts).
@@ -797,7 +797,7 @@ climat_tendance_bivariee <- function(series, periode = "complete", bornes = NULL
     palette = list(name = palette, classes = seq_len(n * n),
                    colors = .climat_palette(palette, n), sense = "bivariate",
                    ncol = n, zero = zero),
-    unites = list(tmax = "°C", precip = "mm")), base)
+    unites = list(tmax = "\u00b0C", precip = "mm")), base)
 
   if (!is.null(cache_path)) {
     racine <- sub("\\.tif$", "", cache_path)
@@ -858,7 +858,7 @@ climat_nuages_annuels <- function(series, mode = c("anomalie", "tendance_cumulee
   mode <- match.arg(mode)
   sm <- series$meta %||% list()
   base <- list(mode = mode, source = sm$source, resolution_native = sm$resolution_native,
-               attribution = sm$attribution, unites = list(x = "mm", y = "°C"))
+               attribution = sm$attribution, unites = list(x = "mm", y = "\u00b0C"))
   echec <- function(status, reason) list(points = NULL, moyennes = NULL, limites = NULL,
                                          meta = c(list(status = status, reason = reason), base))
   if (!identical(sm$status, "ok") || is.null(series$tx) || is.null(series$rr)) {
