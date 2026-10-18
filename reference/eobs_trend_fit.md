@@ -4,11 +4,8 @@ Fit the least-squares trend of a per-year summer series (the output of
 [`eobs_summer_series`](https://pobsteta.github.io/nemeton/reference/eobs_summer_series.md))
 and return the per-decade slope with its goodness of fit, for the trend
 line of chart 1 (spec 036). The slope is `10 *` the per-year OLS slope,
-matching the mapped per-decade slope
-([`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
-/
-[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)),
-so the click chart and the map colour agree by construction.
+the same closed-form per-pixel OLS slope as the climate context map, so
+the click chart and the map colour agree by construction.
 
 ## Usage
 

@@ -946,15 +946,8 @@ Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.
   : Detect the average / heatwave reference years for R6 (spec 027
   §6bis)
 
-### Climat estival E-OBS et descente d’echelle (spec 034, 036)
+### Climat estival E-OBS et grille meteoland (spec 034, 036)
 
-- [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
-  : Summer E-OBS climate trends over the project area (spec 027 §6,
-  branch A)
-- [`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
-  : Downscale an E-OBS variable to a fine raster
-- [`eobs_downscale_bivariate()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale_bivariate.md)
-  : Downscaled bivariate climate-trend map (T°max × precipitation)
 - [`eobs_summer_series()`](https://pobsteta.github.io/nemeton/reference/eobs_summer_series.md)
   : Summer E-OBS series at a point (year -\> value)
 - [`eobs_monthly_climatology()`](https://pobsteta.github.io/nemeton/reference/eobs_monthly_climatology.md)
@@ -962,8 +955,7 @@ Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.
 - [`eobs_trend_fit()`](https://pobsteta.github.io/nemeton/reference/eobs_trend_fit.md)
   : Linear trend of an E-OBS summer series (per decade)
 - [`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
-  : Build the SAFRAN pseudo-station grid for the meteoland engine (spec
-  P4)
+  : Build the SAFRAN pseudo-station grid for meteoland (spec P4)
 - [`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
   : Downscale a daily meteoland variable to a fine raster stack
 

@@ -4,7 +4,7 @@ Build the per-year summer `SpatRaster` (one layer per year, named by
 year) that
 [`microclimate_detect_years`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md)
 and
-[`tendances_estivales_eobs`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
+[`eobs_summer_series`](https://pobsteta.github.io/nemeton/reference/eobs_summer_series.md)
 consume, from the European E-OBS gridded dataset (ECA&D / Copernicus).
 Two paths (spec 034):
 
@@ -114,4 +114,4 @@ Stable: covered by the 1.0 API contract (spec 057).
 ## See also
 
 [`microclimate_detect_years`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md),
-[`tendances_estivales_eobs`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
+[`eobs_summer_series`](https://pobsteta.github.io/nemeton/reference/eobs_summer_series.md)

@@ -79,4 +79,4 @@ Stable: covered by the 1.0 API contract (spec 057).
 ## See also
 
 [`indicateur_r6_sensibilite`](https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.md),
-[`eobs_downscale`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
+[`meteoland_daily_grid`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)

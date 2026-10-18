@@ -1,4 +1,4 @@
-# Build the SAFRAN pseudo-station grid for the meteoland engine (spec P4)
+# Build the SAFRAN pseudo-station grid for meteoland (spec P4)
 
 Sample SAFRAN cells over the AOI + buffer as **pseudo-stations** for the
 meteoland interpolator: a point grid at `spacing_m` (SAFRAN ~8 km), each
@@ -55,5 +55,5 @@ Experimental: may change in any release, without deprecation (spec 057).
 
 ## See also
 
-[`eobs_downscale`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md),
+[`meteoland_daily_grid`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md),
 [`load_biljou_forcing`](https://pobsteta.github.io/nemeton/reference/load_biljou_forcing.md)

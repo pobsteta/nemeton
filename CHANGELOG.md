@@ -13,6 +13,34 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.10.18\] - 2026-10-18
+
+### Removed
+
+- `eobs_downscale()`, `eobs_downscale_bivariate()`,
+  `tendances_estivales_eobs()` (deprecated in 2026.10.16, no caller
+  left; replaced by
+  [`climat_ete_series()`](https://pobsteta.github.io/nemeton/reference/climat_ete_series.md) +
+  [`climat_tendance_bivariee()`](https://pobsteta.github.io/nemeton/reference/climat_tendance_bivariee.md),
+  spec 063), with their internal helpers and `eobs_bivariate_n()`.
+- `gstat` and `automap` from Suggests.
+
+### Changed
+
+- [`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
+  and
+  [`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
+  moved unchanged to `R/meteoland_grid.R`.
+
+### Fixed
+
+- RECONFORT tile resolution no longer aborts on an AOI valid for GEOS
+  but invalid for s2 (Couchey zone 63): `.geom_valide_s2()` snaps to 1
+  cm before `st_make_valid()` in `reconfort_aoi_tiles()` (plus a planar
+  last resort),
+  [`.get_zone_aoi()`](https://pobsteta.github.io/nemeton/reference/dot-get_zone_aoi.md)
+  and zone writers.
+
 ## \[2026.10.17\] - 2026-10-18
 
 ### Removed
@@ -27,10 +55,8 @@ concise, categorised trail.
 
 ### Deprecated
 
-- [`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md),
-  [`eobs_downscale_bivariate()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale_bivariate.md),
-  [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md):
-  superseded by
+- `eobs_downscale()`, `eobs_downscale_bivariate()`,
+  `tendances_estivales_eobs()`: superseded by
   [`climat_ete_series()`](https://pobsteta.github.io/nemeton/reference/climat_ete_series.md) +
   [`climat_tendance_bivariee()`](https://pobsteta.github.io/nemeton/reference/climat_tendance_bivariee.md);
   warning once per session; removal planned once no caller remains (by
@@ -1505,11 +1531,9 @@ concise, categorised trail.
   (spec 034): builds the per-year summer `SpatRaster` (one layer/year)
   consumed by
   [`microclimate_detect_years()`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md)
-  and
-  [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
-  from E-OBS. Tested pure/injection path (`nc` netCDF or dated
-  `SpatRaster` → summer-per-year reduction); best-effort CDS
-  auto-download via `ecmwfr` (dataset
+  and `tendances_estivales_eobs()` from E-OBS. Tested pure/injection
+  path (`nc` netCDF or dated `SpatRaster` → summer-per-year reduction);
+  best-effort CDS auto-download via `ecmwfr` (dataset
   `insitu-gridded-observations-europe`, same CDS key as ERA5), degrading
   to `NULL`. Fills the gap that left the app’s “Auto (E-OBS)” button
   unavailable.
@@ -1780,15 +1804,15 @@ concise, categorised trail.
 
 ### Added
 
-- [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
-  (spec 027 §6, branch A): summer E-OBS climate trend map (warming ×
-  drying) cropped to the union of the units plus a buffer (default 25
-  km, decision §10.4; metric buffer via EPSG:3035), not national. Per
-  E-OBS cell: least-squares trend of summer tmax and precipitation, plus
-  a bivariate classification (`classe_tmax`/`classe_precip` 1-3,
-  `classe_bivariee` 1-9). Engine path from per-year `tx`/`rr` rasters
-  (testable terra logic), `precomputed` fast-path, clean degradation.
-  Returns an sf of cell-centre points for the app to render.
+- `tendances_estivales_eobs()` (spec 027 §6, branch A): summer E-OBS
+  climate trend map (warming × drying) cropped to the union of the units
+  plus a buffer (default 25 km, decision §10.4; metric buffer via
+  EPSG:3035), not national. Per E-OBS cell: least-squares trend of
+  summer tmax and precipitation, plus a bivariate classification
+  (`classe_tmax`/`classe_precip` 1-3, `classe_bivariee` 1-9). Engine
+  path from per-year `tx`/`rr` rasters (testable terra logic),
+  `precomputed` fast-path, clean degradation. Returns an sf of
+  cell-centre points for the app to render.
 
 ## \[0.117.0\] - 2026-07-02
 

@@ -9,7 +9,7 @@ set. This is the real-data feeder for
 [`indicateur_r7_gel`](https://pobsteta.github.io/nemeton/reference/indicateur_r7_gel.md)
 (late-frost risk needs a daily Tmin series) and for any downstream
 daily-climate use; the reduced-statistic context map goes through
-[`eobs_downscale`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
+[`climat_tendance_bivariee`](https://pobsteta.github.io/nemeton/reference/climat_tendance_bivariee.md)
 instead.
 
 meteoland lives in Suggests and is **absent from CI** — like microclimf,
@@ -99,6 +99,6 @@ Experimental: may change in any release, without deprecation (spec 057).
 
 ## See also
 
-[`eobs_downscale`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md),
+[`climat_ete_series`](https://pobsteta.github.io/nemeton/reference/climat_ete_series.md),
 [`indicateur_r7_gel`](https://pobsteta.github.io/nemeton/reference/indicateur_r7_gel.md),
 [`build_safran_stations`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)

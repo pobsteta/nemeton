@@ -5,7 +5,7 @@ meteoland (Thornton 1997 + elevation), returning a SpatRaster with one
 layer per day and terra::time() set. This is the real-data feeder for
 indicateur_r7_gel (late-frost risk needs a daily Tmin series) and for
 any downstream daily-climate use; the reduced-statistic context map goes through
-eobs_downscale instead.
+climat_tendance_bivariee instead.
 meteoland lives in Suggests and is absent from CI — like microclimf, this
 path is validated on real data. Any failure (package absent, GéoSAS down, too
 few stations) returns NULL, never an error, so callers degrade gracefully."><meta property="og:description" content="Interpolate a daily meteorological variable (e.g. daily minimum
@@ -14,7 +14,7 @@ meteoland (Thornton 1997 + elevation), returning a SpatRaster with one
 layer per day and terra::time() set. This is the real-data feeder for
 indicateur_r7_gel (late-frost risk needs a daily Tmin series) and for
 any downstream daily-climate use; the reduced-statistic context map goes through
-eobs_downscale instead.
+climat_tendance_bivariee instead.
 meteoland lives in Suggests and is absent from CI — like microclimf, this
 path is validated on real data. Any failure (package absent, GéoSAS down, too
 few stations) returns NULL, never an error, so callers degrade gracefully."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
@@ -25,7 +25,7 @@ few stations) returns NULL, never an error, so callers degrade gracefully."><met
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.17.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.18</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -125,7 +125,7 @@ few stations) returns NULL, never an error, so callers degrade gracefully."><met
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Downscale a daily meteoland variable to a fine raster stack</h1>
-      <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/R/eobs_downscale.R" class="external-link"><code>R/eobs_downscale.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/R/meteoland_grid.R" class="external-link"><code>R/meteoland_grid.R</code></a></small>
       <div class="d-none name"><code>meteoland_daily_grid.Rd</code></div>
     </div>
 
@@ -136,7 +136,7 @@ temperature) from SAFRAN pseudo-stations onto the DEM grid with
 layer per day and <code><a href="https://rspatial.github.io/terra/reference/time.html" class="external-link">terra::time()</a></code> set. This is the real-data feeder for
 <code><a href="indicateur_r7_gel.html">indicateur_r7_gel</a></code> (late-frost risk needs a daily Tmin series) and for
 any downstream daily-climate use; the reduced-statistic context map goes through
-<code><a href="eobs_downscale.html">eobs_downscale</a></code> instead.</p>
+<code><a href="climat_tendance_bivariee.html">climat_tendance_bivariee</a></code> instead.</p>
 <p>meteoland lives in Suggests and is <strong>absent from CI</strong> — like microclimf, this
 path is validated on real data. Any failure (package absent, GéoSAS down, too
 few stations) returns <code>NULL</code>, never an error, so callers degrade gracefully.</p>
@@ -227,7 +227,7 @@ set, DEM CRS), ready to pass as <code>tmin =</code> to <code><a href="indicateur
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="eobs_downscale.html">eobs_downscale</a></code>, <code><a href="indicateur_r7_gel.html">indicateur_r7_gel</a></code>, <code><a href="build_safran_stations.html">build_safran_stations</a></code></p></div>
+    <div class="dont-index"><p><code><a href="climat_ete_series.html">climat_ete_series</a></code>, <code><a href="indicateur_r7_gel.html">indicateur_r7_gel</a></code>, <code><a href="build_safran_stations.html">build_safran_stations</a></code></p></div>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -1,15 +1,78 @@
 # Changelog
 
+## nemeton 2026.10.18 (2026-10-18)
+
+### Changements cassants
+
+- **`eobs_downscale()`, `eobs_downscale_bivariate()` et
+  `tendances_estivales_eobs()` sont retirées** (accord de Pascal du
+  2026-10-18), après leur dépréciation en 2026.10.16. Le terme de la
+  spec 057 est atteint : l’app ne les appelle plus depuis nemetonshiny
+  v2026.10.14, et `nemetonclaude` ne les a jamais appelées. La carte de
+  contexte passe par
+  [`climat_ete_series()`](https://pobsteta.github.io/nemeton/reference/climat_ete_series.md)
+  et
+  [`climat_tendance_bivariee()`](https://pobsteta.github.io/nemeton/reference/climat_tendance_bivariee.md)
+  (spec 063).
+- Leurs fonctions internes partent avec elles : la chaîne KED
+  (`.eobs_ds_*`), la carte bivariée 5 × 5 (`eobs_bivariate_n()`,
+  `.EOBS_BIVARIATE_*`), la pente et les classes de `tendances_eobs.R`
+  (`.eobs_slope*()`, `.eobs_class3()`, `.eobs_finalise()`).
+- `gstat` et `automap` quittent les Suggests : seul le KED s’en servait.
+
+### Corrections
+
+- **RECONFORT : une AOI valide pour GEOS mais rejetée par s2 ne bloque
+  plus le run** (brief nemetonshiny 2026-10-18, forêt communale de
+  Couchey, zone 63). Deux arêtes quasi colinéaires, à moins d’un
+  millimètre l’une de l’autre, se croisent une fois projetées sur la
+  sphère.
+  [`st_make_valid()`](https://r-spatial.github.io/sf/reference/valid.html)
+  en L93 ne le voit pas, d’où l’échec de la phase `[4/10] tiles` (« Loop
+  31 is not valid: Edge 1 crosses edge 3 »). Le nouvel helper
+  `.geom_valide_s2()` arrondit la géométrie à 1 cm dans son CRS projeté
+  avant
+  [`st_make_valid()`](https://r-spatial.github.io/sf/reference/valid.html).
+  Il sert à trois endroits :
+  - `reconfort_aoi_tiles()` répare l’AOI avec lui, et fait en dernier
+    recours l’intersection en plan (`sf_use_s2(FALSE)`) ;
+  - [`.get_zone_aoi()`](https://pobsteta.github.io/nemeton/reference/dot-get_zone_aoi.md)
+    répare à la lecture une zone invalide en base, si bien que RECONFORT
+    repasse sans toucher à la base ;
+  - [`build_project_monitoring_zones()`](https://pobsteta.github.io/nemeton/reference/build_project_monitoring_zones.md)
+    et
+    [`register_monitoring_zone()`](https://pobsteta.github.io/nemeton/reference/register_monitoring_zone.md)
+    n’écrivent plus de zone invalide.
+
+  Vérifié sur la vraie zone 63 : elle devient valide pour GEOS et pour
+  s2, garde ses 493,79 ha et rend la tuile `T31TFN`.
+
+### Non concernés
+
+- [`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
+  et
+  [`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
+  (gel tardif R7) ne changent pas. Elles passent avec leurs fonctions
+  internes (pseudo-stations SAFRAN, MNT de contexte auto-sourcé, grille
+  `stars`) dans `R/meteoland_grid.R`, avec les tests correspondants dans
+  `test-meteoland-grid.R`.
+- [`load_eobs_source()`](https://pobsteta.github.io/nemeton/reference/load_eobs_source.md)
+  et les accesseurs du clic
+  ([`eobs_summer_series()`](https://pobsteta.github.io/nemeton/reference/eobs_summer_series.md),
+  [`eobs_trend_fit()`](https://pobsteta.github.io/nemeton/reference/eobs_trend_fit.md),
+  [`eobs_monthly_climatology()`](https://pobsteta.github.io/nemeton/reference/eobs_monthly_climatology.md))
+  restent en place.
+- L’avertissement `.avertir_depreciation()` (`R/deprecation.R`) est
+  gardé pour les dépréciations futures.
+
 ## nemeton 2026.10.17 (2026-10-18)
 
 ### Changements cassants
 
-- **Moteur `engine = "meteoland"`
-  d’[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
-  retiré** (accord de Pascal du 2026-10-18 ; fonction expérimentale et
-  dépréciée, aucun appelant dans `nemetonshiny` ni `nemetonclaude`). Le
-  passer avertit et exécute KED, avec
-  `meta$engine_requested = "meteoland"` et
+- **Moteur `engine = "meteoland"` d’`eobs_downscale()` retiré** (accord
+  de Pascal du 2026-10-18 ; fonction expérimentale et dépréciée, aucun
+  appelant dans `nemetonshiny` ni `nemetonclaude`). Le passer avertit et
+  exécute KED, avec `meta$engine_requested = "meteoland"` et
   `meta$engine_fallback = TRUE`, comme le faisait déjà son repli. Les
   arguments `calibrate` et `cv`, propres à ce moteur, disparaissent de
   la signature (absorbés par `...`). Fonctions internes retirées :
@@ -27,12 +90,9 @@
 
 ### Dépréciations
 
-- **[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md),
-  [`eobs_downscale_bivariate()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale_bivariate.md)
-  et
-  [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
-  sont dépréciées** (accord de Pascal du 2026-10-18, spec 063). La carte
-  de contexte de reGénération passe à
+- **`eobs_downscale()`, `eobs_downscale_bivariate()` et
+  `tendances_estivales_eobs()` sont dépréciées** (accord de Pascal du
+  2026-10-18, spec 063). La carte de contexte de reGénération passe à
   [`climat_ete_series()`](https://pobsteta.github.io/nemeton/reference/climat_ete_series.md) +
   [`climat_tendance_bivariee()`](https://pobsteta.github.io/nemeton/reference/climat_tendance_bivariee.md)
   (variation totale, résolution native, palette de L’IF n° 49). Un
@@ -84,8 +144,7 @@
     `hors_couverture`, `indisponible`, `donnees_insuffisantes`). Sorties
     écrites sur disque (`.tif` + `.meta.json`, cercle en `.gpkg`) pour
     traverser un worker `future`. `eobs_downscale*()` et
-    [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
-    ne changent pas.
+    `tendances_estivales_eobs()` ne changent pas.
 
 ## nemeton 2026.10.14 (2026-10-17)
 
@@ -1525,11 +1584,8 @@ combinés, COG FAST, PDF du corpus (signature `%PDF` vérifiée).
   mois) ; des années à cheval sur deux blocs CDS donnent un résultat au
   lieu de `NULL` ; les erreurs gardent leur message (avertissement et
   champ `message` de `eobs:unavailable`).
-- **Tendances E-OBS** :
-  [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
-  rendait une pente **par an** alors que
-  [`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
-  et
+- **Tendances E-OBS** : `tendances_estivales_eobs()` rendait une pente
+  **par an** alors que `eobs_downscale()` et
   [`eobs_trend_fit()`](https://pobsteta.github.io/nemeton/reference/eobs_trend_fit.md)
   sont par décennie. Les trois partagent désormais un seul calcul, **par
   décennie** (valeurs × 10).
@@ -5524,12 +5580,11 @@ L’IF n°49 »). Le nouvel export `eobs_bivariate_n()` expose ce `N` pour
 qu’un consommateur — typiquement la couche cache de `nemetonshiny` —
 détecte qu’un raster bivarié caché a été écrit sous un **schéma
 différent** (ancien 3×3) et doive être **recalculé** plutôt que servi
-périmé. La meta de
-[`eobs_downscale_bivariate()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale_bivariate.md)
-porte déjà le `N` d’écriture dans `palette$ncol` ; il suffit de le
-comparer à `eobs_bivariate_n()`. Corrige le symptôme observé : une carte
-bivariée figée en 3×3 sur des projets dont le cache datait d’avant le
-passage 5×5. Câblage app : brief
+périmé. La meta de `eobs_downscale_bivariate()` porte déjà le `N`
+d’écriture dans `palette$ncol` ; il suffit de le comparer à
+`eobs_bivariate_n()`. Corrige le symptôme observé : une carte bivariée
+figée en 3×3 sur des projets dont le cache datait d’avant le passage
+5×5. Câblage app : brief
 `specs/034-eobs-source/brief-nemetonshiny-bivariate-cache.md`.
 
 ## nemeton 0.158.0 (2026-07-15)
@@ -5796,14 +5851,14 @@ Validé en réel sur la zone 9 (S2 2025) : run complet, 10/10 phases,
 
 #### Changed — carte bivariée : quinconce 5×5 en **bornes absolues** (couleurs « L’IF n°49 »)
 
-[`eobs_downscale_bivariate()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale_bivariate.md)
-passe d’un croisement **3×3 (9 classes)** à un **5×5 (25 classes)**,
-avec les couleurs **échantillonnées directement sur la figure de
-référence « L’IF n°49 » (Copernicus E-OBS)**. La référence est un
-dégradé continu (mesuré : un pixel = une couleur) ; le 5×5 en restitue
-la nuance (jaune → olive → violet → rouge → magenta). Schéma : la
-température domine (lignes chaudes rouge/magenta), frais & sec = jaune,
-frais & humide = violet, chaud & sec = rouge, chaud & humide = magenta.
+`eobs_downscale_bivariate()` passe d’un croisement **3×3 (9 classes)** à
+un **5×5 (25 classes)**, avec les couleurs **échantillonnées directement
+sur la figure de référence « L’IF n°49 » (Copernicus E-OBS)**. La
+référence est un dégradé continu (mesuré : un pixel = une couleur) ; le
+5×5 en restitue la nuance (jaune → olive → violet → rouge → magenta).
+Schéma : la température domine (lignes chaudes rouge/magenta), frais &
+sec = jaune, frais & humide = violet, chaud & sec = rouge, chaud &
+humide = magenta.
 
 - **Classification en bornes ABSOLUES fixes ancrées sur 0** (et non en
   quantiles de l’emprise) — comme L’IF n°49 : les couleurs sont
@@ -5925,10 +5980,10 @@ du semis E-OBS grossier (brief `brief-nemeton-eobs-downscale-rr`).
   les deux tendances puis les **croise en classes 1-9** (tertiles ou
   `breaks` fixes ; `(classe_tmax-1)*3 + classe_precip`, **chaud & sec =
   7 = rouge**, frais & humide = 3 = bleu — même codage que
-  [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)).
-  Retourne un `SpatRaster` entier `classe_bivariee` + `meta$palette` (9
-  couleurs/libellés, `sense = "bivariate"`) + `meta$breaks` + les métas
-  composantes `tx`/`rr`. MNT de contexte auto-sourcé partagé (WMS IGN).
+  `tendances_estivales_eobs()`). Retourne un `SpatRaster` entier
+  `classe_bivariee` + `meta$palette` (9 couleurs/libellés,
+  `sense = "bivariate"`) + `meta$breaks` + les métas composantes
+  `tx`/`rr`. MNT de contexte auto-sourcé partagé (WMS IGN).
 
 Contrat `list(raster, meta)` inchangé. Brief app :
 `specs/027-regeneration-microclimat/brief-nemetonshiny-eobs-context-dem.md`
@@ -5946,9 +6001,8 @@ recouvre qu’~1 maille E-OBS (~11 km) → `status = "insufficient_data"`
 
 - **Auto-sourcing du MNT (option A1)** — `dem` devient **optionnel**.
   Quand il est `NULL`, ou trop petit pour couvrir le buffer,
-  [`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
-  télécharge une **élévation grossière** sur `st_buffer(aoi, buffer_m)`
-  depuis le **WMS IGN Géoplateforme**
+  `eobs_downscale()` télécharge une **élévation grossière** sur
+  `st_buffer(aoi, buffer_m)` depuis le **WMS IGN Géoplateforme**
   (`ELEVATION.ELEVATIONGRIDCOVERAGE`, France, sans auth), à
   `context_res_m` (défaut 250 m — un contexte régional n’a pas besoin de
   plus, la grille est bornée à `max_cells`). Validé en réel : `n_points`
@@ -5974,8 +6028,7 @@ dessus) ; `meta` gagne seulement `dem_source`. Brief app : le rendu
 
 #### Added — moteur meteoland réel + Tmin journalier alimentant R7 (chantier microclimat P4)
 
-Concrétise le rail `engine = "meteoland"`
-d’[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
+Concrétise le rail `engine = "meteoland"` d’`eobs_downscale()`
 (jusqu’ici un stub qui retombait sur KED) et ferme la boucle de données
 réelles de R7. **Validé de bout en bout sur meteoland 2.2.7** : CRS
 Lambert-93 natif accepté, pipeline `create_meteo_interpolator()` →
@@ -6023,12 +6076,11 @@ capte R7 automatiquement, pas de 13e axe.
 
 **`build_safran_stations(aoi, buffer_m, years, dem, …)`** — grille de
 **pseudo-stations SAFRAN** pour le moteur meteoland
-d’[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md).
-SAFRAN est une réanalyse ~8 km : chaque maille = une pseudo-station
-(série journalière + altitude MNT), ce qui suffit à meteoland. Réutilise
-l’acquisition GéoSAS déjà écrite pour BILJOU (`.biljou_forcing_safran`)
-— pas de source neuve. Écarte les pseudo-stations sans série ou sans
-altitude.
+d’`eobs_downscale()`. SAFRAN est une réanalyse ~8 km : chaque maille =
+une pseudo-station (série journalière + altitude MNT), ce qui suffit à
+meteoland. Réutilise l’acquisition GéoSAS déjà écrite pour BILJOU
+(`.biljou_forcing_safran`) — pas de source neuve. Écarte les
+pseudo-stations sans série ou sans altitude.
 
 **Moteur `eobs_downscale(engine = "meteoland")`** : construit désormais
 les stations SAFRAN et borne la densité, mais **l’interpolation
@@ -6954,8 +7006,7 @@ données dans l’app (contraire à la règle
 Nouveau loader qui produit le **SpatRaster estival par année** (une
 couche/an, nommée par l’année) attendu par
 [`microclimate_detect_years()`](https://pobsteta.github.io/nemeton/reference/microclimate_detect_years.md)
-(années de référence moyenne/canicule) et
-[`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
+(années de référence moyenne/canicule) et `tendances_estivales_eobs()`
 (contexte régional). Comble le maillon manquant qui rendait le bouton «
 Auto (E-OBS) » de l’app indisponible (le cœur n’auto-téléchargeait pas
 E-OBS).
@@ -7192,10 +7243,9 @@ Reste : C `regen_bilan_hydrique` (biljouR).
 
 **`microclimate_detect_years(eobs, aoi, years, …)`** accepte désormais
 un **`SpatRaster` E-OBS par-année** (une couche par an, JJA agrégé —
-même contrat que `tx` de
-[`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)),
-plus seulement un named numeric pré-calculé. Chaque couche est
-**croppée + masquée sur l’AOI** (union des UGF) puis moyennée
+même contrat que `tx` de `tendances_estivales_eobs()`), plus seulement
+un named numeric pré-calculé. Chaque couche est **croppée + masquée sur
+l’AOI** (union des UGF) puis moyennée
 ([`terra::global`](https://rspatial.github.io/terra/reference/global.html))
 → indice de chaleur estivale par an, qui alimente la sélection année
 moyenne / canicule de
@@ -7378,11 +7428,11 @@ indice).
 
 #### Added — Branche A : tendances estivales E-OBS sur l’emprise UGF (spec 027 §6)
 
-**[`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)**
-: la carte bivariée de tendances estivales (réchauffement × assèchement,
-inspirée de *L’IF* n°49 IGN), **recadrée sur l’union des UGF + un
-buffer** (décision §10.4, **défaut 25 km** — validé Pascal ; buffer
-métrique via EPSG:3035 LAEA). **Pas de carte nationale.**
+**`tendances_estivales_eobs()`** : la carte bivariée de tendances
+estivales (réchauffement × assèchement, inspirée de *L’IF* n°49 IGN),
+**recadrée sur l’union des UGF + un buffer** (décision §10.4, **défaut
+25 km** — validé Pascal ; buffer métrique via EPSG:3035 LAEA). **Pas de
+carte nationale.**
 
 Le cœur **calcule** ; l’app **rend**. Par maille E-OBS de l’emprise :
 tendance (pente moindres carrés ~ année) de la **T°max** et des

@@ -20,8 +20,8 @@ microclimate_detect_years(eobs = NULL, aoi = NULL, years = NULL,
   The E-OBS summer-heat series. Either a **named numeric**
   (`year -> summer-heat index`, e.g. mean JJA Tmax), used directly, or a
   **per-year summer `SpatRaster`** (one layer per year, JJA-aggregated —
-  same contract as `tx` in
-  [`tendances_estivales_eobs`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)):
+  same contract as `stack` in
+  [`eobs_summer_series`](https://pobsteta.github.io/nemeton/reference/eobs_summer_series.md)):
   each layer is averaged over `aoi` to give the yearly index.
 
 - aoi:
@@ -56,4 +56,4 @@ Experimental: may change in any release, without deprecation (spec 057).
 ## See also
 
 [`indicateur_r6_sensibilite`](https://pobsteta.github.io/nemeton/reference/indicateur_r6_sensibilite.md),
-[`tendances_estivales_eobs`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
+[`eobs_summer_series`](https://pobsteta.github.io/nemeton/reference/eobs_summer_series.md)

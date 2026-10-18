@@ -7,8 +7,8 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.13**
-> (release du 2026-10-17), relevée le 2026-10-17.
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.16**
+> (release du 2026-10-18), relevée le 2026-10-18.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
@@ -610,24 +610,21 @@ puis quelques secondes ; 1950-2025 = +2,7 °C / −15 mm, 2006-2020 = +2,4
 `~/.local/share/nemeton/cache/eobs/`. `vers-nemeton/` vide.
 
 *2026-10-18* (**2026.10.16**) : accord de Pascal pour déprécier
-[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md),
-[`eobs_downscale_bivariate()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale_bivariate.md)
-et
-[`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
-(remplacées par la spec 063 pour la carte de contexte). Avertissement
-une fois par session (`.avertir_depreciation()`, `R/deprecation.R`,
-classe `nemeton_deprecated`), comportement inchangé. Appels restants
-vérifiés en lecture seule : app `origin/main` v2026.10.13 seulement (la
-branche `claude/cycle-2026.10.13` n’en a plus), aucun dans
-`nemetonclaude`. Retrait dès la release de l’app sans ces appels, au
-plus tard le 2027-01-18 ;
+`eobs_downscale()`, `eobs_downscale_bivariate()` et
+`tendances_estivales_eobs()` (remplacées par la spec 063 pour la carte
+de contexte). Avertissement une fois par session
+(`.avertir_depreciation()`, `R/deprecation.R`, classe
+`nemeton_deprecated`), comportement inchangé. Appels restants vérifiés
+en lecture seule : app `origin/main` v2026.10.13 seulement (la branche
+`claude/cycle-2026.10.13` n’en a plus), aucun dans `nemetonclaude`.
+Retrait dès la release de l’app sans ces appels, au plus tard le
+2027-01-18 ;
 [`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
 /
 [`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
 (gel R7) seront alors déplacés dans `R/meteoland_grid.R`. Question
 ouverte au retrait : garder ou non le moteur `engine = "meteoland"`
-d’[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
-(aucun appelant). Brief app :
+d’`eobs_downscale()` (aucun appelant). Brief app :
 `vers-nemetonshiny/2026-10-18-depreciation-eobs-downscale.md`.
 
 *2026-10-18* : PR \#574 mergée (CI verte) ; tag `v2026.10.16` posé par
@@ -635,13 +632,12 @@ d’[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downs
 `codecov/project` à −0,01 % : contrôle non obligatoire, PR sans code).
 
 *2026-10-18* (**2026.10.17**) : accord de Pascal, moteur
-`engine = "meteoland"`
-d’[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
-retiré (aucun appelant) : le passer avertit et tourne en KED
-(`meta$engine_fallback = TRUE`, contrat de l’ancien repli) ; `calibrate`
-et `cv` quittent la signature. Fonctions internes du moteur retirées
-(`.eobs_ds_run_meteoland`, `.meteoland_annual_stack`,
-`.meteoland_cv_stats`, `.eobs_summer_dates`, `.METEOLAND_SUMMER_FUN`) ;
+`engine = "meteoland"` d’`eobs_downscale()` retiré (aucun appelant) : le
+passer avertit et tourne en KED (`meta$engine_fallback = TRUE`, contrat
+de l’ancien repli) ; `calibrate` et `cv` quittent la signature.
+Fonctions internes du moteur retirées (`.eobs_ds_run_meteoland`,
+`.meteoland_annual_stack`, `.meteoland_cv_stats`, `.eobs_summer_dates`,
+`.METEOLAND_SUMMER_FUN`) ;
 [`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
 et
 [`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
@@ -651,6 +647,61 @@ et
 `release.yml`. Cycle dev `2026.10.17.9000`. Dernière release
 nemetonshiny vérifiée sur GitHub : v2026.10.13 (le câblage de la spec
 063, `c5b03b68`, n’est pas encore publié). `vers-nemeton/` vide.
+
+*2026-10-18* — nemetonshiny v2026.10.14 (<nemetonshiny@b4ec7ce2>, cycle
+2026.10.13.9000→2026.10.14) : spec 063 côté app, onglet « Contexte
+climatique » (E-OBS / CHELSA / SAFRAN / nuages annuels) sur un cercle
+autour du projet, remplaçant la carte E-OBS downscalée ; spec 063 livrée
+côté app. Écarts au brief de câblage : une seule `ExtendedTask`, quatre
+clés i18n raccourcies (\> 30 caractères), boutons rr/tg gardés pour
+l’ombrothermique. Vérifié en réel sur CHELSA ; E-OBS et SAFRAN non
+lancés depuis l’app.
+
+*2026-10-18* — nemetonshiny v2026.10.15 (<nemetonshiny@1411468a>, cycle
+2026.10.14.9001→2026.10.15) : plans d’échantillonnage et de validation
+livrés en dossier QGIS ouvrable zippé (suite du dossier ouvrable de
+[`create_qgis_project()`](https://pobsteta.github.io/nemeton/reference/create_qgis_project.md),
+cœur 2026.10.14).
+
+*2026-10-18* — nemetonshiny v2026.10.16 (<nemetonshiny@ee0616f0>, cycle
+2026.10.15.9000→2026.10.16) : contexte climatique, période par défaut
+2006-2020 sans option L’IF n° 49 (bornes France) ; nuages annuels en
+grand, sans grille. L’app ne demande plus `periode = "if49"`.
+
+*2026-10-18* (**2026.10.18**) : réponse de l’app
+(`2026-10-18-reponse-depreciation-eobs-downscale.md`) — plus aucun appel
+depuis v2026.10.14, vérifié en lecture seule sur `origin/main`. Accord
+de Pascal : `eobs_downscale()`, `eobs_downscale_bivariate()` et
+`tendances_estivales_eobs()` retirées avec leurs fonctions internes ;
+`gstat` / `automap` quittent les Suggests.
+[`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
+et
+[`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
+(gel R7) déplacées telles quelles dans `R/meteoland_grid.R` (tests dans
+`test-meteoland-grid.R`). Les quatre briefs de `vers-nemeton/` sont
+traités.
+
+*2026-10-18* (**2026.10.18**, même release) : brief nemetonshiny
+`2026-10-18-reconfort-aoi-invalide-s2.md` (bloquant) — RECONFORT mourait
+en `[4/10] tiles` sur Couchey (zone 63) : zone valide pour GEOS après
+`st_make_valid()`, mais une écharde de moins d’un millimètre se croise
+sur la sphère (s2). `.geom_valide_s2()` (`R/zone_aoi.R`) arrondit à 1 cm
+en CRS projeté avant `st_make_valid()`. Branché dans
+`reconfort_aoi_tiles()` (plus une intersection plane en dernier
+recours), dans
+[`.get_zone_aoi()`](https://pobsteta.github.io/nemeton/reference/dot-get_zone_aoi.md)
+(lecture) et chez les écrivains de zones
+([`build_project_monitoring_zones()`](https://pobsteta.github.io/nemeton/reference/build_project_monitoring_zones.md),
+`.zone_wkt_4326()`). Autres lecteurs vérifiés (`read_reconfort_layer`,
+`read_reconfort_pixel_series`, `monitoring.R:366`) : tous en plan en
+2154 (masque terra, bbox). Ils bénéficient quand même de la réparation à
+la lecture. Test synthétique qui lève avec l’ancien code ; vraie zone 63
+lue en base en lecture seule : valide GEOS et s2, 493,79 ha, `T31TFN`.
+Note annexe du brief, vérifiée : la base Postgres locale de l’app liste
+les migrations d’avant 1.0.0 en plus de `0001_initial_v1`, donc
+[`db_migrate()`](https://pobsteta.github.io/nemeton/reference/db_migrate.md)
+la refuse (« Database predates nemeton 1.0.0 »). Rien n’a été touché ; à
+trancher par Pascal.
 
 ------------------------------------------------------------------------
 
