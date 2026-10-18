@@ -1,3 +1,19 @@
+# nemeton 2026.10.17 (2026-10-18)
+
+## Changements cassants
+
+- **Moteur `engine = "meteoland"` d'`eobs_downscale()` retiré** (accord de
+  Pascal du 2026-10-18 ; fonction expérimentale et dépréciée, aucun appelant
+  dans `nemetonshiny` ni `nemetonclaude`). Le passer avertit et exécute KED,
+  avec `meta$engine_requested = "meteoland"` et `meta$engine_fallback = TRUE`,
+  comme le faisait déjà son repli. Les arguments `calibrate` et `cv`, propres à
+  ce moteur, disparaissent de la signature (absorbés par `...`). Fonctions
+  internes retirées : `.eobs_ds_run_meteoland()`, `.meteoland_annual_stack()`,
+  `.meteoland_cv_stats()`, `.eobs_summer_dates()`, `.METEOLAND_SUMMER_FUN`.
+- **Non concernés** : `meteoland_daily_grid()` et `build_safran_stations()`
+  (moteur gel R7) et leurs fonctions internes (stations SAFRAN, interpolateur,
+  grille), qui restent en place.
+
 # nemeton 2026.10.16 (2026-10-18)
 
 ## Dépréciations

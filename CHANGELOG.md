@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.17] - 2026-10-18
+
+### Removed
+- `eobs_downscale(engine = "meteoland")` (no caller): now warns and runs KED (`meta$engine_fallback = TRUE`); `calibrate` / `cv` arguments dropped. `meteoland_daily_grid()` (frost R7) unchanged.
+
 ## [2026.10.16] - 2026-10-18
 
 ### Deprecated

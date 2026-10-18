@@ -546,6 +546,19 @@ seront alors déplacés dans `R/meteoland_grid.R`. Question ouverte au retrait :
 garder ou non le moteur `engine = "meteoland"` d'`eobs_downscale()` (aucun
 appelant). Brief app : `vers-nemetonshiny/2026-10-18-depreciation-eobs-downscale.md`.
 
+*2026-10-18* : PR #574 mergée (CI verte) ; tag `v2026.10.16` posé par
+`release.yml`. Cycle dev `2026.10.16.9000` (PR #575, mergée malgré
+`codecov/project` à −0,01 % : contrôle non obligatoire, PR sans code).
+
+*2026-10-18* (**2026.10.17**) : accord de Pascal, moteur `engine = "meteoland"`
+d'`eobs_downscale()` retiré (aucun appelant) : le passer avertit et tourne en
+KED (`meta$engine_fallback = TRUE`, contrat de l'ancien repli) ; `calibrate`
+et `cv` quittent la signature. Fonctions internes du moteur retirées
+(`.eobs_ds_run_meteoland`, `.meteoland_annual_stack`, `.meteoland_cv_stats`,
+`.eobs_summer_dates`, `.METEOLAND_SUMMER_FUN`) ; `meteoland_daily_grid()` et
+`build_safran_stations()` (gel R7) inchangés, tests du gel et du microclimat
+verts.
+
 ---
 
 # CI — dépendances et actions GitHub

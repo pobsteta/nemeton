@@ -82,15 +82,6 @@ test_that("var = 'rr' downscales precipitation with its own labels/sense", {
   expect_equal(res$meta$reliability, "low")
 })
 
-test_that("var = 'rr' ignores engine = 'meteoland' and runs KED", {
-  res <- suppressWarnings(eobs_downscale(
-    var = "rr", eobs = make_eobs(), dem = make_dem(), aoi = make_aoi(),
-    engine = "meteoland", statistic = "trend", buffer_m = 30000,
-    covariates = c("dem", "slope")))
-  expect_equal(res$meta$engine, "ked")           # pas de repli meteoland pour rr
-  expect_null(res$meta$engine_fallback)          # forcé en amont, pas un fallback
-})
-
 test_that("tx keeps hot_unfavorable / high reliability", {
   res <- eobs_downscale(var = "tx", eobs = make_eobs(), dem = make_dem(),
                         aoi = make_aoi(), statistic = "trend", buffer_m = 30000,
@@ -121,19 +112,19 @@ test_that("eobs_downscale validates its inputs", {
                "sf")
 })
 
-test_that("engine = 'meteoland' falls back to KED when no stations resolve", {
-  # Sans meteoland (CI) le moteur retourne NULL avant tout réseau. Avec meteoland,
-  # on force le repli en mockant l'acquisition -> aucune pseudo-station : pas de
-  # réseau GéoSAS dans le test, repli déterministe quel que soit l'environnement.
-  testthat::local_mocked_bindings(build_safran_stations = function(...) NULL)
-  res <- suppressWarnings(eobs_downscale(
-    var = "tx", eobs = make_eobs(), dem = make_dem(), aoi = make_aoi(),
-    engine = "meteoland", statistic = "trend", buffer_m = 30000,
-    covariates = c("dem", "slope")))
+test_that("engine = 'meteoland' (retiré en 2026.10.17) avertit et tourne en KED", {
+  expect_warning(
+    res <- eobs_downscale(
+      var = "tx", eobs = make_eobs(), dem = make_dem(), aoi = make_aoi(),
+      engine = "meteoland", statistic = "trend", buffer_m = 30000,
+      covariates = c("dem", "slope")),
+    "removed")
   expect_equal(res$meta$status, "ok")
   expect_equal(res$meta$engine, "ked")
   expect_true(isTRUE(res$meta$engine_fallback))
   expect_equal(res$meta$engine_requested, "meteoland")
+  expect_error(suppressWarnings(eobs_downscale("tx", eobs = make_eobs(),
+    dem = make_dem(), aoi = make_aoi(), engine = "autre")))
 })
 
 test_that("the full KED path runs when gstat is available", {
@@ -204,7 +195,7 @@ test_that("build_safran_stations returns NULL when no series resolve", {
                                     fetch = none))
 })
 
-test_that("the KED contract carries a cv slot (NULL, filled by meteoland)", {
+test_that("the KED contract carries a cv slot (NULL)", {
   res <- eobs_downscale("tx", eobs = make_eobs(), dem = make_dem(),
                         aoi = make_aoi(), statistic = "trend", buffer_m = 30000,
                         covariates = c("dem", "slope"))
@@ -270,30 +261,6 @@ test_that(".meteoland_meteo_sf builds a long sf (station × day)", {
 })
 
 # --- glue meteoland réelle (skippée en CI : meteoland/stars en Suggests) ---
-
-test_that("engine = 'meteoland' runs the interpolator and honours the contract", {
-  skip_if_not_installed("meteoland")
-  skip_if_not_installed("stars")
-  # Injecte des pseudo-stations SAFRAN synthétiques -> vrai run meteoland, offline.
-  testthat::local_mocked_bindings(
-    .biljou_forcing_safran = function(points, years, ...)
-      fake_safran_series(points, years, ndays = 30))
-  eobs <- make_eobs(nyr = 1)
-  res <- suppressWarnings(eobs_downscale(
-    "tx", eobs = eobs, dem = make_dem(), aoi = make_aoi(), engine = "meteoland",
-    statistic = "mean", buffer_m = 20000, covariates = c("dem", "slope"),
-    max_cells = 2000, years = 2020))
-  # Selon la densité effective on obtient meteoland (idéal) OU un repli KED propre.
-  expect_equal(res$meta$status, "ok")
-  expect_true(res$meta$engine %in% c("meteoland", "ked"))
-  if (identical(res$meta$engine, "meteoland")) {
-    expect_equal(res$meta$method, "meteoland")
-    expect_s4_class(res$raster, "SpatRaster")
-    expect_equal(res$meta$crs, "2154")
-    expect_equal(res$meta$palette$sense, "hot_unfavorable")
-    expect_true("cv" %in% names(res$meta))
-  }
-})
 
 test_that("meteoland_daily_grid returns a dated daily Tmin stack for R7", {
   skip_if_not_installed("meteoland")
@@ -534,30 +501,4 @@ test_that("eobs_bivariate_n exposes the current per-axis class count", {
   # et le nombre de couleurs == n².
   expect_identical(as.integer(nemeton:::.EOBS_BIVARIATE_N), n)
   expect_length(nemeton:::.EOBS_BIVARIATE_COLORS, n * n)
-})
-
-test_that("engine = 'meteoland' aggregates summers by the mean, like KED (audit 1.0)", {
-  skip_if_not_installed("meteoland")
-  skip_if_not_installed("stars")
-  # Meme grandeur que l'entree E-OBS de la voie KED (moyenne estivale de tx),
-  # sous le meme libelle : pas le jour le plus chaud (`max`).
-  expect_identical(.METEOLAND_SUMMER_FUN, "mean")
-  captured <- new.env()
-  testthat::local_mocked_bindings(
-    .meteoland_resolve_dem = function(dem, ...) dem,
-    build_safran_stations = function(...) list(points = data.frame(id = 1:10)),
-    .meteoland_meteo_sf = function(...) data.frame(a = 1:3),
-    .meteoland_build_interpolator = function(...) "interp",
-    .eobs_ds_stars_grid = function(...) "grid",
-    .meteoland_annual_stack = function(interp, grid, years, variable, fun) {
-      assign("fun", fun, envir = captured)
-      stop("arret du test")
-    }
-  )
-  out <- suppressWarnings(.eobs_ds_run_meteoland(
-    "tx", eobs = make_eobs(nyr = 2), dem = make_dem(), aoi = make_aoi(),
-    buffer_m = 20000, resolution = NULL, covariates = "dem",
-    statistic = "mean", years = 2010:2011, max_cells = 2000, cache_path = NULL))
-  expect_null(out)
-  expect_identical(captured$fun, "mean")
 })
