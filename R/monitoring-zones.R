@@ -126,7 +126,10 @@ create_monitoring_zone <- function(con, zone_name, zone_polygon,
 # WKT EPSG:4326 d'un polygone de zone. Un sf/sfc multi-entités est fusionné
 # (st_union) au lieu d'être tronqué à sa première entité (audit 1.0).
 .zone_wkt_4326 <- function(zone_polygon) {
-  g <- sf::st_geometry(sf::st_transform(zone_polygon, 4326))
+  # Arrondi à 1 cm en CRS projeté avant la 4326 (cf. .geom_valide_s2).
+  g <- sf::st_geometry(zone_polygon)
+  if (!isTRUE(sf::st_is_longlat(g))) g <- .geom_valide_s2(g)
+  g <- sf::st_transform(g, 4326)
   if (length(g) > 1L) g <- sf::st_union(g)
   sf::st_as_text(g[[1L]])
 }
@@ -312,8 +315,10 @@ build_project_monitoring_zones <- function(con, project_name, project_uuid,
       cli::cli_warn("FAST/FORDEAD stratum {.val {s}} is empty for {.val {project_name}} \u2014 zone not created.")
       next
     }
+    # Arrondi à 1 cm dans work_crs avant la 4326 : une union valide pour GEOS
+    # peut garder des échardes < 1 mm que s2 rejette (Couchey, zone 63).
     poly <- sf::st_transform(
-      sf::st_sfc(sf::st_union(g), crs = work_crs), 4326)
+      .geom_valide_s2(sf::st_sfc(sf::st_union(g), crs = work_crs)), 4326)
     todo[[s]] <- sf::st_as_text(poly[[1L]])
   }
 

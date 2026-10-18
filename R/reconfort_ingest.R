@@ -72,6 +72,10 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
   # abort the whole tile resolution. Repair with st_make_valid() and retry
   # once, mirroring the BD Forêt intersection guard; only pay the repair
   # cost when the raw resolution actually fails.
+  # La réparation arrondit à 1 cm dans le CRS projeté (.geom_valide_s2) : un
+  # st_make_valid() seul rend une géométrie valide pour GEOS que s2 rejette
+  # encore (Couchey, zone 63). En dernier recours, intersection plane en degrés
+  # (sf_use_s2(FALSE)) : la grille de tuiles fait 110 km, la précision suffit.
   .aoi_hit <- function(g) {
     aoi_g <- sf::st_union(sf::st_transform(g, sf::st_crs(grid)))
     suppressWarnings(sf::st_intersects(grid, aoi_g, sparse = FALSE)[, 1])
@@ -80,8 +84,15 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
     .aoi_hit(geom),
     error = function(e) {
       cli::cli_alert_info(
-        "AOI has an invalid geometry ({e$message}); repairing with {.fn sf::st_make_valid} and retrying...")
-      .aoi_hit(sf::st_make_valid(geom))
+        "AOI has an invalid geometry ({e$message}); repairing at 1 cm precision and retrying...")
+      g <- .geom_valide_s2(geom)
+      tryCatch(.aoi_hit(g), error = function(e2) {
+        cli::cli_alert_info(
+          "AOI still invalid for s2 ({e2$message}); intersecting in planar mode.")
+        old <- suppressMessages(sf::sf_use_s2(FALSE))
+        on.exit(suppressMessages(sf::sf_use_s2(old)), add = TRUE)
+        .aoi_hit(sf::st_make_valid(g))
+      })
     }
   )
   tiles <- sort(unique(as.character(grid$tile[hit])))
