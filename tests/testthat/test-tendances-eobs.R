@@ -3,6 +3,10 @@
 # Rasters par-année synthétiques (EPSG:3035, buffer métrique propre), aucune
 # donnée E-OBS réelle, aucun réseau.
 
+# Fonctions dépréciées depuis 2026.10.16 (spec 063) : avertissement coupé ici,
+# vérifié dans test-deprecation.R.
+withr::local_options(nemeton.deprecation_silencieuse = TRUE)
+
 # A 4x4 raster (10 km cells) of per-year summer values: cell i has value
 # base + slope_i * year, slope_i = i * 0.1 -> spatial gradient of trends.
 .eobs_stack <- function(base = 20, slope_scale = 0.1, nyear = 5,

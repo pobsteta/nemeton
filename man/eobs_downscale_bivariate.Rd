@@ -72,7 +72,10 @@ Reliability is \code{"low"} (bounded by the noisy precipitation downscaling).
 }
 \section{Lifecycle}{
 
-Experimental: may change in any release, without deprecation (spec 057).
+Deprecated since nemeton 2026.10.16 (spec 063): the reGénération context map
+now uses \code{\link[=climat_ete_series]{climat_ete_series()}} and \code{\link[=climat_tendance_bivariee]{climat_tendance_bivariee()}} (total change
+over the period, native resolution, L'IF n° 49 palette). A warning is shown
+once per session; removal is planned once no caller remains (spec 057).
 }
 
 \seealso{

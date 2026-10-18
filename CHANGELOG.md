@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.16] - 2026-10-18
+
+### Deprecated
+- `eobs_downscale()`, `eobs_downscale_bivariate()`, `tendances_estivales_eobs()`: superseded by `climat_ete_series()` + `climat_tendance_bivariee()`; warning once per session; removal planned once no caller remains (by 2027-01-18 at the latest).
+
 ## [2026.10.15] - 2026-10-18
 
 ### Added

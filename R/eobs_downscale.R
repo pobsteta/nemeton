@@ -917,7 +917,10 @@ meteoland_daily_grid <- function(aoi, dem, years, variable = "MinTemperature",
 #'   supplied and none could be sourced), `eobs_downscale_too_few_cells` (DEM fine
 #'   but too few E-OBS cells within the buffer).
 #' @section Lifecycle:
-#' Experimental: may change in any release, without deprecation (spec 057).
+#' Deprecated since nemeton 2026.10.16 (spec 063): the reGénération context map
+#' now uses [climat_ete_series()] and [climat_tendance_bivariee()] (total change
+#' over the period, native resolution, L'IF n° 49 palette). A warning is shown
+#' once per session; removal is planned once no caller remains (spec 057).
 #'
 #' @references E-OBS: Cornes et al. (2018). Regression-kriging: Hengl et al.
 #'   (2007). meteoland: De Cáceres et al. (2018).
@@ -932,6 +935,8 @@ eobs_downscale <- function(var = c("tx", "rr"), eobs, dem = NULL, aoi,
                            max_cells = 5e5, min_points = 10L,
                            cache_path = NULL, calibrate = FALSE, cv = FALSE,
                            context_res_m = 250, ...) {
+  .avertir_depreciation("eobs_downscale", "2026.10.16",
+                        "`climat_ete_series()` + `climat_tendance_bivariee()`")
   var <- match.arg(var)
   engine <- match.arg(engine)
   statistic <- match.arg(statistic)
@@ -1143,13 +1148,20 @@ eobs_bivariate_n <- function() .EOBS_BIVARIATE_N
 #'   the white dashed 0/0 lines of the reference figure). `meta$tx` / `meta$rr`
 #'   carry the two component `eobs_downscale()` metas.
 #' @section Lifecycle:
-#' Experimental: may change in any release, without deprecation (spec 057).
+#' Deprecated since nemeton 2026.10.16 (spec 063): the reGénération context map
+#' now uses [climat_ete_series()] and [climat_tendance_bivariee()] (total change
+#' over the period, native resolution, L'IF n° 49 palette). A warning is shown
+#' once per session; removal is planned once no caller remains (spec 057).
 #'
 #' @seealso [eobs_downscale()], [tendances_estivales_eobs()]
 #' @export
 eobs_downscale_bivariate <- function(tx, rr, dem = NULL, aoi, buffer_m = 25000,
                                      breaks = NULL, context_res_m = 250,
                                      min_points = 10L, cache_path = NULL, ...) {
+  .avertir_depreciation("eobs_downscale_bivariate", "2026.10.16",
+                        "`climat_ete_series()` + `climat_tendance_bivariee()`")
+  # Un seul avertissement : les deux appels internes ci-dessous sont muets.
+  withr::local_options(nemeton.deprecation_silencieuse = TRUE)
   txr <- eobs_downscale("tx", eobs = tx, dem = dem, aoi = aoi,
                         statistic = "trend", buffer_m = buffer_m,
                         context_res_m = context_res_m, min_points = min_points,

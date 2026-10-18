@@ -533,6 +533,19 @@ usage (8 Go KNMI + mensualisation France), puis quelques secondes ;
 spec 063 § *Validation*). Cache machine prêt dans
 `~/.local/share/nemeton/cache/eobs/`. `vers-nemeton/` vide.
 
+*2026-10-18* (**2026.10.16**) : accord de Pascal pour déprécier
+`eobs_downscale()`, `eobs_downscale_bivariate()` et
+`tendances_estivales_eobs()` (remplacées par la spec 063 pour la carte de
+contexte). Avertissement une fois par session (`.avertir_depreciation()`,
+`R/deprecation.R`, classe `nemeton_deprecated`), comportement inchangé. Appels
+restants vérifiés en lecture seule : app `origin/main` v2026.10.13 seulement
+(la branche `claude/cycle-2026.10.13` n'en a plus), aucun dans
+`nemetonclaude`. Retrait dès la release de l'app sans ces appels, au plus tard
+le 2027-01-18 ; `meteoland_daily_grid()` / `build_safran_stations()` (gel R7)
+seront alors déplacés dans `R/meteoland_grid.R`. Question ouverte au retrait :
+garder ou non le moteur `engine = "meteoland"` d'`eobs_downscale()` (aucun
+appelant). Brief app : `vers-nemetonshiny/2026-10-18-depreciation-eobs-downscale.md`.
+
 ---
 
 # CI — dépendances et actions GitHub

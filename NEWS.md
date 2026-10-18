@@ -1,3 +1,22 @@
+# nemeton 2026.10.16 (2026-10-18)
+
+## Dépréciations
+
+- **`eobs_downscale()`, `eobs_downscale_bivariate()` et
+  `tendances_estivales_eobs()` sont dépréciées** (accord de Pascal du
+  2026-10-18, spec 063). La carte de contexte de reGénération passe à
+  `climat_ete_series()` + `climat_tendance_bivariee()` (variation totale,
+  résolution native, palette de L'IF n° 49). Un avertissement
+  (`nemeton_deprecated`, `deprecatedWarning`) est émis une fois par session et
+  par fonction ; le comportement ne change pas. L'option
+  `nemeton.deprecation_silencieuse = TRUE` le coupe.
+- Retrait prévu au premier terme de la spec 057 : le 2027-01-18, ou dès que
+  l'app publiée n'appelle plus ces fonctions (sa branche en cours ne les
+  appelle déjà plus). `meteoland_daily_grid()` et `build_safran_stations()`
+  (moteur gel R7), `load_eobs_source()` et les accesseurs du clic
+  (`eobs_summer_series()`, `eobs_trend_fit()`, `eobs_monthly_climatology()`)
+  ne sont pas concernés.
+
 # nemeton 2026.10.15 (2026-10-18)
 
 ## Nouveautés
