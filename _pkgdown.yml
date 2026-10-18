@@ -707,6 +707,12 @@ reference:
     - build_safran_stations
     - meteoland_daily_grid
 
+  - subtitle: "Contexte climatique estival sur un cercle (spec 063)"
+    contents:
+    - climat_ete_series
+    - climat_tendance_bivariee
+    - climat_nuages_annuels
+
   - title: "Documentation interne"
     desc: "Pages de documentation du package et pages internes"
     contents:
