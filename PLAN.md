@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.13** (release du 2026-10-17), relevée le 2026-10-17.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.16** (release du 2026-10-18), relevée le 2026-10-18.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -563,6 +563,52 @@ verts.
 `release.yml`. Cycle dev `2026.10.17.9000`. Dernière release nemetonshiny
 vérifiée sur GitHub : v2026.10.13 (le câblage de la spec 063, `c5b03b68`, n'est
 pas encore publié). `vers-nemeton/` vide.
+
+*2026-10-18* — nemetonshiny v2026.10.14 (nemetonshiny@b4ec7ce2, cycle
+2026.10.13.9000→2026.10.14) : spec 063 côté app, onglet « Contexte
+climatique » (E-OBS / CHELSA / SAFRAN / nuages annuels) sur un cercle autour
+du projet, remplaçant la carte E-OBS downscalée ; spec 063 livrée côté app.
+Écarts au brief de câblage : une seule `ExtendedTask`, quatre clés i18n
+raccourcies (> 30 caractères), boutons rr/tg gardés pour l'ombrothermique.
+Vérifié en réel sur CHELSA ; E-OBS et SAFRAN non lancés depuis l'app.
+
+*2026-10-18* — nemetonshiny v2026.10.15 (nemetonshiny@1411468a, cycle
+2026.10.14.9001→2026.10.15) : plans d'échantillonnage et de validation livrés
+en dossier QGIS ouvrable zippé (suite du dossier ouvrable de
+`create_qgis_project()`, cœur 2026.10.14).
+
+*2026-10-18* — nemetonshiny v2026.10.16 (nemetonshiny@ee0616f0, cycle
+2026.10.15.9000→2026.10.16) : contexte climatique, période par défaut
+2006-2020 sans option L'IF n° 49 (bornes France) ; nuages annuels en grand,
+sans grille. L'app ne demande plus `periode = "if49"`.
+
+*2026-10-18* (**2026.10.18**) : réponse de l'app
+(`2026-10-18-reponse-depreciation-eobs-downscale.md`) — plus aucun appel
+depuis v2026.10.14, vérifié en lecture seule sur `origin/main`. Accord de
+Pascal : `eobs_downscale()`, `eobs_downscale_bivariate()` et
+`tendances_estivales_eobs()` retirées avec leurs fonctions internes ;
+`gstat` / `automap` quittent les Suggests. `meteoland_daily_grid()` et
+`build_safran_stations()` (gel R7) déplacées telles quelles dans
+`R/meteoland_grid.R` (tests dans `test-meteoland-grid.R`). Les quatre briefs
+de `vers-nemeton/` sont traités.
+
+*2026-10-18* (**2026.10.18**, même release) : brief nemetonshiny
+`2026-10-18-reconfort-aoi-invalide-s2.md` (bloquant) — RECONFORT mourait en
+`[4/10] tiles` sur Couchey (zone 63) : zone valide pour GEOS après
+`st_make_valid()`, mais une écharde de moins d'un millimètre se croise sur la
+sphère (s2). `.geom_valide_s2()` (`R/zone_aoi.R`) arrondit à 1 cm en CRS
+projeté avant `st_make_valid()`. Branché dans `reconfort_aoi_tiles()` (plus
+une intersection plane en dernier recours), dans `.get_zone_aoi()` (lecture)
+et chez les écrivains de zones (`build_project_monitoring_zones()`,
+`.zone_wkt_4326()`). Autres lecteurs vérifiés (`read_reconfort_layer`,
+`read_reconfort_pixel_series`, `monitoring.R:366`) : tous en plan en 2154
+(masque terra, bbox). Ils bénéficient quand même de la réparation à la
+lecture. Test synthétique qui lève avec l'ancien code ; vraie zone 63 lue en
+base en lecture seule : valide GEOS et s2, 493,79 ha, `T31TFN`. Note annexe du
+brief, vérifiée : la base Postgres locale de l'app liste les migrations
+d'avant 1.0.0 en plus de `0001_initial_v1`, donc `db_migrate()` la refuse
+(« Database predates nemeton 1.0.0 »). Rien n'a été touché ; à trancher par
+Pascal.
 
 ---
 

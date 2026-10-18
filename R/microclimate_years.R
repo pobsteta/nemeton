@@ -49,8 +49,8 @@
 
 # Resolve a per-year summer-heat index from `eobs`. Supports either a
 # precomputed named numeric (year -> heat) directly, or a per-year summer
-# `SpatRaster` (one layer per year, JJA-aggregated, same contract as the `tx`
-# input of `tendances_estivales_eobs`): the AOI-mean of each layer gives the
+# `SpatRaster` (one layer per year, JJA-aggregated, same contract as the input
+# of `eobs_summer_series`): the AOI-mean of each layer gives the
 # yearly heat index. Years come from `years` or the layer names.
 .eobs_summer_heat <- function(eobs, aoi = NULL, years = NULL, year_window = NULL) {
   if (is.numeric(eobs) && !is.null(names(eobs))) {
@@ -113,7 +113,7 @@
 #' @param eobs The E-OBS summer-heat series. Either a **named numeric**
 #'   (`year -> summer-heat index`, e.g. mean JJA Tmax), used directly, or a
 #'   **per-year summer `SpatRaster`** (one layer per year, JJA-aggregated —
-#'   same contract as `tx` in [tendances_estivales_eobs()]): each layer is
+#'   same contract as `stack` in [eobs_summer_series()]): each layer is
 #'   averaged over `aoi` to give the yearly index.
 #' @param aoi Optional `sf`/`sfc` AOI. When `eobs` is a `SpatRaster` it is
 #'   cropped + masked to the units' union before averaging.
@@ -130,7 +130,7 @@
 #' @section Lifecycle:
 #' Experimental: may change in any release, without deprecation (spec 057).
 #'
-#' @seealso [indicateur_r6_sensibilite()], [tendances_estivales_eobs()]
+#' @seealso [indicateur_r6_sensibilite()], [eobs_summer_series()]
 #' @export
 microclimate_detect_years <- function(eobs = NULL, aoi = NULL, years = NULL,
                                       year_window = NULL, lidar_year = NULL) {

@@ -1,3 +1,51 @@
+# nemeton 2026.10.18 (2026-10-18)
+
+## Changements cassants
+
+- **`eobs_downscale()`, `eobs_downscale_bivariate()` et
+  `tendances_estivales_eobs()` sont retirées** (accord de Pascal du
+  2026-10-18), après leur dépréciation en 2026.10.16. Le terme de la spec 057
+  est atteint : l'app ne les appelle plus depuis nemetonshiny v2026.10.14, et
+  `nemetonclaude` ne les a jamais appelées. La carte de contexte passe par
+  `climat_ete_series()` et `climat_tendance_bivariee()` (spec 063).
+- Leurs fonctions internes partent avec elles : la chaîne KED (`.eobs_ds_*`),
+  la carte bivariée 5 × 5 (`eobs_bivariate_n()`, `.EOBS_BIVARIATE_*`), la pente
+  et les classes de `tendances_eobs.R` (`.eobs_slope*()`, `.eobs_class3()`,
+  `.eobs_finalise()`).
+- `gstat` et `automap` quittent les Suggests : seul le KED s'en servait.
+
+## Corrections
+
+- **RECONFORT : une AOI valide pour GEOS mais rejetée par s2 ne bloque plus
+  le run** (brief nemetonshiny 2026-10-18, forêt communale de Couchey, zone
+  63). Deux arêtes quasi colinéaires, à moins d'un millimètre l'une de
+  l'autre, se croisent une fois projetées sur la sphère. `st_make_valid()` en
+  L93 ne le voit pas, d'où l'échec de la phase `[4/10] tiles` (« Loop 31 is
+  not valid: Edge 1 crosses edge 3 »). Le nouvel helper `.geom_valide_s2()`
+  arrondit la géométrie à 1 cm dans son CRS projeté avant `st_make_valid()`.
+  Il sert à trois endroits :
+  - `reconfort_aoi_tiles()` répare l'AOI avec lui, et fait en dernier recours
+    l'intersection en plan (`sf_use_s2(FALSE)`) ;
+  - `.get_zone_aoi()` répare à la lecture une zone invalide en base, si bien
+    que RECONFORT repasse sans toucher à la base ;
+  - `build_project_monitoring_zones()` et `register_monitoring_zone()`
+    n'écrivent plus de zone invalide.
+
+  Vérifié sur la vraie zone 63 : elle devient valide pour GEOS et pour s2,
+  garde ses 493,79 ha et rend la tuile `T31TFN`.
+
+## Non concernés
+
+- `meteoland_daily_grid()` et `build_safran_stations()` (gel tardif R7) ne
+  changent pas. Elles passent avec leurs fonctions internes (pseudo-stations
+  SAFRAN, MNT de contexte auto-sourcé, grille `stars`) dans
+  `R/meteoland_grid.R`, avec les tests correspondants dans
+  `test-meteoland-grid.R`.
+- `load_eobs_source()` et les accesseurs du clic (`eobs_summer_series()`,
+  `eobs_trend_fit()`, `eobs_monthly_climatology()`) restent en place.
+- L'avertissement `.avertir_depreciation()` (`R/deprecation.R`) est gardé
+  pour les dépréciations futures.
+
 # nemeton 2026.10.17 (2026-10-18)
 
 ## Changements cassants

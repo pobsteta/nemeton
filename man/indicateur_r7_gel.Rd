@@ -60,5 +60,5 @@ Stable: covered by the 1.0 API contract (spec 057).
 }
 
 \seealso{
-\code{\link{indicateur_r6_sensibilite}}, \code{\link{eobs_downscale}}
+\code{\link{indicateur_r6_sensibilite}}, \code{\link{meteoland_daily_grid}}
 }

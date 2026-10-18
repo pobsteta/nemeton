@@ -62,7 +62,7 @@
       "url": "https://api.geosas.fr/edr/collections/safran-isba/position",
       "provider": "GéoSAS / INRAE — Météo-France SIM (SAFRAN-ISBA) daily, 1958-present",
       "auth": "none",
-      "note": "Point (position) queries, one per unit centroid. Consumed by load_biljou_forcing(source = \"safran\") / regen_bilan_hydrique() (BILJOU forcing) and by the meteoland engine of eobs_downscale(). The loaders keep this URL as a constant (.BILJOU_SAFRAN_EDR) — a test checks both stay identical.",
+      "note": "Point (position) queries, one per unit centroid. Consumed by load_biljou_forcing(source = \"safran\") / regen_bilan_hydrique() (BILJOU forcing) and by meteoland_daily_grid() (late-frost R7). The loaders keep this URL as a constant (.BILJOU_SAFRAN_EDR) — a test checks both stay identical.",
       "license": "Météo-France SIM data redistributed by GéoSAS — cite the producers."
     }
   },

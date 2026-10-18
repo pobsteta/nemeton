@@ -52,6 +52,11 @@
     if (!identical(sf::st_crs(a)$epsg, 2154L)) {
       a <- sf::st_transform(a, 2154L)
     }
+    # Zone écrite invalide (sommet dupliqué, Couchey zone 63) : réparée à la
+    # lecture, à 1 cm, pour que tous les consommateurs (s2 compris) la lisent.
+    if (!all(sf::st_is_valid(a))) {
+      sf::st_geometry(a) <- .geom_valide_s2(sf::st_geometry(a))
+    }
     a
   }, error = function(e) {
     cli::cli_abort(c(
@@ -62,6 +67,19 @@
   aoi
 }
 
+
+
+# Répare une géométrie pour GEOS ET pour s2. Valide pour GEOS ne veut pas dire
+# valide pour s2 : deux arêtes quasi colinéaires, à moins d'un millimètre l'une
+# de l'autre, se croisent une fois projetées sur la sphère (Couchey, zone 63 :
+# « Loop 31 is not valid: Edge 1 crosses edge 3 » après st_make_valid()). En CRS
+# projeté, on arrondit d'abord à `precision` (100 = 1 cm) : l'écharde
+# s'effondre et st_make_valid() rend un polygone sain sous les deux moteurs.
+# En CRS géographique, st_make_valid() seul.
+.geom_valide_s2 <- function(geom, precision = 100) {
+  if (isTRUE(sf::st_is_longlat(geom))) return(sf::st_make_valid(geom))
+  sf::st_make_valid(sf::st_set_precision(geom, precision))
+}
 
 #' Apply the UGF zone mask to a SpatRaster
 #'

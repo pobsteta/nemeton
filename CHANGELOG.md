@@ -10,6 +10,18 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.18] - 2026-10-18
+
+### Removed
+- `eobs_downscale()`, `eobs_downscale_bivariate()`, `tendances_estivales_eobs()` (deprecated in 2026.10.16, no caller left; replaced by `climat_ete_series()` + `climat_tendance_bivariee()`, spec 063), with their internal helpers and `eobs_bivariate_n()`.
+- `gstat` and `automap` from Suggests.
+
+### Changed
+- `meteoland_daily_grid()` and `build_safran_stations()` moved unchanged to `R/meteoland_grid.R`.
+
+### Fixed
+- RECONFORT tile resolution no longer aborts on an AOI valid for GEOS but invalid for s2 (Couchey zone 63): `.geom_valide_s2()` snaps to 1 cm before `st_make_valid()` in `reconfort_aoi_tiles()` (plus a planar last resort), `.get_zone_aoi()` and zone writers.
+
 ## [2026.10.17] - 2026-10-18
 
 ### Removed

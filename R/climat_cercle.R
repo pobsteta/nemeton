@@ -9,8 +9,8 @@
 #   - classification bivariée sur la palette 10 × 10 de la Figure 1 de L'IF 49.
 # Trois sources, rendues à leur résolution native (aucun downscaling) :
 # E-OBS 0,1° (KNMI, cache machine), CHELSA v2.1 30″ (COG distants), SAFRAN 8 km
-# (API OGC-EDR GéoSAS). eobs_downscale*() et tendances_estivales_eobs() restent
-# en place pour leurs autres usages.
+# (API OGC-EDR GéoSAS). Remplace eobs_downscale*() et
+# tendances_estivales_eobs(), retirées en 2026.10.18.
 
 # ---- Constantes ----------------------------------------------------------------
 
@@ -153,7 +153,7 @@
 
 # Couleurs indexées par la classe bivariée (ct - 1) * n + cp, avec ct = 1 la
 # moindre hausse de Tmax (n = la plus forte) et cp = 1 le plus sec (n = le plus
-# humide) — même convention que eobs_downscale_bivariate().
+# humide) — même convention que l'ancienne eobs_downscale_bivariate().
 .climat_palette <- function(palette, n) {
   if (identical(palette, "if49_10x10")) {
     if (n != 10L) {
