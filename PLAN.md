@@ -600,6 +600,15 @@ lancée (8 Go KNMI à télécharger). Brief app :
 proposer ensuite : dépréciation d’`eobs_downscale*()` pour la carte de
 contexte.
 
+*2026-10-18* : PR \#572 mergée (R-CMD-check, tests, couverture, pkgdown,
+version-consistency verts, après un correctif `\u` des chaînes non
+ASCII) ; tag `v2026.10.15` posé par `release.yml`. Cycle dev
+`2026.10.15.9000`. Chaîne E-OBS réelle validée (cercle de 25 km près de
+Dijon) : 29,5 min au premier usage (8 Go KNMI + mensualisation France),
+puis quelques secondes ; 1950-2025 = +2,7 °C / −15 mm, 2006-2020 = +2,4
+°C / −176 mm (détail : spec 063 § *Validation*). Cache machine prêt dans
+`~/.local/share/nemeton/cache/eobs/`. `vers-nemeton/` vide.
+
 ------------------------------------------------------------------------
 
 # CI — dépendances et actions GitHub
