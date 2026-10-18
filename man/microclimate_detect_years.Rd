@@ -11,7 +11,7 @@ microclimate_detect_years(eobs = NULL, aoi = NULL, years = NULL,
 \item{eobs}{The E-OBS summer-heat series. Either a \strong{named numeric}
 (\code{year -> summer-heat index}, e.g. mean JJA Tmax), used directly, or a
 \strong{per-year summer \code{SpatRaster}} (one layer per year, JJA-aggregated
-— same contract as \code{tx} in \code{\link{tendances_estivales_eobs}}): each
+— same contract as \code{stack} in \code{\link{eobs_summer_series}}): each
 layer is averaged over \code{aoi} to give the yearly index.}
 
 \item{aoi}{Optional \code{sf}/\code{sfc} AOI. When \code{eobs} is a
@@ -43,5 +43,5 @@ Experimental: may change in any release, without deprecation (spec 057).
 }
 
 \seealso{
-\code{\link{indicateur_r6_sensibilite}}, \code{\link{tendances_estivales_eobs}}
+\code{\link{indicateur_r6_sensibilite}}, \code{\link{eobs_summer_series}}
 }

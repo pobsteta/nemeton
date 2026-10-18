@@ -19,9 +19,8 @@ available.
 Fit the least-squares trend of a per-year summer series (the output of
 \code{\link{eobs_summer_series}}) and return the per-decade slope with its goodness of
 fit, for the trend line of chart 1 (spec 036). The slope is \code{10 *} the
-per-year OLS slope, matching the mapped per-decade slope
-(\code{tendances_estivales_eobs()} / \code{eobs_downscale()}), so the click chart and the
-map colour agree by construction.
+per-year OLS slope, the same closed-form per-pixel OLS slope as the climate
+context map, so the click chart and the map colour agree by construction.
 }
 \section{Lifecycle}{
 

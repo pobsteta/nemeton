@@ -2,7 +2,7 @@
 # détection des années de référence et le contexte régional reGénération.
 # ------------------------------------------------------------------
 # E-OBS = jeu européen quadrillé quotidien (ECA&D / Copernicus). Les deux
-# consommateurs cœur — microclimate_detect_years() et tendances_estivales_eobs()
+# consommateurs cœur — microclimate_detect_years() et eobs_summer_series()
 # — attendent un SpatRaster ESTIVAL PAR ANNÉE (une couche/an, nommée par
 # l'année). Ce loader produit ce format depuis un netCDF quotidien fourni
 # (voie B / injection `nc`, testable) ou téléchargé au CDS (voie A, best-effort,
@@ -238,7 +238,7 @@
 #'
 #' @description
 #' Build the per-year summer `SpatRaster` (one layer per year, named by year)
-#' that [microclimate_detect_years()] and [tendances_estivales_eobs()] consume,
+#' that [microclimate_detect_years()] and [eobs_summer_series()] consume,
 #' from the European E-OBS gridded dataset (ECA&D / Copernicus). Two paths
 #' (spec 034):
 #'

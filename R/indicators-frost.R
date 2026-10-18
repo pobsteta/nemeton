@@ -70,7 +70,7 @@
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
 #'
-#' @seealso [indicateur_r6_sensibilite()], [eobs_downscale()]
+#' @seealso [indicateur_r6_sensibilite()], [meteoland_daily_grid()]
 #' @export
 indicateur_r7_gel <- function(units, tmin = NULL, budburst_doy = 100,
                               window_end_doy = 180, frost_threshold_c = 0,

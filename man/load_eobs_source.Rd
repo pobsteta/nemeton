@@ -66,7 +66,7 @@ graceful degradation (with a warning carrying the underlying error message).
 \description{
 Build the per-year summer \code{SpatRaster} (one layer per year, named by year)
 that \code{\link{microclimate_detect_years}} and
-\code{\link{tendances_estivales_eobs}} consume, from the European E-OBS gridded
+\code{\link{eobs_summer_series}} consume, from the European E-OBS gridded
 dataset (ECA&D / Copernicus). Two paths (spec 034):
 \itemize{
 \item \strong{Injection (\code{nc})} — pass a daily E-OBS netCDF path (downloaded
@@ -83,5 +83,5 @@ Stable: covered by the 1.0 API contract (spec 057).
 }
 
 \seealso{
-\code{\link{microclimate_detect_years}}, \code{\link{tendances_estivales_eobs}}
+\code{\link{microclimate_detect_years}}, \code{\link{eobs_summer_series}}
 }

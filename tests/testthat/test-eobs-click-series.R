@@ -156,11 +156,11 @@ test_that("eobs_trend_fit degrades to NA below two finite points", {
 
 test_that("eobs_trend_fit slope matches the map's closed-form slope", {
   # Cohérence carte <-> graphe : la pente/décennie de eobs_trend_fit doit égaler
-  # .eobs_slope_decade (pente closed-form utilisée par les cartes).
+  # la pente OLS closed-form (lm) ramenée à la décennie.
   s <- make_summer_stack(2011:2018, slope = 0.35, base = 18)
   ser <- eobs_summer_series(s, pt)
   fit <- eobs_trend_fit(ser)
-  closed <- nemeton:::.eobs_slope_decade(ser$value, ser$year)
+  closed <- 10 * unname(stats::coef(stats::lm(value ~ year, data = ser))[2])
   expect_equal(fit$slope_decade, closed, tolerance = 1e-8)
 })
 

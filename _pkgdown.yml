@@ -696,11 +696,8 @@ reference:
     - lai_max_depuis_pai
     - microclimate_detect_years
 
-  - subtitle: "Climat estival E-OBS et descente d'echelle (spec 034, 036)"
+  - subtitle: "Climat estival E-OBS et grille meteoland (spec 034, 036)"
     contents:
-    - tendances_estivales_eobs
-    - eobs_downscale
-    - eobs_downscale_bivariate
     - eobs_summer_series
     - eobs_monthly_climatology
     - eobs_trend_fit

@@ -183,9 +183,8 @@ eobs_monthly_climatology <- function(daily, point, var, years = NULL) {
 #' Fit the least-squares trend of a per-year summer series (the output of
 #' [eobs_summer_series()]) and return the per-decade slope with its goodness of
 #' fit, for the trend line of chart 1 (spec 036). The slope is `10 *` the
-#' per-year OLS slope, matching the mapped per-decade slope
-#' (`tendances_estivales_eobs()` / `eobs_downscale()`), so the click chart and the
-#' map colour agree by construction.
+#' per-year OLS slope, the same closed-form per-pixel OLS slope as the climate
+#' context map, so the click chart and the map colour agree by construction.
 #'
 #' @param series A `data.frame` with numeric columns `year` and `value` (as
 #'   returned by [eobs_summer_series()]).
