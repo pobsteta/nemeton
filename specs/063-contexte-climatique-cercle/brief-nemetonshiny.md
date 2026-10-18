@@ -36,7 +36,9 @@ n <- nemeton::climat_nuages_annuels(s, mode = "anomalie" | "tendance_cumulee")
 - Coûts au **premier** calcul : **E-OBS = 8 Go** à télécharger depuis KNMI
   (tx 5,0 Go + rr 3,2 Go) dans le cache **machine** (`~/.local/share/nemeton/
   nemeton/cache/eobs/`, ou `NEMETON_CACHE_DIR`), puis mensualisation France
-  une fois (~76 années) ; tous les projets suivants : quelques secondes.
+  une fois (~76 années) : **29,5 min mesurées** le 2026-10-18 ; tous les projets
+  suivants : quelques secondes. Sur la machine de Pascal, ce cache est **déjà
+  prêt** (essai réel du 2026-10-18).
   CHELSA ≈ 430 lectures distantes (≈ 1-3 min sur 25 km ; 11 s pour 2 ans
   mesurés). SAFRAN ≈ 335 requêtes (16 s pour 2 ans mesurés). Ensuite tout
   vient du cache projet.

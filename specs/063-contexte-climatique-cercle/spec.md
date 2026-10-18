@@ -95,9 +95,21 @@ Caches :
   7 × 7 mailles EPSG:2154 en 16 s (Tmax mai-sept. 20,8 / 24,2 °C ; cumul
   431 / 308 mm) ; CHELSA 2019-2020 = 55 × 80 px EPSG:4326 en 11 s (Tmax
   23,8 / 23,5 °C) ; HEAD KNMI v33.0e = 200 pour `tx` et `rr`.
-- **Non fait** : chaîne E-OBS complète sur données réelles (8 Go à
-  télécharger, puis l'agrégation France) — à lancer par Pascal ou sur son
-  accord.
+- **Chaîne E-OBS réelle** (2026-10-18, même cercle, sur accord de Pascal,
+  scope plafonné à 12 Go) : 29,5 min au total — téléchargement KNMI tx
+  (5,0 Go) 14 min et rr (3,2 Go) 10 min, mensualisation France ≈ 2,5 min par
+  variable (76 années), puis 19 s pour la première carte (bornes France
+  calculées et mises en cache) et 0,2 s pour la suivante. Cache machine :
+  `eobs_{tx,rr}_mensuel_france_v33.0e.tif` = 43 + 27 Mo,
+  `france_metropole_ser.gpkg`, JSON des bornes. Cercle : 5 × 8 mailles 0,1°,
+  34 valides, 1950-2025 (76 étés).
+  - Période complète 1950-2025 : ΔT°max mai-sept. = +2,7 °C (2,3 à 3,2),
+    ΔP = −15 mm (−48 à −4) ; bornes France ΔT [0 ; 5,06] °C, ΔP [−111 ;
+    134] mm (bornes du cercle seul : [0 ; 3,17] et [−45 ; 0]).
+  - 2006-2020 (L'IF n° 49) : ΔT = +2,4 °C, ΔP = −176 mm, classes 53 à 74
+    (orangés à rouges : réchauffement fort et assèchement, comme la Bourgogne
+    sur la Figure 1).
+  - Nuages : anomalie 2022 = +3,2 °C / −71 mm ; tendance cumulée 1959-2025.
 
 ## Hors périmètre
 
