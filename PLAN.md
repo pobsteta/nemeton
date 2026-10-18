@@ -559,6 +559,11 @@ et `cv` quittent la signature. Fonctions internes du moteur retirées
 `build_safran_stations()` (gel R7) inchangés, tests du gel et du microclimat
 verts.
 
+*2026-10-18* : PR #576 mergée (CI verte) ; tag `v2026.10.17` posé par
+`release.yml`. Cycle dev `2026.10.17.9000`. Dernière release nemetonshiny
+vérifiée sur GitHub : v2026.10.13 (le câblage de la spec 063, `c5b03b68`, n'est
+pas encore publié). `vers-nemeton/` vide.
+
 ---
 
 # CI — dépendances et actions GitHub
