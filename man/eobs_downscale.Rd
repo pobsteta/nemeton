@@ -9,7 +9,7 @@ eobs_downscale(
   eobs,
   dem = NULL,
   aoi,
-  engine = c("ked", "meteoland"),
+  engine = "ked",
   buffer_m = 25000,
   resolution = NULL,
   covariates = c("dem", "slope", "aspect", "twi"),
@@ -19,8 +19,6 @@ eobs_downscale(
   max_cells = 5e+05,
   min_points = 10L,
   cache_path = NULL,
-  calibrate = FALSE,
-  cv = FALSE,
   context_res_m = 250,
   ...
 )
@@ -46,20 +44,18 @@ whole buffer. \code{meta$dem_source} reports \code{"provided"}, \code{"autoscale
 \item{aoi}{An \code{sf}/\code{sfc} of the management units, buffered to frame the
 regional context.}
 
-\item{engine}{\code{"ked"} (default, regression-kriging) or \code{"meteoland"}
-(station interpolator; falls back to KED when unavailable).}
+\item{engine}{\code{"ked"} (regression-kriging, the only engine). The
+\code{"meteoland"} engine was removed in nemeton 2026.10.17 (no caller): passing
+it warns and runs KED, with \code{meta$engine_requested = "meteoland"} and
+\code{meta$engine_fallback = TRUE}, as its former fallback did.}
 
 \item{buffer_m}{Context buffer around the AOI, in metres (default 25000).}
 
 \item{resolution}{Optional target resolution (DEM units). \code{NULL} keeps the
-DEM resolution (aggregated if the grid would exceed \code{max_cells}).
-KED engine only: ignored by \code{engine = "meteoland"}, whose grid is the
-DEM capped at \code{max_cells}.}
+DEM resolution (aggregated if the grid would exceed \code{max_cells}).}
 
 \item{covariates}{Terrain covariates among \code{"dem"}, \code{"slope"}, \code{"aspect"}
-(entered as northness), \code{"twi"} (best-effort). Default all four.
-KED engine only: \code{engine = "meteoland"} ignores it and always uses
-elevation, slope and aspect (its own interpolator covariates).}
+(entered as northness), \code{"twi"} (best-effort). Default all four.}
 
 \item{statistic}{What to downscale: \code{"trend"} (per-decade OLS slope over the
 E-OBS years), \code{"mean"}, or \code{"value"} (a pre-reduced single layer).}
@@ -78,18 +74,12 @@ aggregated above it, so the output is never a gigapixel raster.}
 \item{cache_path}{Optional \code{.tif} path; when given, the result raster is
 written there for instant reload (pattern of \code{pai.tif}).}
 
-\item{calibrate}{\code{engine = "meteoland"} only: run the (expensive) meteoland
-LOO calibration before interpolating (default \code{FALSE}, default params).}
-
-\item{cv}{\code{engine = "meteoland"} only: compute leave-one-out cross-validation
-and return it in \code{meta$cv} (\code{r2}, \code{mae_tmin}, \code{mae_tmax}); default \code{FALSE}
-(expensive). KED always reports \code{meta$cv = NULL}.}
-
 \item{context_res_m}{Target resolution (metres) of the \strong{auto-sourced} coarse
 regional DEM (default 250; ignored when a covering \code{dem} is supplied). A
 regional trend needs no finer — the grid is capped at \code{max_cells} anyway.}
 
-\item{...}{Ignored (forward-compat).}
+\item{...}{Ignored (forward-compat; also absorbs the former \code{calibrate} and
+\code{cv} arguments of the removed meteoland engine).}
 }
 \value{
 A list \code{list(raster, meta)}. \code{raster} is a single-layer \code{SpatRaster}
@@ -122,30 +112,18 @@ signal (~ -0.6 °C / 100 m). \strong{\code{var = "rr"}} (precipitation) is also 
 through the \strong{same KED pipeline} — but the rain↔elevation relation is noisy
 and orographic, so \code{rr} is \strong{less reliable} (\code{meta$reliability = "low"}) and
 its palette sense flips to \code{"dry_unfavorable"} (a drying trend is the adverse
-one — low = red). \code{rr} ignores \code{engine = "meteoland"} (temperature-only) and
-runs KED. Fit for a \strong{regional context} map, not stand-scale precision.
+one — low = red). Fit for a \strong{regional context} map, not stand-scale
+precision.
 
-\strong{Two engines, one contract} (microclimat brief §8):
-\itemize{
-\item \code{engine = "ked"} (default) — regression-kriging: reduce E-OBS to one value
-per cell (the target \code{statistic}), fit the drift
+\strong{Method} — regression-kriging (KED): reduce E-OBS to one value per cell
+(the target \code{statistic}), fit the drift
 \code{value ~ dem [+ slope + northness + twi]}, krige the residuals (variogram
 auto-fit via \pkg{automap} when present, else a spherical \pkg{gstat} model),
 sum drift + kriged residuals on the DEM grid. Without \pkg{gstat}, or with too
 few E-OBS cells, it \strong{degrades to trend-only} (drift surface) — a documented
-fallback, never an error.
-\item \code{engine = "meteoland"} — the station-based interpolator (\pkg{meteoland},
-Thornton 1997 + elevation, microclimat brief Option A / chantier P4). It
-interpolates the \strong{daily} SAFRAN pseudo-station series (from
-\code{\link{build_safran_stations}}) onto the DEM grid, aggregates each summer to the
-mean of daily maximum temperature (the same quantity as the E-OBS input of
-the KED engine), then reduces to the requested \code{statistic} — same output contract
-as KED, plus a \code{meta$cv} cross-validation block. Whenever \pkg{meteoland} is
-absent, GéoSAS is down, or too few pseudo-stations resolve, it \strong{falls back
-to KED}, so the caller never branches on the engine. For a \strong{daily} raster
-stack (e.g. the Tmin series feeding \code{\link{indicateur_r7_gel}}), use
-\code{\link{meteoland_daily_grid}} instead of a reduced statistic.
-}
+fallback, never an error. The station-based meteoland engine was removed in
+2026.10.17; for a \strong{daily} raster stack (e.g. the Tmin series feeding
+\code{\link[=indicateur_r7_gel]{indicateur_r7_gel()}}), use \code{\link[=meteoland_daily_grid]{meteoland_daily_grid()}}.
 }
 \section{Lifecycle}{
 
@@ -157,7 +135,7 @@ once per session; removal is planned once no caller remains (spec 057).
 
 \references{
 E-OBS: Cornes et al. (2018). Regression-kriging: Hengl et al.
-(2007). meteoland: De Cáceres et al. (2018).
+(2007).
 }
 \seealso{
 \code{\link{tendances_estivales_eobs}}
