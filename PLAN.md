@@ -630,6 +630,23 @@ d’[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downs
 (aucun appelant). Brief app :
 `vers-nemetonshiny/2026-10-18-depreciation-eobs-downscale.md`.
 
+*2026-10-18* : PR \#574 mergée (CI verte) ; tag `v2026.10.16` posé par
+`release.yml`. Cycle dev `2026.10.16.9000` (PR \#575, mergée malgré
+`codecov/project` à −0,01 % : contrôle non obligatoire, PR sans code).
+
+*2026-10-18* (**2026.10.17**) : accord de Pascal, moteur
+`engine = "meteoland"`
+d’[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
+retiré (aucun appelant) : le passer avertit et tourne en KED
+(`meta$engine_fallback = TRUE`, contrat de l’ancien repli) ; `calibrate`
+et `cv` quittent la signature. Fonctions internes du moteur retirées
+(`.eobs_ds_run_meteoland`, `.meteoland_annual_stack`,
+`.meteoland_cv_stats`, `.eobs_summer_dates`, `.METEOLAND_SUMMER_FUN`) ;
+[`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
+et
+[`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
+(gel R7) inchangés, tests du gel et du microclimat verts.
+
 ------------------------------------------------------------------------
 
 # CI — dépendances et actions GitHub
@@ -8176,7 +8193,7 @@ référence app manquait.
 Suite au crash OOM de l’analyse reGénération sur Reconfort (systemd-oomd
 a tué les 11 process du scope RStudio, pic 16,8 Go, 10:11), diagnostic :
 le moteur reGénération tourne dans un worker
-[`future::multisession`](https://rdrr.io/pkg/future/man/multisession.html)
+[`future::multisession`](https://future.futureverse.org/reference/multisession.html)
 **nu**, dans le scope de l’app — pas d’isolation mémoire, contrairement
 à FORDEAD (`run_memory_capped`, v0.157.0). Mais
 [`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
@@ -11394,7 +11411,7 @@ La frontière de la commune est désormais persistée au save du projet
 (`data/commune.gpkg`) et réinjectée **synchroniquement** au chargement,
 en même temps que les parcelles. La carte se rend immédiatement, sans
 attendre la `restore_task` asynchrone (worker
-[`future::multisession`](https://rdrr.io/pkg/future/man/multisession.html) +
+[`future::multisession`](https://future.futureverse.org/reference/multisession.html) +
 rechargement de `nemeton` dans le worker + 2 appels séquentiels à
 `geo.api.gouv.fr`). La tâche async ne sert plus qu’à peupler la liste
 déroulante des communes ; les projets *legacy* sans cache retombent sur
@@ -12030,9 +12047,10 @@ changement cœur `nemeton`.
   installé, le calcul **par scène** de l’indice (ouverture COG +
   band-math, la phase dominante) tourne en
   [`furrr::future_map()`](https://furrr.futureverse.org/reference/future_map.html)
-  (le [`future::plan()`](https://rdrr.io/pkg/future/man/plan.html) est
-  choisi par l’appelant — `multisession` en prod, `multicore` fork en
-  test). Un `SpatRaster` étant un pointeur externe non sérialisable
+  (le
+  [`future::plan()`](https://future.futureverse.org/reference/plan.html)
+  est choisi par l’appelant — `multisession` en prod, `multicore` fork
+  en test). Un `SpatRaster` étant un pointeur externe non sérialisable
   inter-process, les workers renvoient des rasters
   [`terra::wrap()`](https://rspatial.github.io/terra/reference/wrap.html)-és,
   `unwrap()`-és côté principal (pas d’écriture concurrente, band-math
@@ -12183,7 +12201,7 @@ changement cœur `nemeton`.
   FAST/FORDEAD workers**). Problème : les workers longs
   (`ingest_sentinel2_timeseries`, `run_fordead_dieback`) tournent dans
   un process
-  [`future::multisession`](https://rdrr.io/pkg/future/man/multisession.html)
+  [`future::multisession`](https://future.futureverse.org/reference/multisession.html)
   séparé et
   [`shiny::ExtendedTask`](https://rdrr.io/pkg/shiny/man/ExtendedTask.html)
   n’offre aucune API d’annulation ; le bouton « Libérer l’interface »
@@ -12333,7 +12351,7 @@ changement cœur `nemeton`.
   deux repos** (Bug \#2 : verrou de fichier
   `File is already open in Rscript.exe` quand la session Shiny et le
   worker
-  [`future::multisession`](https://rdrr.io/pkg/future/man/multisession.html)
+  [`future::multisession`](https://future.futureverse.org/reference/multisession.html)
   ouvraient le même fichier local). Résolution de fond : abandon de
   DuckDB (écrivain mono-process exclusif) au profit de **SQLite/WAL** (1
   writer + N lecteurs concurrents inter-process). **Cœur `nemeton`** :
@@ -12487,7 +12505,7 @@ changement cœur `nemeton`.
   inter-processus.** Un fichier DuckDB n’autorise qu’un seul processus
   en read-write, mais plusieurs connexions read-only simultanées. Quand
   le worker
-  [`future::multisession`](https://rdrr.io/pkg/future/man/multisession.html)
+  [`future::multisession`](https://future.futureverse.org/reference/multisession.html)
   (FAST/FORDEAD) ouvre `monitoring.duckdb` en read-write, la session
   Shiny principale ne peut plus l’ouvrir
   (`File is already open in Rscript.exe`). Fix (enabler cœur, Option A)
@@ -12980,7 +12998,7 @@ changement cœur `nemeton`.
   sur la vraie DB villards. Spec :
   `specs/014-validation-sampling/spec.md`. **Side-quest** : les 8
   workers
-  [`future::multisession`](https://rdrr.io/pkg/future/man/multisession.html)
+  [`future::multisession`](https://future.futureverse.org/reference/multisession.html)
   orphelins du `run_app(language = "fr")` ouvert depuis hier matin
   bloquaient l’accès DB des tests (pool de connexions saturé, ~1
   Go/worker en RAM) — diagnostic + arrêt propre par l’utilisateur a

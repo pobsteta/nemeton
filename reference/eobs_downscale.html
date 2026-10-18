@@ -15,7 +15,7 @@ driven by HD LiDAR already produces."><meta property="og:image" content="https:/
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.16.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.17</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -134,7 +134,7 @@ driven by HD LiDAR already produces.</p>
 <span>  <span class="va">eobs</span>,</span>
 <span>  dem <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">aoi</span>,</span>
-<span>  engine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ked"</span>, <span class="st">"meteoland"</span><span class="op">)</span>,</span>
+<span>  engine <span class="op">=</span> <span class="st">"ked"</span>,</span>
 <span>  buffer_m <span class="op">=</span> <span class="fl">25000</span>,</span>
 <span>  resolution <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  covariates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"dem"</span>, <span class="st">"slope"</span>, <span class="st">"aspect"</span>, <span class="st">"twi"</span><span class="op">)</span>,</span>
@@ -144,8 +144,6 @@ driven by HD LiDAR already produces.</p>
 <span>  max_cells <span class="op">=</span> <span class="fl">5e+05</span>,</span>
 <span>  min_points <span class="op">=</span> <span class="fl">10L</span>,</span>
 <span>  cache_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  calibrate <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  cv <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  context_res_m <span class="op">=</span> <span class="fl">250</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -184,8 +182,10 @@ regional context.</p></dd>
 
 
 <dt id="arg-engine">engine<a class="anchor" aria-label="anchor" href="#arg-engine"></a></dt>
-<dd><p><code>"ked"</code> (default, regression-kriging) or <code>"meteoland"</code>
-(station interpolator; falls back to KED when unavailable).</p></dd>
+<dd><p><code>"ked"</code> (regression-kriging, the only engine). The
+<code>"meteoland"</code> engine was removed in nemeton 2026.10.17 (no caller): passing
+it warns and runs KED, with <code>meta$engine_requested = "meteoland"</code> and
+<code>meta$engine_fallback = TRUE</code>, as its former fallback did.</p></dd>
 
 
 <dt id="arg-buffer-m">buffer_m<a class="anchor" aria-label="anchor" href="#arg-buffer-m"></a></dt>
@@ -194,16 +194,12 @@ regional context.</p></dd>
 
 <dt id="arg-resolution">resolution<a class="anchor" aria-label="anchor" href="#arg-resolution"></a></dt>
 <dd><p>Optional target resolution (DEM units). <code>NULL</code> keeps the
-DEM resolution (aggregated if the grid would exceed <code>max_cells</code>).
-KED engine only: ignored by <code>engine = "meteoland"</code>, whose grid is the
-DEM capped at <code>max_cells</code>.</p></dd>
+DEM resolution (aggregated if the grid would exceed <code>max_cells</code>).</p></dd>
 
 
 <dt id="arg-covariates">covariates<a class="anchor" aria-label="anchor" href="#arg-covariates"></a></dt>
 <dd><p>Terrain covariates among <code>"dem"</code>, <code>"slope"</code>, <code>"aspect"</code>
-(entered as northness), <code>"twi"</code> (best-effort). Default all four.
-KED engine only: <code>engine = "meteoland"</code> ignores it and always uses
-elevation, slope and aspect (its own interpolator covariates).</p></dd>
+(entered as northness), <code>"twi"</code> (best-effort). Default all four.</p></dd>
 
 
 <dt id="arg-statistic">statistic<a class="anchor" aria-label="anchor" href="#arg-statistic"></a></dt>
@@ -235,17 +231,6 @@ aggregated above it, so the output is never a gigapixel raster.</p></dd>
 written there for instant reload (pattern of <code>pai.tif</code>).</p></dd>
 
 
-<dt id="arg-calibrate">calibrate<a class="anchor" aria-label="anchor" href="#arg-calibrate"></a></dt>
-<dd><p><code>engine = "meteoland"</code> only: run the (expensive) meteoland
-LOO calibration before interpolating (default <code>FALSE</code>, default params).</p></dd>
-
-
-<dt id="arg-cv">cv<a class="anchor" aria-label="anchor" href="#arg-cv"></a></dt>
-<dd><p><code>engine = "meteoland"</code> only: compute leave-one-out cross-validation
-and return it in <code>meta$cv</code> (<code>r2</code>, <code>mae_tmin</code>, <code>mae_tmax</code>); default <code>FALSE</code>
-(expensive). KED always reports <code>meta$cv = NULL</code>.</p></dd>
-
-
 <dt id="arg-context-res-m">context_res_m<a class="anchor" aria-label="anchor" href="#arg-context-res-m"></a></dt>
 <dd><p>Target resolution (metres) of the <strong>auto-sourced</strong> coarse
 regional DEM (default 250; ignored when a covering <code>dem</code> is supplied). A
@@ -253,7 +238,8 @@ regional trend needs no finer — the grid is capped at <code>max_cells</code> a
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Ignored (forward-compat).</p></dd>
+<dd><p>Ignored (forward-compat; also absorbs the former <code>calibrate</code> and
+<code>cv</code> arguments of the removed meteoland engine).</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -282,27 +268,18 @@ signal (~ -0.6 °C / 100 m). <strong><code>var = "rr"</code></strong> (precipita
 through the <strong>same KED pipeline</strong> — but the rain↔elevation relation is noisy
 and orographic, so <code>rr</code> is <strong>less reliable</strong> (<code>meta$reliability = "low"</code>) and
 its palette sense flips to <code>"dry_unfavorable"</code> (a drying trend is the adverse
-one — low = red). <code>rr</code> ignores <code>engine = "meteoland"</code> (temperature-only) and
-runs KED. Fit for a <strong>regional context</strong> map, not stand-scale precision.</p>
-<p><strong>Two engines, one contract</strong> (microclimat brief §8):</p><ul><li><p><code>engine = "ked"</code> (default) — regression-kriging: reduce E-OBS to one value
-per cell (the target <code>statistic</code>), fit the drift
+one — low = red). Fit for a <strong>regional context</strong> map, not stand-scale
+precision.</p>
+<p><strong>Method</strong> — regression-kriging (KED): reduce E-OBS to one value per cell
+(the target <code>statistic</code>), fit the drift
 <code>value ~ dem [+ slope + northness + twi]</code>, krige the residuals (variogram
 auto-fit via <span class="pkg">automap</span> when present, else a spherical <span class="pkg">gstat</span> model),
 sum drift + kriged residuals on the DEM grid. Without <span class="pkg">gstat</span>, or with too
 few E-OBS cells, it <strong>degrades to trend-only</strong> (drift surface) — a documented
-fallback, never an error.</p></li>
-<li><p><code>engine = "meteoland"</code> — the station-based interpolator (<span class="pkg">meteoland</span>,
-Thornton 1997 + elevation, microclimat brief Option A / chantier P4). It
-interpolates the <strong>daily</strong> SAFRAN pseudo-station series (from
-<code><a href="build_safran_stations.html">build_safran_stations</a></code>) onto the DEM grid, aggregates each summer to the
-mean of daily maximum temperature (the same quantity as the E-OBS input of
-the KED engine), then reduces to the requested <code>statistic</code> — same output contract
-as KED, plus a <code>meta$cv</code> cross-validation block. Whenever <span class="pkg">meteoland</span> is
-absent, GéoSAS is down, or too few pseudo-stations resolve, it <strong>falls back
-to KED</strong>, so the caller never branches on the engine. For a <strong>daily</strong> raster
-stack (e.g. the Tmin series feeding <code><a href="indicateur_r7_gel.html">indicateur_r7_gel</a></code>), use
-<code><a href="meteoland_daily_grid.html">meteoland_daily_grid</a></code> instead of a reduced statistic.</p></li>
-</ul></div>
+fallback, never an error. The station-based meteoland engine was removed in
+2026.10.17; for a <strong>daily</strong> raster stack (e.g. the Tmin series feeding
+<code><a href="indicateur_r7_gel.html">indicateur_r7_gel()</a></code>), use <code><a href="meteoland_daily_grid.html">meteoland_daily_grid()</a></code>.</p>
+    </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
 
@@ -315,7 +292,7 @@ once per session; removal is planned once no caller remains (spec 057).</p>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
     <p>E-OBS: Cornes et al. (2018). Regression-kriging: Hengl et al.
-(2007). meteoland: De Cáceres et al. (2018).</p>
+(2007).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

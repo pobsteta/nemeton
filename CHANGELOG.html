@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.16.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.17</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,6 +117,14 @@
 <p>For a narrative, per-feature description of each release, see <a href="NEWS.html">NEWS.md</a>. This file is the concise, categorised trail.</p>
 <div class="section level2">
 <h2 id="unreleased"><a href="https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD" class="external-link">Unreleased</a><a class="anchor" aria-label="anchor" href="#unreleased"></a></h2>
+</div>
+<div class="section level2">
+<h2 id="id_20261017---2026-10-18">[2026.10.17] - 2026-10-18<a class="anchor" aria-label="anchor" href="#id_20261017---2026-10-18"></a></h2>
+<div class="section level3">
+<h3 id="removed">Removed<a class="anchor" aria-label="anchor" href="#removed"></a></h3>
+<ul><li>
+<code>eobs_downscale(engine = "meteoland")</code> (no caller): now warns and runs KED (<code>meta$engine_fallback = TRUE</code>); <code>calibrate</code> / <code>cv</code> arguments dropped. <code><a href="reference/meteoland_daily_grid.html">meteoland_daily_grid()</a></code> (frost R7) unchanged.</li>
+</ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_20261016---2026-10-18">[2026.10.16] - 2026-10-18<a class="anchor" aria-label="anchor" href="#id_20261016---2026-10-18"></a></h2>
@@ -243,7 +251,7 @@
 <code><a href="reference/renvoyer_inventaire_video.html">renvoyer_inventaire_video()</a></code> (spec 061, experimental): field-return QField project for the trees still <code>a_completer</code> / <code>a_verifier</code>, with a display filter on <code>arbres</code> (QGIS <code>subset</code>) and all reconciled trees kept.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="removed">Removed<a class="anchor" aria-label="anchor" href="#removed"></a></h3>
+<h3 id="removed-1">Removed<a class="anchor" aria-label="anchor" href="#removed-1"></a></h3>
 <ul><li>
 <code><a href="reference/indicateur_t2_changement.html">indicateur_t2_changement()</a></code>: the N2 / T1 stability proxy. Without FORMS-T, T2 is <code>NA</code>; a unit outside the series gets <code>t2_status = "no_source"</code> (the <code>"proxy"</code> status is gone). <code>t1_values</code> is kept but deprecated and ignored.</li>
 </ul></div>
@@ -295,7 +303,7 @@
 <div class="section level2">
 <h2 id="id_2026102---2026-10-10">[2026.10.2] - 2026-10-10<a class="anchor" aria-label="anchor" href="#id_2026102---2026-10-10"></a></h2>
 <div class="section level3">
-<h3 id="removed-1">Removed<a class="anchor" aria-label="anchor" href="#removed-1"></a></h3>
+<h3 id="removed-2">Removed<a class="anchor" aria-label="anchor" href="#removed-2"></a></h3>
 <ul><li>
 <code>create_qfield_project()</code>, deprecated alias of <code><a href="reference/create_qgis_project.html">create_qgis_project()</a></code>.</li>
 <li>
@@ -342,7 +350,7 @@
 <div class="section level2">
 <h2 id="id_200---2026-10-08">[2.0.0] - 2026-10-08<a class="anchor" aria-label="anchor" href="#id_200---2026-10-08"></a></h2>
 <div class="section level3">
-<h3 id="removed-2">Removed<a class="anchor" aria-label="anchor" href="#removed-2"></a></h3>
+<h3 id="removed-3">Removed<a class="anchor" aria-label="anchor" href="#removed-3"></a></h3>
 <ul><li>
 <code>croiser_parcelles_onf()</code> (dépréciée en 1.2.0) et ses helpers internes ; remplacement : <code>construire_ugf_onf(selection = "toutes")</code>.</li>
 <li>
@@ -417,7 +425,7 @@
 <ul><li>TWI calculé en degrés sur MNT lon/lat ; essences BD Forêt non reconnues.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="removed-3">Removed<a class="anchor" aria-label="anchor" href="#removed-3"></a></h3>
+<h3 id="removed-4">Removed<a class="anchor" aria-label="anchor" href="#removed-4"></a></h3>
 <ul><li>Guide de l’application (vignette), repris par nemetonshiny.</li>
 </ul></div>
 </div>
@@ -1935,7 +1943,7 @@
 <div class="section level2">
 <h2 id="id_0600---2026-06-02">[0.60.0] - 2026-06-02<a class="anchor" aria-label="anchor" href="#id_0600---2026-06-02"></a></h2>
 <div class="section level3">
-<h3 id="removed-4">Removed<a class="anchor" aria-label="anchor" href="#removed-4"></a></h3>
+<h3 id="removed-5">Removed<a class="anchor" aria-label="anchor" href="#removed-5"></a></h3>
 <ul><li>
 <code>read_obs_pixel()</code>, <code>list_fast_alerts_for_zone()</code> and <code>detect_alerts()</code> (deprecated in v0.58.0) are removed. Use <code><a href="reference/build_index_stack.html">build_index_stack()</a></code> / <code><a href="reference/extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code> and <code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> / <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> instead. Files <code>R/read_obs_pixel.R</code>, <code>R/fast_alerts.R</code>, <code>R/alerts.R</code> and their <code>man/</code> pages deleted; exports removed from <code>NAMESPACE</code>.</li>
 <li>
@@ -1945,7 +1953,7 @@
 <div class="section level2">
 <h2 id="id_0580---2026-06-02">[0.58.0] - 2026-06-02<a class="anchor" aria-label="anchor" href="#id_0580---2026-06-02"></a></h2>
 <div class="section level3">
-<h3 id="removed-5">Removed<a class="anchor" aria-label="anchor" href="#removed-5"></a></h3>
+<h3 id="removed-6">Removed<a class="anchor" aria-label="anchor" href="#removed-6"></a></h3>
 <ul><li>
 <code><a href="reference/ingest_sentinel2_timeseries.html">ingest_sentinel2_timeseries()</a></code> no longer extracts per-plot means nor inserts into <code>obs_pixel</code>; it only primes the COG band cache (B04/B08/B12). STAC resolution, the on-disk band cache and the <code>s2:*</code> heartbeats are unchanged. The <code>n_obs_inserted</code> summary field is gone; <code>skip_cached</code> now operates on the COG cache (a scene is skipped when all its required band COGs already exist on disk).</li>
 <li>Internal helpers <code>.insert_obs_pixel()</code> and <code>.find_cached_obs_dates()</code> removed; <code>.extract_scene_obs()</code> replaced by <code>.cache_scene_bands()</code>.</li>
@@ -1964,7 +1972,7 @@
 <h2 id="id_0570---2026-06-02">[0.57.0] - 2026-06-02<a class="anchor" aria-label="anchor" href="#id_0570---2026-06-02"></a></h2>
 <div class="section level3">
 <h3 id="added-108">Added<a class="anchor" aria-label="anchor" href="#added-108"></a></h3>
-<ul><li>Opt-in multi-core scene processing (spec 017 D4). <code><a href="reference/build_index_stack.html">build_index_stack()</a></code> and <code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> / <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> gain a <code>parallel = FALSE</code> argument; when <code>TRUE</code> and <code>furrr</code> is installed the per-scene index compute runs in <code><a href="https://furrr.futureverse.org/reference/future_map.html" class="external-link">furrr::future_map()</a></code> (caller sets the <code><a href="https://rdrr.io/pkg/future/man/plan.html" class="external-link">future::plan()</a></code>). Workers return <code><a href="https://rspatial.github.io/terra/reference/wrap.html" class="external-link">terra::wrap()</a></code>-ed rasters that the main process unwraps; results are identical to sequential. Falls back to sequential when <code>furrr</code> is absent. Closes spec 017.</li>
+<ul><li>Opt-in multi-core scene processing (spec 017 D4). <code><a href="reference/build_index_stack.html">build_index_stack()</a></code> and <code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> / <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> gain a <code>parallel = FALSE</code> argument; when <code>TRUE</code> and <code>furrr</code> is installed the per-scene index compute runs in <code><a href="https://furrr.futureverse.org/reference/future_map.html" class="external-link">furrr::future_map()</a></code> (caller sets the <code><a href="https://future.futureverse.org/reference/plan.html" class="external-link">future::plan()</a></code>). Workers return <code><a href="https://rspatial.github.io/terra/reference/wrap.html" class="external-link">terra::wrap()</a></code>-ed rasters that the main process unwraps; results are identical to sequential. Falls back to sequential when <code>furrr</code> is absent. Closes spec 017.</li>
 </ul></div>
 </div>
 <div class="section level2">

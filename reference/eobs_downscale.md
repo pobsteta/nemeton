@@ -14,7 +14,7 @@ eobs_downscale(
   eobs,
   dem = NULL,
   aoi,
-  engine = c("ked", "meteoland"),
+  engine = "ked",
   buffer_m = 25000,
   resolution = NULL,
   covariates = c("dem", "slope", "aspect", "twi"),
@@ -24,8 +24,6 @@ eobs_downscale(
   max_cells = 5e+05,
   min_points = 10L,
   cache_path = NULL,
-  calibrate = FALSE,
-  cv = FALSE,
   context_res_m = 250,
   ...
 )
@@ -63,8 +61,10 @@ eobs_downscale(
 
 - engine:
 
-  `"ked"` (default, regression-kriging) or `"meteoland"` (station
-  interpolator; falls back to KED when unavailable).
+  `"ked"` (regression-kriging, the only engine). The `"meteoland"`
+  engine was removed in nemeton 2026.10.17 (no caller): passing it warns
+  and runs KED, with `meta$engine_requested = "meteoland"` and
+  `meta$engine_fallback = TRUE`, as its former fallback did.
 
 - buffer_m:
 
@@ -73,16 +73,12 @@ eobs_downscale(
 - resolution:
 
   Optional target resolution (DEM units). `NULL` keeps the DEM
-  resolution (aggregated if the grid would exceed `max_cells`). KED
-  engine only: ignored by `engine = "meteoland"`, whose grid is the DEM
-  capped at `max_cells`.
+  resolution (aggregated if the grid would exceed `max_cells`).
 
 - covariates:
 
   Terrain covariates among `"dem"`, `"slope"`, `"aspect"` (entered as
-  northness), `"twi"` (best-effort). Default all four. KED engine only:
-  `engine = "meteoland"` ignores it and always uses elevation, slope and
-  aspect (its own interpolator covariates).
+  northness), `"twi"` (best-effort). Default all four.
 
 - statistic:
 
@@ -116,17 +112,6 @@ eobs_downscale(
   Optional `.tif` path; when given, the result raster is written there
   for instant reload (pattern of `pai.tif`).
 
-- calibrate:
-
-  `engine = "meteoland"` only: run the (expensive) meteoland LOO
-  calibration before interpolating (default `FALSE`, default params).
-
-- cv:
-
-  `engine = "meteoland"` only: compute leave-one-out cross-validation
-  and return it in `meta$cv` (`r2`, `mae_tmin`, `mae_tmax`); default
-  `FALSE` (expensive). KED always reports `meta$cv = NULL`.
-
 - context_res_m:
 
   Target resolution (metres) of the **auto-sourced** coarse regional DEM
@@ -135,7 +120,8 @@ eobs_downscale(
 
 - ...:
 
-  Ignored (forward-compat).
+  Ignored (forward-compat; also absorbs the former `calibrate` and `cv`
+  arguments of the removed meteoland engine).
 
 ## Value
 
@@ -164,35 +150,21 @@ altitudinal signal (~ -0.6 °C / 100 m). **`var = "rr"`** (precipitation)
 is also supported, through the **same KED pipeline** — but the
 rain↔elevation relation is noisy and orographic, so `rr` is **less
 reliable** (`meta$reliability = "low"`) and its palette sense flips to
-`"dry_unfavorable"` (a drying trend is the adverse one — low = red).
-`rr` ignores `engine = "meteoland"` (temperature-only) and runs KED. Fit
+`"dry_unfavorable"` (a drying trend is the adverse one — low = red). Fit
 for a **regional context** map, not stand-scale precision.
 
-**Two engines, one contract** (microclimat brief §8):
-
-- `engine = "ked"` (default) — regression-kriging: reduce E-OBS to one
-  value per cell (the target `statistic`), fit the drift
-  `value ~ dem [+ slope + northness + twi]`, krige the residuals
-  (variogram auto-fit via automap when present, else a spherical gstat
-  model), sum drift + kriged residuals on the DEM grid. Without gstat,
-  or with too few E-OBS cells, it **degrades to trend-only** (drift
-  surface) — a documented fallback, never an error.
-
-- `engine = "meteoland"` — the station-based interpolator (meteoland,
-  Thornton 1997 + elevation, microclimat brief Option A / chantier P4).
-  It interpolates the **daily** SAFRAN pseudo-station series (from
-  [`build_safran_stations`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md))
-  onto the DEM grid, aggregates each summer to the mean of daily maximum
-  temperature (the same quantity as the E-OBS input of the KED engine),
-  then reduces to the requested `statistic` — same output contract as
-  KED, plus a `meta$cv` cross-validation block. Whenever meteoland is
-  absent, GéoSAS is down, or too few pseudo-stations resolve, it **falls
-  back to KED**, so the caller never branches on the engine. For a
-  **daily** raster stack (e.g. the Tmin series feeding
-  [`indicateur_r7_gel`](https://pobsteta.github.io/nemeton/reference/indicateur_r7_gel.md)),
-  use
-  [`meteoland_daily_grid`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
-  instead of a reduced statistic.
+**Method** — regression-kriging (KED): reduce E-OBS to one value per
+cell (the target `statistic`), fit the drift
+`value ~ dem [+ slope + northness + twi]`, krige the residuals
+(variogram auto-fit via automap when present, else a spherical gstat
+model), sum drift + kriged residuals on the DEM grid. Without gstat, or
+with too few E-OBS cells, it **degrades to trend-only** (drift surface)
+— a documented fallback, never an error. The station-based meteoland
+engine was removed in 2026.10.17; for a **daily** raster stack (e.g. the
+Tmin series feeding
+[`indicateur_r7_gel()`](https://pobsteta.github.io/nemeton/reference/indicateur_r7_gel.md)),
+use
+[`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md).
 
 ## Lifecycle
 
@@ -208,7 +180,6 @@ remains (spec 057).
 ## References
 
 E-OBS: Cornes et al. (2018). Regression-kriging: Hengl et al. (2007).
-meteoland: De Cáceres et al. (2018).
 
 ## See also
 

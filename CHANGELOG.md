@@ -13,6 +13,16 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.10.17\] - 2026-10-18
+
+### Removed
+
+- `eobs_downscale(engine = "meteoland")` (no caller): now warns and runs
+  KED (`meta$engine_fallback = TRUE`); `calibrate` / `cv` arguments
+  dropped.
+  [`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
+  (frost R7) unchanged.
+
 ## \[2026.10.16\] - 2026-10-18
 
 ### Deprecated
@@ -3053,8 +3063,8 @@ concise, categorised trail.
   installed the per-scene index compute runs in
   [`furrr::future_map()`](https://furrr.futureverse.org/reference/future_map.html)
   (caller sets the
-  [`future::plan()`](https://rdrr.io/pkg/future/man/plan.html)). Workers
-  return
+  [`future::plan()`](https://future.futureverse.org/reference/plan.html)).
+  Workers return
   [`terra::wrap()`](https://rspatial.github.io/terra/reference/wrap.html)-ed
   rasters that the main process unwraps; results are identical to
   sequential. Falls back to sequential when `furrr` is absent. Closes

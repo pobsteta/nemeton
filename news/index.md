@@ -1,5 +1,28 @@
 # Changelog
 
+## nemeton 2026.10.17 (2026-10-18)
+
+### Changements cassants
+
+- **Moteur `engine = "meteoland"`
+  d’[`eobs_downscale()`](https://pobsteta.github.io/nemeton/reference/eobs_downscale.md)
+  retiré** (accord de Pascal du 2026-10-18 ; fonction expérimentale et
+  dépréciée, aucun appelant dans `nemetonshiny` ni `nemetonclaude`). Le
+  passer avertit et exécute KED, avec
+  `meta$engine_requested = "meteoland"` et
+  `meta$engine_fallback = TRUE`, comme le faisait déjà son repli. Les
+  arguments `calibrate` et `cv`, propres à ce moteur, disparaissent de
+  la signature (absorbés par `...`). Fonctions internes retirées :
+  `.eobs_ds_run_meteoland()`, `.meteoland_annual_stack()`,
+  `.meteoland_cv_stats()`, `.eobs_summer_dates()`,
+  `.METEOLAND_SUMMER_FUN`.
+- **Non concernés** :
+  [`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
+  et
+  [`build_safran_stations()`](https://pobsteta.github.io/nemeton/reference/build_safran_stations.md)
+  (moteur gel R7) et leurs fonctions internes (stations SAFRAN,
+  interpolateur, grille), qui restent en place.
+
 ## nemeton 2026.10.16 (2026-10-18)
 
 ### Dépréciations
@@ -2164,7 +2187,7 @@ un fichier compagnon `.dates` pour rester exactes même quand deux tuiles
 MGRS partagent une date).
 
 `parallel = TRUE` reste déconseillé dans un processus Shiny sans
-[`future::plan()`](https://rdrr.io/pkg/future/man/plan.html)
+[`future::plan()`](https://future.futureverse.org/reference/plan.html)
 multisession posé : furrr y tourne séquentiellement et n’ajoute que le
 coût de
 [`wrap()`](https://rspatial.github.io/terra/reference/wrap.html)/[`unwrap()`](https://rspatial.github.io/terra/reference/wrap.html).
@@ -5523,7 +5546,7 @@ réutilisable pour les workers de `nemetonshiny` :
   (non exportée) est atteignable aussi. Permet de plafonner le moteur
   reGénération (`nemetonshiny:::run_regeneration_engine`), qui tournait
   jusqu’ici dans un worker
-  [`future::multisession`](https://rdrr.io/pkg/future/man/multisession.html)
+  [`future::multisession`](https://future.futureverse.org/reference/multisession.html)
   **nu** — un débordement mémoire faisait tuer par `systemd-oomd` tout
   le scope RStudio/app (incident Reconfort 2026-07-15).
 - **`options = NULL`** — liste d’options de session posée dans l’enfant
@@ -10180,8 +10203,9 @@ et que est installé, le calcul **par scène** de l’indice (ouverture des
 COG + band-math) est réparti sur plusieurs cœurs via
 [`furrr::future_map()`](https://furrr.futureverse.org/reference/future_map.html)
 — c’est la phase dominante du diagnostic FAST. Le
-[`future::plan()`](https://rdrr.io/pkg/future/man/plan.html) est choisi
-par l’appelant (`multisession` en prod, `multicore` en fork Unix).
+[`future::plan()`](https://future.futureverse.org/reference/plan.html)
+est choisi par l’appelant (`multisession` en prod, `multicore` en fork
+Unix).
 
 - Un `SpatRaster` étant un pointeur externe non sérialisable entre
   process, les workers renvoient des rasters
@@ -10364,7 +10388,7 @@ données utilisateur réelles (incidents villards 2026-05-25 et 2026-05-31
 #### Added — annulation coopérative des workers FAST / FORDEAD
 
 Les workers longs tournent dans un process
-[`future::multisession`](https://rdrr.io/pkg/future/man/multisession.html)
+[`future::multisession`](https://future.futureverse.org/reference/multisession.html)
 séparé et
 [`shiny::ExtendedTask`](https://rdrr.io/pkg/shiny/man/ExtendedTask.html)
 n’a pas d’API d’annulation : jusqu’ici le bouton « Libérer l’interface »
@@ -10559,7 +10583,7 @@ local **recommandé**. C’est la résolution de fond du Bug
 [\#2](https://github.com/pobsteta/nemeton/issues/2) (v0.49.2 ne le
 contournait que partiellement) : un fichier DuckDB est mono-process en
 écriture *exclusif*, si bien que la session Shiny et le worker
-[`future::multisession`](https://rdrr.io/pkg/future/man/multisession.html)
+[`future::multisession`](https://future.futureverse.org/reference/multisession.html)
 d’ingestion ne peuvent pas l’ouvrir en même temps
 (`File is already open in Rscript.exe`). SQLite en WAL autorise **un
 writer + plusieurs lecteurs concurrents entre processus** : la session
@@ -15255,7 +15279,8 @@ install `nemetonshiny` and call `nemetonshiny::run_app()`.
   - Return terminal state from `read_progress_state` to stop
     [`later::later`](https://later.r-lib.org/reference/later.html)
     polling loop
-  - Restore [`future::plan`](https://rdrr.io/pkg/future/man/plan.html)
+  - Restore
+    [`future::plan`](https://future.futureverse.org/reference/plan.html)
     on exit via
     [`withr::defer`](https://withr.r-lib.org/reference/defer.html)
 - Suppressed expected warnings in test-workflow, test-visualization,
