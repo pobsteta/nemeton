@@ -14,8 +14,9 @@
   sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(m)), crs = 2154))
 }
 
+# sf::st_is_valid() en 4326 passe par s2 (sf_use_s2() actif par défaut).
 .s2_valide <- function(g) {
-  all(s2::s2_is_valid(sf::st_transform(sf::st_geometry(g), 4326)))
+  all(sf::st_is_valid(sf::st_transform(sf::st_geometry(g), 4326)))
 }
 
 test_that("le cas de test reproduit le défaut : valide GEOS, invalide s2", {
@@ -74,5 +75,5 @@ test_that(".get_zone_aoi répare à la lecture une zone écrite invalide", {
 test_that(".zone_wkt_4326 n'écrit plus de zone invalide pour s2", {
   wkt <- nemeton:::.zone_wkt_4326(.poly_echarde())
   g <- sf::st_as_sfc(wkt, crs = 4326)
-  expect_true(all(s2::s2_is_valid(g)))
+  expect_true(all(sf::st_is_valid(g)))
 })
