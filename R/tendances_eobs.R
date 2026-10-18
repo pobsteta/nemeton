@@ -104,13 +104,18 @@
 #'   `trend_tmax` (°C/decade), `trend_precip` (mm/decade), `classe_tmax`,
 #'   `classe_precip` (1-3) and `classe_bivariee` (1-9).
 #' @section Lifecycle:
-#' Experimental: may change in any release, without deprecation (spec 057).
+#' Deprecated since nemeton 2026.10.16 (spec 063): the reGénération context map
+#' now uses [climat_ete_series()] and [climat_tendance_bivariee()] (total change
+#' over the period, native resolution, L'IF n° 49 palette). A warning is shown
+#' once per session; removal is planned once no caller remains (spec 057).
 #'
 #' @seealso [indice_priorite_regen()]
 #' @export
 tendances_estivales_eobs <- function(aoi, tx = NULL, rr = NULL, years = NULL,
                                      buffer_m = 25000, breaks = NULL,
                                      precomputed = NULL, ...) {
+  .avertir_depreciation("tendances_estivales_eobs", "2026.10.16",
+                        "`climat_ete_series()` + `climat_tendance_bivariee()`")
   if (!inherits(aoi, c("sf", "sfc"))) {
     stop("aoi must be an sf or sfc object", call. = FALSE)
   }

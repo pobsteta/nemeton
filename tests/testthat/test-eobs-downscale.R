@@ -2,6 +2,10 @@
 # brief-nemeton-eobs-downscaling). Le chemin KED complet exige gstat (Suggests) ;
 # le repli trend-only (dérive lm seule) est pleinement testable sans lui.
 
+# Fonctions dépréciées depuis 2026.10.16 (spec 063) : avertissement coupé ici,
+# vérifié dans test-deprecation.R.
+withr::local_options(nemeton.deprecation_silencieuse = TRUE)
+
 # DEM 2154 fin : altitude croissante ouest -> est (100..1100 m).
 make_dem <- function() {
   d <- terra::rast(terra::ext(0, 40000, 0, 40000), resolution = 200,

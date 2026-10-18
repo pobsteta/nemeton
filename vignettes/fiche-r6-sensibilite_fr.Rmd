@@ -163,6 +163,7 @@ Une différence entre deux simulations, pas un état. La canopée est tenue fixe
 | Sujet | Fichier |
 |---|---|
 | Fonction R6 | `R/indicators-microclimate.R:217` |
-| Détection des années | `microclimate_detect_years()`, `tendances_estivales_eobs()` |
+| Détection des années | `microclimate_detect_years()` |
+| Contexte climatique estival | `climat_ete_series()`, `climat_tendance_bivariee()` (spec 063) |
 | Normalisation | `R/normalization.R`, branche R6 (spec 038) |
 | Spécification | `specs/027-regeneration-microclimat/` L2, ADR-014 |
