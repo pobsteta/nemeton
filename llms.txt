@@ -1216,6 +1216,16 @@ Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.
 - [`meteoland_daily_grid()`](https://pobsteta.github.io/nemeton/reference/meteoland_daily_grid.md)
   : Downscale a daily meteoland variable to a fine raster stack
 
+### Contexte climatique estival sur un cercle (spec 063)
+
+- [`climat_ete_series()`](https://pobsteta.github.io/nemeton/reference/climat_ete_series.md)
+  : Summer climate series on a circle around the project (E-OBS, CHELSA,
+  SAFRAN)
+- [`climat_tendance_bivariee()`](https://pobsteta.github.io/nemeton/reference/climat_tendance_bivariee.md)
+  : Bivariate summer-trend map on the project circle (L'IF n° 49 method)
+- [`climat_nuages_annuels()`](https://pobsteta.github.io/nemeton/reference/climat_nuages_annuels.md)
+  : Yearly summer point clouds on the project circle
+
 ## Documentation interne
 
 Pages de documentation du package et pages internes

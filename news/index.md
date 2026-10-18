@@ -1,5 +1,39 @@
 # Changelog
 
+## nemeton 2026.10.15 (2026-10-18)
+
+### Nouveautés
+
+- **Contexte climatique estival sur un cercle autour du projet** (spec
+  063, brief nemetonshiny du 2026-10-18, méthode des scripts de Pascal)
+  : trois fonctions expérimentales pour remplacer la carte « Contexte
+  régional (E-OBS) » de reGénération, fausse (12 ans, downscaling KED
+  des précipitations, unité par décennie, juin-août, palette 5 × 5).
+  - [`climat_ete_series()`](https://pobsteta.github.io/nemeton/reference/climat_ete_series.md)
+    : Tmax moyenne et cumul de précipitations de l’été (`mois = 5:9` par
+    défaut, années complètes seulement) sur un cercle de `rayon_km`
+    autour du centroïde du projet, à la **résolution native** de la
+    source, mailles du bord entières. E-OBS 0,1° depuis les fichiers
+    KNMI v33.0e (8 Go, cache machine, agrégés une fois en mensuel France
+    ; CDS en repli), CHELSA v2.1 30″ (COG distants découpés au cercle,
+    1979-2021), SAFRAN 8 km (API OGC-EDR GéoSAS, métropole seulement).
+  - [`climat_tendance_bivariee()`](https://pobsteta.github.io/nemeton/reference/climat_tendance_bivariee.md)
+    : **variation totale** sur la période (pente × durée, °C et mm),
+    périodes complète, 2006-2020 (L’IF n° 49) ou libre ; bornes fixes de
+    la Figure 1, France (quantiles E-OBS France des mêmes années et
+    mois, mêmes couleurs entre projets voisins et entre sources) ou du
+    cercle ; palette 10 × 10 relevée sur la Figure 1, ou interpolation
+    des quatre coins.
+  - [`climat_nuages_annuels()`](https://pobsteta.github.io/nemeton/reference/climat_nuages_annuels.md)
+    : nuages de points par année (anomalie à 1981-2010 ou tendance
+    cumulée), sous forme de tableaux pour l’app.
+  - Aucune erreur réseau ne remonte : `meta$status` (`ok`,
+    `hors_couverture`, `indisponible`, `donnees_insuffisantes`). Sorties
+    écrites sur disque (`.tif` + `.meta.json`, cercle en `.gpkg`) pour
+    traverser un worker `future`. `eobs_downscale*()` et
+    [`tendances_estivales_eobs()`](https://pobsteta.github.io/nemeton/reference/tendances_estivales_eobs.md)
+    ne changent pas.
+
 ## nemeton 2026.10.14 (2026-10-17)
 
 ### Nouveautés

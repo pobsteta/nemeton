@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.14.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.15</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,6 +110,22 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.15" id="nemeton-20261015-2026-10-18">nemeton 2026.10.15 (2026-10-18)<a class="anchor" aria-label="anchor" href="#nemeton-20261015-2026-10-18"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-10-15">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-10-15"></a></h3>
+<ul><li>
+<strong>Contexte climatique estival sur un cercle autour du projet</strong> (spec 063, brief nemetonshiny du 2026-10-18, méthode des scripts de Pascal) : trois fonctions expérimentales pour remplacer la carte « Contexte régional (E-OBS) » de reGénération, fausse (12 ans, downscaling KED des précipitations, unité par décennie, juin-août, palette 5 × 5).
+<ul><li>
+<code><a href="../reference/climat_ete_series.html">climat_ete_series()</a></code> : Tmax moyenne et cumul de précipitations de l’été (<code>mois = 5:9</code> par défaut, années complètes seulement) sur un cercle de <code>rayon_km</code> autour du centroïde du projet, à la <strong>résolution native</strong> de la source, mailles du bord entières. E-OBS 0,1° depuis les fichiers KNMI v33.0e (8 Go, cache machine, agrégés une fois en mensuel France ; CDS en repli), CHELSA v2.1 30″ (COG distants découpés au cercle, 1979-2021), SAFRAN 8 km (API OGC-EDR GéoSAS, métropole seulement).</li>
+<li>
+<code><a href="../reference/climat_tendance_bivariee.html">climat_tendance_bivariee()</a></code> : <strong>variation totale</strong> sur la période (pente × durée, °C et mm), périodes complète, 2006-2020 (L’IF n° 49) ou libre ; bornes fixes de la Figure 1, France (quantiles E-OBS France des mêmes années et mois, mêmes couleurs entre projets voisins et entre sources) ou du cercle ; palette 10 × 10 relevée sur la Figure 1, ou interpolation des quatre coins.</li>
+<li>
+<code><a href="../reference/climat_nuages_annuels.html">climat_nuages_annuels()</a></code> : nuages de points par année (anomalie à 1981-2010 ou tendance cumulée), sous forme de tableaux pour l’app.</li>
+<li>Aucune erreur réseau ne remonte : <code>meta$status</code> (<code>ok</code>, <code>hors_couverture</code>, <code>indisponible</code>, <code>donnees_insuffisantes</code>). Sorties écrites sur disque (<code>.tif</code> + <code>.meta.json</code>, cercle en <code>.gpkg</code>) pour traverser un worker <code>future</code>. <code>eobs_downscale*()</code> et <code><a href="../reference/tendances_estivales_eobs.html">tendances_estivales_eobs()</a></code> ne changent pas.</li>
+</ul></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.14" id="nemeton-20261014-2026-10-17">nemeton 2026.10.14 (2026-10-17)<a class="anchor" aria-label="anchor" href="#nemeton-20261014-2026-10-17"></a></h2>
 <div class="section level3">

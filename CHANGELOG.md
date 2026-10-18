@@ -13,6 +13,18 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.10.15\] - 2026-10-18
+
+### Added
+
+- [`climat_ete_series()`](https://pobsteta.github.io/nemeton/reference/climat_ete_series.md),
+  [`climat_tendance_bivariee()`](https://pobsteta.github.io/nemeton/reference/climat_tendance_bivariee.md),
+  [`climat_nuages_annuels()`](https://pobsteta.github.io/nemeton/reference/climat_nuages_annuels.md)
+  (spec 063, experimental): summer Tmax × precipitation context on a
+  circle around the project — E-OBS (KNMI, machine cache), CHELSA v2.1,
+  SAFRAN (GéoSAS EDR) at native resolution; total change over the
+  period, L’IF n° 49 10 × 10 palette; yearly point clouds.
+
 ## \[2026.10.14\] - 2026-10-17
 
 ### Added
