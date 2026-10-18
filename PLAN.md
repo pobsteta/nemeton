@@ -7,7 +7,7 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.16**
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.17**
 > (release du 2026-10-18), relevée le 2026-10-18.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
@@ -706,6 +706,14 @@ trancher par Pascal.
 *2026-10-18* : PR \#578 mergée (CI verte) ; tag `v2026.10.18` posé par
 `release.yml`. Cycle dev `2026.10.18.9000`. Dernière release
 nemetonshiny vérifiée sur GitHub : v2026.10.16. `vers-nemeton/` vide.
+
+*2026-10-18* — nemetonshiny v2026.10.17 (<nemetonshiny@34842577>, PR
+\#251, cycle 2026.10.16.9001→2026.10.17) : contexte climatique (E-OBS,
+CHELSA, SAFRAN) ajouté à « Tout calculer » (étape `regen_climat`, après
+le moteur reGénération ; cartes en cache non relancées, bilan par
+source, échec seulement si aucune carte). Plancher
+`nemeton (>= 2026.10.15)` inchangé, aucun changement cœur. Documentation
+seule, sans release cœur.
 
 ------------------------------------------------------------------------
 
