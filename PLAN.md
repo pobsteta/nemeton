@@ -703,6 +703,10 @@ les migrations d’avant 1.0.0 en plus de `0001_initial_v1`, donc
 la refuse (« Database predates nemeton 1.0.0 »). Rien n’a été touché ; à
 trancher par Pascal.
 
+*2026-10-18* : PR \#578 mergée (CI verte) ; tag `v2026.10.18` posé par
+`release.yml`. Cycle dev `2026.10.18.9000`. Dernière release
+nemetonshiny vérifiée sur GitHub : v2026.10.16. `vers-nemeton/` vide.
+
 ------------------------------------------------------------------------
 
 # CI — dépendances et actions GitHub
