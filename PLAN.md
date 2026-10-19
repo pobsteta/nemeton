@@ -7,8 +7,8 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.17**
-> (release du 2026-10-18), relevée le 2026-10-18.
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.18**
+> (release du 2026-10-19), relevée le 2026-10-19.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
@@ -735,6 +735,18 @@ arrêté à l’examen : rien à débloquer.
 
 *2026-10-19* : PR \#581 mergée (CI verte) ; tag `v2026.10.19` posé par
 `release.yml`. Cycle dev `2026.10.19.9000`. `vers-nemeton/` vide.
+
+*2026-10-19* — nemetonshiny v2026.10.18 (<nemetonshiny@f697a949>, PR
+\#252, cycle 2026.10.17.9001→2026.10.18) : zone de suivi invalide
+réparée à la lecture côté app (Couchey zone 63) —
+`get_monitoring_zone_aoi()` arrondit à 1 cm en Lambert-93 puis
+`st_make_valid()`, comme
+[`.get_zone_aoi()`](https://pobsteta.github.io/nemeton/reference/dot-get_zone_aoi.md)
+;
+[`check_fordead_validity()`](https://pobsteta.github.io/nemeton/reference/check_fordead_validity.md)
+levait « TopologyException: side location conflict ». Suite du correctif
+cœur 2026.10.18. Plancher `nemeton (>= 2026.10.15)` inchangé.
+Documentation seule, sans release cœur.
 
 ------------------------------------------------------------------------
 
