@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.10.19] - 2026-10-19
+
+### Fixed
+- RECONFORT ingest can no longer hang forever on a silent GEODES connection: default (30 s, 120 s) timeout on requests calls without one (`utils/http_timeout.py`), whole process tree killed after 30 min per archive (`nemeton.reconfort_download_timeout`, status 124), one retry before skipping.
+
 ## [2026.10.18] - 2026-10-18
 
 ### Removed
