@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.17** (release du 2026-10-18), relevée le 2026-10-18.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.18** (release du 2026-10-19), relevée le 2026-10-19.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -638,6 +638,14 @@ statut rendu, retentative puis saut, et python contre un serveur muet. Le PID
 
 *2026-10-19* : PR #581 mergée (CI verte) ; tag `v2026.10.19` posé par
 `release.yml`. Cycle dev `2026.10.19.9000`. `vers-nemeton/` vide.
+
+*2026-10-19* — nemetonshiny v2026.10.18 (nemetonshiny@f697a949, PR #252,
+cycle 2026.10.17.9001→2026.10.18) : zone de suivi invalide réparée à la
+lecture côté app (Couchey zone 63) — `get_monitoring_zone_aoi()` arrondit à
+1 cm en Lambert-93 puis `st_make_valid()`, comme `.get_zone_aoi()` ;
+`check_fordead_validity()` levait « TopologyException: side location
+conflict ». Suite du correctif cœur 2026.10.18. Plancher
+`nemeton (>= 2026.10.15)` inchangé. Documentation seule, sans release cœur.
 
 ---
 
