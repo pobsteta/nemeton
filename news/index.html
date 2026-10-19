@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.18.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.19</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,6 +110,20 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.10.19" id="nemeton-20261019-2026-10-19">nemeton 2026.10.19 (2026-10-19)<a class="anchor" aria-label="anchor" href="#nemeton-20261019-2026-10-19"></a></h2>
+<div class="section level3">
+<h3 id="corrections-2026-10-19">Corrections<a class="anchor" aria-label="anchor" href="#corrections-2026-10-19"></a></h3>
+<ul><li>
+<strong>RECONFORT : un téléchargement GEODES ne peut plus figer un run pour toujours</strong> (brief nemetonshiny 2026-10-19, Couchey zone 63, tuile T31TFN). Le run en était resté à l’archive 106/203 : la connexion était ouverte mais plus rien ne passait, et le verrou du dossier de travail refusait tout nouveau lancement. Deux filets :
+<ul><li>
+<strong>Côté python</strong>, <code>utils/http_timeout.py</code> (nouveau, écrit par nemeton) impose un délai <code>(connexion, lecture) = (30 s, 120 s)</code> à tout appel <code>requests</code> qui n’en fixe pas. pygeodes télécharge sans <code>timeout</code>, et <code>requests</code> passe alors <code>timeout=None</code> à urllib3, ce qui annule <code>socket.setdefaulttimeout()</code> : la piste du brief ne suffisait pas (vérifié contre un serveur muet). Le script <code>download_s2_item.py</code> prend <code>-socket_timeout</code> (120 par défaut).</li>
+<li>
+<strong>Côté R</strong>, <code>.reconfort_download_s2_item()</code> tue toute l’arborescence (<code>conda</code> → <code>bash</code> → <code>python</code>) au-delà de 30 min par archive (option <code>nemeton.reconfort_download_timeout</code>), avec <code><a href="http://processx.r-lib.org/reference/process.html" class="external-link">processx::process</a></code> et <code>kill_tree()</code>, et renvoie 124. <code><a href="http://processx.r-lib.org/reference/run.html" class="external-link">processx::run()</a></code> ne convenait pas : il lit la sortie jusqu’à sa fermeture, qu’un petit-fils vivant tient ouverte. Sans <code>processx</code> (Suggests), repli sur <code>system2(timeout =)</code>.</li>
+</ul></li>
+<li>Une archive abandonnée sur délai est retentée une fois avant d’être sautée. L’ingest continue ensuite avec la scène suivante.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.18" id="nemeton-20261018-2026-10-18">nemeton 2026.10.18 (2026-10-18)<a class="anchor" aria-label="anchor" href="#nemeton-20261018-2026-10-18"></a></h2>
 <div class="section level3">

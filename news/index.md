@@ -1,5 +1,33 @@
 # Changelog
 
+## nemeton 2026.10.19 (2026-10-19)
+
+### Corrections
+
+- **RECONFORT : un téléchargement GEODES ne peut plus figer un run pour
+  toujours** (brief nemetonshiny 2026-10-19, Couchey zone 63, tuile
+  T31TFN). Le run en était resté à l’archive 106/203 : la connexion
+  était ouverte mais plus rien ne passait, et le verrou du dossier de
+  travail refusait tout nouveau lancement. Deux filets :
+  - **Côté python**, `utils/http_timeout.py` (nouveau, écrit par
+    nemeton) impose un délai `(connexion, lecture) = (30 s, 120 s)` à
+    tout appel `requests` qui n’en fixe pas. pygeodes télécharge sans
+    `timeout`, et `requests` passe alors `timeout=None` à urllib3, ce
+    qui annule `socket.setdefaulttimeout()` : la piste du brief ne
+    suffisait pas (vérifié contre un serveur muet). Le script
+    `download_s2_item.py` prend `-socket_timeout` (120 par défaut).
+  - **Côté R**, `.reconfort_download_s2_item()` tue toute l’arborescence
+    (`conda` → `bash` → `python`) au-delà de 30 min par archive (option
+    `nemeton.reconfort_download_timeout`), avec
+    [`processx::process`](http://processx.r-lib.org/reference/process.md)
+    et `kill_tree()`, et renvoie 124.
+    [`processx::run()`](http://processx.r-lib.org/reference/run.md) ne
+    convenait pas : il lit la sortie jusqu’à sa fermeture, qu’un
+    petit-fils vivant tient ouverte. Sans `processx` (Suggests), repli
+    sur `system2(timeout =)`.
+- Une archive abandonnée sur délai est retentée une fois avant d’être
+  sautée. L’ingest continue ensuite avec la scène suivante.
+
 ## nemeton 2026.10.18 (2026-10-18)
 
 ### Changements cassants
