@@ -636,6 +636,9 @@ tentative est faite avant de sauter l'archive. Tests : arborescence tuée,
 statut rendu, retentative puis saut, et python contre un serveur muet. Le PID
 399561 était déjà arrêté à l'examen : rien à débloquer.
 
+*2026-10-19* : PR #581 mergée (CI verte) ; tag `v2026.10.19` posé par
+`release.yml`. Cycle dev `2026.10.19.9000`. `vers-nemeton/` vide.
+
 ---
 
 # CI — dépendances et actions GitHub
