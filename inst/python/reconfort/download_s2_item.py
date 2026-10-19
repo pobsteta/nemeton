@@ -12,6 +12,7 @@ import argparse
 import json
 from pygeodes import Geodes, Config
 from utils.tls import enforce_tls_verification
+from utils.http_timeout import enforce_http_timeout
 from pygeodes.utils.stac import Item
 
 if __name__ == "__main__":
@@ -26,7 +27,17 @@ if __name__ == "__main__":
                         help="Path to the item's STAC JSON.")
     parser.add_argument("-outfile", dest="outfile", required=True,
                         help="Destination .zip path for the archive.")
+    parser.add_argument("-socket_timeout", dest="socket_timeout", type=float,
+                        default=120.0,
+                        help="Seconds without data before a socket read fails "
+                             "(default 120; 0 = no timeout).")
     args = parser.parse_args()
+
+    # pygeodes (requests) ne fixe aucun délai de lecture : un serveur qui cesse
+    # d'émettre sans fermer la connexion figeait le run pour toujours (Couchey,
+    # 2026-10-19). Avec un délai de lecture par défaut, l'attente lève ; le
+    # script sort alors en erreur et le pilote R saute l'archive.
+    enforce_http_timeout(read_s=args.socket_timeout)
 
     conf = Config.from_file(args.account)
     # Vérification TLS forcée (pygeodes la coupe par défaut).

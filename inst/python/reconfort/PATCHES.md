@@ -30,5 +30,6 @@ Files vendored without modification (besides the header):
 `iota2/nomenclature.txt`, `iota2/vector_db/random_points.*`.
 
 Not RECONFORT code (nemeton-authored, GPL-3): `list_s2_items.py`,
-`download_s2_item.py`, `utils/tls.py`, `repair_iota2_env.sh` (patches the
+`download_s2_item.py`, `utils/tls.py`, `utils/http_timeout.py`,
+`repair_iota2_env.sh` (patches the
 conda environment, not the files of this directory).

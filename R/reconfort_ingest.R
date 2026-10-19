@@ -404,26 +404,67 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 # Download ONE S2 archive (reconstructed from its STAC JSON) to `outfile`,
 # via the nemeton-authored `download_s2_item.py`. Same `PYTHONWARNINGS`
 # filter as the bulk runner. Returns the exit status. Mockable in tests.
+# Deux filets contre un téléchargement figé (Couchey, 2026-10-19 : connexion
+# GEODES ESTABLISHED muette pendant des heures, verrou du dossier gardé) :
+#  - côté python, `-socket_timeout` : une lecture sans données pendant
+#    `socket_timeout` s lève, le script sort en erreur ;
+#  - côté R, `timeout` s par archive (option `nemeton.reconfort_download_timeout`,
+#    défaut 1800) : au-delà, TOUTE l'arborescence est tuée (sh -> conda -> python,
+#    processx `cleanup_tree`), sinon le python orphelin garderait la connexion.
+#    Le statut 124 (convention de timeout(1)) signale ce cas à l'appelant.
+# Sans processx (Suggests), repli sur system2(timeout =), qui ne tue que le
+# processus lancé : le filet python reste alors le seul sûr.
+.RECONFORT_DOWNLOAD_TIMEOUT_S <- 1800
+.RECONFORT_SOCKET_TIMEOUT_S   <- 120
+
 .reconfort_download_s2_item <- function(conda_bin, env, glue, account, item_json,
-                                        outfile, quiet = FALSE) {
+                                        outfile, quiet = FALSE,
+                                        timeout = getOption(
+                                          "nemeton.reconfort_download_timeout",
+                                          .RECONFORT_DOWNLOAD_TIMEOUT_S)) {
   # Chemins absolus : le script tourne depuis `glue` (cf. .reconfort_run_py()).
   account   <- .reconfort_abs_path(account)
   item_json <- .reconfort_abs_path(item_json)
   outfile   <- .reconfort_abs_path(outfile)
+  # --no-capture-output : sortie relayée au fil de l'eau (cf.
+  # .reconfort_run_py()).
+  args <- c("run", "--no-capture-output", "-n", env, "python",
+            "download_s2_item.py",
+            "-account", account, "-item_json", item_json, "-outfile", outfile,
+            "-socket_timeout", format(.RECONFORT_SOCKET_TIMEOUT_S))
+  if (requireNamespace("processx", quietly = TRUE)) {
+    # process$new + wait, pas processx::run() : run() lit les tubes de sortie
+    # jusqu'à EOF, qu'un petit-fils vivant tient ouverts (blocage vérifié). Ici
+    # la sortie est héritée ("") ou jetée (NULL), et kill_tree() tue tous les
+    # descendants, marqués par processx dès le lancement.
+    p <- tryCatch(
+      processx::process$new(conda_bin, args, wd = glue,
+                            env = c("current", .reconfort_py_envvars()),
+                            stdout = if (quiet) NULL else "",
+                            stderr = if (quiet) NULL else "",
+                            cleanup_tree = TRUE),
+      error = function(e) {
+        if (!quiet) cli::cli_alert_warning(conditionMessage(e))
+        NULL
+      })
+    if (is.null(p)) return(1L)
+    p$wait(timeout = as.numeric(timeout) * 1000)
+    if (p$is_alive()) {
+      p$kill_tree()
+      return(124L)
+    }
+    st <- p$get_exit_status()
+    return(if (is.null(st) || is.na(st)) 1L else as.integer(st))
+  }
   withr::with_envvar(
     .reconfort_py_envvars(),
     withr::with_dir(glue, {
-      suppressWarnings(system2(
-        conda_bin,
-        # --no-capture-output : sortie relayée au fil de l'eau (cf.
-        # .reconfort_run_py()).
-        args = c("run", "--no-capture-output", "-n", env, "python",
-                 "download_s2_item.py",
-                 "-account", shQuote(account),
-                 "-item_json", shQuote(item_json),
-                 "-outfile", shQuote(outfile)),
-        stdout = if (quiet) FALSE else "", stderr = if (quiet) FALSE else ""
+      st <- suppressWarnings(system2(
+        conda_bin, args = shQuote(args),
+        stdout = if (quiet) FALSE else "", stderr = if (quiet) FALSE else "",
+        timeout = timeout
       ))
+      as.integer(st)
     })
   )
 }
@@ -529,6 +570,15 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 
     dl <- .reconfort_download_s2_item(conda_bin, env, glue, account_run,
                                       item_json, tmp_zip, quiet)
+    # Délai dépassé : les coupures GEODES sont souvent passagères, une
+    # seconde tentative avant de sauter l'archive.
+    if (identical(as.integer(dl), 124L)) {
+      if (!quiet) cli::cli_alert_warning(
+        "RECONFORT: download of item {.val {item_id}} timed out; retrying once ...")
+      unlink(tmp_zip, force = TRUE)
+      dl <- .reconfort_download_s2_item(conda_bin, env, glue, account_run,
+                                        item_json, tmp_zip, quiet)
+    }
     # A dropped connection / bad item must not kill the tile: log + skip.
     if (!identical(as.integer(dl), 0L) || !file.exists(tmp_zip) ||
         file.size(tmp_zip) == 0) {

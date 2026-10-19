@@ -621,6 +621,21 @@ reGénération ; cartes en cache non relancées, bilan par source, échec
 seulement si aucune carte). Plancher `nemeton (>= 2026.10.15)` inchangé,
 aucun changement cœur. Documentation seule, sans release cœur.
 
+*2026-10-19* (**2026.10.19**) : brief nemetonshiny
+`2026-10-19-reconfort-telechargement-sans-timeout.md` (bloquant) — run
+Couchey (zone 63, T31TFN) figé à l'archive 106/203 : socket GEODES
+`ESTABLISHED` muette, `system2()` sans délai, verrou `output_zone_63/.lock`
+tenu par un PID vivant. Deux pistes du brief corrigées après vérification :
+`socket.setdefaulttimeout()` ne fait rien sous requests (`timeout=None`
+explicite passé à urllib3), d'où `utils/http_timeout.py`, qui impose
+(30 s, 120 s) aux appels requests sans délai et lève bien face à un serveur
+muet. Et `processx::run()` reste bloqué sur les tubes qu'un petit-fils tient
+ouverts, d'où `processx::process` + `kill_tree()` à 30 min par archive
+(statut 124), vérifié avec un vrai `conda run` → python tué. Une seconde
+tentative est faite avant de sauter l'archive. Tests : arborescence tuée,
+statut rendu, retentative puis saut, et python contre un serveur muet. Le PID
+399561 était déjà arrêté à l'examen : rien à débloquer.
+
 ---
 
 # CI — dépendances et actions GitHub
