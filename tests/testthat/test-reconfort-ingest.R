@@ -770,3 +770,141 @@ test_that("les chemins passes a python sont absolus, et aucun __pycache__ n'est 
     expect_identical(dirname(p), base, info = flag)
   }
 })
+
+# --- Téléchargement figé (brief nemetonshiny 2026-10-19, Couchey) ------------
+
+# Faux conda : un petit-fils qui dort longtemps, comme le python de
+# `conda run` resté accroché à une connexion GEODES muette.
+.faux_conda_fige <- function(dir) {
+  f <- file.path(dir, "fake_conda.sh")
+  writeLines(c("#!/bin/sh",
+               "sh -c 'sleep 300' &",
+               sprintf("echo $! > '%s'", file.path(dir, "gc.pid")),
+               "wait"), f)
+  Sys.chmod(f, "0755")
+  f
+}
+
+test_that("un téléchargement figé est tué au délai, petit-fils compris (124)", {
+  skip_on_os("windows")
+  skip_if_not_installed("processx")
+  wd <- normalizePath(withr::local_tempdir())
+  fake <- .faux_conda_fige(wd)
+  t0 <- Sys.time()
+  st <- nemeton:::.reconfort_download_s2_item(fake, "envx", wd, "acct", "item.json",
+                                              file.path(wd, "out.zip"),
+                                              quiet = TRUE, timeout = 2)
+  expect_identical(st, 124L)
+  expect_lt(as.numeric(difftime(Sys.time(), t0, units = "secs")), 30)
+  Sys.sleep(0.3)
+  pid <- readLines(file.path(wd, "gc.pid"), warn = FALSE)
+  # kill -0 : statut 0 tant que le processus existe.
+  expect_false(suppressWarnings(
+    system2("kill", c("-0", pid), stdout = FALSE, stderr = FALSE)) == 0L)
+})
+
+test_that("le statut du script est rendu tel quel, avec le délai de socket", {
+  skip_on_os("windows")
+  wd <- normalizePath(withr::local_tempdir())
+  log <- file.path(wd, "args.txt")
+  fake <- file.path(wd, "fake_conda.sh")
+  writeLines(c("#!/bin/sh", sprintf("printf '%%s\\n' \"$@\" > '%s'", log),
+               "exit 3"), fake)
+  Sys.chmod(fake, "0755")
+  st <- nemeton:::.reconfort_download_s2_item(fake, "envx", wd, "acct", "item.json",
+                                              file.path(wd, "out.zip"), quiet = TRUE)
+  expect_identical(st, 3L)
+  args <- readLines(log)
+  expect_identical(args[which(args == "-socket_timeout") + 1L], "120")
+})
+
+test_that("délai dépassé : une seconde tentative, puis l'archive est sautée", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  skip_if(Sys.which("zip") == "", "needs an external zip program")
+  st <- .decor_streaming()
+  prebuilt <- file.path(st$root, "prebuilt.zip")
+  appels <- character(0)
+  testthat::local_mocked_bindings(
+    .reconfort_list_s2_items = function(conda_bin, env, glue, cfg, manifest_dir,
+                                        quiet = FALSE) {
+      dir.create(manifest_dir, recursive = TRUE, showWarnings = FALSE)
+      j <- file.path(manifest_dir, c("item0.json", "item1.json"))
+      for (x in j) writeLines("{}", x)
+      data.frame(idx = 0:1, item_id = c("URN:ITEM:FIGE", "URN:ITEM:OK"),
+                 datetime = c("2025-01-01", "2025-01-02"), filesize = 10L,
+                 json = j, stringsAsFactors = FALSE)
+    },
+    # item0 se fige toujours (124), item1 se télécharge.
+    .reconfort_download_s2_item = function(conda_bin, env, glue, account,
+                                           item_json, outfile, quiet = FALSE) {
+      appels <<- c(appels, basename(item_json))
+      if (basename(item_json) == "item0.json") return(124L)
+      file.copy(prebuilt, outfile, overwrite = TRUE)
+      0L
+    })
+  out <- reconfort_ingest_s2(aoi = .aoi_carre(900000), tiles = "T31UFQ",
+                             date_from = "2025-01-01", date_to = "2026-12-31",
+                             s2_root = st$s2, buffer_m = 0, quiet = TRUE)
+  # Deux tentatives pour l'archive figée, une pour la suivante.
+  expect_identical(appels, c("item0.json", "item0.json", "item1.json"))
+  # L'ingest continue : la scène suivante est recadrée et marquée.
+  expect_length(list.files(file.path(st$s2, "ingested", "T31UFQ")), 1L)
+  expect_true(dir.exists(file.path(st$s2, "extracted", "T31UFQ", st$nm)))
+})
+
+test_that("délai dépassé puis reprise : la seconde tentative suffit", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  skip_if(Sys.which("zip") == "", "needs an external zip program")
+  st <- .decor_streaming()
+  prebuilt <- file.path(st$root, "prebuilt.zip")
+  n <- 0L
+  testthat::local_mocked_bindings(
+    .reconfort_download_s2_item = function(conda_bin, env, glue, account,
+                                           item_json, outfile, quiet = FALSE) {
+      n <<- n + 1L
+      if (n == 1L) return(124L)
+      file.copy(prebuilt, outfile, overwrite = TRUE)
+      0L
+    })
+  reconfort_ingest_s2(aoi = .aoi_carre(900000), tiles = "T31UFQ",
+                      date_from = "2025-01-01", date_to = "2026-12-31",
+                      s2_root = st$s2, buffer_m = 0, quiet = TRUE)
+  expect_equal(n, 2L)
+  expect_length(list.files(file.path(st$s2, "ingested", "T31UFQ")), 1L)
+})
+
+test_that("enforce_http_timeout fait lever une lecture muette (requests)", {
+  py <- Sys.which("python3")
+  skip_if(!nzchar(py), "python3 not available")
+  has_req <- suppressWarnings(system2(py, c("-c", shQuote(
+    "import importlib.util; print(importlib.util.find_spec('requests') is not None)")),
+    stdout = TRUE, stderr = FALSE))
+  skip_if(!identical(has_req, "True"), "requests not available to this python3")
+  glue <- normalizePath(.reconfort_glue_dir())
+  script <- withr::local_tempfile(fileext = ".py")
+  writeLines(c(
+    "import socket, sys, threading, time",
+    sprintf("sys.path.insert(0, %s)", jsonlite::toJSON(glue, auto_unbox = TRUE)),
+    "import requests",
+    "from utils.http_timeout import enforce_http_timeout",
+    "srv = socket.socket(); srv.bind(('127.0.0.1', 0)); srv.listen(1)",
+    "port = srv.getsockname()[1]",
+    "def serve():",
+    "    c, _ = srv.accept(); c.recv(1024)",
+    "    c.sendall(b'HTTP/1.1 200 OK\\r\\nContent-Length: 1000000\\r\\n\\r\\n' + b'x' * 1000)",
+    "    time.sleep(60)",
+    "threading.Thread(target=serve, daemon=True).start()",
+    "print(enforce_http_timeout(read_s=1))",
+    "try:",
+    "    r = requests.Session().get('http://127.0.0.1:%d/' % port, stream=True)",
+    "    for _ in r.iter_content(65536): pass",
+    "    print('no-raise')",
+    "except requests.exceptions.RequestException:",
+    "    print('raised')"
+  ), script)
+  withr::local_envvar(PYTHONDONTWRITEBYTECODE = "1")
+  out <- system2(py, shQuote(script), stdout = TRUE, timeout = 30)
+  expect_identical(out, c("(30.0, 1.0)", "raised"))
+})

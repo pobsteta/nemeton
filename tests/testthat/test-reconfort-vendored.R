@@ -17,7 +17,8 @@ test_that("no vendored RECONFORT file claims to be verbatim", {
 test_that("every file patched by nemeton says so and is listed in PATCHES.md", {
   glue <- .reconfort_glue_dir()
   patches <- readLines(file.path(glue, "PATCHES.md"), warn = FALSE)
-  authored <- c("list_s2_items.py", "download_s2_item.py", "utils/tls.py")
+  authored <- c("list_s2_items.py", "download_s2_item.py", "utils/tls.py",
+                "utils/http_timeout.py")
   for (f in setdiff(reconfort_tree(), authored)) {
     src <- readLines(file.path(glue, f), warn = FALSE)
     patched <- any(grepl("nemeton", src, fixed = TRUE))
@@ -32,7 +33,8 @@ test_that("every file patched by nemeton says so and is listed in PATCHES.md", {
 
 test_that("nemeton-authored glue is GPL-3, not MIT", {
   glue <- .reconfort_glue_dir()
-  for (f in c("list_s2_items.py", "download_s2_item.py", "utils/tls.py")) {
+  for (f in c("list_s2_items.py", "download_s2_item.py", "utils/tls.py",
+                "utils/http_timeout.py")) {
     head_txt <- paste(utils::head(readLines(file.path(glue, f)), 3L), collapse = "\n")
     expect_match(head_txt, "GPL-3", fixed = TRUE, info = f)
     expect_false(grepl("\\bMIT\\b", head_txt), info = f)

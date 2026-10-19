@@ -170,7 +170,8 @@ Changes  : Apache-2.0 §4(b) notice — several vendored files are
            `nemeton:` comments; the full list is in
            `inst/python/reconfort/PATCHES.md`. The nemeton-authored
            scripts in the same directory (`list_s2_items.py`,
-           `download_s2_item.py`, `utils/tls.py`) are not RECONFORT
+           `download_s2_item.py`, `utils/tls.py`,
+           `utils/http_timeout.py`) are not RECONFORT
            code and are licensed GPL-3 with the rest of the package.
 
 Third-party attributions in source code

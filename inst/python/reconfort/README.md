@@ -13,7 +13,8 @@ Each one says so in its header, and `PATCHES.md` lists every change
 identical to the calibrated model's expectations; any new change must be
 recorded in `PATCHES.md`, and re-vendoring from upstream must re-apply it.
 
-`list_s2_items.py`, `download_s2_item.py` and `utils/tls.py` are
+`list_s2_items.py`, `download_s2_item.py`, `utils/tls.py` and
+`utils/http_timeout.py` are
 nemeton-authored (GPL-3), not RECONFORT code.
 
 ## Currently vendored
