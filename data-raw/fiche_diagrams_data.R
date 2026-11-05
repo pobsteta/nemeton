@@ -629,7 +629,7 @@ FICHES <- list(
       list(titre = "Urbain — 25 %", lignes = c("pmin(100, 2000/20) = 100", "soit +25 fixe"), tirets = TRUE)
     ),
     aval = av("indicateur_n1_distance", "score 0–100, natif",
-              "écrêtage natif 0–100", "N", "famille_naturalite", "N1 à N3"),
+              "écrêtage natif 0–100", "N", "famille_naturalite", "N1 à N3, N5"),
     notes = c(
       "N1 a deux sources de données, pas trois : le terme urbain vaut toujours 100 et n'a rien mesuré.",
       "Sans couche, la distance vaut NA — plus de distance inventée (correctif).",
@@ -662,7 +662,7 @@ FICHES <- list(
                                                           "nb d'époques couvertes"), tirets = TRUE)
     ),
     aval = av("indicateur_n2_continuite", "score 0–100, natif",
-              "écrêtage natif 0–100", "N", "famille_naturalite", "N1 à N3"),
+              "écrêtage natif 0–100", "N", "famille_naturalite", "N1 à N3, N5"),
     notes = c(
       "La continuité n'est pas la naturalité : une plantation d'épicéa sur sol forestier ancien score haut.",
       "N2 n'alimente plus T2 : le proxy de stabilité qui le recopiait est retiré (2026.10.5).",
@@ -691,7 +691,7 @@ FICHES <- list(
                                                    "+ 0,15·anti_frag + 0,15·B3"))
     ),
     aval = av("indicateur_n3_naturalite", "score 0–100, natif",
-              "écrêtage natif 0–100", "N", "famille_naturalite", "N1 à N3"),
+              "écrêtage natif 0–100", "N", "famille_naturalite", "N1 à N3, N5"),
     notes = c(
       "NA dès qu'une des quatre entrées manque : pas de calcul partiel, pas de valeur dégradée.",
       "Composite : N1 et N2 pèsent 70 %, et N1 porte déjà son terme urbain constant.",
@@ -700,6 +700,41 @@ FICHES <- list(
     legende = paste("Un indicateur qui ne lit aucune donnée : ses quatre entrées sont des",
                     "colonnes. Les défauts de N1, L1 et B3 se propagent donc dans N3, avec",
                     "leurs poids — dont le +25 constant de N1.")
+  ),
+
+  N5 = list(
+    code = "N5", fichier = "fiche-n5-distance-reference_fr.Rmd",
+    titre = paste("Chaine de calcul de N5 : chaque UGF est resumee par son embedding",
+                  "moyen (modele de fondation, 64 dimensions), comparee a une reference",
+                  "de forets peu perturbees par une distance de Mahalanobis regularisee,",
+                  "puis notee par rapport a la dispersion de la reference elle-meme ;",
+                  "sans embedding ou sans reference suffisante, NA et un statut."),
+    liaison = "puis",
+    entrees = list(
+      list(titre = "Embedding AlphaEarth", lignes = c("64 bandes, 10 m, annuel",
+                                                      "alphaearthnemeton")),
+      list(titre = "Référence par défaut", lignes = c("foret_ancienne palier max",
+                                                      "et N1 >= 80")),
+      list(titre = "Référence utilisateur", lignes = "réserves, îlots (sf)", tirets = TRUE),
+      list(titre = "< 15 unités ou rien", lignes = "N5 = NA + statut", tirets = TRUE)
+    ),
+    chemins = list(
+      list(titre = "embedding_summary()", lignes = c("moyenne pondérée par UGF",
+                                                     "min_pixels = 10")),
+      list(titre = "distance_reference()", lignes = c("Mahalanobis, Ledoit-Wolf",
+                                                      "LOO pour la référence")),
+      list(titre = "Score", lignes = c("100 × (1 − F_ref(d))",
+                                       "\"projet\" : rang, en option"), tirets = TRUE)
+    ),
+    aval = av("N5 — distance_reference", "score 0–100, natif",
+              "écrêtage natif 0–100", "N", "famille_naturalite", "N1 à N3, N5"),
+    notes = c(
+      "La référence n'est pas un tirage aléatoire : pente, accès et sols pauvres y sont sur-représentés.",
+      "Référence par défaut choisie par N1 et N2 : N5 leur est corrélé par construction.",
+      "Une distance, pas une cause : une UGF jeune ou sur une autre station peut être loin sans être dégradée."
+    ),
+    legende = paste("Une distance dans l'espace d'un modèle, pas une mesure de terrain.",
+                    "N5 dit à quel point une UGF ressemble à la référence — pas pourquoi.")
   ),
   # ====================================================== P — Production =====
   P1 = list(

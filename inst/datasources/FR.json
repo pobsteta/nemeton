@@ -587,6 +587,33 @@
       "license": "User-generated content - copyright held by the field operator.",
       "note": "Tag an sf with tag_field_data_sources() so detect_ndp() picks up the NDP bump."
     },
+    "aef_embedding": {
+      "type": "raster_local",
+      "format": "COG",
+      "description": "AlphaEarth Foundations annual satellite embedding (64 dimensions, unit norm, 10 m), fetched by alphaearthnemeton (spec 064)",
+      "required_crs": "EPSG:2154",
+      "fallback_crs": "EPSG:3035",
+      "resolution_m": 10,
+      "bands": 64,
+      "temporal": "annual",
+      "value_range": [
+        -1,
+        1
+      ],
+      "provenance": {
+        "package": "alphaearthnemeton",
+        "repo": "https://github.com/pobsteta/alphaearthnemeton",
+        "model": "AlphaEarth Foundations (Google DeepMind, 2025)",
+        "base_data": "Source Cooperative mirror source.coop/tge-labs/aef/v1/annual (tile index aef_index.gpkg); Google Cloud Storage copy"
+      },
+      "license": {
+        "data": "CC-BY-4.0",
+        "attribution": "The AlphaEarth Foundations Satellite Embedding dataset is produced by Google and Google DeepMind."
+      },
+      "indicators": [
+        "N5"
+      ]
+    },
     "chm_opencanopy": {
       "type": "raster_local",
       "format": "COG",

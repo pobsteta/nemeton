@@ -557,7 +557,9 @@ invert_indicator <- function(data,
   # mauvais », donc ils ont besoin d'une règle (inversion), pas d'un
   # passthrough. Cf. .NORMALIZE_RULED et le bloc d'inversion plus bas.
   "indicateur_p3_qualite_bois",
-  "indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite"
+  "indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite",
+  # N5 est un score 0-100 natif, haut = proche de la reference (spec 064).
+  "indicateur_n5_distance_reference"
 )
 
 # Indicateurs pour lesquels `normalize_indicator()` applique une règle EXPLICITE

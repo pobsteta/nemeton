@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.1] - 2026-11-05
+
+### Added
+- N5 distance to a low-disturbance reference in a foundation-model embedding space (`indicateur_n5_distance_reference()`, spec 064): conditional N indicator, Ledoit-Wolf Mahalanobis distance, score on the reference's leave-one-out distribution; fiche N5.
+- `embedding_summary()` and `distance_reference()`, model-agnostic embedding helpers (experimental).
+- `detect_ndp()` flag `embedding_ml`; `aef_embedding` source in `FR.json` and NDP 0.
+
+### Changed
+- 42 indicators (11 conditional); `massif_demo_units` carries `N5`, `n5_status`, `N5_norm` (NA).
+
 ## [2026.10.19] - 2026-10-19
 
 ### Fixed

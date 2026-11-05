@@ -1,0 +1,199 @@
+---
+title: "Fiche indicateur N5 - Distance a la reference"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche indicateur N5 - Distance a la reference}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-11-05. Spec 064.
+> Fonction **expérimentale** : elle peut changer à toute version.
+
+---
+
+## 1. Carte d'identité
+
+| Élément | Valeur |
+|---|---|
+| Code | `N5` |
+| Nom long / colonne | `indicateur_n5_distance_reference` |
+| Famille | **N — Naturalité** |
+| Grandeur mesurée | Proximité de l'UGF à des forêts de référence peu perturbées, dans l'espace d'un modèle de fondation |
+| Unité brute | **score 0–100** (100 = indiscernable de la référence) |
+| Sens | Haut = favorable |
+| Normalisation | **native 0–100**, écrêtage |
+| Fonction | `indicateur_n5_distance_reference()` — `R/indicateur_n5_distance_reference.R` |
+| Entrées | un **embedding** (SpatRaster, une bande par dimension) **et** une **référence** d'au moins 15 unités |
+| Conditionnel | oui : sans embedding, `NA` et `n5_status = "skipped_no_embedding"` |
+
+Colonnes rendues : `N5`, `n5_status`, `n5_source` (`"aef"`), `n5_reference`
+(`"defaut"` ou `"utilisateur"`), `n5_annee`, `n5_distance` (distance brute).
+
+## 2. Le calcul
+
+N1, N2 et N3 mesurent une naturalité **administrative** : éloignement des
+routes et du bâti, continuité cartographique. N5 regarde la forêt elle-même,
+telle que la voit un modèle de fondation.
+
+1. **L'embedding.** AlphaEarth Foundations (Google DeepMind, 2025) publie chaque
+   année un vecteur de 64 dimensions par pixel de 10 m, appris sur Sentinel-1,
+   Sentinel-2, Landsat, GEDI et ERA5. Le paquet amont `alphaearthnemeton` le
+   rapatrie (fichiers COG publics, CC-BY 4.0) ; le cœur ne fait que le lire.
+2. **Le résumé par UGF.** `embedding_summary()` calcule la moyenne de chaque
+   dimension, pondérée par la fraction de pixel couverte. Une UGF de moins de
+   10 pixels valides reste `NA` (`skipped_no_coverage`).
+3. **La référence.** Par défaut, les UGF couvertes à 50 % au moins par le
+   **palier le plus ancien** de `foret_ancienne` **et** dont `N1 ≥ 80`.
+   L'utilisateur peut fournir la sienne : réserves intégrales, îlots de
+   sénescence, placettes de référence.
+4. **La distance.** `distance_reference()` : distance de Mahalanobis au
+   centroïde de la référence, avec une covariance régularisée par
+   Ledoit-Wolf (2004). Sans régularisation, 15 unités en 64 dimensions
+   donneraient une covariance non inversible.
+5. **Le score.** `N5 = 100 × (1 − F(d))`, où `F` est la distribution des
+   distances de chaque unité de référence à la référence construite sans
+   elle (*leave-one-out*). Une UGF aussi proche qu'une unité de référence
+   typique vaut environ 50 ; une UGF plus lointaine que toute la référence
+   vaut 0. Le score dépend de la référence seule, pas des autres UGF du
+   projet. L'option `score = "projet"` rend plutôt le rang dans le projet,
+   au prix de la comparabilité entre projets.
+
+## 3. Le calcul par niveau NDP
+
+| NDP | Source | Ce qui change |
+|---|---|---|
+| **0** | AlphaEarth (10 m, annuel) | flag `augmented = "embedding_ml"`, niveau inchangé |
+| **1** | + LiDAR HD → embedding ForPT (chantier C, à venir) | N5 structurel, `n5_source = "forpt"` |
+| **2–4** | — | une référence locale mesurée (placettes) remplace la référence par défaut |
+
+## 4. Cinq pièges
+
+1. **La référence n'est pas un échantillon aléatoire.** Les forêts anciennes et
+   éloignées sont sur-représentées en pente, en altitude et sur sols pauvres.
+   N5 mesure donc aussi une distance de **station**. Une stratification de la
+   référence par sylvoécorégion n'est pas implémentée.
+2. **Circularité avec N1 et N2.** La référence par défaut est choisie par N1 et
+   par `foret_ancienne` (la couche de N2) : N5 leur est corrélé par
+   construction. Une forte corrélation N1–N5 sur un projet ne confirme rien.
+3. **Une distance, pas une cause.** Une UGF loin de la référence n'est pas
+   « dégradée » : elle peut être jeune, résineuse, ou sur une autre station.
+4. **Une petite référence rend la distance presque euclidienne.** Avec 15
+   unités et 64 dimensions, la covariance est dominée par la régularisation.
+   Le seuil de 15 est un plancher, pas un confort.
+5. **AlphaEarth est annuel.** Une coupe de l'année *n* n'apparaît que dans
+   l'embedding *n* ou *n + 1* ; N5 ne remplace ni FAST, ni FORDEAD, ni T2.
+
+N5 n'entre pas dans N3 (spec 064, décision D-5) : la formule de N3 est stable.
+
+## 5. Aval
+
+```
+indicateur_n5_distance_reference()  ->  colonne N5 (0-100)
+      |
+      +- normalize_indicator()     -> passthrough clamp
+      +- create_family_index("N")  -> famille_naturalite (si N5 non NA)
+```
+
+Sans embedding, N5 vaut `NA` et la famille N est inchangée. Avec un
+embedding, la famille N d'un projet recalculé compte un indicateur de plus.
+
+## 6. Diagramme d'ensemble
+
+<!-- diagramme:auto:debut -->
+<figure>
+<svg viewBox="0 0 820 360" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de N5 : chaque UGF est resumee par son embedding moyen (modele de fondation, 64 dimensions), comparee a une reference de forets peu perturbees par une distance de Mahalanobis regularisee, puis notee par rapport a la dispersion de la reference elle-meme ; sans embedding ou sans reference suffisante, NA et un statut.">
+<defs>
+<marker id="fd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+</marker>
+</defs>
+<g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55">
+<text x="10" y="16">ENTRÉES</text>
+<text x="290" y="16">CALCUL — ÉTAPES SUCCESSIVES</text>
+<text x="588" y="16">AVAL</text>
+</g>
+<rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">Embedding AlphaEarth</text>
+<text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">64 bandes, 10 m, annuel</text>
+<text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">alphaearthnemeton</text>
+<rect x="8" y="106" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">Référence par défaut</text>
+<text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">foret_ancienne palier max</text>
+<text x="20" y="157" font-size="11" fill="currentColor" opacity=".78">et N1 &gt;= 80</text>
+<rect x="8" y="178" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"/>
+<text x="20" y="197" font-size="12.5" font-weight="600" fill="currentColor">Référence utilisateur</text>
+<text x="20" y="213" font-size="11" fill="currentColor" opacity=".78">réserves, îlots (sf)</text>
+<rect x="8" y="234" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"/>
+<text x="20" y="253" font-size="12.5" font-weight="600" fill="currentColor">&lt; 15 unités ou rien</text>
+<text x="20" y="269" font-size="11" fill="currentColor" opacity=".78">N5 = NA + statut</text>
+<rect x="288" y="34" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">embedding_summary()</text>
+<text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne pondérée par UGF</text>
+<text x="300" y="85" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">min_pixels = 10</text>
+<rect x="288" y="126" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="145" font-size="12.5" font-weight="600" fill="currentColor">distance_reference()</text>
+<text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Mahalanobis, Ledoit-Wolf</text>
+<text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">LOO pour la référence</text>
+<rect x="288" y="218" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"/>
+<text x="300" y="237" font-size="12.5" font-weight="600" fill="currentColor">Score</text>
+<text x="300" y="253" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">100 × (1 − F_ref(d))</text>
+<text x="300" y="269" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">"projet" : rang, en option</text>
+<rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"/>
+<text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">N5 — distance_reference</text>
+<text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score 0–100, natif</text>
+<rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text>
+<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">écrêtage natif 0–100</text>
+<rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index("N")</text>
+<text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_naturalite</text>
+<text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne de N1 à N3, N5</text>
+<rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text>
+<text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci · confiance φ</text>
+<line x1="260" y1="63" x2="282" y2="63" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 135 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 199 H271 V247 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 255 H271 V247 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text>
+<line x1="306" y1="186" x2="306" y2="212" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="312" y="202" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text>
+<line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="550" y1="155" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="550" y1="247" x2="566" y2="247" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="566" y2="247" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="10" y="310" font-size="10.5" fill="currentColor" opacity=".62">La référence n'est pas un tirage aléatoire : pente, accès et sols pauvres y sont sur-représentés.</text>
+<text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Référence par défaut choisie par N1 et N2 : N5 leur est corrélé par construction.</text>
+<text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Une distance, pas une cause : une UGF jeune ou sur une autre station peut être loin sans être dégradée.</text>
+</svg>
+<figcaption style="font-size:.9em;opacity:.75">
+Une distance dans l'espace d'un modèle, pas une mesure de terrain. N5 dit à quel point une UGF ressemble à la référence — pas pourquoi.
+</figcaption>
+</figure>
+<!-- diagramme:auto:fin -->
+
+## 7. Références internes
+
+| Sujet | Fichier |
+|---|---|
+| Fonction N5 | `R/indicateur_n5_distance_reference.R` |
+| Fonctions génériques | `R/embeddings.R` : `embedding_summary()`, `distance_reference()` |
+| Spécification | `specs/064-alphaearth-n5/spec.md` |
+| Forêt ancienne | `build_foret_ancienne_mask()`, fiche N2 |
+| Données | Source Cooperative `tge-labs/aef` (index `aef_index.gpkg`), CC-BY 4.0 |
+
+Ledoit O., Wolf M. (2004). *A well-conditioned estimator for
+large-dimensional covariance matrices.* Journal of Multivariate Analysis
+88(2), 365-411.

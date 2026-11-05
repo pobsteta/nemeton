@@ -46,6 +46,8 @@ ML-augmentation flags recognised:
   \item \code{"height_ml"} : \code{attr(data, "chm_source") == "opencanopy"}
   \item \code{"species_ml"} : \code{attr(data, "species_source") \%in\% c("tree_sat", "maestro")}
   \item \code{"texture_ml"} : \code{attr(data, "texture_source") == "maestro"}
+  \item \code{"lai_ml"} : \code{attr(data, "lai_source") == "prosail_s2"} (spec 033)
+  \item \code{"embedding_ml"} : \code{attr(data, "embedding_source") \%in\% c("aef", "maestro", "forpt")} (spec 064)
 }
 }
 \note{

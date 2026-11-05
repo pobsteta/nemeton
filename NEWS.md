@@ -1,3 +1,43 @@
+# nemeton 2026.11.1 (2026-11-05)
+
+## Nouveautés
+
+- **N5 — distance à la référence**, premier indicateur nourri par un modèle
+  de fondation (spec 064, chantier A du brief « Modèles de fondation et
+  raisonnement sylvicole » du 2026-11-05). Famille N, **conditionnel** :
+  `indicateur_n5_distance_reference()` lit un embedding par pixel (AlphaEarth
+  Foundations, 64 dimensions, 10 m, annuel, rapatrié par le futur paquet
+  amont `alphaearthnemeton`) et note chaque UGF selon sa proximité à des
+  forêts de référence peu perturbées. Référence par défaut : UGF couvertes à
+  50 % par le palier le plus ancien de `foret_ancienne` **et** `N1 ≥ 80` ;
+  sinon `reference =` (réserves, îlots de sénescence). Distance de
+  Mahalanobis régularisée Ledoit-Wolf ; score
+  `100 × (1 − F_ref(d))` sur la distribution *leave-one-out* de la référence,
+  pour que N5 ne dépende pas du découpage du projet (le rang dans le projet
+  reste en option, `score = "projet"`). Statut `n5_status` :
+  `calculated`, `skipped_no_embedding`, `skipped_no_reference`,
+  `skipped_reference_too_small` (moins de 15 unités), `skipped_no_coverage`.
+  Colonnes annexes `n5_source`, `n5_reference`, `n5_annee`, `n5_distance`.
+  Fiche `fiche-n5-distance-reference_fr` avec ses cinq pièges.
+- **Fonctions génériques**, indépendantes du modèle source (AlphaEarth
+  aujourd'hui, MAESTRO et ForPT demain) : `embedding_summary()` (moyenne et
+  écart-type pondérés par UGF) et `distance_reference()` (Mahalanobis
+  Ledoit-Wolf, distances *leave-one-out* de la référence). Toutes
+  `experimental`.
+- `detect_ndp()` : flag `augmented = "embedding_ml"` quand
+  `attr(data, "embedding_source")` vaut `"aef"`, `"maestro"` ou `"forpt"` ;
+  source `aef_embedding` (déclarée dans `FR.json` et dans le NDP 0). Le niveau
+  NDP ne change pas.
+
+## Changements visibles
+
+- **42 indicateurs** (31 de base, **11 conditionnels**) : `list_indicators()`,
+  `indicator_labels()` et `massif_demo_units` (colonnes `N5`, `n5_status`,
+  `N5_norm`, à `NA` faute d'embedding dans la démo) comptent N5. Sans
+  embedding, N5 vaut `NA` et la famille N est inchangée ; avec un embedding,
+  la famille N d'un projet recalculé compte un indicateur de plus. Aucun sens
+  d'indicateur ne change.
+
 # nemeton 2026.10.19 (2026-10-19)
 
 ## Corrections

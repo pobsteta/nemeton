@@ -9,8 +9,10 @@
 ## Ce que l'app recevra (spec 064, chantier A)
 
 1. **N5 — distance à la référence** (famille N, conditionnel).
-   Colonnes `N5`, `n5_status` (`no_embedding`, `no_reference`,
-   `reference_too_small`, `ok`), `n5_source`, `n5_reference`, `n5_annee`.
+   **Livré en cœur 2026.11.1.** Colonnes `N5`, `n5_status`
+   (`calculated`, `skipped_no_embedding`, `skipped_no_reference`,
+   `skipped_reference_too_small`, `skipped_no_coverage`), `n5_source`,
+   `n5_reference`, `n5_annee`, `n5_distance`.
    Libellés, `doc_url` et sens viendront de `indicator_labels()` /
    `indicator_families()` comme pour tout indicateur (dé-fork de l'écart n° 1) :
    **aucune table à toucher**. À prévoir : traduction des quatre statuts, et la

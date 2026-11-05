@@ -455,12 +455,13 @@ INDICATOR_FAMILIES <- list(
     description_en = "Infrastructure remoteness, forest continuity and naturalness score",
     icon = "flower1",
     color = "#2E8B57",
-    indicators = c("N1", "N2", "N3"),
-    column_names = c("indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite"),
+    indicators = c("N1", "N2", "N3", "N5"),
+    column_names = c("indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite", "indicateur_n5_distance_reference"),
     indicator_labels = list(
       N1 = list(fr = "Distance infrastructures", en = "Infrastructure Distance"),
       N2 = list(fr = "Continuit\u00e9 foresti\u00e8re", en = "Forest Continuity"),
-      N3 = list(fr = "Score de naturalit\u00e9", en = "Naturalness Score")
+      N3 = list(fr = "Score de naturalit\u00e9", en = "Naturalness Score"),
+      N5 = list(fr = "Distance \u00e0 la r\u00e9f\u00e9rence", en = "Distance to Reference")
     ),
     indicator_tooltips = list(
       N1 = list(
@@ -474,12 +475,17 @@ INDICATOR_FAMILIES <- list(
       N3 = list(
         fr = "Score composite de naturalit\u00e9 int\u00e9grant structure, continuit\u00e9, \u00e9loignement et perturbations anthropiques.",
         en = "Composite naturalness score integrating structure, continuity, remoteness and human disturbance."
+      ),
+      N5 = list(
+        fr = "Proximit\u00e9 de l'UGF \u00e0 des for\u00eats de r\u00e9f\u00e9rence peu perturb\u00e9es, lue dans l'espace d'un mod\u00e8le de fondation (embeddings AlphaEarth, 10 m, annuels). 100 = indiscernable de la r\u00e9f\u00e9rence. Mesure une distance, pas une cause : une UGF jeune ou sur une autre station peut \u00eatre loin sans \u00eatre d\u00e9grad\u00e9e. Conditionnel : exige un embedding et une r\u00e9f\u00e9rence d'au moins 15 unit\u00e9s.",
+        en = "Closeness of the unit to low-disturbance reference forests, read in a foundation-model space (AlphaEarth embeddings, 10 m, annual). 100 = indistinguishable from the reference. Measures a distance, not a cause: a young stand or one on another site may be far without being degraded. Conditional: needs an embedding and a reference of at least 15 units."
       )
     ),
     indicator_docs = list(
       N1 = list(fr = "articles/fiche-n1-distance_fr.html"),
       N2 = list(fr = "articles/fiche-n2-continuite_fr.html"),
-      N3 = list(fr = "articles/fiche-n3-naturalite_fr.html")
+      N3 = list(fr = "articles/fiche-n3-naturalite_fr.html"),
+      N5 = list(fr = "articles/fiche-n5-distance-reference_fr.html")
     )
   )
 )

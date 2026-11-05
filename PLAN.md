@@ -37,9 +37,9 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Interdit accusé réception le 2026-09-23** (brief app `BRIEF-nemeton-plan-md-0.143.17-0.143.28.md`) : aucun écran ne classe, ne compare ni ne moyenne B4/L3 entre projets — l'app n'a pas de vue inter-projets. **Reste ouvert sur un seul point : question B02 en attente côté app** — B02 absente de l'espace k-means, remplacée par `ID` (point 4 du brief), pas encore instruite |
 | 16 | Validation §6 du brief production IFN sur un projet réel | app **v0.152.0** | terrain | Vérifiée seulement sur deux UGF synthétiques en C51 (P2 = 5,37 m³/ha/an, RSE 2,6 % ; E1 `"ifn_ser"` → `recolte_observee`, E1 à 0,6 → `ressource_flux`). Chargement FORMS-T **vérifié en réel** le 2026-10-02 (Dabo : prévision hybride 6,58 contre 7,56 m³/ha/an en SER). Reste la validation métier dans l'app sur un projet recalculé en mode IFN |
-| 20 | N5 distance à la référence : colonnes `N5`, `n5_status` (4 statuts), couche carte | cœur — **spec 064, non livrée** | `nemetonshiny` | **Ouvert avant le code** (2026-11-05), préavis `specs/064-alphaearth-n5/brief-nemetonshiny.md`. Libellés et sens viendront de `indicator_labels()` : rien à forker |
+| 20 | N5 distance à la référence : colonnes `N5`, `n5_status` (5 statuts `skipped_*` / `calculated`), couche carte | cœur **2026.11.1** | `nemetonshiny` | **Ouvert avant le code** (2026-11-05), préavis `specs/064-alphaearth-n5/brief-nemetonshiny.md`. Libellés et sens viendront de `indicator_labels()` : rien à forker |
 | 21 | B4/L3 en mode embedding : `b4_methode` / `l3_methode`, bornes par méthode ; l'interdit de l'écart n° 6 ne tombe que pour `embedding` | cœur — **spec 064, non livrée** | `nemetonshiny` | **Ouvert avant le code** (2026-11-05), même préavis |
-| 22 | Flag NDP `embedding_ml` dans `detect_ndp()$augmented` | cœur — **spec 064, non livrée** | `nemetonshiny` (badge NDP) | **Ouvert avant le code** (2026-11-05), même préavis |
+| 22 | Flag NDP `embedding_ml` dans `detect_ndp()$augmented` | cœur **2026.11.1** | `nemetonshiny` (badge NDP) | **Ouvert avant le code** (2026-11-05), même préavis |
 | 23 | Itinéraires admissibles par UGF et raisons d'exclusion (`itineraires_admissibles()`) | cœur — **spec 065, non livrée** | `nemetonshiny`, `aigora`, `victor` | **Ouvert avant le code** (2026-11-05), préavis app + `specs/065-itineraires-catalogue/brief-aigora.md`, `brief-victor.md` |
 | 24 | Comparaison pondérée (`comparer_itineraires()`) et origine des poids des profils (spec 065 D-1 : migration des poids dans le cœur ?) | cœur — **spec 065, non livrée** | `nemetonshiny`, `aigora` | **Ouvert avant le code** (2026-11-05) ; question posée à l'app : les poids des 13 profils existent-ils sous forme numérique ? |
 
@@ -114,12 +114,13 @@ un raccourci.
 
 | Spec | Objet | État |
 |---|---|---|
-| 064 | Chantier A : `alphaearthnemeton`, `embedding_summary()`, `distance_reference()`, **N5**, B4/L3 `embedding =`, régressions NDP 0 | ✅ spec validée le 2026-11-05 (9 décisions sur 10 ; **D-2 licence de `alphaearthnemeton` reste ouverte**) ; code ⬜ |
+| 064 | Chantier A : `alphaearthnemeton`, `embedding_summary()`, `distance_reference()`, **N5**, B4/L3 `embedding =`, régressions NDP 0 | ✅ spec validée le 2026-11-05 (D-2 : GPL-3) ; 🟨 code : N5 + fonctions génériques + flag NDP → **2026.11.1** ; reste `alphaearthnemeton`, B4/L3, `embedding_regress()`, vignette |
 | 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 (7 décisions) ; code ⬜ ; catalogue à sourcer par Pascal (D-4) |
 
-**Prochaine étape** : implémentation du chantier A (spec 064) dans le cœur,
-puis `alphaearthnemeton` ; la licence de ce paquet (D-2) doit être tranchée
-avant sa création. Spec 065 : premier remplissage du catalogue par Pascal.
+**Prochaine étape** : création du dépôt `alphaearthnemeton` (GPL-3) par
+Pascal, puis `aef_fetch()` ; avec de vrais embeddings, validation de N5 sur
+Dabo et ajustement du dictionnaire de clusters de B4/L3 (D-6). Spec 065 :
+premier remplissage du catalogue par Pascal.
 
 **Journal** — *2026-11-05* : specs 064 et 065 rédigées, écarts n° 20 à 24
 ouverts, préavis émis vers `nemetonshiny`, `maestronemeton`, `aigora` et
@@ -155,6 +156,33 @@ le même jour : les COG AlphaEarth sont servis sur Source Cooperative
 (`source.coop/tge-labs/aef/v1/annual/`, index `aef_index.gpkg`) et sur GCS,
 sous CC-BY 4.0. Le chantier A est donc sans Python. N6 est retiré de la liste
 des codes (D-10).
+
+**Journal** — *2026-11-05* (**2026.11.1**) : premier incrément du chantier A,
+sur demande de Pascal (« GPL-3, et oui, démarre le chantier A »). D-2 tranchée :
+`alphaearthnemeton` sera en GPL-3. Livré dans le cœur :
+
+- `embedding_summary()` et `distance_reference()` (`R/embeddings.R`),
+  génériques, Ledoit-Wolf implémenté en base R (aucune dépendance ajoutée) ;
+- **N5** (`R/indicateur_n5_distance_reference.R`), conditionnel, enregistré
+  dans la famille N, normalisation native 0-100, calculé après N1 par
+  `nemeton_compute()` (il lit N1 pour sa référence par défaut) ; fiche avec
+  diagramme ; 42 indicateurs, 11 conditionnels ;
+- flag `embedding_ml` et source `aef_embedding` (`FR.json`, NDP 0) ;
+- `massif_demo_units` (`.rda` et `.gpkg`) : `N5`, `n5_status`, `N5_norm` à
+  `NA`, exactement ce que `data-raw/massif_demo.R` produirait (aucun embedding
+  dans la démo). Patch direct plutôt que régénération complète, faute des
+  dépendances de `data-raw` dans la session.
+
+Écart à la spec : les statuts suivent la convention des conditionnels du
+paquet (`skipped_no_embedding`… `calculated`) au lieu de `no_embedding`…
+`ok`, et un cinquième statut `skipped_no_coverage` couvre l'UGF hors de
+l'embedding. Spec et préavis app corrigés. Écarts n° 20 et 22 : livrés par le
+cœur, en attente côté app. Tests : 71 assertions nouvelles
+(`test-embeddings.R`) ; suites touchées vertes, sauf `r3_secheresse` dans
+`test-indicators-core.R`, en erreur aussi sur `main` dans cette session
+(paquet optionnel absent). Les pages d'aide ont été écrites à la main pour
+les fichiers modifiés : roxygen 8.0.0 n'était pas disponible (7.3.1 réécrit
+toutes les pages).
 
 ---
 

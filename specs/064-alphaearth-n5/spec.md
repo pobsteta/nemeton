@@ -1,8 +1,8 @@
 # Spec 064 — AlphaEarth : source NDP 0 universelle, N5 distance à la référence, B4/L3 en mode embedding
 
 > **Statut** : **validé** par Pascal le 2026-11-05 (« je valide tes
-> propositions pour les décisions ouvertes »), sauf **D-2** (licence), qui
-> n'avait pas de proposition et reste ouverte. Décisions : § 9.
+> propositions pour les décisions ouvertes » ; D-2 : GPL-3). Décisions : § 9.
+> Avancement : § 13.
 > **Origine** : brief « Modèles de fondation et raisonnement sylvicole dans
 > l'écosystème Néméton » du 2026-11-05, chantier A (priorité 1).
 > **Dépôts** : `alphaearthnemeton` (nouveau, amont) et `nemeton` (cœur).
@@ -69,8 +69,7 @@ Landsat, GEDI, ERA5, etc. C'est exactement le complément NDP 0 qui manque.
 - **Licence** du jeu : **CC-BY 4.0** (documentation Earth Engine et fiche du
   miroir, 2026-11-05), attribution « produit par Google et Google DeepMind »,
   à recopier exactement dans `aef_info()` et dans `FR.json`. Licence du
-  paquet : **[D-2]** (le brief dit MIT, les paquets R de l'écosystème sont en
-  GPL-3).
+  paquet : **GPL-3** [D-2], comme `nemeton`.
 
 ## 4. Livrable cœur — source et couche
 
@@ -135,8 +134,12 @@ indicateur_n5_distance_reference(units, embedding = NULL, reference = NULL,
 - **Sens** : `+` (100 = indiscernable de la référence = le plus naturel).
   Nouveau code, donc pas de palier `INDICATOR_SENSE_VERSION` (le mécanisme vit
   côté app, `nemetonshiny/R/migrate.R`).
-- **Statut** `n5_status` : `no_embedding`, `no_reference`,
-  `reference_too_small` (< `min_reference` UGF ou polygones), `ok`. Colonnes
+- **Statut** `n5_status` (alignés le 2026-11-05 sur la convention des
+  indicateurs conditionnels du paquet, `skipped_no_*` / `calculated`) :
+  `skipped_no_embedding`, `skipped_no_reference`,
+  `skipped_reference_too_small` (< `min_reference` UGF ou polygones),
+  `skipped_no_coverage` (UGF de moins de `min_pixels` pixels valides),
+  `calculated`. Colonnes
   annexes : `n5_source` (`"aef"` ; `"forpt"` et `"fused"` réservées au
   chantier C), `n5_reference` (`"defaut"` ou `"utilisateur"`), `n5_annee`.
 - **Famille N** : N5 est **conditionnel** (comme B4). Sans embedding, il vaut
@@ -223,7 +226,7 @@ embedding_regress(units, embedding, train, target = "H0",
 | # | Question | Décision |
 |---|---|---|
 | D-1 | Accès aux données : `rgee` (Python + compte GEE) ou COG publics ? | COG publics (miroir confirmé le 2026-11-05) ; `rgee` en repli optionnel. Le chantier A est « R pur » |
-| D-2 | Licence de `alphaearthnemeton` : MIT (brief) ou GPL-3 (comme `nemeton`) ? | **reste ouverte** : pas de proposition dans le brouillon. Le jeu de données reste sous CC-BY 4.0 quelle que soit la licence du paquet |
+| D-2 | Licence de `alphaearthnemeton` : MIT (brief) ou GPL-3 (comme `nemeton`) ? | **GPL-3** (Pascal, 2026-11-05). Le jeu de données reste sous CC-BY 4.0 |
 | D-3 | Embedding moyen brut ou renormalisé ? | brut, norme documentée comme indice d'homogénéité |
 | D-4 | Score N5 : rang percentile sur le projet (brief) ou quantile de la distribution de la référence ? | référence par défaut, rang projet en option |
 | D-5 | N5 dans N3 ? | non pour cette spec |
@@ -237,8 +240,8 @@ embedding_regress(units, embedding, train, target = "H0",
 
 1. N5 calculé sur **Dabo** (référence par défaut) et sur **une UGF hors
    France** (spec 006, référence fournie par l'utilisateur) ; `n5_status`
-   correct dans les quatre cas (`no_embedding`, `no_reference`,
-   `reference_too_small`, `ok`) sur fixtures synthétiques.
+   correct dans les cinq cas sur fixtures synthétiques (**fait**,
+   `tests/testthat/test-embeddings.R`).
 2. B4/L3 en mode embedding **stables à ± 2 points** entre deux années AEF
    consécutives sur un même projet sans coupe connue (SUFOSAT, T3) ; et
    **identiques** pour une même UGF incluse dans deux projets différents
@@ -264,3 +267,15 @@ Inscrits dans PLAN.md (table des écarts, n° 20 à 22) **avant** la première
 release : couche N5 sur la carte et dans la fiche projet ; méthode B4/L3
 affichée et bornes par méthode ; flag `embedding_ml` dans le badge NDP.
 Brief app : `specs/064-alphaearth-n5/brief-nemetonshiny.md`.
+
+## 13. Avancement
+
+| Livrable | État |
+|---|---|
+| `embedding_summary()`, `distance_reference()` | ✅ **2026.11.1**, testées sur embeddings synthétiques |
+| N5 (fonction, enregistrement famille N, normalisation, fiche, fixture) | ✅ **2026.11.1** ; validation sur Dabo et hors France à faire avec de vrais embeddings |
+| Flag `embedding_ml`, source `aef_embedding` (`FR.json`, NDP 0) | ✅ **2026.11.1** |
+| Paquet `alphaearthnemeton` (`aef_fetch()`, GPL-3, D-2 tranchée le 2026-11-05) | ⬜ dépôt à créer par Pascal |
+| B4/L3 `embedding =` + dictionnaire de clusters (D-6) | ⬜ demande de vrais embeddings pour ajuster le dictionnaire |
+| `embedding_regress()` (C1, P2, B2 sans CHM) | ⬜ |
+| Vignette `embeddings-alphaearth_fr.Rmd`, fiche « modèles de fondation » | ⬜ |

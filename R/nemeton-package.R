@@ -27,8 +27,8 @@
 #'   \item \strong{S - Social & Recreational}: S1-S3
 #'   \item \strong{P - Production}: P1-P3
 #'   \item \strong{E - Energy & Climate}: E1-E2
-#'   \item \strong{N - Naturalness}: N1-N3
-#'   \item Some indicators are conditional on optional sources (R5 FORDEAD, T3 SUFOSAT, A5 LST, R7 SAFRAN); see \code{indicator_families()}.
+#'   \item \strong{N - Naturalness}: N1-N3, N5 (distance to reference, spec 064)
+#'   \item Some indicators are conditional on optional sources (R5 FORDEAD, T3 SUFOSAT, A5 LST, R7 SAFRAN, N5 embedding); see \code{indicator_families()}.
 #' }
 #'
 #' \strong{Temporal Analysis:}
