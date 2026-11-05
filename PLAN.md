@@ -118,7 +118,7 @@ un raccourci.
 | 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 (7 décisions) ; code ⬜ ; catalogue à sourcer par Pascal (D-4) |
 
 **Prochaine étape** : branche `main` du dépôt `alphaearthnemeton` (pour
-ouvrir la PR de `aef_fetch()`, déjà poussé), puis ; avec de vrais embeddings, validation de N5 sur
+ouvrir la PR de `aef_fetch()`, déjà poussé) ; puis, avec de vrais embeddings, validation de N5 sur
 Dabo et ajustement du dictionnaire de clusters de B4/L3 (D-6). Spec 065 :
 premier remplissage du catalogue par Pascal.
 
