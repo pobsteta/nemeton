@@ -117,8 +117,8 @@ un raccourci.
 | 064 | Chantier A : `alphaearthnemeton`, `embedding_summary()`, `distance_reference()`, **N5**, B4/L3 `embedding =`, régressions NDP 0 | ✅ spec validée le 2026-11-05 (D-2 : GPL-3) ; 🟨 code : N5 + fonctions génériques + flag NDP → **2026.11.1** ; reste `alphaearthnemeton`, B4/L3, `embedding_regress()`, vignette |
 | 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 (7 décisions) ; code ⬜ ; catalogue à sourcer par Pascal (D-4) |
 
-**Prochaine étape** : création du dépôt `alphaearthnemeton` (GPL-3) par
-Pascal, puis `aef_fetch()` ; avec de vrais embeddings, validation de N5 sur
+**Prochaine étape** : branche `main` du dépôt `alphaearthnemeton` (pour
+ouvrir la PR de `aef_fetch()`, déjà poussé), puis ; avec de vrais embeddings, validation de N5 sur
 Dabo et ajustement du dictionnaire de clusters de B4/L3 (D-6). Spec 065 :
 premier remplissage du catalogue par Pascal.
 
@@ -183,6 +183,17 @@ cœur, en attente côté app. Tests : 71 assertions nouvelles
 (paquet optionnel absent). Les pages d'aide ont été écrites à la main pour
 les fichiers modifiés : roxygen 8.0.0 n'était pas disponible (7.3.1 réécrit
 toutes les pages).
+
+**Journal** — *2026-11-05* : `aef_fetch()` écrit dans `alphaearthnemeton`
+(dépôt créé par Pascal, GPL-3). R pur : index GeoPackage distant interrogé
+par emprise, fenêtres des COG lues par `/vsicurl/` sur la copie Google
+(accès anonyme), dé-quantification, reprojection au plus proche voisin sur une
+grille de 10 m en Lambert-93, mosaïque, cache COG adressé par contenu.
+36 tests sur tuiles simulées + 1 test réseau optionnel, `R CMD check` OK.
+Chaîne complète avec N5 vérifiée près de Dabo (2 × 2 km, 52 s ; 4 s en
+cache). Le dépôt n'avait aucune branche et un hook du plugin `imperatrice`
+interdit tout commit sur `main` : le code est sur `claude/pensive-curie-yx018k`,
+devenue branche par défaut ; la PR attend une `main`.
 
 ---
 

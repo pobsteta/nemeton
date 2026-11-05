@@ -275,7 +275,21 @@ Brief app : `specs/064-alphaearth-n5/brief-nemetonshiny.md`.
 | `embedding_summary()`, `distance_reference()` | ✅ **2026.11.1**, testées sur embeddings synthétiques |
 | N5 (fonction, enregistrement famille N, normalisation, fiche, fixture) | ✅ **2026.11.1** ; validation sur Dabo et hors France à faire avec de vrais embeddings |
 | Flag `embedding_ml`, source `aef_embedding` (`FR.json`, NDP 0) | ✅ **2026.11.1** |
-| Paquet `alphaearthnemeton` (`aef_fetch()`, GPL-3, D-2 tranchée le 2026-11-05) | ⬜ dépôt à créer par Pascal |
+| Paquet `alphaearthnemeton` (`aef_fetch()`, GPL-3, D-2 tranchée le 2026-11-05) | 🟨 code poussé le 2026-11-05 (branche `claude/pensive-curie-yx018k`, R CMD check OK), en attente d'une branche `main` pour la PR |
 | B4/L3 `embedding =` + dictionnaire de clusters (D-6) | ⬜ demande de vrais embeddings pour ajuster le dictionnaire |
 | `embedding_regress()` (C1, P2, B2 sans CHM) | ⬜ |
 | Vignette `embeddings-alphaearth_fr.Rmd`, fiche « modèles de fondation » | ⬜ |
+
+### Accès vérifié (2026-11-05)
+
+- Copie Google `https://storage.googleapis.com/alphaearth_foundations/satellite_embedding/v1/annual/`
+  servie en accès anonyme par requêtes partielles (bucket déclaré « requester
+  pays » par Google). Le miroir Source Cooperative est bloqué par le réseau de
+  la session de travail ; il reste un repli (`options(alphaearthnemeton.base_url =)`).
+- Index `aef_index.gpkg` (539 Mo) interrogé à distance par `/vsicurl/` avec un
+  filtre spatial : quelques pages lues, pas le fichier entier.
+- COG int8, 8192 × 8192, 64 bandes `A00`-`A63`, NoData -128, UTM ;
+  dé-quantification `sign(x) * (x / 127.5)^2` (README du bucket), norme 1
+  vérifiée sur 10 000 pixels près de Dabo (0,993 à 1,008).
+- Chaîne complète : 2 × 2 km près de Dabo, 2023 et 2024, 52 s ; N5 calculé sur
+  100 UGF de 200 m avec une référence de 20 UGF ; second appel 4 s (cache).
