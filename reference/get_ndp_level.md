@@ -42,7 +42,8 @@ get_ndp_level(0)
 #> [1] 0.08333333
 #> 
 #> $sources
-#> [1] "sentinel_2" "worldclim"  "bd_topo"    "mnt_25m"   
+#> [1] "sentinel_2"    "worldclim"     "bd_topo"       "mnt_25m"      
+#> [5] "aef_embedding"
 #> 
 get_ndp_level(4)
 #> $ndp

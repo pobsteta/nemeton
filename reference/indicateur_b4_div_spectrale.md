@@ -13,6 +13,8 @@ indicateur_b4_div_spectrale(
   units,
   spectral = NULL,
   reflectance = NULL,
+  embedding = NULL,
+  layers = NULL,
   ...
 )
 ```
@@ -35,6 +37,19 @@ indicateur_b4_div_spectrale(
   Optional reflectance `SpatRaster` / path used to compute spectral
   diversity on the fly when `spectral` is `NULL`.
 
+- embedding:
+
+  Optional foundation-model embedding (SpatRaster, one band per
+  dimension, e.g. the 64 bands of `alphaearthnemeton::aef_fetch()`, or a
+  list of them named by year: the latest is used). Used only when
+  `spectral` and `reflectance` are both `NULL`: embedding mode, see
+  Details.
+
+- layers:
+
+  Optional nemeton_layers; its `aef_embedding` layer is used as
+  `embedding` when none is given.
+
 - ...:
 
   Passed to
@@ -43,8 +58,29 @@ indicateur_b4_div_spectrale(
 
 ## Value
 
-`units` with the numeric `B4` column added, and `b4_status`
-(`"calculated"`, `"skipped_no_spectral"` or `"skipped_no_coverage"`).
+`units` with the numeric `B4` column added, `b4_status` (`"calculated"`,
+`"calculated_embedding"`, `"skipped_no_spectral"` or
+`"skipped_no_coverage"`) and `b4_methode` (`"biodivmapr"`,
+`"embedding"`, or `NA` without source).
+
+## Details
+
+**Embedding mode** (spec 064): every pixel is spread over the clusters
+of a **fixed** dictionary
+([`aef_clusters()`](https://pobsteta.github.io/nemeton/reference/aef_clusters.md),
+k = 32, fitted once on a forest corpus) with weights `exp(-d^2 / 0.1)`
+normalised to 1 (soft assignment: a hard nearest-centroid label made
+pixels near a cluster boundary flip between years). In 100 m windows of
+a grid snapped to multiples of 100 m, the window diversity is the
+Jensen-Shannon divergence of the pixels' memberships (entropy of the
+mean composition minus the mean entropy of the pixels: 0 for a uniform
+window), and B4 is its coverage-weighted mean over the unit. Fixed
+dictionary and fixed grid make B4 comparable between projects, which the
+biodivMapR mode is not (its k-means is fitted on each project). The two
+modes do not give comparable values: `b4_methode` says which one
+produced the value, and the status `"calculated_embedding"` gives the
+embedding mode its own normalisation: affine between the 1st (0) and
+99th (100) percentiles of the window entropy over the dictionary corpus.
 
 ## Lifecycle
 

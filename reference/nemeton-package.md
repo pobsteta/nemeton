@@ -43,10 +43,10 @@ service dimensions.
 
 - **E - Energy & Climate**: E1-E2
 
-- **N - Naturalness**: N1-N3
+- **N - Naturalness**: N1-N3, N5 (distance to reference, spec 064)
 
 - Some indicators are conditional on optional sources (R5 FORDEAD, T3
-  SUFOSAT, A5 LST, R7 SAFRAN); see
+  SUFOSAT, A5 LST, R7 SAFRAN, N5 embedding); see
   [`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md).
 
 **Temporal Analysis:**

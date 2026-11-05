@@ -29,7 +29,8 @@ normalize_indicator(indicator, values, statut = NULL)
   [`indicateur_p2_station`](https://pobsteta.github.io/nemeton/reference/indicateur_p2_station.md),
   status column `p2_status`), normalised against 40 m instead of the 15
   m3/ha/yr of the production modes. `NULL` (default) keeps the
-  production scale.
+  production scale. Also used for B4 and L3: `"calculated_embedding"`
+  (embedding mode, spec 064) selects that mode's own bound.
 
 ## Value
 

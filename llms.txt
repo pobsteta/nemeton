@@ -9,7 +9,7 @@ biophysiques multi-famille** pour la gestion forestiere durable.
 
 ## Architecture (ADR-009)
 
-    nemeton (ce repo)       -> Package coeur R (GPL-3). 41 indicateurs, 12 familles, NDP, radar.
+    nemeton (ce repo)       -> Package coeur R (GPL-3). 42 indicateurs, 12 familles, NDP, radar.
     nemetonshiny            -> Application Shiny (EUPL v1.2). Interface web interactive.
     tree_sat_nemeton        -> Classification d'essences Sentinel-1/2. NDP 0. MIT.
     maestro_nemeton         -> Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
@@ -33,7 +33,7 @@ fournie : R5 FORDEAD/RECONFORT, T3 SUFOSAT, A5 LST, R7 SAFRAN) :
 | **S** | Social & Usages | indicateur_s1_routes, s2_bati, s3_population |
 | **P** | Production & Economie | indicateur_p1_volume, p2_station, p3_qualite_bois |
 | **E** | Energie & Climat | indicateur_e1_bois_energie, e2_evitement |
-| **N** | Naturalite | indicateur_n1_distance, n2_continuite, n3_naturalite |
+| **N** | Naturalite | indicateur_n1_distance, n2_continuite, n3_naturalite, n5_distance_reference |
 
 **Systeme NDP** (Niveau De Precision) : ponderation Fibonacci
 (1,1,2,3,5), confiance phi.
@@ -147,7 +147,7 @@ nemetonshiny::run_app(language = "fr")
 L’application permet de :
 
 - Rechercher et selectionner des parcelles cadastrales par commune
-- Calculer automatiquement les 41 indicateurs (12 familles)
+- Calculer automatiquement les 42 indicateurs (12 familles)
 - Visualiser les resultats (radar avec NDP, cartes, tableaux)
 - Generer des perspectives IA par profil d’acteur (18 profils)
 - Exporter en PDF ou GeoPackage
@@ -975,6 +975,25 @@ des tables embarquees par Marculus
 - [`exporter_tarifs_marculus()`](https://pobsteta.github.io/nemeton/reference/exporter_tarifs_marculus.md)
   : Export the Schaeffer tariff tables for Marculus
 
+### Modeles de fondation et N5 (spec 064)
+
+Embeddings de modeles de fondation (AlphaEarth, fournis par le paquet
+amont alphaearthnemeton) : resume par UGF, distance a une reference
+regularisee Ledoit-Wolf, et indicateur conditionnel N5
+
+- [`embeddings`](https://pobsteta.github.io/nemeton/reference/embeddings.md)
+  : Foundation-model embeddings: generic per-unit tools (spec 064)
+- [`embedding_summary()`](https://pobsteta.github.io/nemeton/reference/embedding_summary.md)
+  : Summarise a pixel-embedding raster per spatial unit
+- [`distance_reference()`](https://pobsteta.github.io/nemeton/reference/distance_reference.md)
+  : Distance of embeddings to a reference set
+- [`indicateur_n5_distance_reference()`](https://pobsteta.github.io/nemeton/reference/indicateur_n5_distance_reference.md)
+  : N5: Distance to a low-disturbance reference (foundation-model
+  embedding)
+- [`aef_clusters()`](https://pobsteta.github.io/nemeton/reference/aef_clusters.md)
+  : Fixed cluster dictionary of AlphaEarth embeddings (B4/L3 embedding
+  mode)
+
 ### Corpus de connaissances et RAG
 
 - [`rag`](https://pobsteta.github.io/nemeton/reference/rag.md) : RAG
@@ -1306,6 +1325,8 @@ lancez nemetonshiny::run_app(language = “fr”).
   ecologique](https://pobsteta.github.io/nemeton/articles/fiche-n2-continuite_fr.md):
 - [Fiche indicateur N3 - Naturalite
   composite](https://pobsteta.github.io/nemeton/articles/fiche-n3-naturalite_fr.md):
+- [Fiche indicateur N5 - Distance a la
+  reference](https://pobsteta.github.io/nemeton/articles/fiche-n5-distance-reference_fr.md):
 - [Fiche indicateur P1 - Volume sur
   pied](https://pobsteta.github.io/nemeton/articles/fiche-p1-volume_fr.md):
 - [Fiche indicateur P2 - Indice de

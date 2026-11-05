@@ -9,7 +9,7 @@ indicator-specific reference maxima and special handling rules."><meta property=
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.19.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -82,6 +82,7 @@ indicator-specific reference maxima and special handling rules."><meta property=
     <li><a class="dropdown-item" href="../articles/fiche-n1-distance_fr.html">N1 - Distance aux infrastructures</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n2-continuite_fr.html">N2 - Continuite ecologique</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n3-naturalite_fr.html">N3 - Naturalite composite</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-n5-distance-reference_fr.html">N5 - Distance a la reference</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille S - Social &amp; Usages</h6></li>
     <li><a class="dropdown-item" href="../articles/fiche-s1-routes_fr.html">S1 - Distance aux routes</a></li>
@@ -143,7 +144,9 @@ an error.</p></dd>
 indicator has several units. Used for P2: <code>"indice_station_m"</code> marks a
 site index in metres (CHM mode of <code><a href="indicateur_p2_station.html">indicateur_p2_station</a></code>, status
 column <code>p2_status</code>), normalised against 40 m instead of the 15 m3/ha/yr
-of the production modes. <code>NULL</code> (default) keeps the production scale.</p></dd>
+of the production modes. <code>NULL</code> (default) keeps the production scale.
+Also used for B4 and L3: <code>"calculated_embedding"</code> (embedding mode,
+spec 064) selects that mode's own bound.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.19.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,6 +102,7 @@
     <li><a class="dropdown-item" href="../articles/fiche-n1-distance_fr.html">N1 - Distance aux infrastructures</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n2-continuite_fr.html">N2 - Continuite ecologique</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n3-naturalite_fr.html">N3 - Naturalite composite</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-n5-distance-reference_fr.html">N5 - Distance a la reference</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille S - Social &amp; Usages</h6></li>
     <li><a class="dropdown-item" href="../articles/fiche-s1-routes_fr.html">S1 - Distance aux routes</a></li>
@@ -141,7 +142,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstétar</h4>
             
-            <h4 data-toc-skip class="date">2026-10-19</h4>
+            <h4 data-toc-skip class="date">2026-11-05</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/complete-referential_fr.Rmd" class="external-link"><code>vignettes/complete-referential_fr.Rmd</code></a></small>
       <div class="d-none name"><code>complete-referential_fr.Rmd</code></div>
@@ -269,7 +270,7 @@ données <code>massif_demo_units</code>.</p>
 <span></span>
 <span><span class="co"># Aperçu des données de base</span></span>
 <span><span class="fu"><a href="https://rspatial.github.io/terra/reference/headtail.html" class="external-link">head</a></span><span class="op">(</span><span class="va">massif_demo_units</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Simple feature collection with 6 features and 122 fields</span></span>
+<span><span class="co">#&gt; Simple feature collection with 6 features and 125 fields</span></span>
 <span><span class="co">#&gt; Geometry type: POLYGON</span></span>
 <span><span class="co">#&gt; Dimension:     XY</span></span>
 <span><span class="co">#&gt; Bounding box:  xmin: 698041.8 ymin: 6499388 xmax: 702507.7 ymax: 6504159</span></span>
@@ -309,83 +310,90 @@ données <code>massif_demo_units</code>.</p>
 <span><span class="co">#&gt; 4 76.75013 NA NA NA NA  315.2487 NA NA  208.7976  NA 100 0.692292 0.6915997 NA</span></span>
 <span><span class="co">#&gt; 5 74.29972 NA NA NA NA 1567.7493 NA NA  968.8934 6.5 100 2.899740 2.8968403 NA</span></span>
 <span><span class="co">#&gt; 6 76.35914 NA NA NA NA 1231.9158 NA NA 2575.4125  NA 100 7.708212 7.7005038 NA</span></span>
-<span><span class="co">#&gt;   N2 N3           b4_status        w4_status        a3_status        a4_status</span></span>
-<span><span class="co">#&gt; 1 60 NA skipped_no_spectral skipped_no_micro skipped_no_micro skipped_no_micro</span></span>
-<span><span class="co">#&gt; 2 60 NA skipped_no_spectral skipped_no_micro skipped_no_micro skipped_no_micro</span></span>
-<span><span class="co">#&gt; 3 60 NA skipped_no_spectral skipped_no_micro skipped_no_micro skipped_no_micro</span></span>
-<span><span class="co">#&gt; 4 60 NA skipped_no_spectral skipped_no_micro skipped_no_micro skipped_no_micro</span></span>
-<span><span class="co">#&gt; 5 60 NA skipped_no_spectral skipped_no_micro skipped_no_micro skipped_no_micro</span></span>
-<span><span class="co">#&gt; 6 60 NA skipped_no_spectral skipped_no_micro skipped_no_micro skipped_no_micro</span></span>
-<span><span class="co">#&gt;        a5_status           l3_status          t3_status r1_status</span></span>
-<span><span class="co">#&gt; 1 skipped_no_lst skipped_no_spectral skipped_no_sufosat  fire_exp</span></span>
-<span><span class="co">#&gt; 2 skipped_no_lst skipped_no_spectral skipped_no_sufosat  fire_exp</span></span>
-<span><span class="co">#&gt; 3 skipped_no_lst skipped_no_spectral skipped_no_sufosat  fire_exp</span></span>
-<span><span class="co">#&gt; 4 skipped_no_lst skipped_no_spectral skipped_no_sufosat  fire_exp</span></span>
-<span><span class="co">#&gt; 5 skipped_no_lst skipped_no_spectral skipped_no_sufosat  fire_exp</span></span>
-<span><span class="co">#&gt; 6 skipped_no_lst skipped_no_spectral skipped_no_sufosat  fire_exp</span></span>
-<span><span class="co">#&gt;           r5_status        r6_status       r7_status     p3_status  C1_norm</span></span>
-<span><span class="co">#&gt; 1 skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul 32.67416</span></span>
-<span><span class="co">#&gt; 2 skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul 11.85798</span></span>
-<span><span class="co">#&gt; 3 skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul 47.02422</span></span>
-<span><span class="co">#&gt; 4 skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul 89.99050</span></span>
-<span><span class="co">#&gt; 5 skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul 19.46893</span></span>
-<span><span class="co">#&gt; 6 skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul 37.85187</span></span>
-<span><span class="co">#&gt;   C2_norm B1_norm B2_norm B3_norm B4_norm  W1_norm W2_norm W3_norm W4_norm</span></span>
-<span><span class="co">#&gt; 1      NA      NA      NA     100      NA  0.00000       0       0      NA</span></span>
-<span><span class="co">#&gt; 2      NA      NA      NA     100      NA  0.00000       0       0      NA</span></span>
-<span><span class="co">#&gt; 3      NA      NA      NA     100      NA  0.00000       0       0      NA</span></span>
-<span><span class="co">#&gt; 4      NA      NA      NA     100      NA 17.35471       0       0      NA</span></span>
-<span><span class="co">#&gt; 5      NA      NA      NA     100      NA  0.00000       0       0      NA</span></span>
-<span><span class="co">#&gt; 6      NA      NA      NA     100      NA  0.00000       0       0      NA</span></span>
-<span><span class="co">#&gt;     A1_norm A2_norm A3_norm A4_norm A5_norm F1_norm F2_norm L1_norm L2_norm</span></span>
-<span><span class="co">#&gt; 1  99.86906   100.0      NA      NA      NA      NA    15.0    47.6    91.8</span></span>
-<span><span class="co">#&gt; 2  99.97049    99.4      NA      NA      NA      NA    10.3    47.4    93.0</span></span>
-<span><span class="co">#&gt; 3 100.00000    99.5      NA      NA      NA      NA    14.9    48.7    91.2</span></span>
-<span><span class="co">#&gt; 4  99.84681    98.6      NA      NA      NA      NA    13.7    48.5    94.5</span></span>
-<span><span class="co">#&gt; 5  99.77814    99.9      NA      NA      NA      NA    13.1    48.8    94.6</span></span>
-<span><span class="co">#&gt; 6  99.76134    99.9      NA      NA      NA      NA    11.1    49.0    94.6</span></span>
-<span><span class="co">#&gt;   L3_norm T1_norm T2_norm T3_norm      R1_norm  R2_norm  R3_norm R4_norm</span></span>
-<span><span class="co">#&gt; 1      NA    34.0      NA      NA 7.406871e-02 64.74369 23.07596      NA</span></span>
-<span><span class="co">#&gt; 2      NA    16.5      NA      NA 1.421085e-14 58.03149 24.69214      NA</span></span>
-<span><span class="co">#&gt; 3      NA    52.0      NA      NA 1.421085e-14 65.45109 26.71145      NA</span></span>
-<span><span class="co">#&gt; 4      NA    83.0      NA      NA 1.093308e-01 64.38051 23.24987      NA</span></span>
-<span><span class="co">#&gt; 5      NA    23.5      NA      NA 4.761100e-01 64.00225 25.70028      NA</span></span>
-<span><span class="co">#&gt; 6      NA    39.5      NA      NA 6.211201e-02 64.87859 23.64086      NA</span></span>
-<span><span class="co">#&gt;   R5_norm R6_norm R7_norm  S1_norm S2_norm S3_norm   P1_norm  P2_norm P3_norm</span></span>
-<span><span class="co">#&gt; 1      NA      NA      NA  0.00000      NA      NA  78.19283       NA     100</span></span>
-<span><span class="co">#&gt; 2      NA      NA      NA 74.04080      NA      NA 100.00000       NA     100</span></span>
-<span><span class="co">#&gt; 3      NA      NA      NA 69.34694      NA      NA  32.63271 43.33333     100</span></span>
-<span><span class="co">#&gt; 4      NA      NA      NA 84.23757      NA      NA  26.09970       NA     100</span></span>
-<span><span class="co">#&gt; 5      NA      NA      NA 21.61254      NA      NA 100.00000 43.33333     100</span></span>
-<span><span class="co">#&gt; 6      NA      NA      NA 38.40421      NA      NA 100.00000       NA     100</span></span>
-<span><span class="co">#&gt;     E1_norm   E2_norm N1_norm N2_norm N3_norm famille_carbone</span></span>
-<span><span class="co">#&gt; 1  78.58500  78.50642      NA      60      NA        32.67416</span></span>
-<span><span class="co">#&gt; 2 100.00000 100.00000      NA      60      NA        11.85798</span></span>
-<span><span class="co">#&gt; 3  32.78955  32.75676      NA      60      NA        47.02422</span></span>
-<span><span class="co">#&gt; 4  26.22318  26.19696      NA      60      NA        89.99050</span></span>
-<span><span class="co">#&gt; 5 100.00000 100.00000      NA      60      NA        19.46893</span></span>
-<span><span class="co">#&gt; 6 100.00000 100.00000      NA      60      NA        37.85187</span></span>
-<span><span class="co">#&gt;   famille_biodiversite famille_eau famille_air famille_sol famille_paysage</span></span>
-<span><span class="co">#&gt; 1                  100    0.000000    99.93453        15.0           69.70</span></span>
-<span><span class="co">#&gt; 2                  100    0.000000    99.68525        10.3           70.20</span></span>
-<span><span class="co">#&gt; 3                  100    0.000000    99.75000        14.9           69.95</span></span>
-<span><span class="co">#&gt; 4                  100    5.784902    99.22340        13.7           71.50</span></span>
-<span><span class="co">#&gt; 5                  100    0.000000    99.83907        13.1           71.70</span></span>
-<span><span class="co">#&gt; 6                  100    0.000000    99.83067        11.1           71.80</span></span>
-<span><span class="co">#&gt;   famille_temporel famille_risque famille_social famille_production</span></span>
-<span><span class="co">#&gt; 1             34.0       29.29790        0.00000           89.09642</span></span>
-<span><span class="co">#&gt; 2             16.5       27.57454       74.04080          100.00000</span></span>
-<span><span class="co">#&gt; 3             52.0       30.72085       69.34694           58.65535</span></span>
-<span><span class="co">#&gt; 4             83.0       29.24657       84.23757           63.04985</span></span>
-<span><span class="co">#&gt; 5             23.5       30.05955       21.61254           81.11111</span></span>
-<span><span class="co">#&gt; 6             39.5       29.52719       38.40421          100.00000</span></span>
-<span><span class="co">#&gt;   famille_energie famille_naturalite                       geometry</span></span>
-<span><span class="co">#&gt; 1        78.54571                 60 POLYGON ((698299.9 6499928,...</span></span>
-<span><span class="co">#&gt; 2       100.00000                 60 POLYGON ((701702.2 6500418,...</span></span>
-<span><span class="co">#&gt; 3        32.77315                 60 POLYGON ((702240.4 6500270,...</span></span>
-<span><span class="co">#&gt; 4        26.21007                 60 POLYGON ((700641.3 6504129,...</span></span>
-<span><span class="co">#&gt; 5       100.00000                 60 POLYGON ((699268.2 6500307,...</span></span>
-<span><span class="co">#&gt; 6       100.00000                 60 POLYGON ((699943.5 6499421,...</span></span>
+<span><span class="co">#&gt;   N2 N3 N5           b4_status        w4_status        a3_status</span></span>
+<span><span class="co">#&gt; 1 60 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro</span></span>
+<span><span class="co">#&gt; 2 60 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro</span></span>
+<span><span class="co">#&gt; 3 60 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro</span></span>
+<span><span class="co">#&gt; 4 60 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro</span></span>
+<span><span class="co">#&gt; 5 60 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro</span></span>
+<span><span class="co">#&gt; 6 60 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro</span></span>
+<span><span class="co">#&gt;          a4_status      a5_status           l3_status          t3_status</span></span>
+<span><span class="co">#&gt; 1 skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat</span></span>
+<span><span class="co">#&gt; 2 skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat</span></span>
+<span><span class="co">#&gt; 3 skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat</span></span>
+<span><span class="co">#&gt; 4 skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat</span></span>
+<span><span class="co">#&gt; 5 skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat</span></span>
+<span><span class="co">#&gt; 6 skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat</span></span>
+<span><span class="co">#&gt;   r1_status         r5_status        r6_status       r7_status     p3_status</span></span>
+<span><span class="co">#&gt; 1  fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul</span></span>
+<span><span class="co">#&gt; 2  fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul</span></span>
+<span><span class="co">#&gt; 3  fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul</span></span>
+<span><span class="co">#&gt; 4  fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul</span></span>
+<span><span class="co">#&gt; 5  fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul</span></span>
+<span><span class="co">#&gt; 6  fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul</span></span>
+<span><span class="co">#&gt;      n5_status  C1_norm C2_norm B1_norm B2_norm B3_norm B4_norm  W1_norm</span></span>
+<span><span class="co">#&gt; 1 no_embedding 32.67416      NA      NA      NA     100      NA  0.00000</span></span>
+<span><span class="co">#&gt; 2 no_embedding 11.85798      NA      NA      NA     100      NA  0.00000</span></span>
+<span><span class="co">#&gt; 3 no_embedding 47.02422      NA      NA      NA     100      NA  0.00000</span></span>
+<span><span class="co">#&gt; 4 no_embedding 89.99050      NA      NA      NA     100      NA 17.35471</span></span>
+<span><span class="co">#&gt; 5 no_embedding 19.46893      NA      NA      NA     100      NA  0.00000</span></span>
+<span><span class="co">#&gt; 6 no_embedding 37.85187      NA      NA      NA     100      NA  0.00000</span></span>
+<span><span class="co">#&gt;   W2_norm W3_norm W4_norm   A1_norm A2_norm A3_norm A4_norm A5_norm F1_norm</span></span>
+<span><span class="co">#&gt; 1       0       0      NA  99.86906   100.0      NA      NA      NA      NA</span></span>
+<span><span class="co">#&gt; 2       0       0      NA  99.97049    99.4      NA      NA      NA      NA</span></span>
+<span><span class="co">#&gt; 3       0       0      NA 100.00000    99.5      NA      NA      NA      NA</span></span>
+<span><span class="co">#&gt; 4       0       0      NA  99.84681    98.6      NA      NA      NA      NA</span></span>
+<span><span class="co">#&gt; 5       0       0      NA  99.77814    99.9      NA      NA      NA      NA</span></span>
+<span><span class="co">#&gt; 6       0       0      NA  99.76134    99.9      NA      NA      NA      NA</span></span>
+<span><span class="co">#&gt;   F2_norm L1_norm L2_norm L3_norm T1_norm T2_norm T3_norm      R1_norm  R2_norm</span></span>
+<span><span class="co">#&gt; 1    15.0    47.6    91.8      NA    34.0      NA      NA 7.406871e-02 64.74369</span></span>
+<span><span class="co">#&gt; 2    10.3    47.4    93.0      NA    16.5      NA      NA 1.421085e-14 58.03149</span></span>
+<span><span class="co">#&gt; 3    14.9    48.7    91.2      NA    52.0      NA      NA 1.421085e-14 65.45109</span></span>
+<span><span class="co">#&gt; 4    13.7    48.5    94.5      NA    83.0      NA      NA 1.093308e-01 64.38051</span></span>
+<span><span class="co">#&gt; 5    13.1    48.8    94.6      NA    23.5      NA      NA 4.761100e-01 64.00225</span></span>
+<span><span class="co">#&gt; 6    11.1    49.0    94.6      NA    39.5      NA      NA 6.211201e-02 64.87859</span></span>
+<span><span class="co">#&gt;    R3_norm R4_norm R5_norm R6_norm R7_norm  S1_norm S2_norm S3_norm   P1_norm</span></span>
+<span><span class="co">#&gt; 1 23.07596      NA      NA      NA      NA  0.00000      NA      NA  78.19283</span></span>
+<span><span class="co">#&gt; 2 24.69214      NA      NA      NA      NA 74.04080      NA      NA 100.00000</span></span>
+<span><span class="co">#&gt; 3 26.71145      NA      NA      NA      NA 69.34694      NA      NA  32.63271</span></span>
+<span><span class="co">#&gt; 4 23.24987      NA      NA      NA      NA 84.23757      NA      NA  26.09970</span></span>
+<span><span class="co">#&gt; 5 25.70028      NA      NA      NA      NA 21.61254      NA      NA 100.00000</span></span>
+<span><span class="co">#&gt; 6 23.64086      NA      NA      NA      NA 38.40421      NA      NA 100.00000</span></span>
+<span><span class="co">#&gt;    P2_norm P3_norm   E1_norm   E2_norm N1_norm N2_norm N3_norm N5_norm</span></span>
+<span><span class="co">#&gt; 1       NA     100  78.58500  78.50642      NA      60      NA      NA</span></span>
+<span><span class="co">#&gt; 2       NA     100 100.00000 100.00000      NA      60      NA      NA</span></span>
+<span><span class="co">#&gt; 3 43.33333     100  32.78955  32.75676      NA      60      NA      NA</span></span>
+<span><span class="co">#&gt; 4       NA     100  26.22318  26.19696      NA      60      NA      NA</span></span>
+<span><span class="co">#&gt; 5 43.33333     100 100.00000 100.00000      NA      60      NA      NA</span></span>
+<span><span class="co">#&gt; 6       NA     100 100.00000 100.00000      NA      60      NA      NA</span></span>
+<span><span class="co">#&gt;   famille_carbone famille_biodiversite famille_eau famille_air famille_sol</span></span>
+<span><span class="co">#&gt; 1        32.67416                  100    0.000000    99.93453        15.0</span></span>
+<span><span class="co">#&gt; 2        11.85798                  100    0.000000    99.68525        10.3</span></span>
+<span><span class="co">#&gt; 3        47.02422                  100    0.000000    99.75000        14.9</span></span>
+<span><span class="co">#&gt; 4        89.99050                  100    5.784902    99.22340        13.7</span></span>
+<span><span class="co">#&gt; 5        19.46893                  100    0.000000    99.83907        13.1</span></span>
+<span><span class="co">#&gt; 6        37.85187                  100    0.000000    99.83067        11.1</span></span>
+<span><span class="co">#&gt;   famille_paysage famille_temporel famille_risque famille_social</span></span>
+<span><span class="co">#&gt; 1           69.70             34.0       29.29790        0.00000</span></span>
+<span><span class="co">#&gt; 2           70.20             16.5       27.57454       74.04080</span></span>
+<span><span class="co">#&gt; 3           69.95             52.0       30.72085       69.34694</span></span>
+<span><span class="co">#&gt; 4           71.50             83.0       29.24657       84.23757</span></span>
+<span><span class="co">#&gt; 5           71.70             23.5       30.05955       21.61254</span></span>
+<span><span class="co">#&gt; 6           71.80             39.5       29.52719       38.40421</span></span>
+<span><span class="co">#&gt;   famille_production famille_energie famille_naturalite</span></span>
+<span><span class="co">#&gt; 1           89.09642        78.54571                 60</span></span>
+<span><span class="co">#&gt; 2          100.00000       100.00000                 60</span></span>
+<span><span class="co">#&gt; 3           58.65535        32.77315                 60</span></span>
+<span><span class="co">#&gt; 4           63.04985        26.21007                 60</span></span>
+<span><span class="co">#&gt; 5           81.11111       100.00000                 60</span></span>
+<span><span class="co">#&gt; 6          100.00000       100.00000                 60</span></span>
+<span><span class="co">#&gt;                         geometry</span></span>
+<span><span class="co">#&gt; 1 POLYGON ((698299.9 6499928,...</span></span>
+<span><span class="co">#&gt; 2 POLYGON ((701702.2 6500418,...</span></span>
+<span><span class="co">#&gt; 3 POLYGON ((702240.4 6500270,...</span></span>
+<span><span class="co">#&gt; 4 POLYGON ((700641.3 6504129,...</span></span>
+<span><span class="co">#&gt; 5 POLYGON ((699268.2 6500307,...</span></span>
+<span><span class="co">#&gt; 6 POLYGON ((699943.5 6499421,...</span></span>
 <span></span>
 <span><span class="co"># Calculer les indicateurs pour la démonstration</span></span>
 <span><span class="co"># Les indicateurs sont générés de manière synthétique pour les besoins de cette vignette</span></span>

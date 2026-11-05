@@ -726,6 +726,25 @@ des tables embarquees par Marculus
 - [`exporter_tarifs_marculus()`](https://pobsteta.github.io/nemeton/reference/exporter_tarifs_marculus.md)
   : Export the Schaeffer tariff tables for Marculus
 
+### Modeles de fondation et N5 (spec 064)
+
+Embeddings de modeles de fondation (AlphaEarth, fournis par le paquet
+amont alphaearthnemeton) : resume par UGF, distance a une reference
+regularisee Ledoit-Wolf, et indicateur conditionnel N5
+
+- [`embeddings`](https://pobsteta.github.io/nemeton/reference/embeddings.md)
+  : Foundation-model embeddings: generic per-unit tools (spec 064)
+- [`embedding_summary()`](https://pobsteta.github.io/nemeton/reference/embedding_summary.md)
+  : Summarise a pixel-embedding raster per spatial unit
+- [`distance_reference()`](https://pobsteta.github.io/nemeton/reference/distance_reference.md)
+  : Distance of embeddings to a reference set
+- [`indicateur_n5_distance_reference()`](https://pobsteta.github.io/nemeton/reference/indicateur_n5_distance_reference.md)
+  : N5: Distance to a low-disturbance reference (foundation-model
+  embedding)
+- [`aef_clusters()`](https://pobsteta.github.io/nemeton/reference/aef_clusters.md)
+  : Fixed cluster dictionary of AlphaEarth embeddings (B4/L3 embedding
+  mode)
+
 ### Corpus de connaissances et RAG
 
 - [`rag`](https://pobsteta.github.io/nemeton/reference/rag.md) : RAG

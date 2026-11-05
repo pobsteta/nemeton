@@ -15,7 +15,7 @@ indicateur_b4_div_spectrale."><meta property="og:image" content="https://pobstet
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.19.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -88,6 +88,7 @@ indicateur_b4_div_spectrale."><meta property="og:image" content="https://pobstet
     <li><a class="dropdown-item" href="../articles/fiche-n1-distance_fr.html">N1 - Distance aux infrastructures</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n2-continuite_fr.html">N2 - Continuite ecologique</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n3-naturalite_fr.html">N3 - Naturalite composite</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-n5-distance-reference_fr.html">N5 - Distance a la reference</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille S - Social &amp; Usages</h6></li>
     <li><a class="dropdown-item" href="../articles/fiche-s1-routes_fr.html">S1 - Distance aux routes</a></li>
@@ -134,6 +135,8 @@ mosaic (spec 028 D1). Backward compatible like
 <span>  spectral <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  reflectance <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  min_windows <span class="op">=</span> <span class="fl">3L</span>,</span>
+<span>  embedding <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  layers <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -166,6 +169,15 @@ below which the unit's dispersion is undefined and <code>NA</code> is returned
 below 3 are raised to 3.</p></dd>
 
 
+<dt id="arg-embedding-layers">embedding, layers<a class="anchor" aria-label="anchor" href="#arg-embedding-layers"></a></dt>
+<dd><p>Embedding mode, as in <code><a href="indicateur_b4_div_spectrale.html">indicateur_b4_div_spectrale()</a></code>:
+L3 is then the mean Euclidean distance of the unit's 100 m window mean
+embeddings (fixed grid) to the unit's centroid, <code>NA</code> below
+<code>min_windows</code> windows. Status <code>"calculated_embedding"</code>, method in
+<code>l3_methode</code>. The value grows with unit size (more windows, more
+contrast): compare units of similar size.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Passed to <code><a href="compute_spectral_diversity.html">compute_spectral_diversity</a></code> when computing
 on the fly (e.g. <code>window_size</code>, <code>mask</code>, <code>nb_cpu</code>).</p></dd>
@@ -173,8 +185,10 @@ on the fly (e.g. <code>window_size</code>, <code>mask</code>, <code>nb_cpu</code
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>units</code> with the numeric <code>L3</code> column added, and
-<code>l3_status</code> (<code>"calculated"</code>, <code>"skipped_no_spectral"</code> or <code>"skipped_no_coverage"</code>).</p>
+    <p><code>units</code> with the numeric <code>L3</code> column added,
+<code>l3_status</code> (<code>"calculated"</code>, <code>"calculated_embedding"</code>,
+<code>"skipped_no_spectral"</code> or <code>"skipped_no_coverage"</code>) and
+<code>l3_methode</code> (<code>"biodivmapr"</code>, <code>"embedding"</code> or <code>NA</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

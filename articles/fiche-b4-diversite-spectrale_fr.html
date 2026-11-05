@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.19.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -102,6 +102,7 @@
     <li><a class="dropdown-item" href="../articles/fiche-n1-distance_fr.html">N1 - Distance aux infrastructures</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n2-continuite_fr.html">N2 - Continuite ecologique</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n3-naturalite_fr.html">N3 - Naturalite composite</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-n5-distance-reference_fr.html">N5 - Distance a la reference</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille S - Social &amp; Usages</h6></li>
     <li><a class="dropdown-item" href="../articles/fiche-s1-routes_fr.html">S1 - Distance aux routes</a></li>
@@ -141,7 +142,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-10-19</h4>
+            <h4 data-toc-skip class="date">2026-11-05</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-b4-diversite-spectrale_fr.Rmd" class="external-link"><code>vignettes/fiche-b4-diversite-spectrale_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-b4-diversite-spectrale_fr.Rmd</code></div>
@@ -431,6 +432,100 @@ lui, et non la mesure, qui rend deux projets incomparables.
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section level2">
+<h2 id="annexe-mode-embedding-spec-064">8. Annexe — mode embedding (spec 064)<a class="anchor" aria-label="anchor" href="#annexe-mode-embedding-spec-064"></a>
+</h2>
+<p>Depuis 2026.11.1,
+<code>indicateur_b4_div_spectrale(embedding =)</code> calcule B4 sans
+biodivMapR, à partir des embeddings AlphaEarth
+(<code>alphaearthnemeton::aef_fetch()</code> ou couche
+<code>aef_embedding</code> du projet). Il ne s’active que si
+<code>spectral</code> et <code>reflectance</code> sont absents : la
+méthode par défaut ne change pas.</p>
+<ol style="list-style-type: decimal">
+<li>
+<strong>Dictionnaire fixe</strong> (<code><a href="../reference/aef_clusters.html">aef_clusters()</a></code>, k =
+32), ajusté une fois sur 55 000 pixels de 11 massifs forestiers (8 en
+Bourgogne-Franche-Comté, 3 hors de France), AlphaEarth 2024,
+<code>data-raw/aef_clusters.R</code>.</li>
+<li>
+<strong>Affectation souple</strong> : chaque pixel est réparti entre
+les 32 clusters avec un poids <code>exp(-d² / 0,1)</code> normalisé à 1,
+au lieu d’être rangé dans le seul cluster le plus proche.</li>
+<li>
+<strong>Diversité de fenêtre</strong> (100 m, grille calée sur les
+multiples de 100 m en Lambert-93) = <strong>divergence de
+Jensen-Shannon</strong> des appartenances : entropie de la composition
+moyenne moins entropie moyenne des pixels. Une fenêtre uniforme vaut 0,
+où qu’elle se trouve dans l’espace des embeddings ; une fenêtre de moins
+de 50 pixels valides est ignorée.</li>
+<li>B4 = moyenne des fenêtres sur l’UGF, pondérée par la surface
+couverte.</li>
+</ol>
+<p><strong>Pourquoi ce calcul.</strong> Trois versions ont été mesurées
+sur 16 UGF de 500 m près de Dabo, 2023 contre 2024 (écarts en points sur
+0-100 ; « signal/bruit » = écart-type entre UGF divisé par l’écart
+médian entre années) :</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Version</th>
+<th>Écart médian</th>
+<th>Écart max</th>
+<th>Signal/bruit</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Affectation stricte, Shannon</td>
+<td>4,3</td>
+<td>12,8</td>
+<td>4,9</td>
+</tr>
+<tr class="even">
+<td>Affectation souple (τ = 0,2), Shannon de la composition</td>
+<td>1,5</td>
+<td>3,1</td>
+<td>8,5</td>
+</tr>
+<tr class="odd">
+<td><strong>Affectation souple (τ = 0,1), Jensen-Shannon</strong></td>
+<td><strong>0,7</strong></td>
+<td><strong>2,2</strong></td>
+<td><strong>19,7</strong></td>
+</tr>
+</tbody>
+</table>
+<p>L’affectation stricte fait basculer d’une année à l’autre les pixels
+proches d’une frontière entre clusters. Le Shannon de la composition
+souple, lui, compte comme diverse une fenêtre uniforme dont les pixels
+sont <em>entre</em> plusieurs clusters : la divergence retranche cette
+ambiguïté propre à chaque pixel. τ plus grand que 0,1 écrase le signal
+(à 0,2, les UGF de Dabo tiennent entre 2 et 12).</p>
+<p><strong>Ce qui change par rapport à biodivMapR.</strong> Dictionnaire
+fixe et grille fixe : une même parcelle obtient le même B4 dans tous les
+projets. L’interdit d’usage de la section 4 (pas de comparaison entre
+projets) <strong>tombe pour ce mode seulement</strong>
+(<code>b4_methode = "embedding"</code>).</p>
+<p><strong>Normalisation.</strong> Statut
+<code>calculated_embedding</code> : échelle affine entre le 1er centile
+(0) et le 99e centile (100) des fenêtres du corpus, soit 0 et 0,87
+(<code>data-raw/aef_bornes_b4.R</code>, champ <code>bornes_b4</code> du
+fichier du dictionnaire). Près de Dabo, les UGF vont de 13 à 50 (médiane
+32) : le corpus contient des fenêtres de lisière bien plus contrastées
+qu’une futaie. Les valeurs des deux modes ne se comparent pas entre
+elles.</p>
+<p><strong>Pièges propres au mode.</strong> Le dictionnaire décrit des
+paysages forestiers (fenêtres de 2 km, clairières et routes comprises),
+pas des peuplements purs ; un projet très éloigné du corpus (outre-mer,
+forêt tropicale) se répartira mal entre les clusters. τ et les bornes
+ont été choisis sur un seul site (Dabo) : à revoir sur d’autres
+massifs.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

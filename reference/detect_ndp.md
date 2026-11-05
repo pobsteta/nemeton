@@ -68,6 +68,12 @@ ML-augmentation flags recognised:
 
 - `"texture_ml"` : `attr(data, "texture_source") == "maestro"`
 
+- `"lai_ml"` : `attr(data, "lai_source") == "prosail_s2"` (spec 033)
+
+- `"embedding_ml"` :
+  `attr(data, "embedding_source") %in% c("aef", "maestro", "forpt")`
+  (spec 064)
+
 ## Note
 
 Breaking change in nemeton 0.16.0: `detect_ndp()` used to return a plain

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.19.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,6 +80,7 @@
     <li><a class="dropdown-item" href="articles/fiche-n1-distance_fr.html">N1 - Distance aux infrastructures</a></li>
     <li><a class="dropdown-item" href="articles/fiche-n2-continuite_fr.html">N2 - Continuite ecologique</a></li>
     <li><a class="dropdown-item" href="articles/fiche-n3-naturalite_fr.html">N3 - Naturalite composite</a></li>
+    <li><a class="dropdown-item" href="articles/fiche-n5-distance-reference_fr.html">N5 - Distance a la reference</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille S - Social &amp; Usages</h6></li>
     <li><a class="dropdown-item" href="articles/fiche-s1-routes_fr.html">S1 - Distance aux routes</a></li>
@@ -206,7 +207,50 @@
 </td>
 <td>terrain</td>
 <td>Vérifiée seulement sur deux UGF synthétiques en C51 (P2 = 5,37 m³/ha/an, RSE 2,6 % ; E1 <code>"ifn_ser"</code> → <code>recolte_observee</code>, E1 à 0,6 → <code>ressource_flux</code>). Chargement FORMS-T <strong>vérifié en réel</strong> le 2026-10-02 (Dabo : prévision hybride 6,58 contre 7,56 m³/ha/an en SER). Reste la validation métier dans l’app sur un projet recalculé en mode IFN</td>
-</tr></tbody></table><p><strong>Trois écarts (n° 3, n° 6 résiduel, n° 16), aucun n’appelle plus de correctif dans le cœur.</strong> Les n° 18 (T2) et 19 (<code>r1_status</code>) sont refermés par l’app v0.155.0 le 2026-10-05 ; <code>r1_fallback_reason</code> reste non transporté, à la demande (le rapport ne cite pas le motif exact). Le n° 13 est refermé le 2026-10-02 (cinq relances RECONFORT propres, table ci-dessous). Les n° 15 et 17 sont refermés par l’app v0.152.1 le 2026-10-02 (table ci-dessous). Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte corrigée. Le n° 6 a été lu côté app — l’interdit tient, faute de vue inter-projets où l’enfreindre — et ne reste ouvert que sur la question B02. Les n° 7, 8, 10 et 11 sont refermés le 2026-09-23 (relus sur <code>nemetonshiny@3869ffd8</code>, table ci-dessous). Le n° 12 (FAST, cœur v0.198.0) est refermé le même jour par l’app v0.143.31. Le n° 13 (RECONFORT, cœur v0.199.0) est refermé côté app par la v0.144.2 et ne reste ouvert que sur la relance des cinq runs écrêtés par le défaut iota2 #12. Le n° 14 (houppiers, cœur v0.199.2) est refermé par l’app v0.144.2 (table ci-dessous).</p>
+</tr><tr><td>20</td>
+<td>N5 distance à la référence : colonnes <code>N5</code>, <code>n5_status</code> (5 statuts <code>skipped_*</code> / <code>calculated</code>), couche carte</td>
+<td>cœur <strong>2026.11.1</strong>
+</td>
+<td><code>nemetonshiny</code></td>
+<td>
+<strong>Ouvert avant le code</strong> (2026-11-05), préavis <code>specs/064-alphaearth-n5/brief-nemetonshiny.md</code>. Libellés et sens viendront de <code><a href="reference/indicator_labels.html">indicator_labels()</a></code> : rien à forker</td>
+</tr><tr><td>21</td>
+<td>B4/L3 en mode embedding : <code>b4_methode</code> / <code>l3_methode</code>, statut <code>calculated_embedding</code> à passer à <code>normalize_indicator(statut =)</code> ; l’interdit de l’écart n° 6 ne tombe que pour <code>embedding</code>
+</td>
+<td>cœur <strong>2026.11.1</strong>
+</td>
+<td><code>nemetonshiny</code></td>
+<td>
+<strong>Ouvert avant le code</strong> (2026-11-05), même préavis</td>
+</tr><tr><td>22</td>
+<td>Flag NDP <code>embedding_ml</code> dans <code>detect_ndp()$augmented</code>
+</td>
+<td>cœur <strong>2026.11.1</strong>
+</td>
+<td>
+<code>nemetonshiny</code> (badge NDP)</td>
+<td>
+<strong>Ouvert avant le code</strong> (2026-11-05), même préavis</td>
+</tr><tr><td>23</td>
+<td>Itinéraires admissibles par UGF et raisons d’exclusion (<code>itineraires_admissibles()</code>)</td>
+<td>cœur — <strong>spec 065, non livrée</strong>
+</td>
+<td>
+<code>nemetonshiny</code>, <code>aigora</code>, <code>victor</code>
+</td>
+<td>
+<strong>Ouvert avant le code</strong> (2026-11-05), préavis app + <code>specs/065-itineraires-catalogue/brief-aigora.md</code>, <code>brief-victor.md</code>
+</td>
+</tr><tr><td>24</td>
+<td>Comparaison pondérée (<code>comparer_itineraires()</code>) et origine des poids des profils (spec 065 D-1 : migration des poids dans le cœur ?)</td>
+<td>cœur — <strong>spec 065, non livrée</strong>
+</td>
+<td>
+<code>nemetonshiny</code>, <code>aigora</code>
+</td>
+<td>
+<strong>Ouvert avant le code</strong> (2026-11-05) ; question posée à l’app : les poids des 13 profils existent-ils sous forme numérique ?</td>
+</tr></tbody></table><p><strong>Les n° 20 à 24 sont ouverts le 2026-11-05 avant toute ligne de code</strong> (specs 064 et 065, brief « modèles de fondation »), pour que la leçon des n° 10 et 11 serve : un écart s’inscrit quand on le prévoit, pas quand on le découvre. <strong>Trois écarts (n° 3, n° 6 résiduel, n° 16), aucun n’appelle plus de correctif dans le cœur.</strong> Les n° 18 (T2) et 19 (<code>r1_status</code>) sont refermés par l’app v0.155.0 le 2026-10-05 ; <code>r1_fallback_reason</code> reste non transporté, à la demande (le rapport ne cite pas le motif exact). Le n° 13 est refermé le 2026-10-02 (cinq relances RECONFORT propres, table ci-dessous). Les n° 15 et 17 sont refermés par l’app v0.152.1 le 2026-10-02 (table ci-dessous). Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR et une desserte corrigée. Le n° 6 a été lu côté app — l’interdit tient, faute de vue inter-projets où l’enfreindre — et ne reste ouvert que sur la question B02. Les n° 7, 8, 10 et 11 sont refermés le 2026-09-23 (relus sur <code>nemetonshiny@3869ffd8</code>, table ci-dessous). Le n° 12 (FAST, cœur v0.198.0) est refermé le même jour par l’app v0.143.31. Le n° 13 (RECONFORT, cœur v0.199.0) est refermé côté app par la v0.144.2 et ne reste ouvert que sur la relance des cinq runs écrêtés par le défaut iota2 #12. Le n° 14 (houppiers, cœur v0.199.2) est refermé par l’app v0.144.2 (table ci-dessous).</p>
 <p><strong>Les n° 10 et 11 n’étaient pas dans cette table</strong>, et c’est le constat le plus utile de la release. Le n° 10 a été trouvé en vérifiant le n° 8 ; le n° 11 en dressant le tableau des 41 indicateurs. Or <strong>les deux étaient documentés depuis le 2026-08-27</strong>, en piège n° 1 de leurs fiches respectives (T1 : « <em>120 ans et 300 ans obtiennent le même score de 100</em> » ; E1 : « <em>Le plafond de 0,3 t MS/ha/an sature dès 150 m³/ha environ</em> »). Écrits, datés, jamais remontés ici. Une fiche peut décrire un défaut pendant trois semaines sans que personne ne le voie : <strong>le trou était dans la table, pas dans le code.</strong></p>
 <p><strong>Les quatorze autres sont refermés.</strong> Les n° 1, 2, 4 et 5 ont été vérifiés en lecture seule sur <code>nemetonshiny@5a1afd7c</code> le 2026-08-22 (détail dans l’entrée de journal du 2026-08-22, chantiers A et D) ; le n° 9 sur <code>nemetonshiny@d2442193</code> le 2026-08-31 ; les n° 7, 8, 10 et 11 sur <code>nemetonshiny@3869ffd8</code> le 2026-09-23 (plancher <code>DESCRIPTION:15</code> : <code>nemeton (&gt;= 0.197.0)</code>) ; le n° 12 sur <code>nemetonshiny@69cf0aeb</code> (tag v0.143.31) le 2026-09-23 (plancher <code>nemeton (&gt;= 0.198.0)</code>) ; le n° 14 et la partie app du n° 13 sur <code>nemetonshiny@9b9c4b98</code> (tag v0.144.2) le 2026-09-23 (plancher <code>nemeton (&gt;= 0.199.2)</code>) ; les n° 15 et 17 sur <code>nemetonshiny@546a2d74</code> (tag v0.152.1) le 2026-10-02 (plancher <code>nemeton (&gt;= 0.207.0)</code>) :</p>
 <table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>#</th>
@@ -300,6 +344,53 @@
 <td>
 <code>service_project.R:601-603</code> — <code>.indicator_status_col(cc)</code> puis <code>normalize_indicator(cc, v, statut = st)</code>. <strong>En plus du brief</strong> : <code>service_compute.R:4286-4287</code> retire le statut d’un calcul précédent (sinon un P2 repassé CHM → IFN gardait <code>indice_station_m</code> et ses m³/ha/an étaient notés sur 40)</td>
 </tr></tbody></table><p><strong>Ce que l’écart n° 1 aura coûté et rapporté.</strong> Ouvert le 2026-08-15 comme « non consommé, et désormais bloquant », il l’était : la copie de la table dans <code>app_config.R</code> déclarait 40 indicateurs contre 41, A5 était calculé puis filtré à l’affichage, et une troisième copie des libellés (les clés i18n <code>indicator_&lt;CODE&gt;</code>) avait F1 et F2 inversés — la carte d’érosion sortait « F1 - Fertilité des sols ». Le dé-fork a retiré la <strong>classe</strong> de bug : quatre jours plus tard, la correction du sens de la famille R (v0.181.0) puis le décroisement de F (v0.182.0) ont traversé l’app <strong>sans une ligne de table à toucher</strong>. C’est l’argument à opposer au prochain fork qui se présentera comme un raccourci.</p>
+<hr></div>
+<div class="section level1">
+<h1 id="chantier--modèles-de-fondation-et-itinéraires-sylvicoles-specs-064-065">Chantier — Modèles de fondation et itinéraires sylvicoles (specs 064, 065)<a class="anchor" aria-label="anchor" href="#chantier--mod%C3%A8les-de-fondation-et-itin%C3%A9raires-sylvicoles-specs-064-065"></a></h1>
+<blockquote>
+<p>Brief de Pascal du 2026-11-05 (« Modèles de fondation et raisonnement sylvicole dans l’écosystème Néméton »), copié dans <code>specs/064-alphaearth-n5/brief-source-modeles-de-fondation.md</code>. Six chantiers (A à E, plus l’agent <code>sylviculteur</code>) ; ce chantier n’ouvre que les deux premières specs demandées par le § 5 du brief.</p>
+</blockquote>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>Spec</th>
+<th>Objet</th>
+<th>État</th>
+</tr></thead><tbody><tr><td>064</td>
+<td>Chantier A : <code>alphaearthnemeton</code>, <code><a href="reference/embedding_summary.html">embedding_summary()</a></code>, <code><a href="reference/distance_reference.html">distance_reference()</a></code>, <strong>N5</strong>, B4/L3 <code>embedding =</code>, régressions NDP 0</td>
+<td>✅ spec validée le 2026-11-05 (D-2 : GPL-3) ; 🟨 code : N5 + fonctions génériques + flag NDP → <strong>2026.11.1</strong> ; reste <code>alphaearthnemeton</code>, B4/L3, <code>embedding_regress()</code>, vignette</td>
+</tr><tr><td>065</td>
+<td>Étape 4 : catalogue d’itinéraires, <code>itineraires_admissibles()</code>, <code>comparer_itineraires()</code> sans FINN</td>
+<td>✅ spec validée le 2026-11-05 (7 décisions) ; code ⬜ ; catalogue à sourcer par Pascal (D-4)</td>
+</tr></tbody></table><p><strong>Prochaine étape</strong> : branche <code>main</code> du dépôt <code>alphaearthnemeton</code> (pour ouvrir la PR de <code>aef_fetch()</code>, déjà poussé) ; puis, avec de vrais embeddings, validation de N5 sur Dabo et ajustement du dictionnaire de clusters de B4/L3 (D-6). Spec 065 : premier remplissage du catalogue par Pascal.</p>
+<p><strong>Journal</strong> — <em>2026-11-05</em> : specs 064 et 065 rédigées, écarts n° 20 à 24 ouverts, préavis émis vers <code>nemetonshiny</code>, <code>maestronemeton</code>, <code>aigora</code> et <code>victor</code> (dans les dossiers des specs ; l’espace <code>/home/pascal/dev/briefs/</code> n’est pas accessible depuis cette session). Points du brief qui ne tiennent pas tels quels, relevés en lisant le code :</p>
+<ol style="list-style-type: decimal"><li>
+<strong><code>rgee</code> n’est pas « R pur »</strong> : il passe par Python (<code>earthengine-api</code>) et un compte GEE. Les COG publics d’AlphaEarth, s’ils sont confirmés, rendent le chantier A réellement sans Python (064 D-1).</li>
+<li>
+<strong>N5 en rang percentile sur le projet</strong> reproduirait le défaut de l’écart n° 6 (valeur dépendante du découpage). Proposé : quantile de la distribution de la référence (064 D-4).</li>
+<li>
+<strong>« Comparable par construction »</strong> vaut pour l’espace AEF, pas pour un k-means par projet : il faut un dictionnaire de clusters fixe et versionné (064 D-6).</li>
+<li>
+<strong>Les 13 profils experts vivent dans <code>nemetonshiny</code></strong> : le cœur ne peut pas les lire pour <code>comparer_itineraires()</code> (065 D-1).</li>
+<li>
+<strong><code>yaml</code> n’est pas une dépendance du cœur</strong> ; les catalogues sont en JSON (065 D-2). <code>ranger</code> non plus (064 D-8).</li>
+<li>
+<strong><code>INDICATOR_SENSE_VERSION</code> vit dans l’app</strong> (<code>R/migrate.R</code>), pas dans le cœur ; N5 étant un code nouveau, il n’en a pas besoin.</li>
+<li>
+<strong>N6</strong> est cité dans les principes du brief mais défini nulle part (064 D-10).</li>
+<li>
+<strong>B1 rend un score, pas un type de protection</strong> : le filtre d’admissibilité relira la couche d’aires protégées avec les codes de B1.</li>
+<li>Avec N5 conditionnel, le décompte passe de <strong>41 à 42</strong> : à propager au moment du code.</li>
+</ol><p><strong>Journal</strong> — <em>2026-11-05</em> : Pascal valide toutes les propositions des décisions ouvertes. Seule la D-2 de la spec 064 (licence de <code>alphaearthnemeton</code>) reste ouverte, faute de proposition. La D-1 est vérifiée le même jour : les COG AlphaEarth sont servis sur Source Cooperative (<code>source.coop/tge-labs/aef/v1/annual/</code>, index <code>aef_index.gpkg</code>) et sur GCS, sous CC-BY 4.0. Le chantier A est donc sans Python. N6 est retiré de la liste des codes (D-10).</p>
+<p><strong>Journal</strong> — <em>2026-11-05</em> (<strong>2026.11.1</strong>) : premier incrément du chantier A, sur demande de Pascal (« GPL-3, et oui, démarre le chantier A »). D-2 tranchée : <code>alphaearthnemeton</code> sera en GPL-3. Livré dans le cœur :</p>
+<ul><li>
+<code><a href="reference/embedding_summary.html">embedding_summary()</a></code> et <code><a href="reference/distance_reference.html">distance_reference()</a></code> (<code>R/embeddings.R</code>), génériques, Ledoit-Wolf implémenté en base R (aucune dépendance ajoutée) ;</li>
+<li>
+<strong>N5</strong> (<code>R/indicateur_n5_distance_reference.R</code>), conditionnel, enregistré dans la famille N, normalisation native 0-100, calculé après N1 par <code><a href="reference/nemeton_compute.html">nemeton_compute()</a></code> (il lit N1 pour sa référence par défaut) ; fiche avec diagramme ; 42 indicateurs, 11 conditionnels ;</li>
+<li>flag <code>embedding_ml</code> et source <code>aef_embedding</code> (<code>FR.json</code>, NDP 0) ;</li>
+<li>
+<code>massif_demo_units</code> (<code>.rda</code> et <code>.gpkg</code>) : <code>N5</code>, <code>n5_status</code>, <code>N5_norm</code> à <code>NA</code>, exactement ce que <code>data-raw/massif_demo.R</code> produirait (aucun embedding dans la démo). Patch direct plutôt que régénération complète, faute des dépendances de <code>data-raw</code> dans la session.</li>
+</ul><p>Écart à la spec : les statuts suivent la convention des conditionnels du paquet (<code>skipped_no_embedding</code>… <code>calculated</code>) au lieu de <code>no_embedding</code>… <code>ok</code>, et un cinquième statut <code>skipped_no_coverage</code> couvre l’UGF hors de l’embedding. Spec et préavis app corrigés. Écarts n° 20 et 22 : livrés par le cœur, en attente côté app. Tests : 71 assertions nouvelles (<code>test-embeddings.R</code>) ; suites touchées vertes, sauf <code>r3_secheresse</code> dans <code>test-indicators-core.R</code>, en erreur aussi sur <code>main</code> dans cette session (paquet optionnel absent). Les pages d’aide ont été écrites à la main pour les fichiers modifiés : roxygen 8.0.0 n’était pas disponible (7.3.1 réécrit toutes les pages).</p>
+<p><strong>Journal</strong> — <em>2026-11-05</em> : <strong>B4 en affectation souple</strong>, à la demande de Pascal. L’affectation stricte laissait B4 instable à l’UGF (écart médian 4,3 points, max 12,8 entre 2023 et 2024 près de Dabo). Trois essais : (1) Shannon de la composition souple — mieux (signal/bruit 8,5 à τ = 0,2) mais une fenêtre uniforme « entre » plusieurs clusters y paraît diverse (test qui l’a révélé : cluster unique plus divers qu’un mélange de deux) ; (2) <strong>divergence de Jensen-Shannon</strong> (entropie de la composition moyenne moins entropie moyenne des pixels) — une fenêtre uniforme vaut 0 ; (3) balayage de τ : 0,1 retenu (écart médian 0,7, max 2,2, signal/bruit 19,7 ; au-delà le signal s’écrase). Bornes recalculées sur le corpus (<code>data-raw/aef_bornes_b4.R</code>) : 0 et 0,87. Le critère ± 2 de la spec tient désormais à 0,2 point près sur le pire UGF. τ choisi sur un seul site.</p>
+<p><strong>Journal</strong> — <em>2026-11-05</em> : <strong>B4/L3 en mode embedding</strong> (écart n° 21, D-6). Dictionnaire fixe <code><a href="reference/aef_clusters.html">aef_clusters()</a></code> v1 : k-means (MacQueen, k = 32) sur 55 000 pixels AlphaEarth 2024 de 11 massifs (8 BFC, Forêt-Noire, Białowieża, forêt bavaroise), inertie intra 22 % ; script <code>data-raw/aef_clusters.R</code>. Fenêtres de 100 m sur grille calée sur les multiples de 100 m : une même parcelle a la même valeur dans tous les projets (testé). Bornes calées sur le corpus : B4 = 5 clusters effectifs/ha (la borne biodivMapR log(10) aurait tassé l’UGF type vers 23/100), L3 = 0,5. Stabilité 2023-2024 près de Dabo : moyenne du projet à 0,4 / 0,3 point ; par UGF, B4 écart médian 4,2 (max 12), L3 médian 1,2 — le ± 2 de la spec ne tient pas UGF par UGF pour B4 (étiquetage tranché). Fiches B4 et L3 : annexe « mode embedding ».</p>
+<p><strong>Journal</strong> — <em>2026-11-05</em> : <code>aef_fetch()</code> écrit dans <code>alphaearthnemeton</code> (dépôt créé par Pascal, GPL-3). R pur : index GeoPackage distant interrogé par emprise, fenêtres des COG lues par <code>/vsicurl/</code> sur la copie Google (accès anonyme), dé-quantification, reprojection au plus proche voisin sur une grille de 10 m en Lambert-93, mosaïque, cache COG adressé par contenu. 36 tests sur tuiles simulées + 1 test réseau optionnel, <code>R CMD check</code> OK. Chaîne complète avec N5 vérifiée près de Dabo (2 × 2 km, 52 s ; 4 s en cache). Le dépôt n’avait aucune branche et un hook du plugin <code>imperatrice</code> interdit tout commit sur <code>main</code> : le code est sur <code>claude/pensive-curie-yx018k</code>, devenue branche par défaut ; la PR attend une <code>main</code>.</p>
 <hr></div>
 <div class="section level1">
 <h1 id="décision--versionnage-calendaire-aaaamn-spec-057--8">Décision — versionnage calendaire <code>AAAA.M.N</code> (spec 057 § 8)<a class="anchor" aria-label="anchor" href="#d%C3%A9cision--versionnage-calendaire-aaaamn-spec-057--8"></a></h1>

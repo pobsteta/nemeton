@@ -15,7 +15,7 @@ NA and the sf is returned unchanged."><meta property="og:image" content="https:/
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.19.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -88,6 +88,7 @@ NA and the sf is returned unchanged."><meta property="og:image" content="https:/
     <li><a class="dropdown-item" href="../articles/fiche-n1-distance_fr.html">N1 - Distance aux infrastructures</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n2-continuite_fr.html">N2 - Continuite ecologique</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n3-naturalite_fr.html">N3 - Naturalite composite</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-n5-distance-reference_fr.html">N5 - Distance a la reference</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille S - Social &amp; Usages</h6></li>
     <li><a class="dropdown-item" href="../articles/fiche-s1-routes_fr.html">S1 - Distance aux routes</a></li>
@@ -133,6 +134,8 @@ NDP 0 (Sentinel-2). Strictly backward compatible: with neither
 <span>  <span class="va">units</span>,</span>
 <span>  spectral <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  reflectance <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  embedding <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  layers <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -158,6 +161,19 @@ compute spectral diversity on the fly when <code>spectral</code> is
 
 
 
+<dt id="arg-embedding">embedding<a class="anchor" aria-label="anchor" href="#arg-embedding"></a></dt>
+<dd><p>Optional foundation-model embedding (SpatRaster, one band
+per dimension, e.g. the 64 bands of <code>alphaearthnemeton::aef_fetch()</code>, or
+a list of them named by year: the latest is used). Used only when
+<code>spectral</code> and <code>reflectance</code> are both <code>NULL</code>: embedding
+mode, see Details.</p></dd>
+
+
+<dt id="arg-layers">layers<a class="anchor" aria-label="anchor" href="#arg-layers"></a></dt>
+<dd><p>Optional nemeton_layers; its <code>aef_embedding</code> layer is
+used as <code>embedding</code> when none is given.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Passed to <code><a href="compute_spectral_diversity.html">compute_spectral_diversity</a></code> when computing
 on the fly (e.g. <code>window_size</code>, <code>mask</code>, <code>nb_cpu</code>).</p></dd>
@@ -165,8 +181,29 @@ on the fly (e.g. <code>window_size</code>, <code>mask</code>, <code>nb_cpu</code
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p><code>units</code> with the numeric <code>B4</code> column added, and
-<code>b4_status</code> (<code>"calculated"</code>, <code>"skipped_no_spectral"</code> or <code>"skipped_no_coverage"</code>).</p>
+    <p><code>units</code> with the numeric <code>B4</code> column added,
+<code>b4_status</code> (<code>"calculated"</code>, <code>"calculated_embedding"</code>,
+<code>"skipped_no_spectral"</code> or <code>"skipped_no_coverage"</code>) and
+<code>b4_methode</code> (<code>"biodivmapr"</code>, <code>"embedding"</code>, or
+<code>NA</code> without source).</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p><strong>Embedding mode</strong> (spec 064): every pixel is spread over the clusters of
+a <strong>fixed</strong> dictionary (<code><a href="aef_clusters.html">aef_clusters()</a></code>, k = 32, fitted once on a forest
+corpus) with weights <code>exp(-d^2 / 0.1)</code> normalised to 1 (soft assignment:
+a hard nearest-centroid label made pixels near a cluster boundary flip
+between years). In 100 m windows of a grid snapped to multiples of 100 m,
+the window diversity is the Jensen-Shannon divergence of the pixels'
+memberships (entropy of the mean composition minus the mean entropy of
+the pixels: 0 for a uniform window), and B4 is its coverage-weighted mean
+over the unit. Fixed dictionary and fixed
+grid make B4 comparable between projects, which the biodivMapR mode is
+not (its k-means is fitted on each project). The two modes do not give
+comparable values: <code>b4_methode</code> says which one produced the value, and
+the status <code>"calculated_embedding"</code> gives the embedding mode its own
+normalisation: affine between the 1st (0) and 99th (100) percentiles of
+the window entropy over the dictionary corpus.</p>
     </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>

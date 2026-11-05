@@ -617,7 +617,7 @@ ggplot(demo_norm |> st_drop_geometry(), aes(x = ecosystem_index)) +
 ``` r
 
 sessionInfo()
-#> R version 4.6.1 (2026-06-24)
+#> R version 4.6.2 (2026-10-29)
 #> Platform: x86_64-pc-linux-gnu
 #> Running under: Ubuntu 24.04.5 LTS
 #> 
@@ -638,24 +638,24 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] tidyr_1.3.2             sf_1.1-3                dplyr_1.2.1            
-#> [4] ggplot2_4.0.3           nemeton_2026.10.19.9000
+#> [1] tidyr_1.3.2       sf_1.1-3          dplyr_1.2.1       ggplot2_4.0.3    
+#> [5] nemeton_2026.11.1
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] utf8_1.2.6         sass_0.4.10        generics_0.1.4     class_7.3-23      
-#>  [5] KernSmooth_2.23-26 lattice_0.22-9     digest_0.6.39      magrittr_2.0.5    
-#>  [9] evaluate_1.0.5     grid_4.6.1         RColorBrewer_1.1-3 fastmap_1.2.0     
-#> [13] Matrix_1.7-5       jsonlite_2.0.0     e1071_1.7-17       DBI_1.3.0         
+#>  [1] utf8_1.2.6         sass_0.4.10        generics_0.1.4     class_7.3-24      
+#>  [5] KernSmooth_2.23-27 lattice_0.23-1     digest_0.6.39      magrittr_2.0.5    
+#>  [9] evaluate_1.0.5     grid_4.6.2         RColorBrewer_1.1-3 fastmap_1.2.0     
+#> [13] Matrix_1.7-6       jsonlite_2.0.0     e1071_1.7-17       DBI_1.3.0         
 #> [17] mgcv_1.9-4         purrr_1.2.2        viridisLite_0.4.3  scales_1.4.0      
 #> [21] codetools_0.2-20   textshaping_1.0.5  jquerylib_0.1.4    cli_3.6.6         
-#> [25] rlang_1.3.0        units_1.0-1        splines_4.6.1      withr_3.0.3       
-#> [29] cachem_1.1.0       yaml_2.3.12        otel_0.2.0         tools_4.6.1       
+#> [25] rlang_1.3.0        units_1.0-1        splines_4.6.2      withr_3.0.3       
+#> [29] cachem_1.1.0       yaml_2.3.12        otel_0.2.0         tools_4.6.2       
 #> [33] vctrs_0.7.3        R6_2.6.1           proxy_0.4-29       lifecycle_1.0.5   
 #> [37] classInt_0.4-11    fs_2.1.0           htmlwidgets_1.6.4  ragg_1.5.2        
 #> [41] pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.1      terra_1.9-50      
 #> [45] bslib_0.12.0       pillar_1.11.1      gtable_0.3.6       glue_1.8.1        
-#> [49] Rcpp_1.1.2         systemfonts_1.3.2  xfun_0.61          tibble_3.3.1      
-#> [53] tidyselect_1.2.1   knitr_1.52         farver_2.1.2       nlme_3.1-169      
-#> [57] htmltools_0.5.9    rmarkdown_2.32     labeling_0.4.3     compiler_4.6.1    
+#> [49] Rcpp_1.1.2         systemfonts_1.3.2  xfun_0.62          tibble_3.3.1      
+#> [53] tidyselect_1.2.1   knitr_1.52         farver_2.1.2       nlme_3.1-171      
+#> [57] htmltools_0.5.9    rmarkdown_2.32     labeling_0.4.3     compiler_4.6.2    
 #> [61] S7_0.2.2
 ```

@@ -26,6 +26,7 @@ articles:
   fiche-n1-distance_fr: fiche-n1-distance_fr.html
   fiche-n2-continuite_fr: fiche-n2-continuite_fr.html
   fiche-n3-naturalite_fr: fiche-n3-naturalite_fr.html
+  fiche-n5-distance-reference_fr: fiche-n5-distance-reference_fr.html
   fiche-p1-volume_fr: fiche-p1-volume_fr.html
   fiche-p2-station_fr: fiche-p2-station_fr.html
   fiche-p3-qualite-bois_fr: fiche-p3-qualite-bois_fr.html
@@ -54,7 +55,7 @@ articles:
   tarifs-schaeffer-ser_fr: tarifs-schaeffer-ser_fr.html
   temporal-analysis_fr: temporal-analysis_fr.html
   tutorial-guide: tutorial-guide.html
-last_built: 2026-10-19T15:28Z
+last_built: 2026-11-05T17:00Z
 urls:
   reference: https://pobsteta.github.io/nemeton/reference
   article: https://pobsteta.github.io/nemeton/articles

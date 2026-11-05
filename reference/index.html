@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.19.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,6 +80,7 @@
     <li><a class="dropdown-item" href="../articles/fiche-n1-distance_fr.html">N1 - Distance aux infrastructures</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n2-continuite_fr.html">N2 - Continuite ecologique</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n3-naturalite_fr.html">N3 - Naturalite composite</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-n5-distance-reference_fr.html">N5 - Distance a la reference</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille S - Social &amp; Usages</h6></li>
     <li><a class="dropdown-item" href="../articles/fiche-s1-routes_fr.html">S1 - Distance aux routes</a></li>
@@ -2139,6 +2140,50 @@
 
         </dt>
         <dd>Export the Schaeffer tariff tables for Marculus</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="modeles-de-fondation-et-n-spec-">Modeles de fondation et N5 (spec 064)<a class="anchor" aria-label="anchor" href="#modeles-de-fondation-et-n-spec-"></a></h3>
+      <div class="section-desc"><p>Embeddings de modeles de fondation (AlphaEarth, fournis par le paquet amont alphaearthnemeton) : resume par UGF, distance a une reference regularisee Ledoit-Wolf, et indicateur conditionnel N5</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="embeddings.html">embeddings</a></code>
+
+        </dt>
+        <dd>Foundation-model embeddings: generic per-unit tools (spec 064)</dd>
+
+        <dt>
+
+          <code><a href="embedding_summary.html">embedding_summary()</a></code>
+
+        </dt>
+        <dd>Summarise a pixel-embedding raster per spatial unit</dd>
+
+        <dt>
+
+          <code><a href="distance_reference.html">distance_reference()</a></code>
+
+        </dt>
+        <dd>Distance of embeddings to a reference set</dd>
+
+        <dt>
+
+          <code><a href="indicateur_n5_distance_reference.html">indicateur_n5_distance_reference()</a></code>
+
+        </dt>
+        <dd>N5: Distance to a low-disturbance reference (foundation-model embedding)</dd>
+
+        <dt>
+
+          <code><a href="aef_clusters.html">aef_clusters()</a></code>
+
+        </dt>
+        <dd>Fixed cluster dictionary of AlphaEarth embeddings (B4/L3 embedding mode)</dd>
       </dl></div><div class="section level2">
 
       <h3 id="corpus-de-connaissances-et-rag">Corpus de connaissances et RAG<a class="anchor" aria-label="anchor" href="#corpus-de-connaissances-et-rag"></a></h3>

@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.19.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -107,6 +107,7 @@
     <li><a class="dropdown-item" href="articles/fiche-n1-distance_fr.html">N1 - Distance aux infrastructures</a></li>
     <li><a class="dropdown-item" href="articles/fiche-n2-continuite_fr.html">N2 - Continuite ecologique</a></li>
     <li><a class="dropdown-item" href="articles/fiche-n3-naturalite_fr.html">N3 - Naturalite composite</a></li>
+    <li><a class="dropdown-item" href="articles/fiche-n5-distance-reference_fr.html">N5 - Distance a la reference</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille S - Social &amp; Usages</h6></li>
     <li><a class="dropdown-item" href="articles/fiche-s1-routes_fr.html">S1 - Distance aux routes</a></li>
@@ -151,7 +152,7 @@
 <div class="section level2">
 <h2 id="architecture-adr-009">Architecture (ADR-009)<a class="anchor" aria-label="anchor" href="#architecture-adr-009"></a>
 </h2>
-<pre><code>nemeton (ce repo)       -&gt; Package coeur R (GPL-3). 41 indicateurs, 12 familles, NDP, radar.
+<pre><code>nemeton (ce repo)       -&gt; Package coeur R (GPL-3). 42 indicateurs, 12 familles, NDP, radar.
 nemetonshiny            -&gt; Application Shiny (EUPL v1.2). Interface web interactive.
 tree_sat_nemeton        -&gt; Classification d'essences Sentinel-1/2. NDP 0. MIT.
 maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.</code></pre>
@@ -230,7 +231,7 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <tr>
 <td><strong>N</strong></td>
 <td>Naturalite</td>
-<td>indicateur_n1_distance, n2_continuite, n3_naturalite</td>
+<td>indicateur_n1_distance, n2_continuite, n3_naturalite, n5_distance_reference</td>
 </tr>
 </tbody>
 </table>
@@ -321,7 +322,7 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <p>L’application permet de :</p>
 <ul>
 <li>Rechercher et selectionner des parcelles cadastrales par commune</li>
-<li>Calculer automatiquement les 41 indicateurs (12 familles)</li>
+<li>Calculer automatiquement les 42 indicateurs (12 familles)</li>
 <li>Visualiser les resultats (radar avec NDP, cartes, tableaux)</li>
 <li>Generer des perspectives IA par profil d’acteur (18 profils)</li>
 <li>Exporter en PDF ou GeoPackage</li>

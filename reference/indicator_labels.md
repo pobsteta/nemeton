@@ -190,6 +190,7 @@ ind[!is.na(ind$doc_url), c("code", "doc_url", "doc_lang")]
 #> 39   N1
 #> 40   N2
 #> 41   N3
+#> 42   N5
 #>                                                                                 doc_url
 #> 1                 https://pobsteta.github.io/nemeton/articles/fiche-c1-biomasse_fr.html
 #> 2                     https://pobsteta.github.io/nemeton/articles/fiche-c2-ndvi_fr.html
@@ -232,6 +233,7 @@ ind[!is.na(ind$doc_url), c("code", "doc_url", "doc_lang")]
 #> 39                https://pobsteta.github.io/nemeton/articles/fiche-n1-distance_fr.html
 #> 40              https://pobsteta.github.io/nemeton/articles/fiche-n2-continuite_fr.html
 #> 41              https://pobsteta.github.io/nemeton/articles/fiche-n3-naturalite_fr.html
+#> 42      https://pobsteta.github.io/nemeton/articles/fiche-n5-distance-reference_fr.html
 #>    doc_lang
 #> 1        fr
 #> 2        fr
@@ -274,6 +276,7 @@ ind[!is.na(ind$doc_url), c("code", "doc_url", "doc_lang")]
 #> 39       fr
 #> 40       fr
 #> 41       fr
+#> 42       fr
 
 # A fact sheet served in a language other than the one requested
 en <- indicator_labels(lang = "en")
@@ -320,4 +323,5 @@ en[!is.na(en$doc_lang) & en$doc_lang != "en", c("code", "doc_lang")]
 #> 39   N1       fr
 #> 40   N2       fr
 #> 41   N3       fr
+#> 42   N5       fr
 ```

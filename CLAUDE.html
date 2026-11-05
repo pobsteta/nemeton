@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.19.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,6 +80,7 @@
     <li><a class="dropdown-item" href="articles/fiche-n1-distance_fr.html">N1 - Distance aux infrastructures</a></li>
     <li><a class="dropdown-item" href="articles/fiche-n2-continuite_fr.html">N2 - Continuite ecologique</a></li>
     <li><a class="dropdown-item" href="articles/fiche-n3-naturalite_fr.html">N3 - Naturalite composite</a></li>
+    <li><a class="dropdown-item" href="articles/fiche-n5-distance-reference_fr.html">N5 - Distance a la reference</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille S - Social &amp; Usages</h6></li>
     <li><a class="dropdown-item" href="articles/fiche-s1-routes_fr.html">S1 - Distance aux routes</a></li>
@@ -115,7 +116,7 @@
 
 <div class="section level2">
 <h2 id="identité-du-projet">Identité du projet<a class="anchor" aria-label="anchor" href="#identit%C3%A9-du-projet"></a></h2>
-<p>Néméton est une plateforme d’analyse forestière systémique développée par Pascal Obstetar à titre personnel. Elle calcule <strong>41 indicateurs</strong> — 31 de base et 10 conditionnels, calculés seulement quand leur source est fournie (B4, L3, W4, A3, A4, A5, R5, R6, R7, T3 ; <code>list_indicators(conditionnels = FALSE)</code> rend les 31) — organisés en <strong>12 familles</strong>, les affiche sur un radar, et génère des perspectives IA adaptées à 15 profils d’acteurs de la filière forêt-bois. Le nom vient du gaulois <em>nemeton</em> (sanctuaire en forêt).</p>
+<p>Néméton est une plateforme d’analyse forestière systémique développée par Pascal Obstetar à titre personnel. Elle calcule <strong>42 indicateurs</strong> — 31 de base et 11 conditionnels, calculés seulement quand leur source est fournie (B4, L3, W4, A3, A4, A5, R5, R6, R7, T3, N5 ; <code>list_indicators(conditionnels = FALSE)</code> rend les 31) — organisés en <strong>12 familles</strong>, les affiche sur un radar, et génère des perspectives IA adaptées à 15 profils d’acteurs de la filière forêt-bois. Le nom vient du gaulois <em>nemeton</em> (sanctuaire en forêt).</p>
 <p>Le package R <code>nemeton</code> (v0.15.1.9000) est le <strong>cœur métier</strong> : indicateurs, familles, NDP, normalisation, visualisation. Depuis v0.15.0 (ADR-009), l’application Shiny/golem a été extraite dans un package séparé <code>nemetonshiny</code> (repo distinct). Ce repo-ci ne contient donc PLUS de modules Shiny, profils experts ni fichiers i18n — ils vivent dans <code>nemetonshiny</code>.</p>
 </div>
 <div class="section level2">
@@ -136,7 +137,7 @@
 </div>
 <div class="section level2">
 <h2 id="architecture-packages-adr-009">Architecture (packages, ADR-009)<a class="anchor" aria-label="anchor" href="#architecture-packages-adr-009"></a></h2>
-<pre><code>nemeton (ce repo)     → Package cœur. 41 indicateurs, 12 familles, NDP, normalisation, viz.
+<pre><code>nemeton (ce repo)     → Package cœur. 42 indicateurs, 12 familles, NDP, normalisation, viz.
 nemetonshiny          → App Shiny/golem : UI, modules, i18n, profils experts, LLM, OAuth2.
 tree_sat_nemeton      → Classification d'essences par Sentinel-1/2. NDP 0.
 maestro_nemeton       → Classification d'essences par MAESTRO ViT (ortho+MNT). NDP 1+.
@@ -184,7 +185,7 @@ platform_nemeton      → Documentation plateforme, ADR, glossaire.</code></pre>
 <td>E1 (bois-énergie), E2 (évitement carbone)</td>
 </tr><tr><td>N</td>
 <td>Naturalité</td>
-<td>N1 (distance infra), N2 (continuité), N3 (composite)</td>
+<td>N1 (distance infra), N2 (continuité), N3 (composite), N5 (distance à la référence, embedding de modèle de fondation — spec 064)</td>
 </tr></tbody></table></div>
 <div class="section level2">
 <h2 id="système-ndp-niveau-de-précision--adr-011">Système NDP (Niveau De Précision) — ADR-011<a class="anchor" aria-label="anchor" href="#syst%C3%A8me-ndp-niveau-de-pr%C3%A9cision--adr-011"></a></h2>
@@ -291,7 +292,7 @@ platform_nemeton      → Documentation plateforme, ADR, glossaire.</code></pre>
 <ol style="list-style-type: decimal"><li>
 <strong>Inventaire</strong> (contexte_inventaire) : collecte et validation des données terrain et satellite</li>
 <li>
-<strong>Analyse systémique</strong> (contexte_analyse) : calcul des 41 indicateurs, 12 familles, radar, Fibonacci</li>
+<strong>Analyse systémique</strong> (contexte_analyse) : calcul des 42 indicateurs, 12 familles, radar, Fibonacci</li>
 <li>
 <strong>Cartographie</strong> (contexte_cartographie) : classification d’essences, cartes, LiDAR, satellite</li>
 <li>
@@ -460,10 +461,12 @@ R/site_index.R                → compute_site_index() + courbes Duplat &amp; Tr
 R/indicators-microclimate.R   → A3/A4/W4/R6 sous couvert + microclimate_run (spec 027)
 R/indice_priorite_regen.R     → indice_priorite_regen() croisement exposition × stress hydrique + tolérances essence + regen_species_choices() (sélecteur essence cible) (spec 027 v2.1 L3, §10.1)
 R/regen_engines.R             → scaffolds moteurs reGénération : regen_bilan_hydrique (biljouR), regen_sensibilite (microclimf), pai_depuis_nuage (lasR) — chemin precomputed pur (spec 027 v2.1 L1/L2)
+R/embeddings.R                → embedding_summary(), distance_reference() : embeddings de modèles de fondation, génériques (spec 064)
+R/indicateur_n5_distance_reference.R → N5, distance à une référence peu perturbée (spec 064)
 R/climat_cercle.R             → climat_ete_series() / climat_tendance_bivariee() / climat_nuages_annuels() : contexte climatique estival sur un cercle autour du projet, E-OBS / CHELSA / SAFRAN (spec 063)
 R/meteoland_grid.R            → meteoland_daily_grid() + build_safran_stations() : Tmin journalière SAFRAN → meteoland pour le gel R7
 R/family-system.R             → Agrégation des indicateurs en familles
-R/indicators-*.R              → Calcul des 41 indicateurs (air, biodiversity, energy,
+R/indicators-*.R              → Calcul des 42 indicateurs (air, biodiversity, energy,
                                  naturalness, productive, risk, social, temporal, core, families)
 R/normalization.R             → Normalisation des indicateurs en indices [0..1]
 R/indicator-config.R          → Configuration des indicateurs (sens, bornes, unité)
@@ -472,7 +475,7 @@ R/datasources.R               → Déclaration des sources de données par NDP
 R/species-config.R            → Configuration des essences (maestro, tree_sat)
 R/temporal.R                  → Analyse temporelle (T1, T2)
 R/visualization.R             → Helpers de visualisation (radar, etc.)
-R/data-massif_demo.R + data/  → Fixture massif_demo_units (20 unités, 41 indicateurs calculés par le paquet, data-raw/massif_demo.R)
+R/data-massif_demo.R + data/  → Fixture massif_demo_units (20 unités, 42 indicateurs calculés par le paquet, data-raw/massif_demo.R)
 R/i18n.R                      → Squelette i18n côté cœur (messages R uniquement)
 inst/tutorials/               → Tutoriels pédagogiques (acquisition, LiDAR, ABA, etc.)
 inst/extdata/aba.model/       → Modèle ABA (Area-Based Approach) + données LiDAR d'exemple

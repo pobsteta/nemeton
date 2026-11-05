@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.19.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -80,6 +80,7 @@
     <li><a class="dropdown-item" href="../articles/fiche-n1-distance_fr.html">N1 - Distance aux infrastructures</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n2-continuite_fr.html">N2 - Continuite ecologique</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n3-naturalite_fr.html">N3 - Naturalite composite</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-n5-distance-reference_fr.html">N5 - Distance a la reference</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille S - Social &amp; Usages</h6></li>
     <li><a class="dropdown-item" href="../articles/fiche-s1-routes_fr.html">S1 - Distance aux routes</a></li>
@@ -110,6 +111,26 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.1" id="nemeton-2026111-2026-11-05">nemeton 2026.11.1 (2026-11-05)<a class="anchor" aria-label="anchor" href="#nemeton-2026111-2026-11-05"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-1">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-1"></a></h3>
+<ul><li>
+<strong>N5 — distance à la référence</strong>, premier indicateur nourri par un modèle de fondation (spec 064, chantier A du brief « Modèles de fondation et raisonnement sylvicole » du 2026-11-05). Famille N, <strong>conditionnel</strong> : <code><a href="../reference/indicateur_n5_distance_reference.html">indicateur_n5_distance_reference()</a></code> lit un embedding par pixel (AlphaEarth Foundations, 64 dimensions, 10 m, annuel, rapatrié par le futur paquet amont <code>alphaearthnemeton</code>) et note chaque UGF selon sa proximité à des forêts de référence peu perturbées. Référence par défaut : UGF couvertes à 50 % par le palier le plus ancien de <code>foret_ancienne</code> <strong>et</strong> <code>N1 ≥ 80</code> ; sinon <code>reference =</code> (réserves, îlots de sénescence). Distance de Mahalanobis régularisée Ledoit-Wolf ; score <code>100 × (1 − F_ref(d))</code> sur la distribution <em>leave-one-out</em> de la référence, pour que N5 ne dépende pas du découpage du projet (le rang dans le projet reste en option, <code>score = "projet"</code>). Statut <code>n5_status</code> : <code>calculated</code>, <code>skipped_no_embedding</code>, <code>skipped_no_reference</code>, <code>skipped_reference_too_small</code> (moins de 15 unités), <code>skipped_no_coverage</code>. Colonnes annexes <code>n5_source</code>, <code>n5_reference</code>, <code>n5_annee</code>, <code>n5_distance</code>. Fiche <code>fiche-n5-distance-reference_fr</code> avec ses cinq pièges.</li>
+<li>
+<strong>Fonctions génériques</strong>, indépendantes du modèle source (AlphaEarth aujourd’hui, MAESTRO et ForPT demain) : <code><a href="../reference/embedding_summary.html">embedding_summary()</a></code> (moyenne et écart-type pondérés par UGF) et <code><a href="../reference/distance_reference.html">distance_reference()</a></code> (Mahalanobis Ledoit-Wolf, distances <em>leave-one-out</em> de la référence). Toutes <code>experimental</code>.</li>
+<li>
+<strong>B4 et L3 en mode embedding</strong> (<code>embedding =</code>, ou couche <code>aef_embedding</code> via <code>layers =</code>), quand ni <code>spectral</code> ni <code>reflectance</code> ne sont fournis : les pixels sont répartis (affectation souple, <code>exp(-d² / 0,1)</code>) entre les clusters d’un <strong>dictionnaire fixe de 32 clusters</strong> (<code><a href="../reference/aef_clusters.html">aef_clusters()</a></code>, ajusté une fois sur 11 massifs forestiers, AlphaEarth 2024, <code>data-raw/aef_clusters.R</code>), dans des fenêtres de 100 m d’une grille calée sur les multiples de 100 m. B4 = divergence de Jensen-Shannon moyenne des fenêtres (0 pour une fenêtre uniforme) ; L3 = dispersion des embeddings moyens des fenêtres. Une même parcelle a la même valeur dans tous les projets (écart n° 6). Statut <code>calculated_embedding</code> et colonnes <code>b4_methode</code> / <code>l3_methode</code> (<code>"biodivmapr"</code>, <code>"embedding"</code>) ; <code>normalize_indicator(statut =)</code> applique au mode embedding ses propres bornes (B4 : 1er et 99e centiles du corpus, 0 et 0,87 ; L3 : 0,5). Stabilité 2023-2024 mesurée près de Dabo : par UGF, écart médian 0,7 point et maximum 2,2 pour B4 (contre 4,3 et 12,8 avec une affectation stricte), 1,2 point pour L3.</li>
+<li>
+<code><a href="../reference/detect_ndp.html">detect_ndp()</a></code> : flag <code>augmented = "embedding_ml"</code> quand <code>attr(data, "embedding_source")</code> vaut <code>"aef"</code>, <code>"maestro"</code> ou <code>"forpt"</code> ; source <code>aef_embedding</code> (déclarée dans <code>FR.json</code> et dans le NDP 0). Le niveau NDP ne change pas.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changements-visibles-2026-11-1">Changements visibles<a class="anchor" aria-label="anchor" href="#changements-visibles-2026-11-1"></a></h3>
+<ul><li>
+<strong>42 indicateurs</strong> (31 de base, <strong>11 conditionnels</strong>) : <code><a href="../reference/list_indicators.html">list_indicators()</a></code>, <code><a href="../reference/indicator_labels.html">indicator_labels()</a></code> et <code>massif_demo_units</code> (colonnes <code>N5</code>, <code>n5_status</code>, <code>N5_norm</code>, à <code>NA</code> faute d’embedding dans la démo) comptent N5. Sans embedding, N5 vaut <code>NA</code> et la famille N est inchangée ; avec un embedding, la famille N d’un projet recalculé compte un indicateur de plus. Aucun sens d’indicateur ne change.</li>
+<li>B4 et L3 rendent une colonne de plus, <code>b4_methode</code> / <code>l3_methode</code> (<code>"biodivmapr"</code> quand biodivMapR a servi, <code>NA</code> sans source). Le mode par défaut est inchangé.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.10.19" id="nemeton-20261019-2026-10-19">nemeton 2026.10.19 (2026-10-19)<a class="anchor" aria-label="anchor" href="#nemeton-20261019-2026-10-19"></a></h2>
 <div class="section level3">

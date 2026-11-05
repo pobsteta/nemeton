@@ -11,7 +11,7 @@ has_lidar_hd, has_drone_rgb, chm_source)."><meta property="og:image" content="ht
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.10.19.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -84,6 +84,7 @@ has_lidar_hd, has_drone_rgb, chm_source)."><meta property="og:image" content="ht
     <li><a class="dropdown-item" href="../articles/fiche-n1-distance_fr.html">N1 - Distance aux infrastructures</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n2-continuite_fr.html">N2 - Continuite ecologique</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-n3-naturalite_fr.html">N3 - Naturalite composite</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-n5-distance-reference_fr.html">N5 - Distance a la reference</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille S - Social &amp; Usages</h6></li>
     <li><a class="dropdown-item" href="../articles/fiche-s1-routes_fr.html">S1 - Distance aux routes</a></li>
@@ -167,6 +168,8 @@ they are reported separately via the <code>augmented</code> vector.</p>
 </ul><p>ML-augmentation flags recognised:</p><ul><li><p><code>"height_ml"</code> : <code>attr(data, "chm_source") == "opencanopy"</code></p></li>
 <li><p><code>"species_ml"</code> : <code>attr(data, "species_source") %in% c("tree_sat", "maestro")</code></p></li>
 <li><p><code>"texture_ml"</code> : <code>attr(data, "texture_source") == "maestro"</code></p></li>
+<li><p><code>"lai_ml"</code> : <code>attr(data, "lai_source") == "prosail_s2"</code> (spec 033)</p></li>
+<li><p><code>"embedding_ml"</code> : <code>attr(data, "embedding_source") %in% c("aef", "maestro", "forpt")</code> (spec 064)</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>

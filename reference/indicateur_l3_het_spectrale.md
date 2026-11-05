@@ -14,6 +14,8 @@ indicateur_l3_het_spectrale(
   spectral = NULL,
   reflectance = NULL,
   min_windows = 3L,
+  embedding = NULL,
+  layers = NULL,
   ...
 )
 ```
@@ -43,6 +45,16 @@ indicateur_l3_het_spectrale(
   floor for a dispersion around a centroid). Values below 3 are raised
   to 3.
 
+- embedding, layers:
+
+  Embedding mode, as in
+  [`indicateur_b4_div_spectrale()`](https://pobsteta.github.io/nemeton/reference/indicateur_b4_div_spectrale.md):
+  L3 is then the mean Euclidean distance of the unit's 100 m window mean
+  embeddings (fixed grid) to the unit's centroid, `NA` below
+  `min_windows` windows. Status `"calculated_embedding"`, method in
+  `l3_methode`. The value grows with unit size (more windows, more
+  contrast): compare units of similar size.
+
 - ...:
 
   Passed to
@@ -51,8 +63,10 @@ indicateur_l3_het_spectrale(
 
 ## Value
 
-`units` with the numeric `L3` column added, and `l3_status`
-(`"calculated"`, `"skipped_no_spectral"` or `"skipped_no_coverage"`).
+`units` with the numeric `L3` column added, `l3_status` (`"calculated"`,
+`"calculated_embedding"`, `"skipped_no_spectral"` or
+`"skipped_no_coverage"`) and `l3_methode` (`"biodivmapr"`, `"embedding"`
+or `NA`).
 
 ## Details
 

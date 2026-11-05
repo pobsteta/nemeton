@@ -31,6 +31,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-n1-distance_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-n2-continuite_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-n3-naturalite_fr.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/articles/fiche-n5-distance-reference_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-p1-volume_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-p2-station_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-p3-qualite-bois_fr.html</loc></url>
@@ -78,6 +79,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_VALIDITY_DEPARTMENTS.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/RECONFORT_VALIDITY_SPECIES.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/a5_applicabilite.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/aef_clusters.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/affecter_hauteur_houppier.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/aggregate_family_scores.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/aggregate_plot_metrics.html</loc></url>
@@ -144,6 +146,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/delete_knowledge_document.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/density_selfthinning.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/detect_ndp.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/distance_reference.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/dot-aoi_bbox_4326.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/dot-aoi_geojson_list.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/dot-aoi_geometry_reticulate.html</loc></url>
@@ -184,6 +187,8 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/dot-write_fordead_model_bundle.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/download_hunting_data.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/embed_query.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/embedding_summary.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/embeddings.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/empty_sf_from_schema.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/enable_rag.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/enrich_parcels_bdforet.html</loc></url>
@@ -281,6 +286,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_n1_distance.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_n2_continuite.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_n3_naturalite.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_n5_distance_reference.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_p1_volume.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_p2_station.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/indicateur_p3_qualite_bois.html</loc></url>

@@ -1,5 +1,74 @@
 # Changelog
 
+## nemeton 2026.11.1 (2026-11-05)
+
+### Nouveautés
+
+- **N5 — distance à la référence**, premier indicateur nourri par un
+  modèle de fondation (spec 064, chantier A du brief « Modèles de
+  fondation et raisonnement sylvicole » du 2026-11-05). Famille N,
+  **conditionnel** :
+  [`indicateur_n5_distance_reference()`](https://pobsteta.github.io/nemeton/reference/indicateur_n5_distance_reference.md)
+  lit un embedding par pixel (AlphaEarth Foundations, 64 dimensions, 10
+  m, annuel, rapatrié par le futur paquet amont `alphaearthnemeton`) et
+  note chaque UGF selon sa proximité à des forêts de référence peu
+  perturbées. Référence par défaut : UGF couvertes à 50 % par le palier
+  le plus ancien de `foret_ancienne` **et** `N1 ≥ 80` ; sinon
+  `reference =` (réserves, îlots de sénescence). Distance de Mahalanobis
+  régularisée Ledoit-Wolf ; score `100 × (1 − F_ref(d))` sur la
+  distribution *leave-one-out* de la référence, pour que N5 ne dépende
+  pas du découpage du projet (le rang dans le projet reste en option,
+  `score = "projet"`). Statut `n5_status` : `calculated`,
+  `skipped_no_embedding`, `skipped_no_reference`,
+  `skipped_reference_too_small` (moins de 15 unités),
+  `skipped_no_coverage`. Colonnes annexes `n5_source`, `n5_reference`,
+  `n5_annee`, `n5_distance`. Fiche `fiche-n5-distance-reference_fr` avec
+  ses cinq pièges.
+- **Fonctions génériques**, indépendantes du modèle source (AlphaEarth
+  aujourd’hui, MAESTRO et ForPT demain) :
+  [`embedding_summary()`](https://pobsteta.github.io/nemeton/reference/embedding_summary.md)
+  (moyenne et écart-type pondérés par UGF) et
+  [`distance_reference()`](https://pobsteta.github.io/nemeton/reference/distance_reference.md)
+  (Mahalanobis Ledoit-Wolf, distances *leave-one-out* de la référence).
+  Toutes `experimental`.
+- **B4 et L3 en mode embedding** (`embedding =`, ou couche
+  `aef_embedding` via `layers =`), quand ni `spectral` ni `reflectance`
+  ne sont fournis : les pixels sont répartis (affectation souple,
+  `exp(-d² / 0,1)`) entre les clusters d’un **dictionnaire fixe de 32
+  clusters**
+  ([`aef_clusters()`](https://pobsteta.github.io/nemeton/reference/aef_clusters.md),
+  ajusté une fois sur 11 massifs forestiers, AlphaEarth 2024,
+  `data-raw/aef_clusters.R`), dans des fenêtres de 100 m d’une grille
+  calée sur les multiples de 100 m. B4 = divergence de Jensen-Shannon
+  moyenne des fenêtres (0 pour une fenêtre uniforme) ; L3 = dispersion
+  des embeddings moyens des fenêtres. Une même parcelle a la même valeur
+  dans tous les projets (écart n° 6). Statut `calculated_embedding` et
+  colonnes `b4_methode` / `l3_methode` (`"biodivmapr"`, `"embedding"`) ;
+  `normalize_indicator(statut =)` applique au mode embedding ses propres
+  bornes (B4 : 1er et 99e centiles du corpus, 0 et 0,87 ; L3 : 0,5).
+  Stabilité 2023-2024 mesurée près de Dabo : par UGF, écart médian 0,7
+  point et maximum 2,2 pour B4 (contre 4,3 et 12,8 avec une affectation
+  stricte), 1,2 point pour L3.
+- [`detect_ndp()`](https://pobsteta.github.io/nemeton/reference/detect_ndp.md)
+  : flag `augmented = "embedding_ml"` quand
+  `attr(data, "embedding_source")` vaut `"aef"`, `"maestro"` ou
+  `"forpt"` ; source `aef_embedding` (déclarée dans `FR.json` et dans le
+  NDP 0). Le niveau NDP ne change pas.
+
+### Changements visibles
+
+- **42 indicateurs** (31 de base, **11 conditionnels**) :
+  [`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md),
+  [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md)
+  et `massif_demo_units` (colonnes `N5`, `n5_status`, `N5_norm`, à `NA`
+  faute d’embedding dans la démo) comptent N5. Sans embedding, N5 vaut
+  `NA` et la famille N est inchangée ; avec un embedding, la famille N
+  d’un projet recalculé compte un indicateur de plus. Aucun sens
+  d’indicateur ne change.
+- B4 et L3 rendent une colonne de plus, `b4_methode` / `l3_methode`
+  (`"biodivmapr"` quand biodivMapR a servi, `NA` sans source). Le mode
+  par défaut est inchangé.
+
 ## nemeton 2026.10.19 (2026-10-19)
 
 ### Corrections
