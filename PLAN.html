@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -359,7 +359,8 @@
 </tr><tr><td>065</td>
 <td>Étape 4 : catalogue d’itinéraires, <code>itineraires_admissibles()</code>, <code>comparer_itineraires()</code> sans FINN</td>
 <td>✅ spec validée le 2026-11-05 (7 décisions) ; code ⬜ ; catalogue à sourcer par Pascal (D-4)</td>
-</tr></tbody></table><p><strong>Prochaine étape</strong> : branche <code>main</code> du dépôt <code>alphaearthnemeton</code> (pour ouvrir la PR de <code>aef_fetch()</code>, déjà poussé) ; puis, avec de vrais embeddings, validation de N5 sur Dabo et ajustement du dictionnaire de clusters de B4/L3 (D-6). Spec 065 : premier remplissage du catalogue par Pascal.</p>
+</tr></tbody></table><p><strong>Prochaine étape</strong> : avec de vrais embeddings, validation de N5 sur le parcellaire de Dabo et un projet hors France ; <code>embedding_regress()</code> et la vignette <code>embeddings-alphaearth_fr.Rmd</code>. Spec 065 : premier remplissage du catalogue par Pascal.</p>
+<p><strong>Journal</strong> — <em>2026-11-05</em> (<strong>2026.11.1</strong> publiée) : PR pobsteta/nemeton#584 et pobsteta/alphaearthnemeton#1 mergées par Pascal ; <code>release.yml</code> pose le tag <code>v2026.11.1</code>. Cycle dev <code>2026.11.1.9000</code>. Côté app, les écarts n° 20 à 22 attendent <code>nemetonshiny</code> (brief <code>specs/064-alphaearth-n5/brief-nemetonshiny.md</code>).</p>
 <p><strong>Journal</strong> — <em>2026-11-05</em> : specs 064 et 065 rédigées, écarts n° 20 à 24 ouverts, préavis émis vers <code>nemetonshiny</code>, <code>maestronemeton</code>, <code>aigora</code> et <code>victor</code> (dans les dossiers des specs ; l’espace <code>/home/pascal/dev/briefs/</code> n’est pas accessible depuis cette session). Points du brief qui ne tiennent pas tels quels, relevés en lisant le code :</p>
 <ol style="list-style-type: decimal"><li>
 <strong><code>rgee</code> n’est pas « R pur »</strong> : il passe par Python (<code>earthengine-api</code>) et un compte GEE. Les COG publics d’AlphaEarth, s’ils sont confirmés, rendent le chantier A réellement sans Python (064 D-1).</li>
