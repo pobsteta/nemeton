@@ -37,8 +37,13 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 3 | Validation terrain du profil en travers | `foretaccess 2.3.0` + app v0.123.0 | terrain | **Jamais exercé de bout en bout** sur un projet réel portant nuage LiDAR *et* desserte corrigée |
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Interdit accusé réception le 2026-09-23** (brief app `BRIEF-nemeton-plan-md-0.143.17-0.143.28.md`) : aucun écran ne classe, ne compare ni ne moyenne B4/L3 entre projets — l'app n'a pas de vue inter-projets. **Reste ouvert sur un seul point : question B02 en attente côté app** — B02 absente de l'espace k-means, remplacée par `ID` (point 4 du brief), pas encore instruite |
 | 16 | Validation §6 du brief production IFN sur un projet réel | app **v0.152.0** | terrain | Vérifiée seulement sur deux UGF synthétiques en C51 (P2 = 5,37 m³/ha/an, RSE 2,6 % ; E1 `"ifn_ser"` → `recolte_observee`, E1 à 0,6 → `ressource_flux`). Chargement FORMS-T **vérifié en réel** le 2026-10-02 (Dabo : prévision hybride 6,58 contre 7,56 m³/ha/an en SER). Reste la validation métier dans l'app sur un projet recalculé en mode IFN |
+| 20 | N5 distance à la référence : colonnes `N5`, `n5_status` (4 statuts), couche carte | cœur — **spec 064, non livrée** | `nemetonshiny` | **Ouvert avant le code** (2026-11-05), préavis `specs/064-alphaearth-n5/brief-nemetonshiny.md`. Libellés et sens viendront de `indicator_labels()` : rien à forker |
+| 21 | B4/L3 en mode embedding : `b4_methode` / `l3_methode`, bornes par méthode ; l'interdit de l'écart n° 6 ne tombe que pour `embedding` | cœur — **spec 064, non livrée** | `nemetonshiny` | **Ouvert avant le code** (2026-11-05), même préavis |
+| 22 | Flag NDP `embedding_ml` dans `detect_ndp()$augmented` | cœur — **spec 064, non livrée** | `nemetonshiny` (badge NDP) | **Ouvert avant le code** (2026-11-05), même préavis |
+| 23 | Itinéraires admissibles par UGF et raisons d'exclusion (`itineraires_admissibles()`) | cœur — **spec 065, non livrée** | `nemetonshiny`, `aigora`, `victor` | **Ouvert avant le code** (2026-11-05), préavis app + `specs/065-itineraires-catalogue/brief-aigora.md`, `brief-victor.md` |
+| 24 | Comparaison pondérée (`comparer_itineraires()`) et origine des poids des profils (spec 065 D-1 : migration des poids dans le cœur ?) | cœur — **spec 065, non livrée** | `nemetonshiny`, `aigora` | **Ouvert avant le code** (2026-11-05) ; question posée à l'app : les poids des 13 profils existent-ils sous forme numérique ? |
 
-**Trois écarts (n° 3, n° 6 résiduel, n° 16), aucun n'appelle plus de correctif dans le cœur.** Les n° 18 (T2) et 19 (`r1_status`) sont refermés par l'app v0.155.0 le 2026-10-05 ; `r1_fallback_reason` reste non transporté, à la demande (le rapport ne cite pas le motif exact). Le n° 13 est refermé le 2026-10-02 (cinq relances RECONFORT propres, table ci-dessous). Les n° 15 et 17 sont refermés par l'app v0.152.1 le 2026-10-02 (table ci-dessous).
+**Les n° 20 à 24 sont ouverts le 2026-11-05 avant toute ligne de code** (specs 064 et 065, brief « modèles de fondation »), pour que la leçon des n° 10 et 11 serve : un écart s'inscrit quand on le prévoit, pas quand on le découvre. **Trois écarts (n° 3, n° 6 résiduel, n° 16), aucun n'appelle plus de correctif dans le cœur.** Les n° 18 (T2) et 19 (`r1_status`) sont refermés par l'app v0.155.0 le 2026-10-05 ; `r1_fallback_reason` reste non transporté, à la demande (le rapport ne cite pas le motif exact). Le n° 13 est refermé le 2026-10-02 (cinq relances RECONFORT propres, table ci-dessous). Les n° 15 et 17 sont refermés par l'app v0.152.1 le 2026-10-02 (table ci-dessous).
 Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR
 et une desserte corrigée. Le n° 6 a été lu côté app — l'interdit tient, faute
 de vue inter-projets où l'enfreindre — et ne reste ouvert que sur la question
@@ -96,6 +101,51 @@ jours plus tard, la correction du sens de la famille R (v0.181.0) puis le
 décroisement de F (v0.182.0) ont traversé l'app **sans une ligne de table à
 toucher**. C'est l'argument à opposer au prochain fork qui se présentera comme
 un raccourci.
+
+---
+
+# Chantier — Modèles de fondation et itinéraires sylvicoles (specs 064, 065)
+
+> Brief de Pascal du 2026-11-05 (« Modèles de fondation et raisonnement
+> sylvicole dans l'écosystème Néméton »), copié dans
+> `specs/064-alphaearth-n5/brief-source-modeles-de-fondation.md`. Six chantiers
+> (A à E, plus l'agent `sylviculteur`) ; ce chantier n'ouvre que les deux
+> premières specs demandées par le § 5 du brief.
+
+| Spec | Objet | État |
+|---|---|---|
+| 064 | Chantier A : `alphaearthnemeton`, `embedding_summary()`, `distance_reference()`, **N5**, B4/L3 `embedding =`, régressions NDP 0 | 🟨 brouillon, **10 décisions ouvertes** (§ 9) |
+| 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | 🟨 brouillon, **7 décisions ouvertes** (§ 8) |
+
+**Prochaine étape** : arbitrage de Pascal sur les décisions ouvertes. **Rien
+n'est implémenté avant** (brief § 5.5).
+
+**Journal** — *2026-11-05* : specs 064 et 065 rédigées, écarts n° 20 à 24
+ouverts, préavis émis vers `nemetonshiny`, `maestronemeton`, `aigora` et
+`victor` (dans les dossiers des specs ; l'espace `/home/pascal/dev/briefs/`
+n'est pas accessible depuis cette session). Points du brief qui ne tiennent
+pas tels quels, relevés en lisant le code :
+
+1. **`rgee` n'est pas « R pur »** : il passe par Python (`earthengine-api`) et
+   un compte GEE. Les COG publics d'AlphaEarth, s'ils sont confirmés, rendent
+   le chantier A réellement sans Python (064 D-1).
+2. **N5 en rang percentile sur le projet** reproduirait le défaut de l'écart
+   n° 6 (valeur dépendante du découpage). Proposé : quantile de la
+   distribution de la référence (064 D-4).
+3. **« Comparable par construction »** vaut pour l'espace AEF, pas pour un
+   k-means par projet : il faut un dictionnaire de clusters fixe et versionné
+   (064 D-6).
+4. **Les 13 profils experts vivent dans `nemetonshiny`** : le cœur ne peut pas
+   les lire pour `comparer_itineraires()` (065 D-1).
+5. **`yaml` n'est pas une dépendance du cœur** ; les catalogues sont en JSON
+   (065 D-2). `ranger` non plus (064 D-8).
+6. **`INDICATOR_SENSE_VERSION` vit dans l'app** (`R/migrate.R`), pas dans le
+   cœur ; N5 étant un code nouveau, il n'en a pas besoin.
+7. **N6** est cité dans les principes du brief mais défini nulle part (064 D-10).
+8. **B1 rend un score, pas un type de protection** : le filtre
+   d'admissibilité relira la couche d'aires protégées avec les codes de B1.
+9. Avec N5 conditionnel, le décompte passe de **41 à 42** : à propager au
+   moment du code.
 
 ---
 
