@@ -603,6 +603,7 @@ reference:
     - embedding_summary
     - distance_reference
     - indicateur_n5_distance_reference
+    - aef_clusters
 
   - subtitle: "Corpus de connaissances et RAG"
     contents:

@@ -9,6 +9,8 @@ indicateur_l3_het_spectrale(
   spectral = NULL,
   reflectance = NULL,
   min_windows = 3L,
+  embedding = NULL,
+  layers = NULL,
   ...
 )
 }
@@ -29,12 +31,21 @@ below which the unit's dispersion is undefined and \code{NA} is returned
 (default \code{3L}, the floor for a dispersion around a centroid). Values
 below 3 are raised to 3.}
 
+\item{embedding, layers}{Embedding mode, as in \code{\link[=indicateur_b4_div_spectrale]{indicateur_b4_div_spectrale()}}:
+L3 is then the mean Euclidean distance of the unit's 100 m window mean
+embeddings (fixed grid) to the unit's centroid, \code{NA} below
+\code{min_windows} windows. Status \code{"calculated_embedding"}, method in
+\code{l3_methode}. The value grows with unit size (more windows, more
+contrast): compare units of similar size.}
+
 \item{...}{Passed to \code{\link{compute_spectral_diversity}} when computing
 on the fly (e.g. \code{window_size}, \code{mask}, \code{nb_cpu}).}
 }
 \value{
-\code{units} with the numeric \code{L3} column added, and
-\code{l3_status} (\code{"calculated"}, \code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}).
+\code{units} with the numeric \code{L3} column added,
+\code{l3_status} (\code{"calculated"}, \code{"calculated_embedding"},
+\code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}) and
+\code{l3_methode} (\code{"biodivmapr"}, \code{"embedding"} or \code{NA}).
 }
 \description{
 Per-unit Bray-Curtis beta diversity (spectral-species turnover,

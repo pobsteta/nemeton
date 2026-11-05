@@ -203,3 +203,107 @@ distance_reference <- function(x, reference,
   intensite <- min(max(b2_bar, 0), d2) / d2
   list(sigma = intensite * cible + (1 - intensite) * s, shrinkage = intensite)
 }
+
+
+#' Fixed cluster dictionary of AlphaEarth embeddings (B4/L3 embedding mode)
+#'
+#' The `k` centroids against which every embedding pixel is labelled when B4
+#' and L3 run in embedding mode. They were fitted **once**, on a corpus of
+#' forest landscapes (11 massifs of Bourgogne-Franche-Comté and outside
+#' France, AlphaEarth 2024, `data-raw/aef_clusters.R`), and are versioned:
+#' a k-means refitted on every project would make B4 as incomparable between
+#' projects as its biodivMapR version (spec 064, decision D-6).
+#'
+#' @param version Dictionary version. Only `"v1"` (k = 32) exists.
+#' @return A `k x 64` numeric matrix (columns `A00` to `A63`), with the
+#'   provenance (sites, year, algorithm, inertia) in `attr(, "meta")`.
+#'
+#' @section Lifecycle:
+#' Experimental (spec 064): may change in any release.
+#' @export
+aef_clusters <- function(version = "v1") {
+  csv <- system.file("extdata", sprintf("aef_clusters_%s.csv", version),
+                     package = "nemeton")
+  if (!nzchar(csv)) {
+    cli::cli_abort("No AlphaEarth cluster dictionary {.val {version}}.")
+  }
+  d <- utils::read.csv(csv)
+  m <- as.matrix(d[, grep("^A[0-9]{2}$", names(d))])
+  rownames(m) <- d$cluster
+  json <- sub("\\.csv$", ".json", csv)
+  attr(m, "meta") <- if (file.exists(json)) jsonlite::read_json(json, simplifyVector = TRUE) else list()
+  attr(m, "version") <- version
+  m
+}
+
+# Fenetres d'embedding a grille FIXE (spec 064, D-6). La grille de `taille_m`
+# est calee sur les multiples de `taille_m` dans le CRS du raster : une meme
+# parcelle tombe dans les memes fenetres quel que soit le projet qui la
+# contient. Rend, par fenetre :
+#   - shannon : entropie de Shannon des clusters du dictionnaire (B4) ;
+#   - moyenne : embedding moyen (L3, dispersion des fenetres de l'UGF).
+# Une fenetre de moins de `min_pixels` pixels valides vaut NA.
+.embedding_fenetres <- function(layer, centroides = aef_clusters(),
+                                taille_m = 100, min_pixels = 50L) {
+  if (terra::nlyr(layer) != ncol(centroides)) {
+    cli::cli_abort(c(
+      "The embedding has {terra::nlyr(layer)} band{?s}, the cluster dictionary {ncol(centroides)}.",
+      "i" = "The dictionary is AlphaEarth's (64 dimensions)."
+    ))
+  }
+  pas <- terra::res(layer)[1]
+  fact <- as.integer(round(taille_m / pas))
+  if (fact < 1L || abs(fact * pas - taille_m) > 1e-6) {
+    cli::cli_abort("Window size {taille_m} m is not a multiple of the pixel size {pas} m.")
+  }
+  e <- terra::ext(layer)
+  cale <- terra::ext(floor(e$xmin / taille_m) * taille_m,
+                     ceiling(e$xmax / taille_m) * taille_m,
+                     floor(e$ymin / taille_m) * taille_m,
+                     ceiling(e$ymax / taille_m) * taille_m)
+  layer <- terra::extend(layer, cale)
+
+  c2 <- rowSums(centroides^2)
+  ct <- t(centroides)
+  etiquette <- function(v) {
+    out <- rep(NA_integer_, nrow(v))
+    ok <- stats::complete.cases(v)
+    if (any(ok)) {
+      d <- sweep(-2 * (v[ok, , drop = FALSE] %*% ct), 2L, c2, "+")
+      out[ok] <- max.col(-d, ties.method = "first")
+    }
+    out
+  }
+  clusters <- terra::app(layer, etiquette)
+
+  k <- nrow(centroides)
+  shannon_fenetre <- function(x, ...) {
+    x <- x[!is.na(x)]
+    if (length(x) < min_pixels) return(NA_real_)
+    p <- tabulate(x, k) / length(x)
+    p <- p[p > 0]
+    -sum(p * log(p))
+  }
+  shannon <- terra::aggregate(clusters, fact = fact, fun = shannon_fenetre)
+  moyenne <- terra::aggregate(layer, fact = fact, fun = "mean", na.rm = TRUE)
+  moyenne <- terra::mask(moyenne, shannon)
+  names(shannon) <- "shannon"
+  list(shannon = shannon, moyenne = moyenne)
+}
+
+# Embedding a utiliser : SpatRaster, ou liste nommee par annee (la plus
+# recente), ou couche `aef_embedding` du projet.
+.embedding_resolu <- function(embedding, layers) {
+  if (is.null(embedding) && inherits(layers, "nemeton_layers")) {
+    embedding <- resolve_raster_layer(layers, "aef_embedding")
+  }
+  if (is.list(embedding) && !inherits(embedding, "SpatRaster")) {
+    if (!length(embedding)) return(NULL)
+    annees <- names(embedding)
+    embedding <- embedding[[annees[which.max(as.integer(annees))]]]
+  }
+  if (!is.null(embedding) && !inherits(embedding, "SpatRaster")) {
+    cli::cli_abort("{.arg embedding} must be a SpatRaster or a list of SpatRaster.")
+  }
+  embedding
+}

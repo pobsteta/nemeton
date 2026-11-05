@@ -191,3 +191,42 @@ Une chaîne à trois étages dont la dernière marche est conventionnelle. Le pl
 | Indicateur jumeau (β) | `indicateur_l3_het_spectrale()` |
 | Spécification | `specs/028-diversite-spectrale/` |
 | Écart ouvert vers l'app | `PLAN.md`, table des écarts, ligne 7 |
+
+## 8. Annexe — mode embedding (spec 064)
+
+Depuis 2026.11.1, `indicateur_b4_div_spectrale(embedding =)` calcule B4 sans
+biodivMapR, à partir des embeddings AlphaEarth (`alphaearthnemeton::aef_fetch()`
+ou couche `aef_embedding` du projet). Il ne s'active que si `spectral` et
+`reflectance` sont absents : la méthode par défaut ne change pas.
+
+1. Chaque pixel reçoit le cluster le plus proche d'un **dictionnaire fixe**
+   (`aef_clusters()`, k = 32), ajusté une fois sur 55 000 pixels de 11 massifs
+   forestiers (8 en Bourgogne-Franche-Comté, 3 hors de France), AlphaEarth
+   2024, `data-raw/aef_clusters.R`.
+2. Shannon des clusters dans des fenêtres de 100 m d'une **grille calée sur
+   les multiples de 100 m** (Lambert-93) ; une fenêtre de moins de 50 pixels
+   valides est ignorée.
+3. B4 = moyenne des fenêtres sur l'UGF, pondérée par la surface couverte.
+
+**Ce qui change par rapport à biodivMapR.** Dictionnaire fixe et grille fixe :
+une même parcelle obtient le même B4 dans tous les projets. L'interdit
+d'usage de la section 4 (pas de comparaison entre projets) **tombe pour ce
+mode seulement** (`b4_methode = "embedding"`).
+
+**Normalisation.** Statut `calculated_embedding` : 100 pour **5 clusters
+effectifs par hectare** (`log(5)`), et non 10. Sur le corpus, la meilleure
+fenêtre compte 6,4 clusters effectifs et le 99e centile 4,9 ; `log(10)`
+laisserait l'UGF type vers 23/100. Les valeurs des deux modes ne se comparent
+pas entre elles.
+
+**Stabilité mesurée** (16 UGF de 500 m près de Dabo, 2023 contre 2024) :
+moyenne du projet stable à 0,4 point ; par UGF, écart médian 4,2 points,
+90e centile 8, maximum 12. Le critère de la spec (± 2 points) tient pour le
+projet, **pas pour l'UGF** : l'affectation à un cluster est tranchée, un
+pixel proche d'une frontière bascule d'une année à l'autre. Comparer des
+années UGF par UGF demande donc de la prudence.
+
+**Pièges propres au mode.** Le dictionnaire décrit des paysages forestiers
+(fenêtres de 2 km, clairières et routes comprises), pas des peuplements purs ;
+un projet très éloigné du corpus (outre-mer, forêt tropicale) tombera dans peu
+de clusters et aura un B4 bas sans être pauvre.

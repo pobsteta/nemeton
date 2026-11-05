@@ -38,7 +38,7 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 6 | B4/L3 : les valeurs changent de sens et d'échelle, et ne se comparent pas entre projets | cœur **v0.190.0** | `nemetonshiny` | Brief émis le 2026-08-27 (`specs/028-diversite-spectrale/brief-nemetonshiny-b4-l3-recalibrage.md`). **Interdit accusé réception le 2026-09-23** (brief app `BRIEF-nemeton-plan-md-0.143.17-0.143.28.md`) : aucun écran ne classe, ne compare ni ne moyenne B4/L3 entre projets — l'app n'a pas de vue inter-projets. **Reste ouvert sur un seul point : question B02 en attente côté app** — B02 absente de l'espace k-means, remplacée par `ID` (point 4 du brief), pas encore instruite |
 | 16 | Validation §6 du brief production IFN sur un projet réel | app **v0.152.0** | terrain | Vérifiée seulement sur deux UGF synthétiques en C51 (P2 = 5,37 m³/ha/an, RSE 2,6 % ; E1 `"ifn_ser"` → `recolte_observee`, E1 à 0,6 → `ressource_flux`). Chargement FORMS-T **vérifié en réel** le 2026-10-02 (Dabo : prévision hybride 6,58 contre 7,56 m³/ha/an en SER). Reste la validation métier dans l'app sur un projet recalculé en mode IFN |
 | 20 | N5 distance à la référence : colonnes `N5`, `n5_status` (5 statuts `skipped_*` / `calculated`), couche carte | cœur **2026.11.1** | `nemetonshiny` | **Ouvert avant le code** (2026-11-05), préavis `specs/064-alphaearth-n5/brief-nemetonshiny.md`. Libellés et sens viendront de `indicator_labels()` : rien à forker |
-| 21 | B4/L3 en mode embedding : `b4_methode` / `l3_methode`, bornes par méthode ; l'interdit de l'écart n° 6 ne tombe que pour `embedding` | cœur — **spec 064, non livrée** | `nemetonshiny` | **Ouvert avant le code** (2026-11-05), même préavis |
+| 21 | B4/L3 en mode embedding : `b4_methode` / `l3_methode`, statut `calculated_embedding` à passer à `normalize_indicator(statut =)` ; l'interdit de l'écart n° 6 ne tombe que pour `embedding` | cœur **2026.11.1** | `nemetonshiny` | **Ouvert avant le code** (2026-11-05), même préavis |
 | 22 | Flag NDP `embedding_ml` dans `detect_ndp()$augmented` | cœur **2026.11.1** | `nemetonshiny` (badge NDP) | **Ouvert avant le code** (2026-11-05), même préavis |
 | 23 | Itinéraires admissibles par UGF et raisons d'exclusion (`itineraires_admissibles()`) | cœur — **spec 065, non livrée** | `nemetonshiny`, `aigora`, `victor` | **Ouvert avant le code** (2026-11-05), préavis app + `specs/065-itineraires-catalogue/brief-aigora.md`, `brief-victor.md` |
 | 24 | Comparaison pondérée (`comparer_itineraires()`) et origine des poids des profils (spec 065 D-1 : migration des poids dans le cœur ?) | cœur — **spec 065, non livrée** | `nemetonshiny`, `aigora` | **Ouvert avant le code** (2026-11-05) ; question posée à l'app : les poids des 13 profils existent-ils sous forme numérique ? |
@@ -183,6 +183,19 @@ cœur, en attente côté app. Tests : 71 assertions nouvelles
 (paquet optionnel absent). Les pages d'aide ont été écrites à la main pour
 les fichiers modifiés : roxygen 8.0.0 n'était pas disponible (7.3.1 réécrit
 toutes les pages).
+
+**Journal** — *2026-11-05* : **B4/L3 en mode embedding** (écart n° 21, D-6).
+Dictionnaire fixe `aef_clusters()` v1 : k-means (MacQueen, k = 32) sur
+55 000 pixels AlphaEarth 2024 de 11 massifs (8 BFC, Forêt-Noire,
+Białowieża, forêt bavaroise), inertie intra 22 % ; script
+`data-raw/aef_clusters.R`. Fenêtres de 100 m sur grille calée sur les
+multiples de 100 m : une même parcelle a la même valeur dans tous les projets
+(testé). Bornes calées sur le corpus : B4 = 5 clusters effectifs/ha (la
+borne biodivMapR log(10) aurait tassé l'UGF type vers 23/100), L3 = 0,5.
+Stabilité 2023-2024 près de Dabo : moyenne du projet à 0,4 / 0,3 point ; par
+UGF, B4 écart médian 4,2 (max 12), L3 médian 1,2 — le ± 2 de la spec ne tient
+pas UGF par UGF pour B4 (étiquetage tranché). Fiches B4 et L3 : annexe
+« mode embedding ».
 
 **Journal** — *2026-11-05* : `aef_fetch()` écrit dans `alphaearthnemeton`
 (dépôt créé par Pascal, GPL-3). R pur : index GeoPackage distant interrogé

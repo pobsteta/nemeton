@@ -17,8 +17,13 @@
    `indicator_families()` comme pour tout indicateur (dé-fork de l'écart n° 1) :
    **aucune table à toucher**. À prévoir : traduction des quatre statuts, et la
    couche N5 sur la carte. **Écart n° 20.**
-2. **B4 / L3 en mode embedding.** Nouvelle colonne `b4_methode` /
-   `l3_methode` (`biodivmapr`, `embedding`). Les deux méthodes ne se comparent
+2. **B4 / L3 en mode embedding.** **Livré en cœur 2026.11.1.** Nouvelle
+   colonne `b4_methode` / `l3_methode` (`biodivmapr`, `embedding`, `NA` sans
+   source) et nouveau statut `calculated_embedding` : l'app doit le
+   transmettre à `normalize_indicator(statut =)` comme elle le fait pour P2
+   (écart n° 17), sinon le mode embedding est noté contre la borne de
+   biodivMapR. Activation : passer `embedding =` ou une couche
+   `aef_embedding` dans `layers`. Les deux méthodes ne se comparent
    pas : la fiche de l'UGF doit afficher la méthode à côté de la valeur.
    L'interdit de l'écart n° 6 (pas de comparaison inter-projets) tombe
    **seulement** pour la méthode `embedding`. **Écart n° 21.**

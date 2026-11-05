@@ -24,6 +24,19 @@
   écart-type pondérés par UGF) et `distance_reference()` (Mahalanobis
   Ledoit-Wolf, distances *leave-one-out* de la référence). Toutes
   `experimental`.
+- **B4 et L3 en mode embedding** (`embedding =`, ou couche `aef_embedding`
+  via `layers =`), quand ni `spectral` ni `reflectance` ne sont fournis : les
+  pixels sont étiquetés par un **dictionnaire fixe de 32 clusters**
+  (`aef_clusters()`, ajusté une fois sur 11 massifs forestiers, AlphaEarth
+  2024, `data-raw/aef_clusters.R`), dans des fenêtres de 100 m d'une grille
+  calée sur les multiples de 100 m. B4 = Shannon moyen des fenêtres ; L3 =
+  dispersion des embeddings moyens des fenêtres. Une même parcelle a la même
+  valeur dans tous les projets (écart n° 6). Statut `calculated_embedding` et
+  colonnes `b4_methode` / `l3_methode` (`"biodivmapr"`, `"embedding"`) ;
+  `normalize_indicator(statut =)` applique au mode embedding ses propres
+  bornes (B4 : 5 clusters effectifs par hectare ; L3 : 0,5). Stabilité
+  2023-2024 mesurée près de Dabo : moyenne du projet à 0,4 point (B4) et
+  0,3 point (L3) ; par UGF, écart médian 4,2 points pour B4, 1,2 pour L3.
 - `detect_ndp()` : flag `augmented = "embedding_ml"` quand
   `attr(data, "embedding_source")` vaut `"aef"`, `"maestro"` ou `"forpt"` ;
   source `aef_embedding` (déclarée dans `FR.json` et dans le NDP 0). Le niveau
@@ -37,6 +50,9 @@
   embedding, N5 vaut `NA` et la famille N est inchangée ; avec un embedding,
   la famille N d'un projet recalculé compte un indicateur de plus. Aucun sens
   d'indicateur ne change.
+- B4 et L3 rendent une colonne de plus, `b4_methode` / `l3_methode`
+  (`"biodivmapr"` quand biodivMapR a servi, `NA` sans source). Le mode par
+  défaut est inchangé.
 
 # nemeton 2026.10.19 (2026-10-19)
 

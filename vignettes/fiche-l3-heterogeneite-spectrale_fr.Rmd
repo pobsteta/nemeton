@@ -177,3 +177,26 @@ Une dispersion, pas une position. C'est exactement ce que le correctif 0.190.0 a
 | Indicateur jumeau (α) | `vignette("fiche-b4-diversite-spectrale_fr", package = "nemeton")` |
 | Spécification | `specs/028-diversite-spectrale/`, §10 |
 | Écart ouvert vers l'app | `PLAN.md`, table des écarts, ligne 6 |
+
+## 8. Annexe — mode embedding (spec 064)
+
+Depuis 2026.11.1, `indicateur_l3_het_spectrale(embedding =)` calcule L3 à
+partir des embeddings AlphaEarth, quand `spectral` et `reflectance` sont
+absents. L3 est alors la **dispersion multivariée** (même définition que
+biodivMapR, au sens de *betadisper*) des **embeddings moyens des fenêtres de
+100 m** de l'UGF, sur une grille calée sur les multiples de 100 m : distance
+euclidienne moyenne des fenêtres au centroïde de l'UGF ; `NA` sous
+`min_windows` fenêtres (`skipped_no_coverage`).
+
+**Comparable entre projets** (grille fixe, espace AlphaEarth commun) : l'interdit
+de la section 4 tombe pour `l3_methode = "embedding"` seulement.
+
+**Normalisation.** Statut `calculated_embedding`, borne 0,5 (UGF de 500 m du
+corpus : au plus 0,51 ; de 200 m : au plus 0,47).
+
+**Stabilité mesurée** (16 UGF de 500 m près de Dabo, 2023 contre 2024) :
+moyenne du projet stable à 0,3 point ; par UGF, écart médian 1,2 point,
+90e centile 2,5.
+
+**Piège.** La dispersion croît avec la taille de l'UGF (plus de fenêtres,
+plus de contrastes) : ne comparer que des UGF de tailles voisines.
