@@ -1,3 +1,24 @@
+# nemeton 2026.11.2 (2026-11-05)
+
+## Nouveautés
+
+- **`embedding_regress()`** (spec 064, chantier A) : prédit une variable de
+  peuplement (par défaut la hauteur dominante `H0`) à partir des embeddings
+  d'un modèle de fondation autour de placettes de terrain (placettes IFN du
+  projet), et rend un raster prêt pour l'argument `chm =` des indicateurs qui
+  lisent une hauteur (P1, P2, C1), avec `attr(, "chm_source") =
+  "aef_regression"`. Hauteur de NDP 0 quand il n'y a ni CHM ni LiDAR.
+  - Modèle : ranger s'il est installé (`Suggests`), sinon **ridge en base R**
+    (pénalité choisie par validation croisée généralisée).
+  - Évaluation par **validation croisée par blocs spatiaux** (blocs de 5 km,
+    une placette et ses voisines tombent dans le même pli) : RMSE, R² et biais
+    hors pli, à citer avec toute valeur dérivée.
+  - Moins de 30 placettes utilisables : aucun modèle, statut
+    `train_too_small`.
+  - **Piège documenté** : la prédiction est lisse. Elle ne convient pas à B2,
+    dont la composante structurelle est le coefficient de variation du CHM.
+- `ranger` ajouté aux Suggests.
+
 # nemeton 2026.11.1 (2026-11-05)
 
 ## Nouveautés

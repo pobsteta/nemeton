@@ -10,6 +10,12 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.2] - 2026-11-05
+
+### Added
+- `embedding_regress()`: stand variable (default `H0`) predicted from foundation-model embeddings around field plots, spatial block cross-validation (RMSE, R2, bias), ranger or base-R ridge (GCV), prediction raster usable as `chm =` for P1/P2/C1; `train_too_small` below 30 plots.
+- `ranger` in Suggests.
+
 ## [2026.11.1] - 2026-11-05
 
 ### Added

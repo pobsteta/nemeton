@@ -122,6 +122,17 @@ parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
 vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier remplissage du
 catalogue par Pascal.
 
+**Journal** — *2026-11-05* (**2026.11.2**) : `embedding_regress()`
+(spec 064 § 8). Variable de peuplement (H0 par défaut) prédite par l'embedding
+moyen dans le rayon des placettes ; ranger si installé, sinon ridge en base R
+(GCV) ; validation croisée par blocs spatiaux de 5 km ; raster rendu prêt
+pour `chm =` (P1, P2, C1). Écart à la spec : B2 exclu, la CV d'une hauteur
+prédite mesurerait le modèle. Testé sur données synthétiques (24
+assertions) ; **pas validé sur de vraies placettes IFN** : les serveurs IFN et
+data.gouv.fr sont bloqués par le réseau de la session de travail. À faire sur
+le poste de Pascal : `ifn_charger()` sur Dabo, `embedding_regress()` sur H0,
+lire le RMSE hors pli.
+
 **Journal** — *2026-11-05* (**2026.11.1** publiée) : PR pobsteta/nemeton#584
 et pobsteta/alphaearthnemeton#1 mergées par Pascal ; `release.yml` pose le
 tag `v2026.11.1`. Cycle dev `2026.11.1.9000`. Côté app, les écarts n° 20 à 22
