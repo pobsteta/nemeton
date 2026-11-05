@@ -117,10 +117,15 @@ un raccourci.
 | 064 | Chantier A : `alphaearthnemeton`, `embedding_summary()`, `distance_reference()`, **N5**, B4/L3 `embedding =`, régressions NDP 0 | ✅ spec validée le 2026-11-05 (D-2 : GPL-3) ; 🟨 code : N5 + fonctions génériques + flag NDP → **2026.11.1** ; reste `alphaearthnemeton`, B4/L3, `embedding_regress()`, vignette |
 | 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 (7 décisions) ; code ⬜ ; catalogue à sourcer par Pascal (D-4) |
 
-**Prochaine étape** : branche `main` du dépôt `alphaearthnemeton` (pour
-ouvrir la PR de `aef_fetch()`, déjà poussé) ; puis, avec de vrais embeddings, validation de N5 sur
-Dabo et ajustement du dictionnaire de clusters de B4/L3 (D-6). Spec 065 :
-premier remplissage du catalogue par Pascal.
+**Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
+parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
+vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier remplissage du
+catalogue par Pascal.
+
+**Journal** — *2026-11-05* (**2026.11.1** publiée) : PR pobsteta/nemeton#584
+et pobsteta/alphaearthnemeton#1 mergées par Pascal ; `release.yml` pose le
+tag `v2026.11.1`. Cycle dev `2026.11.1.9000`. Côté app, les écarts n° 20 à 22
+attendent `nemetonshiny` (brief `specs/064-alphaearth-n5/brief-nemetonshiny.md`).
 
 **Journal** — *2026-11-05* : specs 064 et 065 rédigées, écarts n° 20 à 24
 ouverts, préavis émis vers `nemetonshiny`, `maestronemeton`, `aigora` et
