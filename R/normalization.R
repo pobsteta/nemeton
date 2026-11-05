@@ -822,14 +822,17 @@ normalize_indicator <- function(indicator, values, statut = NULL) {
   # whole forest domain in the bottom 40 % of the scale — a typical unit
   # scored 20/100 whatever it held.
   if (indicator %in% c("indicateur_b4_div_spectrale", "B4")) {
-    # Mode embedding (statut "calculated_embedding", spec 064) : sa propre
-    # borne, 5 clusters effectifs par hectare (cf. .B4_MAX_CLUSTERS_EMBEDDING).
-    borne <- rep(log(.B4_MAX_SPECTRAL_SPECIES), length(values))
+    # Mode embedding (statut "calculated_embedding", spec 064) : affectation
+    # souple, entropie jamais nulle ; echelle affine entre le 1er et le 99e
+    # centile des fenetres du corpus (.B4_EMBEDDING_H_MIN / _MAX).
+    out <- values / log(.B4_MAX_SPECTRAL_SPECIES) * 100
     if (!is.null(statut)) {
       st <- rep_len(as.character(statut), length(values))
-      borne[!is.na(st) & st == "calculated_embedding"] <- log(.B4_MAX_CLUSTERS_EMBEDDING)
+      emb <- !is.na(st) & st == "calculated_embedding"
+      out[emb] <- (values[emb] - .B4_EMBEDDING_H_MIN) /
+        (.B4_EMBEDDING_H_MAX - .B4_EMBEDDING_H_MIN) * 100
     }
-    return(pmin(100, pmax(0, values / borne * 100)))
+    return(pmin(100, pmax(0, out)))
   }
 
   # L3 spectral beta diversity: high = good (spec 028 D1). The input is the

@@ -29,11 +29,14 @@
 .L3_MAX_DISPERSION <- 0.5
 
 # Bornes du mode embedding (spec 064, D-6, D-7), calees le 2026-11-05 sur le
-# corpus du dictionnaire (11 massifs, AlphaEarth 2024, fenetres de 100 m) :
-# meilleure fenetre 6,4 clusters effectifs, 99e centile 4,9 ; dispersion des
-# UGF de 500 m au plus 0,51, de 200 m au plus 0,47. Le score B4 atteint 100
-# pour 5 clusters effectifs par hectare (log(10) laisserait l'UGF type a 23).
-.B4_MAX_CLUSTERS_EMBEDDING <- 5
+# corpus du dictionnaire (11 massifs, AlphaEarth 2024, fenetres de 100 m).
+# B4 : divergence de Jensen-Shannon des appartenances souples (tau =
+# .EMBEDDING_TAU) ; normalisation affine entre le 1er et le 99e centile
+# des fenetres du corpus (data-raw/aef_bornes_b4.R, champ `bornes_b4` de
+# inst/extdata/aef_clusters_v1.json ; un test verifie la concordance).
+# L3 : dispersion des UGF de 500 m au plus 0,51, de 200 m au plus 0,47.
+.B4_EMBEDDING_H_MIN <- 0
+.B4_EMBEDDING_H_MAX <- 0.87
 .L3_MAX_DISPERSION_EMBEDDING <- 0.5
 
 # Names biodivMapR gives to the *dispersion* companion of a diversity map
@@ -408,16 +411,21 @@ compute_spectral_diversity <- function(reflectance,
 #'   the fly (e.g. \code{window_size}, \code{mask}, \code{nb_cpu}).
 #'
 #' @details
-#' **Embedding mode** (spec 064): every pixel is labelled with the nearest
-#' centroid of a **fixed** cluster dictionary ([aef_clusters()], k = 32,
-#' fitted once on a forest corpus), the Shannon index of those labels is
-#' computed in 100 m windows of a grid snapped to multiples of 100 m, and B4
-#' is the coverage-weighted mean over the unit. Fixed dictionary and fixed
+#' **Embedding mode** (spec 064): every pixel is spread over the clusters of
+#' a **fixed** dictionary ([aef_clusters()], k = 32, fitted once on a forest
+#' corpus) with weights `exp(-d^2 / 0.1)` normalised to 1 (soft assignment:
+#' a hard nearest-centroid label made pixels near a cluster boundary flip
+#' between years). In 100 m windows of a grid snapped to multiples of 100 m,
+#' the window diversity is the Jensen-Shannon divergence of the pixels'
+#' memberships (entropy of the mean composition minus the mean entropy of
+#' the pixels: 0 for a uniform window), and B4 is its coverage-weighted mean
+#' over the unit. Fixed dictionary and fixed
 #' grid make B4 comparable between projects, which the biodivMapR mode is
 #' not (its k-means is fitted on each project). The two modes do not give
 #' comparable values: `b4_methode` says which one produced the value, and
 #' the status `"calculated_embedding"` gives the embedding mode its own
-#' normalisation bound (5 effective clusters per hectare = 100).
+#' normalisation: affine between the 1st (0) and 99th (100) percentiles of
+#' the window entropy over the dictionary corpus.
 #'
 #' @return \code{units} with the numeric \code{B4} column added,
 #'   \code{b4_status} (\code{"calculated"}, \code{"calculated_embedding"},

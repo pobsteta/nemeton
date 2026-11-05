@@ -52,16 +52,21 @@ NDP 0 (Sentinel-2). Strictly backward compatible: with neither
 \code{NA} and the \code{sf} is returned unchanged.
 }
 \details{
-\strong{Embedding mode} (spec 064): every pixel is labelled with the nearest
-centroid of a \strong{fixed} cluster dictionary (\code{\link[=aef_clusters]{aef_clusters()}}, k = 32,
-fitted once on a forest corpus), the Shannon index of those labels is
-computed in 100 m windows of a grid snapped to multiples of 100 m, and B4
-is the coverage-weighted mean over the unit. Fixed dictionary and fixed
+\strong{Embedding mode} (spec 064): every pixel is spread over the clusters of
+a \strong{fixed} dictionary (\code{\link[=aef_clusters]{aef_clusters()}}, k = 32, fitted once on a forest
+corpus) with weights \code{exp(-d^2 / 0.1)} normalised to 1 (soft assignment:
+a hard nearest-centroid label made pixels near a cluster boundary flip
+between years). In 100 m windows of a grid snapped to multiples of 100 m,
+the window diversity is the Jensen-Shannon divergence of the pixels'
+memberships (entropy of the mean composition minus the mean entropy of
+the pixels: 0 for a uniform window), and B4 is its coverage-weighted mean
+over the unit. Fixed dictionary and fixed
 grid make B4 comparable between projects, which the biodivMapR mode is
 not (its k-means is fitted on each project). The two modes do not give
 comparable values: \code{b4_methode} says which one produced the value, and
 the status \code{"calculated_embedding"} gives the embedding mode its own
-normalisation bound (5 effective clusters per hectare = 100).
+normalisation: affine between the 1st (0) and 99th (100) percentiles of
+the window entropy over the dictionary corpus.
 }
 \section{Lifecycle}{
 

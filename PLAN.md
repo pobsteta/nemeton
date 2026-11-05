@@ -184,6 +184,19 @@ cœur, en attente côté app. Tests : 71 assertions nouvelles
 les fichiers modifiés : roxygen 8.0.0 n'était pas disponible (7.3.1 réécrit
 toutes les pages).
 
+**Journal** — *2026-11-05* : **B4 en affectation souple**, à la demande de
+Pascal. L'affectation stricte laissait B4 instable à l'UGF (écart médian 4,3
+points, max 12,8 entre 2023 et 2024 près de Dabo). Trois essais : (1) Shannon
+de la composition souple — mieux (signal/bruit 8,5 à τ = 0,2) mais une
+fenêtre uniforme « entre » plusieurs clusters y paraît diverse (test qui
+l'a révélé : cluster unique plus divers qu'un mélange de deux) ; (2)
+**divergence de Jensen-Shannon** (entropie de la composition moyenne moins
+entropie moyenne des pixels) — une fenêtre uniforme vaut 0 ; (3) balayage de
+τ : 0,1 retenu (écart médian 0,7, max 2,2, signal/bruit 19,7 ; au-delà le
+signal s'écrase). Bornes recalculées sur le corpus
+(`data-raw/aef_bornes_b4.R`) : 0 et 0,87. Le critère ± 2 de la spec tient
+désormais à 0,2 point près sur le pire UGF. τ choisi sur un seul site.
+
 **Journal** — *2026-11-05* : **B4/L3 en mode embedding** (écart n° 21, D-6).
 Dictionnaire fixe `aef_clusters()` v1 : k-means (MacQueen, k = 32) sur
 55 000 pixels AlphaEarth 2024 de 11 massifs (8 BFC, Forêt-Noire,

@@ -199,34 +199,50 @@ biodivMapR, à partir des embeddings AlphaEarth (`alphaearthnemeton::aef_fetch()
 ou couche `aef_embedding` du projet). Il ne s'active que si `spectral` et
 `reflectance` sont absents : la méthode par défaut ne change pas.
 
-1. Chaque pixel reçoit le cluster le plus proche d'un **dictionnaire fixe**
-   (`aef_clusters()`, k = 32), ajusté une fois sur 55 000 pixels de 11 massifs
-   forestiers (8 en Bourgogne-Franche-Comté, 3 hors de France), AlphaEarth
-   2024, `data-raw/aef_clusters.R`.
-2. Shannon des clusters dans des fenêtres de 100 m d'une **grille calée sur
-   les multiples de 100 m** (Lambert-93) ; une fenêtre de moins de 50 pixels
-   valides est ignorée.
-3. B4 = moyenne des fenêtres sur l'UGF, pondérée par la surface couverte.
+1. **Dictionnaire fixe** (`aef_clusters()`, k = 32), ajusté une fois sur
+   55 000 pixels de 11 massifs forestiers (8 en Bourgogne-Franche-Comté,
+   3 hors de France), AlphaEarth 2024, `data-raw/aef_clusters.R`.
+2. **Affectation souple** : chaque pixel est réparti entre les 32 clusters
+   avec un poids `exp(-d² / 0,1)` normalisé à 1, au lieu d'être rangé dans le
+   seul cluster le plus proche.
+3. **Diversité de fenêtre** (100 m, grille calée sur les multiples de 100 m
+   en Lambert-93) = **divergence de Jensen-Shannon** des appartenances :
+   entropie de la composition moyenne moins entropie moyenne des pixels. Une
+   fenêtre uniforme vaut 0, où qu'elle se trouve dans l'espace des
+   embeddings ; une fenêtre de moins de 50 pixels valides est ignorée.
+4. B4 = moyenne des fenêtres sur l'UGF, pondérée par la surface couverte.
+
+**Pourquoi ce calcul.** Trois versions ont été mesurées sur 16 UGF de 500 m
+près de Dabo, 2023 contre 2024 (écarts en points sur 0-100 ; « signal/bruit »
+= écart-type entre UGF divisé par l'écart médian entre années) :
+
+| Version | Écart médian | Écart max | Signal/bruit |
+|---|---|---|---|
+| Affectation stricte, Shannon | 4,3 | 12,8 | 4,9 |
+| Affectation souple (τ = 0,2), Shannon de la composition | 1,5 | 3,1 | 8,5 |
+| **Affectation souple (τ = 0,1), Jensen-Shannon** | **0,7** | **2,2** | **19,7** |
+
+L'affectation stricte fait basculer d'une année à l'autre les pixels proches
+d'une frontière entre clusters. Le Shannon de la composition souple, lui,
+compte comme diverse une fenêtre uniforme dont les pixels sont *entre*
+plusieurs clusters : la divergence retranche cette ambiguïté propre à chaque
+pixel. τ plus grand que 0,1 écrase le signal (à 0,2, les UGF de Dabo
+tiennent entre 2 et 12).
 
 **Ce qui change par rapport à biodivMapR.** Dictionnaire fixe et grille fixe :
 une même parcelle obtient le même B4 dans tous les projets. L'interdit
 d'usage de la section 4 (pas de comparaison entre projets) **tombe pour ce
 mode seulement** (`b4_methode = "embedding"`).
 
-**Normalisation.** Statut `calculated_embedding` : 100 pour **5 clusters
-effectifs par hectare** (`log(5)`), et non 10. Sur le corpus, la meilleure
-fenêtre compte 6,4 clusters effectifs et le 99e centile 4,9 ; `log(10)`
-laisserait l'UGF type vers 23/100. Les valeurs des deux modes ne se comparent
-pas entre elles.
-
-**Stabilité mesurée** (16 UGF de 500 m près de Dabo, 2023 contre 2024) :
-moyenne du projet stable à 0,4 point ; par UGF, écart médian 4,2 points,
-90e centile 8, maximum 12. Le critère de la spec (± 2 points) tient pour le
-projet, **pas pour l'UGF** : l'affectation à un cluster est tranchée, un
-pixel proche d'une frontière bascule d'une année à l'autre. Comparer des
-années UGF par UGF demande donc de la prudence.
+**Normalisation.** Statut `calculated_embedding` : échelle affine entre le
+1er centile (0) et le 99e centile (100) des fenêtres du corpus, soit 0 et
+0,87 (`data-raw/aef_bornes_b4.R`, champ `bornes_b4` du fichier du
+dictionnaire). Près de Dabo, les UGF vont de 13 à 50 (médiane 32) : le
+corpus contient des fenêtres de lisière bien plus contrastées qu'une futaie.
+Les valeurs des deux modes ne se comparent pas entre elles.
 
 **Pièges propres au mode.** Le dictionnaire décrit des paysages forestiers
 (fenêtres de 2 km, clairières et routes comprises), pas des peuplements purs ;
-un projet très éloigné du corpus (outre-mer, forêt tropicale) tombera dans peu
-de clusters et aura un B4 bas sans être pauvre.
+un projet très éloigné du corpus (outre-mer, forêt tropicale) se répartira
+mal entre les clusters. τ et les bornes ont été choisis sur un seul site
+(Dabo) : à revoir sur d'autres massifs.

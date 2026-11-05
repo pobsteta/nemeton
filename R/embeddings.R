@@ -236,15 +236,38 @@ aef_clusters <- function(version = "v1") {
   m
 }
 
+# Temperature de l'affectation souple des pixels aux clusters (spec 064).
+# Choisie le 2026-11-05 sur Dabo (16 UGF de 500 m, 2023 contre 2024), B4 =
+# divergence de Jensen-Shannon, echelle 0-100 calee sur le corpus :
+#   tau            0 (stricte)  0,03  0,05  0,075  0,10  0,20
+#   ecart median   4,3          1,7   1,1   0,9    0,7   0,2
+#   ecart max      12,8         3,5   3,3   2,9    2,2   0,7
+#   ecart-type UGF 20,7         19,5  18,4  16,9   13,2  3,9
+#   signal/bruit   4,9          11,7  16,6  19,1   19,7  18,1
+# (signal/bruit = ecart-type entre UGF / ecart median entre annees). Au-dela
+# de 0,1 le signal s'ecrase (a 0,2, les UGF de Dabo tiennent entre 2 et 12).
+# Ecrire Shannon de la composition seule (sans retrancher l'entropie propre
+# des pixels) donnait au mieux 8,5 : un pixel pur situe entre plusieurs
+# clusters y comptait comme divers.
+.EMBEDDING_TAU <- 0.1
+
 # Fenetres d'embedding a grille FIXE (spec 064, D-6). La grille de `taille_m`
 # est calee sur les multiples de `taille_m` dans le CRS du raster : une meme
 # parcelle tombe dans les memes fenetres quel que soit le projet qui la
 # contient. Rend, par fenetre :
-#   - shannon : entropie de Shannon des clusters du dictionnaire (B4) ;
+#   - shannon : diversite de la fenetre (B4) = divergence de Jensen-Shannon
+#     des appartenances des pixels, H(composition moyenne) - moyenne des
+#     H(pixel). Chaque pixel est reparti entre les clusters du dictionnaire
+#     avec un poids exp(-d^2 / tau) normalise (affectation souple). Une
+#     fenetre uniforme vaut 0 ou qu'elle soit dans l'espace ; avec tau -> 0
+#     (affectation stricte) on retrouve le Shannon des etiquettes, qui faisait
+#     basculer d'une annee a l'autre les pixels proches d'une frontiere entre
+#     clusters (ecart median 4,3 points a l'UGF) ;
 #   - moyenne : embedding moyen (L3, dispersion des fenetres de l'UGF).
 # Une fenetre de moins de `min_pixels` pixels valides vaut NA.
 .embedding_fenetres <- function(layer, centroides = aef_clusters(),
-                                taille_m = 100, min_pixels = 50L) {
+                                taille_m = 100, min_pixels = 50L,
+                                tau = .EMBEDDING_TAU) {
   if (terra::nlyr(layer) != ncol(centroides)) {
     cli::cli_abort(c(
       "The embedding has {terra::nlyr(layer)} band{?s}, the cluster dictionary {ncol(centroides)}.",
@@ -263,28 +286,38 @@ aef_clusters <- function(version = "v1") {
                      ceiling(e$ymax / taille_m) * taille_m)
   layer <- terra::extend(layer, cale)
 
+  k <- nrow(centroides)
   c2 <- rowSums(centroides^2)
   ct <- t(centroides)
-  etiquette <- function(v) {
-    out <- rep(NA_integer_, nrow(v))
+  appartenance <- function(v) {
+    out <- matrix(NA_real_, nrow(v), k)
     ok <- stats::complete.cases(v)
     if (any(ok)) {
-      d <- sweep(-2 * (v[ok, , drop = FALSE] %*% ct), 2L, c2, "+")
-      out[ok] <- max.col(-d, ties.method = "first")
+      x <- v[ok, , drop = FALSE]
+      d <- sweep(-2 * (x %*% ct), 2L, c2, "+") + rowSums(x^2)
+      z <- -(d - apply(d, 1L, min)) / tau
+      m <- exp(z)
+      out[ok, ] <- m / rowSums(m)
     }
     out
   }
-  clusters <- terra::app(layer, etiquette)
-
-  k <- nrow(centroides)
-  shannon_fenetre <- function(x, ...) {
-    x <- x[!is.na(x)]
-    if (length(x) < min_pixels) return(NA_real_)
-    p <- tabulate(x, k) / length(x)
-    p <- p[p > 0]
-    -sum(p * log(p))
-  }
-  shannon <- terra::aggregate(clusters, fact = fact, fun = shannon_fenetre)
+  memb <- terra::app(layer, appartenance)
+  h_pixel <- terra::app(memb, function(q) {
+    q[!is.na(q) & q <= 0] <- NA
+    -rowSums(q * log(q), na.rm = TRUE)
+  })
+  h_pixel_moyen <- terra::aggregate(h_pixel, fact = fact, fun = "mean", na.rm = TRUE)
+  n_valides <- terra::aggregate(!is.na(memb[[1]]), fact = fact, fun = "sum")
+  composition <- terra::aggregate(memb, fact = fact, fun = "mean", na.rm = TRUE)
+  # Fenetre sans pixel valide : composition toute NA, masquee juste apres
+  # par le seuil `min_pixels`.
+  shannon <- terra::app(composition, function(q) {
+    q[!is.na(q) & q <= 0] <- NA
+    -rowSums(q * log(q), na.rm = TRUE)
+  }) - h_pixel_moyen
+  # Arrondis numeriques : la divergence est >= 0 par construction.
+  shannon <- terra::clamp(shannon, lower = 0, values = TRUE)
+  shannon <- terra::mask(shannon, n_valides < min_pixels, maskvalue = TRUE)
   moyenne <- terra::aggregate(layer, fact = fact, fun = "mean", na.rm = TRUE)
   moyenne <- terra::mask(moyenne, shannon)
   names(shannon) <- "shannon"

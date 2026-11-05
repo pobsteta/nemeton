@@ -26,17 +26,20 @@
   `experimental`.
 - **B4 et L3 en mode embedding** (`embedding =`, ou couche `aef_embedding`
   via `layers =`), quand ni `spectral` ni `reflectance` ne sont fournis : les
-  pixels sont étiquetés par un **dictionnaire fixe de 32 clusters**
-  (`aef_clusters()`, ajusté une fois sur 11 massifs forestiers, AlphaEarth
-  2024, `data-raw/aef_clusters.R`), dans des fenêtres de 100 m d'une grille
-  calée sur les multiples de 100 m. B4 = Shannon moyen des fenêtres ; L3 =
-  dispersion des embeddings moyens des fenêtres. Une même parcelle a la même
+  pixels sont répartis (affectation souple, `exp(-d² / 0,1)`) entre les
+  clusters d'un **dictionnaire fixe de 32 clusters** (`aef_clusters()`,
+  ajusté une fois sur 11 massifs forestiers, AlphaEarth 2024,
+  `data-raw/aef_clusters.R`), dans des fenêtres de 100 m d'une grille calée
+  sur les multiples de 100 m. B4 = divergence de Jensen-Shannon moyenne des
+  fenêtres (0 pour une fenêtre uniforme) ; L3 = dispersion des embeddings
+  moyens des fenêtres. Une même parcelle a la même
   valeur dans tous les projets (écart n° 6). Statut `calculated_embedding` et
   colonnes `b4_methode` / `l3_methode` (`"biodivmapr"`, `"embedding"`) ;
   `normalize_indicator(statut =)` applique au mode embedding ses propres
-  bornes (B4 : 5 clusters effectifs par hectare ; L3 : 0,5). Stabilité
-  2023-2024 mesurée près de Dabo : moyenne du projet à 0,4 point (B4) et
-  0,3 point (L3) ; par UGF, écart médian 4,2 points pour B4, 1,2 pour L3.
+  bornes (B4 : 1er et 99e centiles du corpus, 0 et 0,87 ; L3 : 0,5).
+  Stabilité 2023-2024 mesurée près de Dabo : par UGF, écart médian
+  0,7 point et maximum 2,2 pour B4 (contre 4,3 et 12,8 avec une affectation
+  stricte), 1,2 point pour L3.
 - `detect_ndp()` : flag `augmented = "embedding_ml"` quand
   `attr(data, "embedding_source")` vaut `"aef"`, `"maestro"` ou `"forpt"` ;
   source `aef_embedding` (déclarée dans `FR.json` et dans le NDP 0). Le niveau
