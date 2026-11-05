@@ -1,11 +1,10 @@
 # Brief `nemetonshiny` — modèles de fondation (specs 064 et 065)
 
-> **Statut** : **préavis**, émis avec les specs 064 et 065 encore en brouillon.
+> **Statut** : **préavis**. Specs 064 et 065 validées le 2026-11-05, code non livré.
 > Aucune fonction cœur n'existe encore ; ce brief annonce ce qui viendra pour
 > que l'app puisse préparer ses écrans, et ouvre les écarts n° 20 à 24 de
 > `PLAN.md` **avant** la première release (leçon des écarts n° 10 et 11).
-> Rien à coder tant que les specs ne sont pas validées et la release cœur
-> publiée. Un brief définitif suivra chaque release.
+> Rien à coder tant que la release cœur n'est pas publiée. Un brief définitif suivra chaque release.
 
 ## Ce que l'app recevra (spec 064, chantier A)
 

@@ -1,12 +1,12 @@
 # Spec 064 — AlphaEarth : source NDP 0 universelle, N5 distance à la référence, B4/L3 en mode embedding
 
-> **Statut** : **brouillon, à valider par Pascal**. Rien n'est implémenté avant
-> validation (brief § 5.5).
+> **Statut** : **validé** par Pascal le 2026-11-05 (« je valide tes
+> propositions pour les décisions ouvertes »), sauf **D-2** (licence), qui
+> n'avait pas de proposition et reste ouverte. Décisions : § 9.
 > **Origine** : brief « Modèles de fondation et raisonnement sylvicole dans
 > l'écosystème Néméton » du 2026-11-05, chantier A (priorité 1).
 > **Dépôts** : `alphaearthnemeton` (nouveau, amont) et `nemeton` (cœur).
-> **Décisions ouvertes** : § 9. Les points marqués **[D-n]** dans le texte y
-> renvoient.
+> **Décisions** : § 9. Les points marqués **[D-n]** dans le texte y renvoient.
 
 ## 1. Pourquoi
 
@@ -50,19 +50,25 @@ Landsat, GEDI, ERA5, etc. C'est exactement le complément NDP 0 qui manque.
 
 - **Accès [D-1]**. Le brief propose Earth Engine via `rgee`. Or `rgee`
   **dépend de Python** (`earthengine-api` via reticulate) et d'un compte GEE :
-  ce n'est pas « R pur ». Le jeu existe aussi en **COG publics** (export
-  GCS / Source Cooperative annoncé en 2025, à vérifier : chemin, quantification
-  `int8`, tuilage UTM). Si ce miroir est confirmé, `aef_fetch()` le lit par
-  `/vsicurl/` ou `/vsis3/` avec `terra`, sans Python ni compte. `rgee` reste en
-  repli optionnel.
+  ce n'est pas « R pur ». Le jeu existe en **COG publics** : miroir Source
+  Cooperative `source.coop/tge-labs/aef/v1/annual/` (Radiant Earth), avec un
+  **index des tuiles** (`aef_index.gpkg`, aussi en GeoParquet et CSV : le nom
+  des fichiers ne dit pas quelle zone ils couvrent), et copie Google sur GCS
+  (guide Earth Engine « AEF on GCS »). Vérifié le 2026-11-05. **Retenu** :
+  `aef_fetch()` lit l'index, sélectionne les tuiles qui touchent l'emprise et
+  les lit par `/vsicurl/` ou `/vsis3/` avec `terra`, sans Python ni compte.
+  `rgee` reste en repli optionnel. À vérifier au moment du code : années
+  effectivement servies (le miroir annonce 2017-2025 mais signale 2017 retiré
+  pour un défaut de qualité), quantification, tuilage UTM.
 - **Déquantification** : si les COG sont en `int8`, `aef_fetch()` rend des
   `float32` déquantifiées et renormalisées à la norme unité. Le cœur ne
   connaît que des embeddings flottants.
 - **Cache adressé par contenu** (comme FAST, spec 017 D6) :
   `hash(emprise arrondie, année, version du jeu)`. Le hash ne porte pas la date
   de la demande.
-- **Licence** du jeu : à recopier exactement dans `aef_info()` et dans
-  `FR.json` (CC-BY 4.0 annoncé, à vérifier au moment du code). Licence du
+- **Licence** du jeu : **CC-BY 4.0** (documentation Earth Engine et fiche du
+  miroir, 2026-11-05), attribution « produit par Google et Google DeepMind »,
+  à recopier exactement dans `aef_info()` et dans `FR.json`. Licence du
   paquet : **[D-2]** (le brief dit MIT, les paquets R de l'écosystème sont en
   GPL-3).
 
@@ -120,7 +126,7 @@ indicateur_n5_distance_reference(units, embedding = NULL, reference = NULL,
 - **Score 0-100 [D-4]**. Le brief propose le **rang percentile sur le
   projet**. C'est le défaut qui a ouvert l'écart n° 6 : un même massif noté
   dans deux projets de découpes différentes aurait deux N5, et un projet de 20
-  UGF s'étale toujours de 0 à 100. Proposition :
+  UGF s'étale toujours de 0 à 100. Retenu :
   `score = "reference"` (défaut) : `N5 = 100 × (1 − F_ref(d))`, où `F_ref` est la
   distribution empirique des distances leave-one-out de la référence. Une UGF
   aussi proche que la référence typique vaut ~50, une UGF plus lointaine que
@@ -137,7 +143,7 @@ indicateur_n5_distance_reference(units, embedding = NULL, reference = NULL,
   `NA` et la famille N est inchangée (`create_family_index(na.rm = TRUE)`).
   **Avec** embedding, la famille N d'un projet existant bouge au recalcul :
   c'est voulu, à annoncer dans NEWS. **[D-5]** N5 entre-t-il dans N3 ?
-  Proposition : **non** dans cette spec (N3 est stable, sa formule est fixée
+  Retenu : **non** dans cette spec (N3 est stable, sa formule est fixée
   par le tuto 04) ; à rediscuter quand N4/N5 structurels existeront.
 - **Décompte** : 41 → **42 indicateurs** (31 de base, 11 conditionnels). Tous
   les endroits qui écrivent « 41 » sont à mettre à jour au moment du code
@@ -178,7 +184,7 @@ indicateur_l3_het_spectrale(units, spectral = NULL, reflectance = NULL,
 - **[D-6] Comparabilité inter-projets.** Le brief l'annonce « par
   construction, puisque l'espace est globalement normalisé ». C'est vrai de
   l'**espace**, pas des **clusters** : un k-means ajusté sur chaque projet
-  rendrait B4 aussi incomparable qu'aujourd'hui. Proposition : un
+  rendrait B4 aussi incomparable qu'aujourd'hui. Retenu : un
   **dictionnaire de k centroïdes** ajusté une fois sur un corpus de référence
   (forêts BFC + quelques massifs hors France), versionné dans
   `inst/extdata/aef_clusters_v1.csv` avec sa provenance ; `k` à fixer
@@ -186,7 +192,7 @@ indicateur_l3_het_spectrale(units, spectral = NULL, reflectance = NULL,
 - **Colonne annexe** `b4_methode` / `l3_methode` ∈ `biodivmapr`, `embedding`.
   Les deux méthodes ne donnent **pas** des valeurs comparables entre elles :
   la normalisation (`indicator-config.R`) doit porter des bornes par méthode.
-  **[D-7]** Est-ce un changement de sens au sens de la spec 057 ? Proposition :
+  **[D-7]** Est-ce un changement de sens au sens de la spec 057 ? Retenu :
   non, tant que le défaut reste biodivMapR ; oui (palier
   `INDICATOR_SENSE_VERSION` côté app) le jour où le défaut bascule.
 
@@ -200,7 +206,7 @@ embedding_regress(units, embedding, train, target = "H0",
 - `train` : placettes IFN du projet (`ifn_charger()`, `R/ifn_source.R`) avec
   leur hauteur dominante ; covariables Fay-Herriot existantes en option
   (`R/fay_herriot.R`).
-- Modèle : **[D-8]** `ranger` (brief) n'est pas dans DESCRIPTION. Proposition :
+- Modèle : **[D-8]** `ranger` (brief) n'est pas dans DESCRIPTION. Retenu :
   `Suggests: ranger`, avec repli **ridge en base R** (même code que les sondes
   du chantier B, qui en ont besoin de toute façon). La valeur rendue porte son
   RMSE en validation croisée spatiale par blocs.
@@ -212,12 +218,12 @@ embedding_regress(units, embedding, train, target = "H0",
   compris) → pas de régression, statut `train_too_small`, et les indicateurs
   gardent leur repli actuel.
 
-## 9. Décisions ouvertes (à arbitrer par Pascal)
+## 9. Décisions (Pascal, 2026-11-05 : propositions validées)
 
-| # | Question | Proposition |
+| # | Question | Décision |
 |---|---|---|
-| D-1 | Accès aux données : `rgee` (Python + compte GEE) ou COG publics ? | COG publics si le miroir est confirmé ; `rgee` en repli optionnel. Le chantier A redevient alors « R pur » |
-| D-2 | Licence de `alphaearthnemeton` : MIT (brief) ou GPL-3 (comme `nemeton`) ? | à trancher ; le jeu de données reste sous sa propre licence |
+| D-1 | Accès aux données : `rgee` (Python + compte GEE) ou COG publics ? | COG publics (miroir confirmé le 2026-11-05) ; `rgee` en repli optionnel. Le chantier A est « R pur » |
+| D-2 | Licence de `alphaearthnemeton` : MIT (brief) ou GPL-3 (comme `nemeton`) ? | **reste ouverte** : pas de proposition dans le brouillon. Le jeu de données reste sous CC-BY 4.0 quelle que soit la licence du paquet |
 | D-3 | Embedding moyen brut ou renormalisé ? | brut, norme documentée comme indice d'homogénéité |
 | D-4 | Score N5 : rang percentile sur le projet (brief) ou quantile de la distribution de la référence ? | référence par défaut, rang projet en option |
 | D-5 | N5 dans N3 ? | non pour cette spec |
@@ -225,7 +231,7 @@ embedding_regress(units, embedding, train, target = "H0",
 | D-7 | Le mode embedding de B4/L3 déclenche-t-il un palier de sens ? | non tant que biodivMapR reste le défaut |
 | D-8 | `ranger` en Suggests, repli ridge base R ? | oui |
 | D-9 | Années : une seule (la plus récente) ou plusieurs pour N5 ? | la plus récente par défaut, `annee =` en argument ; multi-années = chantier D (T4) |
-| D-10 | Le code **N6** cité dans les principes du brief n'est défini nulle part | le retirer de la liste, ou lui donner un objet avant de réserver le code |
+| D-10 | Le code **N6** cité dans les principes du brief n'est défini nulle part | retiré de la liste : aucun code n'est réservé sans objet |
 
 ## 10. Critères d'acceptation
 

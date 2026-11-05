@@ -114,11 +114,12 @@ un raccourci.
 
 | Spec | Objet | État |
 |---|---|---|
-| 064 | Chantier A : `alphaearthnemeton`, `embedding_summary()`, `distance_reference()`, **N5**, B4/L3 `embedding =`, régressions NDP 0 | 🟨 brouillon, **10 décisions ouvertes** (§ 9) |
-| 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | 🟨 brouillon, **7 décisions ouvertes** (§ 8) |
+| 064 | Chantier A : `alphaearthnemeton`, `embedding_summary()`, `distance_reference()`, **N5**, B4/L3 `embedding =`, régressions NDP 0 | ✅ spec validée le 2026-11-05 (9 décisions sur 10 ; **D-2 licence de `alphaearthnemeton` reste ouverte**) ; code ⬜ |
+| 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 (7 décisions) ; code ⬜ ; catalogue à sourcer par Pascal (D-4) |
 
-**Prochaine étape** : arbitrage de Pascal sur les décisions ouvertes. **Rien
-n'est implémenté avant** (brief § 5.5).
+**Prochaine étape** : implémentation du chantier A (spec 064) dans le cœur,
+puis `alphaearthnemeton` ; la licence de ce paquet (D-2) doit être tranchée
+avant sa création. Spec 065 : premier remplissage du catalogue par Pascal.
 
 **Journal** — *2026-11-05* : specs 064 et 065 rédigées, écarts n° 20 à 24
 ouverts, préavis émis vers `nemetonshiny`, `maestronemeton`, `aigora` et
@@ -146,6 +147,14 @@ pas tels quels, relevés en lisant le code :
    d'admissibilité relira la couche d'aires protégées avec les codes de B1.
 9. Avec N5 conditionnel, le décompte passe de **41 à 42** : à propager au
    moment du code.
+
+**Journal** — *2026-11-05* : Pascal valide toutes les propositions des
+décisions ouvertes. Seule la D-2 de la spec 064 (licence de
+`alphaearthnemeton`) reste ouverte, faute de proposition. La D-1 est vérifiée
+le même jour : les COG AlphaEarth sont servis sur Source Cooperative
+(`source.coop/tge-labs/aef/v1/annual/`, index `aef_index.gpkg`) et sur GCS,
+sous CC-BY 4.0. Le chantier A est donc sans Python. N6 est retiré de la liste
+des codes (D-10).
 
 ---
 

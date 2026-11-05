@@ -2,8 +2,8 @@
 
 > **Statut** : **préavis**. Le chantier B n'a pas encore de spec cœur ; il
 > réutilise les fonctions génériques de la spec 064 (`embedding_summary()`,
-> `distance_reference()`), qui doivent être validées d'abord. Rien à coder
-> côté `maestronemeton` avant que la spec 064 soit validée.
+> `distance_reference()`), validées le 2026-11-05 (spec 064). Rien à coder
+> côté `maestronemeton` avant la release cœur qui les livre.
 > **Origine** : brief « Modèles de fondation… » du 2026-11-05, chantier B.
 
 ## Ce qui est demandé à `maestronemeton`

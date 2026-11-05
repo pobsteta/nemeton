@@ -1,6 +1,6 @@
 # Brief `victor` — outils vocaux pour les itinéraires
 
-> **Statut** : **préavis**. Dépend de la spec 065 (brouillon) et du skill
+> **Statut** : **préavis**. Dépend de la spec 065 (validée le 2026-11-05) et du skill
 > `sylviculteur` d'`aigora`. Rien à coder avant la release cœur.
 > **Origine** : brief « Modèles de fondation… » du 2026-11-05, § 3.4.
 

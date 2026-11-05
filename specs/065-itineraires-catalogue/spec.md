@@ -1,12 +1,12 @@
 # Spec 065 — Catalogue d'itinéraires sylvicoles, admissibilité et comparaison (sans simulation)
 
-> **Statut** : **brouillon, à valider par Pascal**. Rien n'est implémenté avant
-> validation (brief § 5.5).
+> **Statut** : **validé** par Pascal le 2026-11-05 (« je valide tes
+> propositions pour les décisions ouvertes »). Décisions : § 8.
 > **Origine** : brief « Modèles de fondation et raisonnement sylvicole dans
 > l'écosystème Néméton » du 2026-11-05, § 3.2 et étape 4 du § 4.
 > **Dépôts** : `nemeton` (cœur, ce qui calcule) ; `aigora` (agent, ce qui
 > raisonne) et `victor` (voix) par briefs dérivés.
-> **Décisions ouvertes** : § 8, renvoyées par **[D-n]**.
+> **Décisions** : § 8, renvoyées par **[D-n]**.
 
 ## 1. Pourquoi, et pourquoi avant FINN
 
@@ -51,7 +51,7 @@ chiffrées. La sortie change de contenu, pas de forme.
 
 ## 3. Le catalogue
 
-Fichier `inst/extdata/itineraires_sylvicoles.json` (ou `.yml`, D-2),
+Fichier `inst/extdata/itineraires_sylvicoles.json` (JSON, D-2),
 accesseur `itineraires_catalogue()`, schéma validé par
 `valider_catalogue_itineraires()` (test unitaire sur le fichier livré).
 
@@ -169,11 +169,11 @@ Fixés ici pour ne pas changer de forme plus tard :
 - **App** : vue « itinéraires » dans l'onglet plan d'actions
   (`brief-nemetonshiny.md`).
 
-## 8. Décisions ouvertes (à arbitrer par Pascal)
+## 8. Décisions (Pascal, 2026-11-05 : propositions validées)
 
-| # | Question | Proposition |
+| # | Question | Décision |
 |---|---|---|
-| D-1 | Les poids des profils : le brief fait lire les 13 profils YAML par le cœur, qui ne le peut pas (dépendance inverse). | (a) le cœur prend un vecteur `poids`, l'app et l'agent le dérivent du profil ; **ou** (b) les poids par famille (pas les prompts) migrent dans le cœur, `inst/extdata/profils_poids.json`, puisque c'est de la logique métier (règle stricte n° 1). Proposition : **(b)**, l'app garde prompts et libellés |
+| D-1 | Les poids des profils : le brief fait lire les 13 profils YAML par le cœur, qui ne le peut pas (dépendance inverse). | (a) le cœur prend un vecteur `poids`, l'app et l'agent le dérivent du profil ; **ou** (b) les poids par famille (pas les prompts) migrent dans le cœur, `inst/extdata/profils_poids.json`, puisque c'est de la logique métier (règle stricte n° 1). Retenu : **(b)**, l'app garde prompts et libellés |
 | D-2 | Format du catalogue : YAML (brief) impose `yaml` en Imports ; JSON est déjà lu par `jsonlite`. | JSON, pour ne rien ajouter ; YAML seulement si Pascal veut éditer le catalogue à la main en priorité |
 | D-3 | Desserte : appeler `foretaccess` depuis le cœur, ou lire une colonne déjà calculée ? | colonne (`desserte_m`, distance de débardage) fournie par l'appelant ; `NA` → `donnee_manquante` |
 | D-4 | Périmètre du premier catalogue | BFC d'abord : chêne sessile, hêtre, sapin, épicéa, douglas en futaie régulière ; futaie irrégulière Pro Silva ; TSF ; libre évolution ; îlots de sénescence. ~12 entrées, sourcées par Pascal |

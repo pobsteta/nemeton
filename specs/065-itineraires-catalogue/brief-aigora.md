@@ -1,8 +1,8 @@
 # Brief `aigora` — skill et agent `sylviculteur`
 
 > **Statut** : **préavis**. Dépend de la spec 065 (catalogue, admissibilité,
-> comparaison), encore en brouillon. Le skill peut être **rédigé** dès la
-> validation de la spec ; il ne peut être **exercé** qu'après la release cœur
+> comparaison), validée le 2026-11-05. Le skill peut être **rédigé** dès
+> maintenant ; il ne peut être **exercé** qu'après la release cœur
 > qui livre `itineraires_admissibles()` et `comparer_itineraires()`.
 > **Origine** : brief « Modèles de fondation… » du 2026-11-05, § 3.3.
 
