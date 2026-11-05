@@ -20,7 +20,7 @@ nemeton_compute(
 \item{layers}{A \code{nemeton_layers} object containing spatial data layers}
 
 \item{indicators}{Character vector of indicator names to calculate, or "all" for all
-41 indicators of \code{\link{list_indicators}} (the source-conditional ones
+42 indicators of \code{\link{list_indicators}} (the source-conditional ones
 included: without their source they come back \code{NA} with their status).
 Use \code{list_indicators(conditionnels = FALSE)} for the 31 base indicators.}
 

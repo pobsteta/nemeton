@@ -1,0 +1,91 @@
+{
+  "version": "v1",
+  "k": 32,
+  "annee": 2024,
+  "pixels": 55000,
+  "pixels_par_site": 5000,
+  "fenetre_m": 2000,
+  "crs_echantillonnage": "EPSG:3035",
+  "graine": 64,
+  "algorithme": "stats::kmeans, MacQueen, nstart = 10, iter.max = 300",
+  "inertie_intra_sur_totale": 0.218875729028677,
+  "sites": [
+    {
+      "site": "chaux",
+      "pays": "FR",
+      "lon": 5.7,
+      "lat": 47.1
+    },
+    {
+      "site": "citeaux",
+      "pays": "FR",
+      "lon": 5.08,
+      "lat": 47.13
+    },
+    {
+      "site": "bertranges",
+      "pays": "FR",
+      "lon": 3.2,
+      "lat": 47.13
+    },
+    {
+      "site": "joux",
+      "pays": "FR",
+      "lon": 6.05,
+      "lat": 46.86
+    },
+    {
+      "site": "risoux",
+      "pays": "FR",
+      "lon": 6.1,
+      "lat": 46.55
+    },
+    {
+      "site": "vosges_saonoises",
+      "pays": "FR",
+      "lon": 6.7,
+      "lat": 47.83
+    },
+    {
+      "site": "morvan_haut_folin",
+      "pays": "FR",
+      "lon": 4.03,
+      "lat": 47.02
+    },
+    {
+      "site": "chatillon",
+      "pays": "FR",
+      "lon": 4.7,
+      "lat": 47.83
+    },
+    {
+      "site": "schwarzwald",
+      "pays": "DE",
+      "lon": 8.2,
+      "lat": 48.3
+    },
+    {
+      "site": "bialowieza",
+      "pays": "PL",
+      "lon": 23.85,
+      "lat": 52.72
+    },
+    {
+      "site": "bayerischer_wald",
+      "pays": "DE",
+      "lon": 13.45,
+      "lat": 48.95
+    }
+  ],
+  "source": "AlphaEarth Foundations Satellite Embedding v1 (annual), CC-BY 4.0",
+  "attribution": "The AlphaEarth Foundations Satellite Embedding dataset is produced by Google and Google DeepMind.",
+  "date": "2026-11-05",
+  "script": "data-raw/aef_clusters.R",
+  "bornes_b4": {
+    "tau": 0.1,
+    "h_min": 0,
+    "h_max": 0.87,
+    "fenetres": 4475,
+    "script": "data-raw/aef_bornes_b4.R"
+  }
+}

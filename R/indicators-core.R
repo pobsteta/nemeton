@@ -6,7 +6,7 @@
 #' @param units A \code{nemeton_units} or \code{sf} object representing analysis units
 #' @param layers A \code{nemeton_layers} object containing spatial data layers
 #' @param indicators Character vector of indicator names to calculate, or "all" for all
-#'   41 indicators of \code{\link{list_indicators}} (the source-conditional ones
+#'   42 indicators of \code{\link{list_indicators}} (the source-conditional ones
 #'   included: without their source they come back \code{NA} with their status).
 #'   Use \code{list_indicators(conditionnels = FALSE)} for the 31 base indicators.
 #' @param preprocess Logical. Automatically harmonize CRS and crop layers? Default TRUE.
@@ -142,7 +142,9 @@ nemeton_compute <- function(units,
   # et on leur passe `work`, une copie des unités enrichie des codes courts au
   # fil de la boucle. Avant 0.208.0, chaque indicateur recevait les unités
   # d'origine : N3 et E2 valaient toujours NA et T2 retombait sur 50 (audit 1.0).
-  composites <- c("indicateur_e2_evitement", "indicateur_n3_naturalite")
+  # N5 lit N1 pour sa reference par defaut (spec 064).
+  composites <- c("indicateur_e2_evitement", "indicateur_n3_naturalite",
+                  "indicateur_n5_distance_reference")
   indicators <- c(setdiff(indicators, composites), intersect(composites, indicators))
   work <- units
 
@@ -366,17 +368,17 @@ extract_indicator_value <- function(result, indicator,
 
 #' List available indicators
 #'
-#' Returns the indicators of the 12-family framework: the **41 indicators**
+#' Returns the indicators of the 12-family framework: the **42 indicators**
 #' of [indicator_families()], in the same order, including the
 #' source-conditional ones.
 #'
-#' Ten indicators are **conditional**: they need a source that the public
+#' Eleven indicators are **conditional**: they need a source that the public
 #' NDP 0 layers do not provide, and return `NA` (with a `<code>_status`
 #' column such as `"skipped_no_micro"`) when it is absent, never an error.
 #' They are B4 and L3 (Sentinel-2 spectral diversity), W4, A3, A4 and R6
 #' (precomputed microclimate), A5 (land-surface temperature), R5 (FORDEAD or
-#' RECONFORT dieback), R7 (daily minimum temperature) and T3 (SUFOSAT
-#' clear-cuts). `conditionnels = FALSE` keeps only the 31 indicators that the
+#' RECONFORT dieback), R7 (daily minimum temperature), T3 (SUFOSAT
+#' clear-cuts) and N5 (foundation-model embedding, spec 064). `conditionnels = FALSE` keeps only the 31 indicators that the
 #' base layers can compute.
 #'
 #' @param category Character. Filter by category: `"all"` (default),
@@ -384,8 +386,8 @@ extract_indicator_value <- function(result, indicator,
 #'   `"productive"`, `"energy"`, `"naturalness"`.
 #' @param return_type Character. Return `"names"` (default) or `"details"`
 #'   (data.frame with descriptions).
-#' @param conditionnels Logical. Include the ten source-conditional
-#'   indicators? Default `TRUE` (all 41).
+#' @param conditionnels Logical. Include the eleven source-conditional
+#'   indicators? Default `TRUE` (all 42).
 #'
 #' @return Character vector of indicator names, or a data.frame with columns
 #'   `name`, `code`, `family`, `category`, `description`, `conditionnel`
@@ -394,11 +396,12 @@ extract_indicator_value <- function(result, indicator,
 #'
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
-#' Since 1.0.0 the list holds all 41 indicators (31 before) and the details
+#' Since 1.0.0 the list holds all the indicators (31 before; 41 in 1.0.0,
+#' 42 since N5, spec 064) and the details
 #' carry `code`, `conditionnel` and `source_conditionnelle`.
 #'
 #' @examples
-#' # All 41 indicator names
+#' # All 42 indicator names
 #' list_indicators()
 #'
 #' # Only those computable from the base layers
@@ -412,7 +415,7 @@ list_indicators <- function(category = "all", return_type = c("names", "details"
                             conditionnels = TRUE) {
   return_type <- match.arg(return_type)
 
-  # La liste vient de la table des familles (source unique, 41 indicateurs) ;
+  # La liste vient de la table des familles (source unique, 42 indicateurs) ;
   # seules la categorie, la description et la source conditionnelle sont
   # propres a cette fonction.
   lab <- indicator_labels(lang = "en")
@@ -491,7 +494,8 @@ list_indicators <- function(category = "all", return_type = c("names", "details"
     "E2", "energy", "Fossil fuel avoidance via carbon sequestration (E2)", NA,
     "N1", "naturalness", "Distance to natural reference (N1)", NA,
     "N2", "naturalness", "Ecological continuity (N2)", NA,
-    "N3", "naturalness", "Composite naturalness index (N3)", NA
+    "N3", "naturalness", "Composite naturalness index (N3)", NA,
+    "N5", "naturalness", "Distance to a low-disturbance reference, foundation-model embedding (N5)", "embedding"
   ), ncol = 4, byrow = TRUE)
   data.frame(category = m[, 2], description = m[, 3], source = m[, 4],
              row.names = m[, 1], stringsAsFactors = FALSE)

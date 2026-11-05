@@ -18,7 +18,9 @@ an error.}
 indicator has several units. Used for P2: \code{"indice_station_m"} marks a
 site index in metres (CHM mode of \code{\link{indicateur_p2_station}}, status
 column \code{p2_status}), normalised against 40 m instead of the 15 m3/ha/yr
-of the production modes. \code{NULL} (default) keeps the production scale.}
+of the production modes. \code{NULL} (default) keeps the production scale.
+Also used for B4 and L3: \code{"calculated_embedding"} (embedding mode,
+spec 064) selects that mode's own bound.}
 }
 \value{
 Numeric vector. Normalized values (0-100).

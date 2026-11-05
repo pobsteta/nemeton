@@ -491,7 +491,8 @@ args_demo <- list(
 # N3 <- N1/N2/L1/B3) : calculés en dernier, sur `travail` enrichi au fil de
 # la boucle, comme dans nemeton_compute().
 indicateurs <- list_indicators()
-composites <- c("indicateur_e2_evitement", "indicateur_n3_naturalite")
+composites <- c("indicateur_e2_evitement", "indicateur_n3_naturalite",
+                "indicateur_n5_distance_reference")
 ordre <- c(setdiff(indicateurs, composites), composites)
 travail <- massif_demo_units
 codes <- setNames(vapply(indicateurs, .indicator_short_code, ""), indicateurs)

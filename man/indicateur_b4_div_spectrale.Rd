@@ -8,6 +8,8 @@ indicateur_b4_div_spectrale(
   units,
   spectral = NULL,
   reflectance = NULL,
+  embedding = NULL,
+  layers = NULL,
   ...
 )
 }
@@ -23,12 +25,24 @@ compute spectral diversity on the fly when \code{spectral} is
 \code{NULL}.}
 
 
+\item{embedding}{Optional foundation-model embedding (SpatRaster, one band
+per dimension, e.g. the 64 bands of \code{alphaearthnemeton::aef_fetch()}, or
+a list of them named by year: the latest is used). Used only when
+\code{spectral} and \code{reflectance} are both \code{NULL}: embedding
+mode, see Details.}
+
+\item{layers}{Optional nemeton_layers; its \code{aef_embedding} layer is
+used as \code{embedding} when none is given.}
+
 \item{...}{Passed to \code{\link{compute_spectral_diversity}} when computing
 on the fly (e.g. \code{window_size}, \code{mask}, \code{nb_cpu}).}
 }
 \value{
-\code{units} with the numeric \code{B4} column added, and
-\code{b4_status} (\code{"calculated"}, \code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}).
+\code{units} with the numeric \code{B4} column added,
+\code{b4_status} (\code{"calculated"}, \code{"calculated_embedding"},
+\code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}) and
+\code{b4_methode} (\code{"biodivmapr"}, \code{"embedding"}, or
+\code{NA} without source).
 }
 \description{
 Per-unit Shannon alpha diversity of spectral species (biodivMapR),
@@ -36,6 +50,23 @@ a remote-sensing proxy for compositional biodiversity available from
 NDP 0 (Sentinel-2). Strictly backward compatible: with neither
 \code{spectral} nor \code{reflectance}, the column is filled with
 \code{NA} and the \code{sf} is returned unchanged.
+}
+\details{
+\strong{Embedding mode} (spec 064): every pixel is spread over the clusters of
+a \strong{fixed} dictionary (\code{\link[=aef_clusters]{aef_clusters()}}, k = 32, fitted once on a forest
+corpus) with weights \code{exp(-d^2 / 0.1)} normalised to 1 (soft assignment:
+a hard nearest-centroid label made pixels near a cluster boundary flip
+between years). In 100 m windows of a grid snapped to multiples of 100 m,
+the window diversity is the Jensen-Shannon divergence of the pixels'
+memberships (entropy of the mean composition minus the mean entropy of
+the pixels: 0 for a uniform window), and B4 is its coverage-weighted mean
+over the unit. Fixed dictionary and fixed
+grid make B4 comparable between projects, which the biodivMapR mode is
+not (its k-means is fitted on each project). The two modes do not give
+comparable values: \code{b4_methode} says which one produced the value, and
+the status \code{"calculated_embedding"} gives the embedding mode its own
+normalisation: affine between the 1st (0) and 99th (100) percentiles of
+the window entropy over the dictionary corpus.
 }
 \section{Lifecycle}{
 

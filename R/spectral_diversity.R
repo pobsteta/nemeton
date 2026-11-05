@@ -28,6 +28,17 @@
 # run) and per-unit dispersions measured there span 0.064 to 0.440.
 .L3_MAX_DISPERSION <- 0.5
 
+# Bornes du mode embedding (spec 064, D-6, D-7), calees le 2026-11-05 sur le
+# corpus du dictionnaire (11 massifs, AlphaEarth 2024, fenetres de 100 m).
+# B4 : divergence de Jensen-Shannon des appartenances souples (tau =
+# .EMBEDDING_TAU) ; normalisation affine entre le 1er et le 99e centile
+# des fenetres du corpus (data-raw/aef_bornes_b4.R, champ `bornes_b4` de
+# inst/extdata/aef_clusters_v1.json ; un test verifie la concordance).
+# L3 : dispersion des UGF de 500 m au plus 0,51, de 200 m au plus 0,47.
+.B4_EMBEDDING_H_MIN <- 0
+.B4_EMBEDDING_H_MAX <- 0.87
+.L3_MAX_DISPERSION_EMBEDDING <- 0.5
+
 # Names biodivMapR gives to the *dispersion* companion of a diversity map
 # (e.g. "shannon_sd.tiff" next to "shannon_mean.tiff"). These are never the
 # primary map, and they are SHORTER than the map they accompany -- which is
@@ -389,11 +400,38 @@ compute_spectral_diversity <- function(reflectance,
 #' @param reflectance Optional reflectance \code{SpatRaster} / path used to
 #'   compute spectral diversity on the fly when \code{spectral} is
 #'   \code{NULL}.
+#' @param embedding Optional foundation-model embedding (SpatRaster, one band
+#'   per dimension, e.g. the 64 bands of `alphaearthnemeton::aef_fetch()`, or
+#'   a list of them named by year: the latest is used). Used only when
+#'   \code{spectral} and \code{reflectance} are both \code{NULL}: embedding
+#'   mode, see Details.
+#' @param layers Optional nemeton_layers; its \code{aef_embedding} layer is
+#'   used as \code{embedding} when none is given.
 #' @param ... Passed to [compute_spectral_diversity()] when computing on
 #'   the fly (e.g. \code{window_size}, \code{mask}, \code{nb_cpu}).
 #'
-#' @return \code{units} with the numeric \code{B4} column added, and
-#'   \code{b4_status} (\code{"calculated"}, \code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}).
+#' @details
+#' **Embedding mode** (spec 064): every pixel is spread over the clusters of
+#' a **fixed** dictionary ([aef_clusters()], k = 32, fitted once on a forest
+#' corpus) with weights `exp(-d^2 / 0.1)` normalised to 1 (soft assignment:
+#' a hard nearest-centroid label made pixels near a cluster boundary flip
+#' between years). In 100 m windows of a grid snapped to multiples of 100 m,
+#' the window diversity is the Jensen-Shannon divergence of the pixels'
+#' memberships (entropy of the mean composition minus the mean entropy of
+#' the pixels: 0 for a uniform window), and B4 is its coverage-weighted mean
+#' over the unit. Fixed dictionary and fixed
+#' grid make B4 comparable between projects, which the biodivMapR mode is
+#' not (its k-means is fitted on each project). The two modes do not give
+#' comparable values: `b4_methode` says which one produced the value, and
+#' the status `"calculated_embedding"` gives the embedding mode its own
+#' normalisation: affine between the 1st (0) and 99th (100) percentiles of
+#' the window entropy over the dictionary corpus.
+#'
+#' @return \code{units} with the numeric \code{B4} column added,
+#'   \code{b4_status} (\code{"calculated"}, \code{"calculated_embedding"},
+#'   \code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}) and
+#'   \code{b4_methode} (\code{"biodivmapr"}, \code{"embedding"}, or
+#'   \code{NA} without source).
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
 #'
@@ -402,12 +440,28 @@ compute_spectral_diversity <- function(reflectance,
 indicateur_b4_div_spectrale <- function(units,
                                         spectral = NULL,
                                         reflectance = NULL,
+                                        embedding = NULL,
+                                        layers = NULL,
                                         ...) {
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
   }
   if (is.null(spectral) && !is.null(reflectance)) {
     spectral <- compute_spectral_diversity(reflectance, ...)
+  }
+  if (is.null(spectral)) {
+    embedding <- .embedding_resolu(embedding, layers)
+    if (!is.null(embedding)) {
+      fen <- .embedding_fenetres(embedding)
+      values <- .aggregate_diversity(fen$shannon, units)
+      units$B4 <- values
+      units$b4_status <- ifelse(is.na(values), "skipped_no_coverage",
+                                "calculated_embedding")
+      units$b4_methode <- "embedding"
+      .spectral_message(values, "B4",
+                        "Shannon of embedding clusters (fixed AlphaEarth dictionary)")
+      return(units)
+    }
   }
   values <- if (is.null(spectral)) {
     rep(NA_real_, nrow(units))
@@ -417,6 +471,7 @@ indicateur_b4_div_spectrale <- function(units,
   units$B4 <- values
   units$b4_status <- if (is.null(spectral)) rep("skipped_no_spectral", nrow(units))
                      else .statut_conditionnel(values)
+  units$b4_methode <- if (is.null(spectral)) NA_character_ else "biodivmapr"
   .spectral_message(values, "B4",
                     "spectral alpha diversity (Shannon) via biodivMapR")
   units
@@ -464,8 +519,17 @@ indicateur_b4_div_spectrale <- function(units,
 #'   returned (default \code{3L}, the floor for a dispersion around a
 #'   centroid). Values below 3 are raised to 3.
 #'
-#' @return \code{units} with the numeric \code{L3} column added, and
-#'   \code{l3_status} (\code{"calculated"}, \code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}).
+#' @param embedding,layers Embedding mode, as in [indicateur_b4_div_spectrale()]:
+#'   L3 is then the mean Euclidean distance of the unit's 100 m window mean
+#'   embeddings (fixed grid) to the unit's centroid, `NA` below
+#'   `min_windows` windows. Status `"calculated_embedding"`, method in
+#'   `l3_methode`. The value grows with unit size (more windows, more
+#'   contrast): compare units of similar size.
+#'
+#' @return \code{units} with the numeric \code{L3} column added,
+#'   \code{l3_status} (\code{"calculated"}, \code{"calculated_embedding"},
+#'   \code{"skipped_no_spectral"} or \code{"skipped_no_coverage"}) and
+#'   \code{l3_methode} (\code{"biodivmapr"}, \code{"embedding"} or \code{NA}).
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
 #'
@@ -475,12 +539,29 @@ indicateur_l3_het_spectrale <- function(units,
                                         spectral = NULL,
                                         reflectance = NULL,
                                         min_windows = 3L,
+                                        embedding = NULL,
+                                        layers = NULL,
                                         ...) {
   if (!inherits(units, "sf")) {
     stop("units must be an sf object", call. = FALSE)
   }
   if (is.null(spectral) && !is.null(reflectance)) {
     spectral <- compute_spectral_diversity(reflectance, ...)
+  }
+  if (is.null(spectral)) {
+    embedding <- .embedding_resolu(embedding, layers)
+    if (!is.null(embedding)) {
+      fen <- .embedding_fenetres(embedding)
+      values <- .aggregate_beta_dispersion(fen$moyenne, units,
+                                           min_windows = min_windows)
+      units$L3 <- values
+      units$l3_status <- ifelse(is.na(values), "skipped_no_coverage",
+                                "calculated_embedding")
+      units$l3_methode <- "embedding"
+      .spectral_message(values, "L3",
+                        "dispersion of 100 m embedding windows (AlphaEarth)")
+      return(units)
+    }
   }
   values <- if (is.null(spectral)) {
     rep(NA_real_, nrow(units))
@@ -490,6 +571,7 @@ indicateur_l3_het_spectrale <- function(units,
   units$L3 <- values
   units$l3_status <- if (is.null(spectral)) rep("skipped_no_spectral", nrow(units))
                      else .statut_conditionnel(values)
+  units$l3_methode <- if (is.null(spectral)) NA_character_ else "biodivmapr"
   .spectral_message(values, "L3",
                     "spectral beta diversity (Bray-Curtis PCoA dispersion) via biodivMapR")
   units

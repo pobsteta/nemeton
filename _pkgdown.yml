@@ -111,6 +111,8 @@ navbar:
         href: articles/fiche-n2-continuite_fr.html
       - text: "N3 - Naturalite composite"
         href: articles/fiche-n3-naturalite_fr.html
+      - text: "N5 - Distance a la reference"
+        href: articles/fiche-n5-distance-reference_fr.html
       - text: "---"
       - text: "Famille S - Social & Usages"
       - text: "S1 - Distance aux routes"
@@ -590,6 +592,18 @@ reference:
     - communes_ser
     - tarif_schaeffer_local
     - exporter_tarifs_marculus
+
+  - subtitle: "Modeles de fondation et N5 (spec 064)"
+    desc: >
+      Embeddings de modeles de fondation (AlphaEarth, fournis par le paquet
+      amont alphaearthnemeton) : resume par UGF, distance a une reference
+      regularisee Ledoit-Wolf, et indicateur conditionnel N5
+    contents:
+    - embeddings
+    - embedding_summary
+    - distance_reference
+    - indicateur_n5_distance_reference
+    - aef_clusters
 
   - subtitle: "Corpus de connaissances et RAG"
     contents:

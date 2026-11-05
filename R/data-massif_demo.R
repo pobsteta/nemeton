@@ -2,11 +2,11 @@
 #'
 #' Example forest dataset for demonstrating the nemeton package: 20 forest
 #' parcels covering a 5 km x 5 km area in France (Lambert-93), with a
-#' synthetic stand inventory, the 41 indicators computed by the package from
+#' synthetic stand inventory, the 42 indicators computed by the package from
 #' the demo layers, their normalised versions and the 12 family indices.
 #'
 #' @format An \code{sf} object with 20 features (POLYGON, EPSG:2154) and 123
-#'   columns (122 fields + geometry):
+#'   columns (125 fields + geometry):
 #' \describe{
 #'   \item{parcel_id}{Character. Unique parcel identifier (P01-P20).}
 #'   \item{forest_type}{Character. Forest type: "Futaie feuillue",
@@ -31,16 +31,16 @@
 #'   \item{couvert}{Numeric. Canopy cover fraction (0-1), used by C1.}
 #'   \item{C1, C2, B1, B2, B3, B4, W1, W2, W3, W4, A1, A2, A3, A4, A5, F1, F2,
 #'     L1, L2, L3, T1, T2, T3, R1, R2, R3, R4, R5, R6, R7, S1, S2, S3, P1, P2,
-#'     P3, E1, E2, N1, N2, N3}{Numeric. Raw values of the 41 indicators, in
+#'     P3, E1, E2, N1, N2, N3, N5}{Numeric. Raw values of the 42 indicators, in
 #'     the order of \code{list_indicators()}; see \code{indicator_labels()}
 #'     for their meaning. \code{NA} when the demo layers cannot compute the
 #'     indicator (see Details).}
 #'   \item{b4_status, w4_status, a3_status, a4_status, a5_status, l3_status,
 #'     t3_status, r1_status, r5_status, r6_status, r7_status,
-#'     p3_status}{Character. Status written by the indicators that carry
+#'     p3_status, n5_status}{Character. Status written by the indicators that carry
 #'     one (e.g. \code{"skipped_no_micro"}, \code{"fire_exp"},
 #'     \code{"diametre_seul"}).}
-#'   \item{C1_norm, ..., N3_norm}{Numeric. The 41 indicators normalised to
+#'   \item{C1_norm, ..., N5_norm}{Numeric. The 42 indicators normalised to
 #'     0-100 by \code{normalize_indicator()} (higher = more favourable).}
 #'   \item{famille_carbone, famille_biodiversite, famille_eau, famille_air,
 #'     famille_sol, famille_paysage, famille_temporel, famille_risque,
@@ -57,7 +57,7 @@
 #' \code{couvert}); so are the demo layers of \code{inst/extdata/}. The
 #' inventory plays the part of field data: no real stand is described.
 #'
-#' \strong{What is computed.} The 41 indicator columns, their \code{_norm}
+#' \strong{What is computed.} The 42 indicator columns, their \code{_norm}
 #' and the family indices are not simulated: \code{data-raw/massif_demo.R}
 #' computes them with the package's own functions from
 #' \code{\link{massif_demo_layers}} and the synthetic inventory (as
@@ -66,14 +66,14 @@
 #' B3, N2, R1 and R4; and an empty game-density raster for R4, so that the
 #' generation needs no network (R2 also uses the default 270 degree wind).
 #'
-#' \strong{Indicators left NA (19).} The demo layers hold no NDVI (C2), no
+#' \strong{Indicators left NA (20).} The demo layers hold no NDVI (C2), no
 #' protected areas (B1), no CHM, LiDAR or NDVI for the stand structure (B2),
 #' no soil layer (F1), no buildings (S2, N1, hence N3), no population grid
-#' (S3), and no LiDAR canopy height or game density for R4. The ten
+#' (S3), and no LiDAR canopy height or game density for R4. The eleven
 #' source-conditional indicators also stay NA, with their status: B4 and L3
 #' (Sentinel-2 spectral diversity), W4, A3, A4 and R6 (microclimate), A5
 #' (land-surface temperature), R5 (FORDEAD / RECONFORT), R7 (daily minimum
-#' temperature) and T3 (SUFOSAT). The demo's two-digit IFN species codes
+#' temperature), T3 (SUFOSAT) and N5 (foundation-model embedding). The demo's two-digit IFN species codes
 #' are not in P2's productivity table, so P2 falls back to the genus mean
 #' (6.5 m3/ha/yr) on the 11 parcels of fertility class 2 and is NA on the 9
 #' parcels of class 1 or 3, which have no genus entry.

@@ -557,7 +557,9 @@ invert_indicator <- function(data,
   # mauvais », donc ils ont besoin d'une règle (inversion), pas d'un
   # passthrough. Cf. .NORMALIZE_RULED et le bloc d'inversion plus bas.
   "indicateur_p3_qualite_bois",
-  "indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite"
+  "indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite",
+  # N5 est un score 0-100 natif, haut = proche de la reference (spec 064).
+  "indicateur_n5_distance_reference"
 )
 
 # Indicateurs pour lesquels `normalize_indicator()` applique une règle EXPLICITE
@@ -622,6 +624,8 @@ invert_indicator <- function(data,
 #'   site index in metres (CHM mode of [indicateur_p2_station()], status
 #'   column `p2_status`), normalised against 40 m instead of the 15 m3/ha/yr
 #'   of the production modes. `NULL` (default) keeps the production scale.
+#'   Also used for B4 and L3: `"calculated_embedding"` (embedding mode,
+#'   spec 064) selects that mode's own bound.
 #'
 #' @return Numeric vector. Normalized values (0-100).
 #'
@@ -818,7 +822,17 @@ normalize_indicator <- function(indicator, values, statut = NULL) {
   # whole forest domain in the bottom 40 % of the scale — a typical unit
   # scored 20/100 whatever it held.
   if (indicator %in% c("indicateur_b4_div_spectrale", "B4")) {
-    return(pmin(100, pmax(0, values / log(.B4_MAX_SPECTRAL_SPECIES) * 100)))
+    # Mode embedding (statut "calculated_embedding", spec 064) : affectation
+    # souple, entropie jamais nulle ; echelle affine entre le 1er et le 99e
+    # centile des fenetres du corpus (.B4_EMBEDDING_H_MIN / _MAX).
+    out <- values / log(.B4_MAX_SPECTRAL_SPECIES) * 100
+    if (!is.null(statut)) {
+      st <- rep_len(as.character(statut), length(values))
+      emb <- !is.na(st) & st == "calculated_embedding"
+      out[emb] <- (values[emb] - .B4_EMBEDDING_H_MIN) /
+        (.B4_EMBEDDING_H_MAX - .B4_EMBEDDING_H_MIN) * 100
+    }
+    return(pmin(100, pmax(0, out)))
   }
 
   # L3 spectral beta diversity: high = good (spec 028 D1). The input is the
@@ -833,7 +847,12 @@ normalize_indicator <- function(indicator, values, statut = NULL) {
   # actually reaches — not the nominal 1.0, which would have compressed
   # every unit into the bottom half of the scale for a second time.
   if (indicator %in% c("indicateur_l3_het_spectrale", "L3")) {
-    return(pmin(100, pmax(0, values / .L3_MAX_DISPERSION * 100)))
+    borne <- rep(.L3_MAX_DISPERSION, length(values))
+    if (!is.null(statut)) {
+      st <- rep_len(as.character(statut), length(values))
+      borne[!is.na(st) & st == "calculated_embedding"] <- .L3_MAX_DISPERSION_EMBEDDING
+    }
+    return(pmin(100, pmax(0, values / borne * 100)))
   }
 
   if (identical(indicator, "indicateur_p2_station") && !is.null(statut)) {

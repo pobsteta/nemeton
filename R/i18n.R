@@ -311,6 +311,7 @@ msg_error <- function(key, ...) {
     indicateur_n1_distance = "Infrastructure distance (N: Naturalness & Wilderness)",
     indicateur_n2_continuite = "Forest continuity (N: Naturalness & Wilderness)",
     indicateur_n3_naturalite = "Wilderness composite index (N: Naturalness & Wilderness)",
+    indicateur_n5_distance_reference = "Distance to a low-disturbance reference (N: Naturalness & Wilderness)",
 
     # Indicateurs ajoutes apres 0.4.0 (libelles manquants, audit 1.0)
     indicateur_b4_div_spectrale = "Spectral alpha diversity (B: Biodiversity/Vivant)",
@@ -543,6 +544,7 @@ msg_error <- function(key, ...) {
     indicateur_n1_distance = "Distance infrastructures (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
     indicateur_n2_continuite = "Continuit\u00e9 foresti\u00e8re (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
     indicateur_n3_naturalite = "Indice composite wilderness (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
+    indicateur_n5_distance_reference = "Distance \u00e0 une r\u00e9f\u00e9rence peu perturb\u00e9e (N : Naturalit\u00e9 & Caract\u00e8re sauvage)",
 
     # Indicateurs ajoutes apres 0.4.0 (libelles manquants, audit 1.0)
     indicateur_b4_div_spectrale = "Diversit\u00e9 spectrale alpha (B: Biodiversit\u00e9/Vivant)",

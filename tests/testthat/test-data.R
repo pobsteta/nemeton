@@ -13,12 +13,12 @@ test_that("massif_demo_units has correct structure", {
   expect_equal(sf::st_crs(massif_demo_units)$epsg, 2154)
 })
 
-test_that("massif_demo_units carries the 41 indicators and their _norm", {
+test_that("massif_demo_units carries the 42 indicators and their _norm", {
   skip_if_not_installed("sf")
 
   data("massif_demo_units", package = "nemeton")
   codes <- indicator_labels()$code
-  expect_length(codes, 41)
+  expect_length(codes, 42)
 
   expect_length(setdiff(codes, names(massif_demo_units)), 0)
   expect_length(setdiff(paste0(codes, "_norm"), names(massif_demo_units)), 0)

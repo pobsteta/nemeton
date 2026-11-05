@@ -31,7 +31,7 @@ NDP_LEVELS <- list(
     name = "D\u00e9couverte",
     fibonacci = 1L,
     confidence = 1 / 12,
-    sources = c("sentinel_2", "worldclim", "bd_topo", "mnt_25m")
+    sources = c("sentinel_2", "worldclim", "bd_topo", "mnt_25m", "aef_embedding")
   ),
   list(
     ndp = 1L,
@@ -230,6 +230,7 @@ ndp_table <- function() {
 #'   \item \code{"species_ml"} : \code{attr(data, "species_source") \%in\% c("tree_sat", "maestro")}
 #'   \item \code{"texture_ml"} : \code{attr(data, "texture_source") == "maestro"}
 #'   \item \code{"lai_ml"} : \code{attr(data, "lai_source") == "prosail_s2"} (spec 033)
+#'   \item \code{"embedding_ml"} : \code{attr(data, "embedding_source") \%in\% c("aef", "maestro", "forpt")} (spec 064)
 #' }
 #'
 #' @note
@@ -325,6 +326,12 @@ detect_ndp <- function(data) {
     sources <- c(sources, "scanner_terrestre")
   }
   if (isTRUE(attr(data, "has_modele_3d"))) sources <- c(sources, "modele_3d")
+  # Embedding de modele de fondation (spec 064) : source NDP 0 optionnelle,
+  # listee seulement quand elle est presente.
+  embedding_source <- attr(data, "embedding_source")
+  if (!is.null(embedding_source) && identical(as.character(embedding_source), "aef")) {
+    sources <- c(sources, "aef_embedding")
+  }
   if (field_plots > 0L) {
     sources <- c(sources, "field_qfield")
     # Inventaire vidéo Groma : traité comme un inventaire terrain (même
@@ -368,6 +375,13 @@ detect_ndp <- function(data) {
   lai_source <- attr(data, "lai_source")
   if (!is.null(lai_source) && identical(as.character(lai_source), "prosail_s2")) {
     augmented <- c(augmented, "lai_ml")
+  }
+
+  # spec 064 : embedding de modele de fondation (AlphaEarth ; MAESTRO et ForPT
+  # aux chantiers B et C). Flag ML separe, NDP de base inchange.
+  if (!is.null(embedding_source) &&
+      as.character(embedding_source) %in% c("aef", "maestro", "forpt")) {
+    augmented <- c(augmented, "embedding_ml")
   }
 
   new_ndp_result(level, augmented, sources)
