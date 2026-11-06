@@ -45,9 +45,21 @@ faisait ignorer un âge relevé).
 |---|---|---|---|
 | 1 | **Champ d'âge** | colonne `age` renseignée | tel quel |
 | 2 | **Année d'installation** | `establishment_year_field` fourni | `année_courante − année_installation` |
+| 2 bis | **Âge structurel** (depuis 2026.11.7, spec 067) | argument `age_structurel =` fourni (vecteur, colonne ou raster) | tel quel ; `t1_source = "age_structurel"` |
 | 3 | **BD Forêt / TFV** | couche `bdforet` avec un champ TFV reconnu | âge typologique via `.estimate_age_tfv()`, moyenne pondérée par la surface des TFV **reconnus** |
 | 4 | **NDVI** | couche `ndvi` | `20 + max(0, NDVI − 0,2) / 0,6 × 100` |
 | — | *aucun* | — | **NA** + avertissement |
+
+La colonne `t1_source` dit quel chemin a daté chaque unité (`age`,
+`annee_installation`, `age_structurel`, `bdforet`, `ndvi`, ou `NA`).
+
+**L'âge structurel** (« T1 désaturé », spec 067). La BD Forêt plafonne à
+100 ans et le NDVI à 120 : toutes les vieilles forêts y paraissent
+centenaires. Un âge lu dans la structure du peuplement, par exemple la tête
+« âge » de ForPT sur le nuage LiDAR (`forptnemeton::forpt_age()`, à venir),
+peut aller au-delà. La borne de normalisation reste à 200 ans : le sens de T1
+ne change pas. Un âge structurel n'est pas un âge : un peuplement de station
+pauvre paraît plus jeune, et la tête de ForPT a été entraînée hors de France.
 
 Champs TFV reconnus : `TFV`, `tfv`, `CODE_TFV`, `code_tfv`, `ESSENCE`,
 `essence`, `LIB_FV`, `lib_fv`, `LIBELLE`, `libelle`. L'estimation typologique
@@ -74,7 +86,7 @@ fait par le bas.
 | NDP | Chemin servi | Ce qui change |
 |---|---|---|
 | **0** | 4 (NDVI) ou 3 (BD Forêt) | âge **typologique**, pas mesuré |
-| **1** | 3 | inchangé — l'âge ne se lit pas au LiDAR |
+| **1** | 2 bis ou 3 | avec un âge structurel (LiDAR HD + ForPT), un âge **estimé par la structure**, non plafonné à 120 ans ; sinon inchangé |
 | **2** | 3 | — |
 | **3** | 1 ou 2 : **âge relevé sur le terrain** | seule vraie mesure (sondage, archives, carottage), prioritaire sur la BD Forêt |
 | **4** | 1 | — |

@@ -637,3 +637,49 @@ test_that("T2 validates sf input", {
     "must be.*sf"
   )
 })
+
+# ---- T1 : age structurel (spec 067, T1 desature) ------------------------------
+
+test_that("T1 uses a structural age after measured ages and before the estimates", {
+  carre <- function(x0) sf::st_polygon(list(rbind(c(x0, 0), c(x0 + 10, 0), c(x0 + 10, 10),
+                                                   c(x0, 10), c(x0, 0))))
+  u <- sf::st_sf(id = 1:4, age = c(60, NA, NA, NA), an = c(NA, 1990, NA, NA),
+                 geometry = sf::st_sfc(lapply(c(0, 20, 40, 60), carre), crs = 2154))
+  r <- suppressMessages(indicateur_t1_anciennete(
+    u, age_field = "age", establishment_year_field = "an", current_year = 2026,
+    age_structurel = c(300, 250, 240, NA)))
+  expect_equal(r$T1, c(60, 36, 240, NA))
+  expect_equal(r$t1_source, c("age", "annee_installation", "age_structurel", NA))
+
+  # sans age structurel : comportement inchange, source tracee
+  r0 <- suppressMessages(indicateur_t1_anciennete(u, age_field = "age"))
+  expect_equal(r0$T1, c(60, NA, NA, NA))
+  expect_equal(r0$t1_source, c("age", NA, NA, NA))
+
+  # colonne, valeurs aberrantes, raster
+  u$forpt <- c(NA, -5, 180, Inf)
+  r2 <- suppressMessages(indicateur_t1_anciennete(u, age_field = NULL, age_structurel = "forpt"))
+  expect_equal(r2$T1, c(NA, NA, 180, NA))
+  rast <- terra::rast(xmin = 0, xmax = 80, ymin = 0, ymax = 10, resolution = 1, crs = "EPSG:2154")
+  terra::values(rast) <- 210
+  r3 <- suppressMessages(indicateur_t1_anciennete(u, age_field = NULL, age_structurel = rast))
+  expect_equal(r3$T1, rep(210, 4))
+  expect_equal(unique(r3$t1_source), "age_structurel")
+
+  expect_error(indicateur_t1_anciennete(u, age_structurel = c(1, 2)), "4 units")
+  expect_error(indicateur_t1_anciennete(u, age_structurel = "absente"), "not found")
+  expect_error(indicateur_t1_anciennete(u, age_structurel = list(1)), "numeric vector")
+})
+
+test_that("T1 normalisation still saturates at 200 years with a structural age", {
+  expect_equal(as.numeric(normalize_indicator("T1", c(100, 200, 300))), c(50, 100, 100))
+})
+
+test_that("T1 marks BD Foret and NDVI as sources", {
+  u <- sf::st_sf(id = 1, geometry = sf::st_sfc(
+    sf::st_polygon(list(rbind(c(0, 0), c(10, 0), c(10, 10), c(0, 10), c(0, 0)))), crs = 2154))
+  bdf <- sf::st_sf(TFV = "Forêt fermée feuillus", geometry = sf::st_geometry(u))
+  r <- suppressMessages(indicateur_t1_anciennete(u, bdforet = bdf, age_field = NULL))
+  expect_equal(r$T1, 100)
+  expect_equal(r$t1_source, "bdforet")
+})

@@ -128,7 +128,7 @@ terrain.
 |---|---|
 | 1. B5 sans ForPT | ✅ **2026.11.5** — `indicateur_b5_stratification()`, fiche B5, écart n° 26 |
 | 2. `simulate_density_sensitivity()` | ✅ **2026.11.6** — B5 seul ; N4 et N5 structurel à ajouter quand ils existeront |
-| 3. `forptnemeton` : `forpt_embed()`, `forpt_age()` ; N5 structurel, T1 désaturé | attend D-6 (licences) et D-7 (dépôt) |
+| 3. `forptnemeton` : `forpt_embed()`, `forpt_age()` ; N5 structurel, T1 désaturé | T1 côté cœur ✅ **2026.11.7** (`age_structurel =`, `t1_source`) ; `forptnemeton` attend D-7 (dépôt) et la licence des poids (D-6, ci-dessous) ; N5 structurel : rien à coder dans le cœur |
 | 4. `forpt_segment()` (SelectAnyTree), N4 | N4 reporté (D-2) |
 
 **Écarts au § 4 lors du codage de B5.**
@@ -167,3 +167,20 @@ retour. Vercors, 16 retours/m², 5 répétitions : écart au 90ᵉ centile de 0,
 dessous de la densité du LiDAR HD sur des placettes de 700 m² : le badge
 drone de l'app dira donc le plus souvent `densite_suffisante` pour B5 ; ce
 sera N4 (arbres morts, très gros bois) qui pourra justifier un drone.
+
+**D-6, licences vérifiées le 2026-11-06.**
+
+| Élément | Licence | Conséquence |
+|---|---|---|
+| Code ForPT (`github.com/prs-eth/ForPT`) | **MIT** (fichier LICENSE du dépôt) | compatible avec `forptnemeton` en GPL-3 |
+| Poids ForPT (Hugging Face `prs-eth/ForPT`) | **non vérifiée** : Hugging Face est bloqué depuis la session ; la carte du modèle ne l'affiche pas dans les extraits trouvés. L'encodeur LitePT dont il dérive est sous MIT | **à lire par Pascal** sur la carte du modèle avant d'écrire `forpt_embed()` |
+| SelectAnyTree (`github.com/thanhhff/SelectAnyTree`) | **CC BY-NC 4.0** (annoncée dans le README, héritée de ForestFormer3D / OneFormer3D) ; **poids non publiés** (« coming soon ») | non commercial, et incompatible avec la GPL-3 (une restriction de plus) : ne peut pas être embarqué dans `forptnemeton` |
+
+**Conséquence pour D-1 (instances d'arbres).** SelectAnyTree ne peut pas être
+le chemin par défaut : pas de poids, et une licence non commerciale.
+Proposition à valider : instances d'arbres par les algorithmes de lidR déjà
+utilisés par `segment_houppiers()` (sommets `lmf`, puis `dalponte2016` ou
+`silva2016` sur le MNH, ou `li2012` sur le nuage), dans le cœur, sans modèle ;
+basculer sur ForPT quand ses instances seront publiées, si leur licence le
+permet. SelectAnyTree resterait un appel optionnel, installé par
+l'utilisateur, pour un usage non commercial.

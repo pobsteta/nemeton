@@ -10,7 +10,8 @@ indicateur_t1_anciennete(
   bdforet = NULL,
   age_field = "age",
   establishment_year_field = NULL,
-  current_year = NULL
+  current_year = NULL,
+  age_structurel = NULL
 )
 }
 \arguments{
@@ -29,6 +30,14 @@ Used for units with no measured age.}
 
 \item{current_year}{Integer. Current year for age calculation from establishment year.
 Default uses current system year.}
+
+\item{age_structurel}{Optional structural age (years), estimated from the
+stand structure rather than dated: a numeric vector (one value per
+unit), the name of a column of \code{units}, or a SpatRaster (mean over
+each unit). Typically \code{forptnemeton::forpt_age()} from the LiDAR
+point cloud (spec 067). It ranks after a measured age and an
+establishment year and before BD Forêt and NDVI, which saturate at 100
+and 120 years. \code{NULL} (default): T1 is unchanged.}
 }
 \value{
 The input \code{units} (same class, rows and order) with an added numeric column \code{T1}: estimated age in years -- NOT a 0-100
@@ -38,17 +47,29 @@ ancientness counts as maximal. Until 0.196.0 it was wrongly declared natively
 0-100 and merely clamped, so 150 and 250 years both came out at 100. See spec
 048 section 10.
   \code{NA} for a unit no source can date (no default age).
+A column \code{t1_source} says which source dated each unit:
+\code{"age"}, \code{"annee_installation"}, \code{"age_structurel"},
+\code{"bdforet"}, \code{"ndvi"}, or \code{NA}.
 }
 \description{
 Estimates stand age per unit, a measured age taking precedence over an
-estimate: direct age field, then establishment year, then BD Forêt TFV
-(Type de Formation Végétale, area-weighted, tuto 04 methodology), then an
-NDVI proxy. Each source only fills the units left \code{NA} by the
-previous ones.
+estimate: direct age field, then establishment year, then a structural
+age when one is given (e.g. ForPT from the LiDAR point cloud, spec 067),
+then BD Forêt TFV (Type de Formation Végétale, area-weighted, tuto 04
+methodology), then an NDVI proxy. Each source only fills the units left
+\code{NA} by the previous ones.
 }
 \details{
 **Order of precedence** (per unit): measured age, establishment year,
-BD Forêt TFV, NDVI proxy.
+structural age (when given), BD Forêt TFV, NDVI proxy.
+
+**Structural age** (spec 067, "T1 désaturé"): the BD Forêt TFV tops out
+at 100 years and the NDVI proxy at 120, so old stands are all read as
+about a century old. A structural age read in the LiDAR point cloud can
+go further; normalisation still rescales against 200 years (spec 048
+section 10), so the default meaning of T1 does not change. A structural
+age is not an age: a stand on a poor site looks younger, and the ForPT
+age head was trained outside France.
 
 **BD Forêt TFV method**:
 \itemize{

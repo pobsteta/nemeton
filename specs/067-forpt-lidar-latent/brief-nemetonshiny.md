@@ -1,6 +1,6 @@
 # Brief `nemetonshiny` — B5, stratification verticale (spec 067)
 
-> **Statut** : livré en cœur **2026.11.5** (B5) et **2026.11.6** (dimensionnement). Écart n° 26 de `PLAN.md`.
+> **Statut** : livré en cœur **2026.11.5** (B5), **2026.11.6** (dimensionnement) et **2026.11.7** (T1 `t1_source`, `age_structurel`). Écart n° 26 de `PLAN.md`.
 
 ## Ce que l'app reçoit
 
@@ -36,3 +36,13 @@ et un `resume` par densité simulée (`ecart_median`, `ecart_p90`,
 mérite d'être testé », avec le tableau `resume` en détail. Le calcul relit le
 nuage : à lancer à la demande (tâche longue), pas à chaque affichage. Seul B5
 est simulé pour l'instant.
+
+## Ajout 2026.11.7 — T1 et sa source
+
+`indicateur_t1_anciennete()` rend une colonne `t1_source` (`age`,
+`annee_installation`, `age_structurel`, `bdforet`, `ndvi`, `NA`). Proposé :
+l'afficher à côté de T1 dans la fiche de l'UGF (un âge typologique de la BD
+Forêt n'a pas le poids d'un âge relevé). Nouvel argument `age_structurel =`
+pour passer l'âge structurel de ForPT quand `forptnemeton` existera ; sans
+lui, rien ne change. `nemeton_compute()` ne transporte pas `t1_source` : à
+lire en appelant T1 directement si l'app le veut.
