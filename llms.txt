@@ -317,6 +317,8 @@ Protection, diversite structurelle et connectivite ecologique
   : Indicator B4 — Spectral alpha diversity (family B)
 - [`indicateur_b5_stratification()`](https://pobsteta.github.io/nemeton/reference/indicateur_b5_stratification.md)
   : B5: Vertical stratification from the LiDAR point cloud
+- [`simulate_density_sensitivity()`](https://pobsteta.github.io/nemeton/reference/simulate_density_sensitivity.md)
+  : Sensitivity of B5 to the density of the LiDAR point cloud
 
 ### Famille W : Regulation de l’eau
 

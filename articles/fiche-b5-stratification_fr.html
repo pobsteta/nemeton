@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -324,10 +324,66 @@ sous-échantillonnés</td>
 </tr>
 </tbody>
 </table>
-<p>La fonction de dimensionnement de la spec 067
-(<code>simulate_density_sensitivity()</code>, à venir) mesurera la
-stabilité de B5 quand la densité baisse : c’est elle qui dira si une
-campagne drone change le diagnostic.</p>
+<p><strong>Dimensionnement.</strong>
+<code><a href="../reference/simulate_density_sensitivity.html">simulate_density_sensitivity()</a></code> éclaircit le nuage vers des
+densités plus faibles (par impulsion quand le nuage porte
+<code>gpstime</code>, sinon retour par retour), recalcule B5 plusieurs
+fois par densité et mesure l’écart à la valeur de pleine densité. Si B5
+ne bouge plus quand on retire la moitié des retours, une campagne plus
+dense a peu de chances de changer le diagnostic
+(<code>conclusion = "densite_suffisante"</code>) ; s’il bouge, la
+densité actuelle est une limite (<code>"densite_limite"</code>) et un
+vol drone mérite d’être essayé. C’est une lecture de
+<strong>convergence</strong> : un éclaircissement ne montre pas ce qu’un
+nuage plus dense verrait, seulement si le score a cessé de bouger.</p>
+<p>Sur les 96 placettes du Vercors (16 retours/m², éclaircie par
+impulsion, cinq répétitions, profil <code>"points"</code>) :</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+</colgroup>
+<thead><tr class="header">
+<th>Densité simulée (retours/m²)</th>
+<th>Écart médian</th>
+<th>Écart au 90ᵉ centile</th>
+<th>Part stable (≤ 5 points)</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>10</td>
+<td>0,3</td>
+<td>0,8</td>
+<td>100 %</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td>0,5</td>
+<td>1,5</td>
+<td>100 %</td>
+</tr>
+<tr class="odd">
+<td>2</td>
+<td>1,0</td>
+<td>2,6</td>
+<td>99,8 %</td>
+</tr>
+<tr class="even">
+<td>1</td>
+<td>1,5</td>
+<td>3,9</td>
+<td>96,3 %</td>
+</tr>
+</tbody>
+</table>
+<p>B5 est stable jusqu’à 1 retour/m² sur des placettes de 700 m² : la
+<strong>précision</strong> de B5 ne demande pas de drone. Son
+<strong>biais</strong> est une autre question : un éclaircissement garde
+la même occultation, il ne dit rien des sous-étages que le LiDAR aérien
+ne voit pas (piège n° 1). Le profil <code>"densite_foliaire"</code> est
+un peu plus sensible (écart au 90ᵉ centile 4,2 à 1 retour/m²).</p>
 </div>
 <div class="section level2">
 <h2 id="quatre-pièges">4. Quatre pièges<a class="anchor" aria-label="anchor" href="#quatre-pi%C3%A8ges"></a>
@@ -454,14 +510,18 @@ les renvoie : feuillage, branches et troncs comptent pareil.
 <td><code>R/indicateur_b5_stratification.R</code></td>
 </tr>
 <tr class="even">
+<td>Dimensionnement</td>
+<td><code>R/simulate_density_sensitivity.R</code></td>
+</tr>
+<tr class="odd">
 <td>Spécification</td>
 <td><code>specs/067-forpt-lidar-latent/spec.md</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>MNT et MNH depuis le nuage</td>
 <td><code><a href="../reference/compute_dtm_chm_from_laz.html">compute_dtm_chm_from_laz()</a></code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Structure vue du ciel</td>
 <td>fiche B2</td>
 </tr>

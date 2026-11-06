@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,6 +115,19 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.6" id="nemeton-2026116-2026-11-06">nemeton 2026.11.6 (2026-11-06)<a class="anchor" aria-label="anchor" href="#nemeton-2026116-2026-11-06"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-6">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-6"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/simulate_density_sensitivity.html">simulate_density_sensitivity()</a></code></strong> (spec 067, dimensionnement) : éclaircit le nuage LiDAR vers des densités plus faibles (par défaut 10, 5 et 2 retours/m²), par impulsion quand le nuage porte <code>gpstime</code>, sinon retour par retour, recalcule B5 à chaque tirage et mesure l’écart à la valeur de pleine densité. Rend le détail par UGF, un résumé par densité (écart médian, 90ᵉ centile, part stable sous <code>tolerance = 5</code> points, part perdue sous <code>min_points</code>) et une conclusion <code>densite_suffisante</code>, <code>densite_limite</code> ou <code>non_simule</code>, lue comme une convergence : un éclaircissement ne montre pas ce qu’un nuage plus dense verrait. Le nuage n’est lu qu’une fois. Seul B5 est simulé ; N4 et N5 structurel suivront.</li>
+<li>Sur les 96 placettes du Vercors (16 retours/m²), B5 reste stable jusqu’à 1 retour/m² (90 % des écarts sous 3,9 points) : la précision de B5 ne demande pas de drone ; son biais d’occultation, lui, n’est pas mesuré par un éclaircissement.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="interne-2026-11-6">Interne<a class="anchor" aria-label="anchor" href="#interne-2026-11-6"></a></h3>
+<ul><li>B5 : comptes factorisés (codes par retour, tabulation, score) pour être partagés avec le dimensionnement ; lecture des dalles LAZ isolée dans une fonction interne, testée sans lidR. Comportement inchangé.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.5" id="nemeton-2026115-2026-11-06">nemeton 2026.11.5 (2026-11-06)<a class="anchor" aria-label="anchor" href="#nemeton-2026115-2026-11-06"></a></h2>
 <div class="section level3">

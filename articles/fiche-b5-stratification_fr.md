@@ -77,10 +77,35 @@ Moins de 100 retours, sol compris : `skipped_low_density`.
 | **2** | \+ LiDAR drone | densité bien plus forte, sous-étages mieux vus |
 | **3–4** | \+ scanner terrestre | profil complet ; B5 n’est plus limité par l’occultation |
 
-La fonction de dimensionnement de la spec 067
-(`simulate_density_sensitivity()`, à venir) mesurera la stabilité de B5
-quand la densité baisse : c’est elle qui dira si une campagne drone
-change le diagnostic.
+**Dimensionnement.**
+[`simulate_density_sensitivity()`](https://pobsteta.github.io/nemeton/reference/simulate_density_sensitivity.md)
+éclaircit le nuage vers des densités plus faibles (par impulsion quand
+le nuage porte `gpstime`, sinon retour par retour), recalcule B5
+plusieurs fois par densité et mesure l’écart à la valeur de pleine
+densité. Si B5 ne bouge plus quand on retire la moitié des retours, une
+campagne plus dense a peu de chances de changer le diagnostic
+(`conclusion = "densite_suffisante"`) ; s’il bouge, la densité actuelle
+est une limite (`"densite_limite"`) et un vol drone mérite d’être
+essayé. C’est une lecture de **convergence** : un éclaircissement ne
+montre pas ce qu’un nuage plus dense verrait, seulement si le score a
+cessé de bouger.
+
+Sur les 96 placettes du Vercors (16 retours/m², éclaircie par impulsion,
+cinq répétitions, profil `"points"`) :
+
+| Densité simulée (retours/m²) | Écart médian | Écart au 90ᵉ centile | Part stable (≤ 5 points) |
+|----|----|----|----|
+| 10 | 0,3 | 0,8 | 100 % |
+| 5 | 0,5 | 1,5 | 100 % |
+| 2 | 1,0 | 2,6 | 99,8 % |
+| 1 | 1,5 | 3,9 | 96,3 % |
+
+B5 est stable jusqu’à 1 retour/m² sur des placettes de 700 m² : la
+**précision** de B5 ne demande pas de drone. Son **biais** est une autre
+question : un éclaircissement garde la même occultation, il ne dit rien
+des sous-étages que le LiDAR aérien ne voit pas (piège n° 1). Le profil
+`"densite_foliaire"` est un peu plus sensible (écart au 90ᵉ centile 4,2
+à 1 retour/m²).
 
 ## 4. Quatre pièges
 
@@ -144,6 +169,7 @@ les renvoie : feuillage, branches et troncs comptent pareil.
 | Sujet | Fichier |
 |----|----|
 | Fonction B5 | `R/indicateur_b5_stratification.R` |
+| Dimensionnement | `R/simulate_density_sensitivity.R` |
 | Spécification | `specs/067-forpt-lidar-latent/spec.md` |
 | MNT et MNH depuis le nuage | [`compute_dtm_chm_from_laz()`](https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.md) |
 | Structure vue du ciel | fiche B2 |

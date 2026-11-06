@@ -52,7 +52,7 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 23 | Itinéraires admissibles par UGF et raisons d’exclusion ([`itineraires_admissibles()`](https://pobsteta.github.io/nemeton/reference/itineraires_admissibles.md)) | cœur **2026.11.4** | `nemetonshiny`, `aigora`, `victor` | **Ouvert avant le code** (2026-11-05), préavis app + `specs/065-itineraires-catalogue/brief-aigora.md`, `brief-victor.md` |
 | 24 | Comparaison pondérée ([`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md)) ; poids des profils dans le cœur ([`profils_poids()`](https://pobsteta.github.io/nemeton/reference/profils_poids.md), spec 065 D-1 b) | cœur **2026.11.4** | `nemetonshiny`, `aigora` | **Ouvert avant le code** (2026-11-05) ; question posée à l’app : les poids des 13 profils existent-ils sous forme numérique ? |
 | 25 | Table des sondes « Ce que les modèles voient » ([`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md)) | cœur **2026.11.3** | `nemetonshiny` | **Ouvert avant le code** (2026-11-06). Vue triée par R², lecture `voit` / `partiel` / `angle_mort`, marqueur `source_commune` |
-| 26 | B5 stratification verticale : colonnes `B5`, `b5_status` (4 statuts), `b5_s1`…`b5_s5` (profil vertical), `b5_densite` ; couche carte | cœur **2026.11.5** | `nemetonshiny` | Ouvert le 2026-11-06, préavis `specs/067-forpt-lidar-latent/brief-nemetonshiny.md`. Libellés, sens et `doc_url` viennent de [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md) : rien à forker |
+| 26 | B5 stratification verticale : colonnes `B5`, `b5_status` (4 statuts), `b5_s1`…`b5_s5` (profil vertical), `b5_densite` ; couche carte ; badge de dimensionnement drone (`simulate_density_sensitivity()$conclusion`) | cœur **2026.11.5** / **2026.11.6** | `nemetonshiny` | Ouvert le 2026-11-06, préavis `specs/067-forpt-lidar-latent/brief-nemetonshiny.md`. Libellés, sens et `doc_url` viennent de [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md) : rien à forker |
 
 **Les n° 20 à 24 sont ouverts le 2026-11-05 avant toute ligne de code**
 (specs 064 et 065, brief « modèles de fondation »), pour que la leçon
@@ -141,13 +141,23 @@ opposer au prochain fork qui se présentera comme un raccourci.
 | 064 | Chantier A : `alphaearthnemeton`, [`embedding_summary()`](https://pobsteta.github.io/nemeton/reference/embedding_summary.md), [`distance_reference()`](https://pobsteta.github.io/nemeton/reference/distance_reference.md), **N5**, B4/L3 `embedding =`, régressions NDP 0 | ✅ spec validée le 2026-11-05 (D-2 : GPL-3) ; 🟨 code : N5 + fonctions génériques + flag NDP → **2026.11.1** ; reste `alphaearthnemeton`, B4/L3, [`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md), vignette |
 | 065 | Étape 4 : catalogue d’itinéraires, [`itineraires_admissibles()`](https://pobsteta.github.io/nemeton/reference/itineraires_admissibles.md), [`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md) sans FINN | ✅ spec validée le 2026-11-05 ; moteur → **2026.11.4** ; catalogue (squelette `a_sourcer`) à remplir par Pascal (D-4) |
 | 066 | Chantier B : sondes [`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md) (cœur, AlphaEarth d’abord) et MAESTRO en extracteur d’embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
-| 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; **B5** → **2026.11.5** ; reste `simulate_density_sensitivity()`, `forptnemeton` (D-6 licences, D-7 dépôt), N5 structurel, T1 désaturé, N4 (reporté, D-2) |
+| 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; **B5** → **2026.11.5** ; [`simulate_density_sensitivity()`](https://pobsteta.github.io/nemeton/reference/simulate_density_sensitivity.md) → **2026.11.6** ; reste `forptnemeton` (D-6 licences, D-7 dépôt), N5 structurel, T1 désaturé, N4 (reporté, D-2) |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
 parcellaire de Dabo et un projet hors France ;
 [`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md)
 et la vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier
 remplissage du catalogue par Pascal.
+
+**Journal** — *2026-11-06* (**2026.11.6**) : 2026.11.5 mergée
+(pobsteta/nemeton#591).
+[`simulate_density_sensitivity()`](https://pobsteta.github.io/nemeton/reference/simulate_density_sensitivity.md)
+: éclaircies par impulsion (`gpstime`) ou par retour, résumé par
+densité, conclusion de convergence. Vercors (16 retours/m²) : B5 stable
+jusqu’à 1 retour/m² (p90 des écarts 3,9 points, 96 % des UGF-tirages
+sous 5 points) ; la précision de B5 ne justifie pas de drone, son biais
+d’occultation n’est pas mesurable ainsi. Écart n° 26 étendu au badge de
+dimensionnement.
 
 **Journal** — *2026-11-06* (**2026.11.5**) : spec 067 validée (D-1 à D-7
 telles que proposées), mergée (pobsteta/nemeton#590). **B5** codé sans
