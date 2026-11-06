@@ -1,3 +1,28 @@
+# nemeton 2026.11.6 (2026-11-06)
+
+## Nouveautés
+
+- **`simulate_density_sensitivity()`** (spec 067, dimensionnement) :
+  éclaircit le nuage LiDAR vers des densités plus faibles (par défaut 10, 5 et
+  2 retours/m²), par impulsion quand le nuage porte `gpstime`, sinon retour
+  par retour, recalcule B5 à chaque tirage et mesure l'écart à la valeur de
+  pleine densité. Rend le détail par UGF, un résumé par densité (écart
+  médian, 90ᵉ centile, part stable sous `tolerance = 5` points, part perdue
+  sous `min_points`) et une conclusion `densite_suffisante`,
+  `densite_limite` ou `non_simule`, lue comme une convergence : un
+  éclaircissement ne montre pas ce qu'un nuage plus dense verrait. Le nuage
+  n'est lu qu'une fois. Seul B5 est simulé ; N4 et N5 structurel suivront.
+- Sur les 96 placettes du Vercors (16 retours/m²), B5 reste stable jusqu'à
+  1 retour/m² (90 % des écarts sous 3,9 points) : la précision de B5 ne
+  demande pas de drone ; son biais d'occultation, lui, n'est pas mesuré par
+  un éclaircissement.
+
+## Interne
+
+- B5 : comptes factorisés (codes par retour, tabulation, score) pour être
+  partagés avec le dimensionnement ; lecture des dalles LAZ isolée dans une
+  fonction interne, testée sans lidR. Comportement inchangé.
+
 # nemeton 2026.11.5 (2026-11-06)
 
 ## Nouveautés

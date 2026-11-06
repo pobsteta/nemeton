@@ -153,3 +153,100 @@ test_that("nemeton_compute passes the cloud to B5 and normalisation is passthrou
   expect_equal(as.numeric(normalize_indicator("B5", c(0, 55, 100, 120))),
                c(0, 55, 100, 100))
 })
+
+test_that("LAZ tiles are read tile by tile and summed (lidR simulated)", {
+  u <- .b5_units()[1:2, ]
+  nuage <- .b5_nuage()
+  moities <- split(nuage, nuage$X < 20)
+  withr::with_tempdir({
+    dir.create("dalles")
+    file.create(file.path("dalles", c("a.laz", "b.laz", "vide.laz")))
+    lues <- character(0)
+    local_mocked_bindings(
+      .b5_lidr_ok = function() TRUE,
+      .b5_lire_dalle = function(fichier, filtre, normaliser) {
+        lues <<- c(lues, basename(fichier))
+        expect_match(filtre, "^-keep_xy ")
+        switch(basename(fichier), a.laz = moities[["TRUE"]], b.laz = moities[["FALSE"]],
+               vide.laz = NULL)
+      },
+      .package = "nemeton"
+    )
+    r <- indicateur_b5_stratification(u, "dalles")
+    expect_setequal(lues, c("a.laz", "b.laz", "vide.laz"))
+    expect_equal(r$B5, indicateur_b5_stratification(u, nuage)$B5)
+    expect_equal(r$b5_points, c(5000, 5000))
+    # dalles toutes vides : aucune couverture, pas d'erreur
+    local_mocked_bindings(.b5_lire_dalle = function(...) NULL, .package = "nemeton")
+    expect_equal(unique(indicateur_b5_stratification(u, "dalles")$b5_status),
+                 "skipped_no_coverage")
+  })
+})
+
+# ---- simulate_density_sensitivity() ------------------------------------------
+
+test_that("simulate_density_sensitivity thins below the current density only", {
+  u <- .b5_units()[1:2, ]
+  s <- simulate_density_sensitivity(u, .b5_nuage(), densites = c(20, 10, 5, 1),
+                                    repetitions = 3)
+  expect_s3_class(s, "sensibilite_densite")
+  expect_equal(s$densite_actuelle, 12.5)
+  expect_equal(s$eclaircie, "retours")
+  expect_equal(s$resume$densite, c(10, 5, 1))          # 20 >= 12,5 : non simulee
+  expect_equal(s$resume$proportion, round(c(10, 5, 1) / 12.5, 4))
+  expect_equal(s$reference$B5, c(0, 100))
+  expect_equal(nrow(s$detail), 3 * 3 * 2)
+  expect_true(all(s$detail$ecart >= 0, na.rm = TRUE))
+  # profils tranches : une strate seule reste a 0, l'equilibre reste pres de 100
+  expect_true(all(s$detail$B5[s$detail$unite == 1] == 0))
+  expect_lt(max(s$resume$ecart_p90), 5)
+  expect_true(all(s$resume$stable))
+  expect_equal(s$conclusion, "densite_suffisante")
+  expect_output(print(s), "Conclusion: densite_suffisante")
+})
+
+test_that("simulate_density_sensitivity is reproducible and thins by pulse", {
+  u <- .b5_units()[1:2, ]
+  nuage <- .b5_nuage()
+  a <- simulate_density_sensitivity(u, nuage, densites = 5, repetitions = 2, graine = 7)
+  b <- simulate_density_sensitivity(u, nuage, densites = 5, repetitions = 2, graine = 7)
+  expect_identical(a$detail, b$detail)
+  # deux retours par impulsion : une impulsion gardee garde ses deux retours
+  nuage$gpstime <- rep(seq_len(nrow(nuage) / 2), each = 2)
+  p <- simulate_density_sensitivity(u, nuage, densites = 5, repetitions = 1)
+  expect_equal(p$eclaircie, "impulsions")
+  expect_true(all(p$detail$B5 >= 0))
+})
+
+test_that("simulate_density_sensitivity reports units lost and unstable profiles", {
+  u <- .b5_units()[1, ]
+  set.seed(4)
+  # 400 retours repartis sur deux strates : a 0,1 retour/m2 il en reste ~40
+  nuage <- data.frame(X = runif(400, 0, 20), Y = runif(400, 0, 20),
+                      Z = c(runif(200, 1, 1.9), runif(200, 25, 28)))
+  s <- simulate_density_sensitivity(u, nuage, densites = c(0.5, 0.1), repetitions = 4,
+                                    min_points = 30)
+  expect_true(all(c("part_perdue", "part_stable") %in% names(s$resume)))
+  expect_gte(s$resume$part_perdue[2], 0)
+  # tolerance nulle : tout ecart rend instable
+  s0 <- simulate_density_sensitivity(u, nuage, densites = 0.5, repetitions = 4,
+                                     tolerance = 0, min_points = 30)
+  expect_false(s0$resume$stable)
+  expect_equal(s0$conclusion, "densite_limite")
+  # rien sous la densite actuelle
+  s1 <- simulate_density_sensitivity(u, nuage, densites = 50)
+  expect_equal(s1$conclusion, "non_simule")
+  expect_equal(nrow(s1$resume), 0)
+  expect_output(print(s1), "non_simule")
+})
+
+test_that("simulate_density_sensitivity validates its arguments", {
+  u <- .b5_units()[1, ]
+  n <- .b5_nuage()
+  expect_error(simulate_density_sensitivity(u, n, indicateurs = "N4"), "B5")
+  expect_error(simulate_density_sensitivity(u, NULL), "required")
+  expect_error(simulate_density_sensitivity(u, n, densites = -1), "positive")
+  expect_error(simulate_density_sensitivity(u, n, repetitions = 0), "at least 1")
+  expect_error(simulate_density_sensitivity(u, n, strates = c(1, 5)), "starting at 0")
+  expect_error(simulate_density_sensitivity(sf::st_drop_geometry(u), n), "sf")
+})
