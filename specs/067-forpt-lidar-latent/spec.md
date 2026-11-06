@@ -128,7 +128,7 @@ terrain.
 |---|---|
 | 1. B5 sans ForPT | ✅ **2026.11.5** — `indicateur_b5_stratification()`, fiche B5, écart n° 26 |
 | 2. `simulate_density_sensitivity()` | ✅ **2026.11.6** — B5 seul ; N4 et N5 structurel à ajouter quand ils existeront |
-| 3. `forptnemeton` : `forpt_embed()`, `forpt_age()` ; N5 structurel, T1 désaturé | T1 côté cœur ✅ **2026.11.7** (`age_structurel =`, `t1_source`) ; `forptnemeton` attend D-7 (dépôt) et la licence des poids (D-6, ci-dessous) ; N5 structurel : rien à coder dans le cœur |
+| 3. `forptnemeton` : `forpt_embed()`, `forpt_age()` ; N5 structurel, T1 désaturé | T1 côté cœur ✅ **2026.11.7** (`age_structurel =`, `t1_source`) ; `forptnemeton` ✅ **2026.11.2** : `forpt_embed()` et `forpt_age()`, **jamais exécutés sur GPU** ; N5 structurel : rien à coder dans le cœur (`embedding = forpt_embed(...)`) |
 | 4. `forpt_segment()` (SelectAnyTree), N4 | N4 reporté (D-2) |
 
 **Écarts au § 4 lors du codage de B5.**
@@ -211,3 +211,28 @@ dépendent pas du choix. Le chemin par le nuage (`li2012`) et l'estimation du
 diamètre à 1,30 m pour le très gros bois viendront avec N4, qui reste
 reporté (D-2). ForPT remplacera lidR quand ses instances seront publiées, si
 leur licence le permet.
+
+**`forptnemeton` livré le 2026-11-06 (pobsteta/forptnemeton#1, #2), ce que
+le code de ForPT a appris.**
+
+- **GPU obligatoire** : l'attention de LitePT appelle `flash_attn`, sans
+  version CPU (`forpt/models/litept/litept_v1m2_pretrain.py`). D-4 tient :
+  GPU ponctuel, l'objectif CPU ne vaut que pour B5.
+- **`forpt_embed()`** : cellules de 10 m (et non des voxels de 2 m comme au
+  § 3 : une cellule de 2 m ne contient qu'une quarantaine de retours de
+  LiDAR HD), prétraitement des configurations ForPT (`CenterShift`, grille
+  de 5 cm, coordonnées en caractéristiques), embedding = moyenne des 504
+  sorties de l'encodeur, comme la tête d'âge. Le profil vertical par strate
+  du § 3 n'est pas fait : à reprendre si N5 structurel le demande.
+- **`forpt_age()` travaille par arbre**, pas par UGF : la tête d'âge est
+  entraînée sur FORage, un nuage par arbre (8 192 points). L'âge par UGF est
+  la médiane des arbres dont le houppier (`segment_houppiers()`, D-1) tombe
+  dans l'UGF, prête pour `indicateur_t1_anciennete(age_structurel =)`.
+  FORage contient des arbres de LiDAR HD aérien (`*_ALSHD_*`).
+- **Hypothèse à vérifier** : le repère des nuages d'arbres de FORage n'est
+  pas documenté (la configuration ne recentre pas, les coordonnées servent
+  de caractéristiques) ; `forpt_age()` recentre x, y sur l'arbre et garde la
+  hauteur au-dessus du sol. À contrôler sur un fichier `coord.npy` de FORage
+  avant de croire les âges.
+- **Reste** : un premier passage sur GPU (Pascal), la licence des poids
+  (D-6), SelectAnyTree en option quand ses poids seront publiés, N4 (D-2).
