@@ -9,6 +9,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/TUTORIAL_INSTALL.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/biodiversity-resilience_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/complete-referential_fr.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/articles/embeddings-alphaearth_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/f1-three-sources_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-a1-couverture_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-a2-qualite-air_fr.html</loc></url>
@@ -28,6 +29,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-l1-effet-lisiere_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-l2-morcellement_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-l3-heterogeneite-spectrale_fr.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/articles/fiche-modeles-de-fondation_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-n1-distance_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-n2-continuite_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-n3-naturalite_fr.html</loc></url>
@@ -187,6 +189,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/dot-write_fordead_model_bundle.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/download_hunting_data.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/embed_query.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/embedding_regress.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/embedding_summary.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/embeddings.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/empty_sf_from_schema.html</loc></url>
@@ -381,6 +384,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/print.nemeton_temporal.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/print.nemeton_units.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/probe_ign_lidar_tiles.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/probe_indicator.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/project_lock_acquire.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/project_lock_heartbeat.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/project_lock_release.html</loc></url>

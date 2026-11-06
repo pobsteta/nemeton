@@ -744,6 +744,10 @@ regularisee Ledoit-Wolf, et indicateur conditionnel N5
 - [`aef_clusters()`](https://pobsteta.github.io/nemeton/reference/aef_clusters.md)
   : Fixed cluster dictionary of AlphaEarth embeddings (B4/L3 embedding
   mode)
+- [`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md)
+  : Predict a stand variable from foundation-model embeddings (NDP 0)
+- [`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md)
+  : What foundation models see: probe indicators with an embedding
 
 ### Corpus de connaissances et RAG
 

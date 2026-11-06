@@ -51,6 +51,7 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 22 | Flag NDP `embedding_ml` dans `detect_ndp()$augmented` | cœur **2026.11.1** | `nemetonshiny` (badge NDP) | **Ouvert avant le code** (2026-11-05), même préavis |
 | 23 | Itinéraires admissibles par UGF et raisons d’exclusion (`itineraires_admissibles()`) | cœur — **spec 065, non livrée** | `nemetonshiny`, `aigora`, `victor` | **Ouvert avant le code** (2026-11-05), préavis app + `specs/065-itineraires-catalogue/brief-aigora.md`, `brief-victor.md` |
 | 24 | Comparaison pondérée (`comparer_itineraires()`) et origine des poids des profils (spec 065 D-1 : migration des poids dans le cœur ?) | cœur — **spec 065, non livrée** | `nemetonshiny`, `aigora` | **Ouvert avant le code** (2026-11-05) ; question posée à l’app : les poids des 13 profils existent-ils sous forme numérique ? |
+| 25 | Table des sondes « Ce que les modèles voient » ([`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md)) | cœur **2026.11.3** | `nemetonshiny` | **Ouvert avant le code** (2026-11-06). Vue triée par R², lecture `voit` / `partiel` / `angle_mort`, marqueur `source_commune` |
 
 **Les n° 20 à 24 sont ouverts le 2026-11-05 avant toute ligne de code**
 (specs 064 et 065, brief « modèles de fondation »), pour que la leçon
@@ -136,13 +137,64 @@ opposer au prochain fork qui se présentera comme un raccourci.
 
 | Spec | Objet | État |
 |----|----|----|
-| 064 | Chantier A : `alphaearthnemeton`, [`embedding_summary()`](https://pobsteta.github.io/nemeton/reference/embedding_summary.md), [`distance_reference()`](https://pobsteta.github.io/nemeton/reference/distance_reference.md), **N5**, B4/L3 `embedding =`, régressions NDP 0 | ✅ spec validée le 2026-11-05 (D-2 : GPL-3) ; 🟨 code : N5 + fonctions génériques + flag NDP → **2026.11.1** ; reste `alphaearthnemeton`, B4/L3, `embedding_regress()`, vignette |
+| 064 | Chantier A : `alphaearthnemeton`, [`embedding_summary()`](https://pobsteta.github.io/nemeton/reference/embedding_summary.md), [`distance_reference()`](https://pobsteta.github.io/nemeton/reference/distance_reference.md), **N5**, B4/L3 `embedding =`, régressions NDP 0 | ✅ spec validée le 2026-11-05 (D-2 : GPL-3) ; 🟨 code : N5 + fonctions génériques + flag NDP → **2026.11.1** ; reste `alphaearthnemeton`, B4/L3, [`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md), vignette |
 | 065 | Étape 4 : catalogue d’itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 (7 décisions) ; code ⬜ ; catalogue à sourcer par Pascal (D-4) |
+| 066 | Chantier B : sondes [`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md) (cœur, AlphaEarth d’abord) et MAESTRO en extracteur d’embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
-parcellaire de Dabo et un projet hors France ; `embedding_regress()` et
-la vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier
+parcellaire de Dabo et un projet hors France ;
+[`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md)
+et la vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier
 remplissage du catalogue par Pascal.
+
+**Journal** — *2026-11-06* (**2026.11.3**) : spec 066 validée par Pascal
+(« je valide, code »).
+[`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md)
+livré : ridge par indicateur sur l’embedding moyen des UGF, validation
+croisée par blocs spatiaux (utilitaire `.cv_blocs_spatiaux()` désormais
+commun avec
+[`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md),
+dont les 24 assertions passent inchangées), lecture `voit` / `partiel` /
+`angle_mort`, marqueur `source_commune`. 21 assertions sur embeddings
+synthétiques. Reste : la table sur un projet réel d’au moins 50 UGF
+(critère 3), MAESTRO côté `maestronemeton`, la vue app (écart n° 25).
+
+**Journal** — *2026-11-06* : releases 2026.11.1 et 2026.11.2 publiées
+(tags posés) ; pobsteta/nemeton#587 (vignette, fiche Modèles de
+fondation) mergée. **Spec 066** rédigée (chantier B) : sondes
+[`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md)
+génériques, applicables tout de suite à AlphaEarth sans MAESTRO, et
+attentes du cœur envers `maestronemeton`. Point du brief qui ne tient
+pas tel quel : utiliser une sonde à R² élevé pour *fournir* un
+indicateur en NDP augmenté (D-3, proposé : non, une sonde est un
+diagnostic). Écart n° 25 ouvert. Rien n’est implémenté avant validation.
+
+**Journal** — *2026-11-06* : 2026.11.2 mergée (pobsteta/nemeton#586) ;
+cycle dev `2026.11.2.9000`. Vignette `embeddings-alphaearth_fr.Rmd`
+(récupération des embeddings, N5, B4/L3 en mode embedding,
+[`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md),
+NDP) et fiche commune « Modèles de fondation » (modèles, licence et
+attribution, angles morts), liée depuis les fiches N5, B4 et L3. Reste
+du chantier A : validations sur données réelles (N5 sur Dabo et hors
+France,
+[`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md)
+sur placettes IFN), impossibles depuis la session de travail (IFN
+bloqué) ou faute du parcellaire.
+
+**Journal** — *2026-11-05* (**2026.11.2**) :
+[`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md)
+(spec 064 § 8). Variable de peuplement (H0 par défaut) prédite par
+l’embedding moyen dans le rayon des placettes ; ranger si installé,
+sinon ridge en base R (GCV) ; validation croisée par blocs spatiaux de 5
+km ; raster rendu prêt pour `chm =` (P1, P2, C1). Écart à la spec : B2
+exclu, la CV d’une hauteur prédite mesurerait le modèle. Testé sur
+données synthétiques (24 assertions) ; **pas validé sur de vraies
+placettes IFN** : les serveurs IFN et data.gouv.fr sont bloqués par le
+réseau de la session de travail. À faire sur le poste de Pascal :
+[`ifn_charger()`](https://pobsteta.github.io/nemeton/reference/ifn_charger.md)
+sur Dabo,
+[`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md)
+sur H0, lire le RMSE hors pli.
 
 **Journal** — *2026-11-05* (**2026.11.1** publiée) : PR
 pobsteta/nemeton#584 et pobsteta/alphaearthnemeton#1 mergées par Pascal

@@ -2,6 +2,8 @@
 
 > **Document de référence** — Néméton (package cœur), 2026-11-05. Spec
 > 064. Fonction **expérimentale** : elle peut changer à toute version.
+> Voir aussi la fiche commune [Modèles de
+> fondation](https://pobsteta.github.io/nemeton/articles/fiche-modeles-de-fondation_fr.md).
 
 ------------------------------------------------------------------------
 

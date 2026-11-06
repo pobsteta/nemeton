@@ -1,5 +1,50 @@
 # Changelog
 
+## nemeton 2026.11.3 (2026-11-06)
+
+### Nouveautés
+
+- **[`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md)**
+  (spec 066, chantier B) : ce que les modèles de fondation « voient »
+  des indicateurs. Pour chaque indicateur déjà calculé sur les UGF du
+  projet, une régression ridge de l’embedding moyen de l’UGF vers
+  l’indicateur (normalisé 0-100 par défaut) est évaluée par validation
+  croisée par blocs spatiaux de 2 km. La table rend le R², le RMSE et
+  une lecture : `voit` (R² ≥ 0,5), `partiel` (0,2 à 0,5), `angle_mort`
+  (\< 0,2), des conventions affichées comme telles. Le marqueur
+  `source_commune` signale les indicateurs calculés, selon leur source,
+  à partir de Sentinel-2 comme AlphaEarth (C2, B4, L3, A1, R5, T2) : un
+  R² élevé peut y venir de l’entrée commune. Moins de 50 UGF utilisables
+  : pas de sonde (`trop_peu_unites`). Une sonde est un diagnostic, pas
+  un estimateur : elle ne remplace aucun indicateur.
+- La validation croisée par blocs spatiaux
+  d’[`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md)
+  est factorisée dans un utilitaire commun ; comportement inchangé.
+
+## nemeton 2026.11.2 (2026-11-05)
+
+### Nouveautés
+
+- **[`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md)**
+  (spec 064, chantier A) : prédit une variable de peuplement (par défaut
+  la hauteur dominante `H0`) à partir des embeddings d’un modèle de
+  fondation autour de placettes de terrain (placettes IFN du projet), et
+  rend un raster prêt pour l’argument `chm =` des indicateurs qui lisent
+  une hauteur (P1, P2, C1), avec
+  `attr(, "chm_source") = "aef_regression"`. Hauteur de NDP 0 quand il
+  n’y a ni CHM ni LiDAR.
+  - Modèle : ranger s’il est installé (`Suggests`), sinon **ridge en
+    base R** (pénalité choisie par validation croisée généralisée).
+  - Évaluation par **validation croisée par blocs spatiaux** (blocs de 5
+    km, une placette et ses voisines tombent dans le même pli) : RMSE,
+    R² et biais hors pli, à citer avec toute valeur dérivée.
+  - Moins de 30 placettes utilisables : aucun modèle, statut
+    `train_too_small`.
+  - **Piège documenté** : la prédiction est lisse. Elle ne convient pas
+    à B2, dont la composante structurelle est le coefficient de
+    variation du CHM.
+- `ranger` ajouté aux Suggests.
+
 ## nemeton 2026.11.1 (2026-11-05)
 
 ### Nouveautés

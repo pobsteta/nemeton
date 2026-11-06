@@ -6,6 +6,8 @@
   Climatiques](https://pobsteta.github.io/nemeton/articles/biodiversity-resilience_fr.md):
 - [Référentiel Complet 12
   Familles](https://pobsteta.github.io/nemeton/articles/complete-referential_fr.md):
+- [Embeddings AlphaEarth : N5, B4/L3 en mode embedding, hauteur de NDP
+  0](https://pobsteta.github.io/nemeton/articles/embeddings-alphaearth_fr.md):
 - [F1 Fertilité — trois sources, trois
   compromis](https://pobsteta.github.io/nemeton/articles/f1-three-sources_fr.md):
 - [Fiche indicateur A1 - Couverture
@@ -44,6 +46,8 @@
   paysage](https://pobsteta.github.io/nemeton/articles/fiche-l2-morcellement_fr.md):
 - [Fiche indicateur L3 - Heterogeneite spectrale
   beta](https://pobsteta.github.io/nemeton/articles/fiche-l3-heterogeneite-spectrale_fr.md):
+- [Fiche - Modeles de
+  fondation](https://pobsteta.github.io/nemeton/articles/fiche-modeles-de-fondation_fr.md):
 - [Fiche indicateur N1 - Distance aux
   infrastructures](https://pobsteta.github.io/nemeton/articles/fiche-n1-distance_fr.md):
 - [Fiche indicateur N2 - Continuite

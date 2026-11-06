@@ -13,6 +13,32 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.3\] - 2026-11-06
+
+### Added
+
+- [`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md):
+  per-indicator ridge probe of a foundation-model embedding with spatial
+  block cross-validation (R2, RMSE, reading `voit` / `partiel` /
+  `angle_mort`, `source_commune` flag); diagnostic only (spec 066).
+
+### Changed
+
+- Spatial block cross-validation of
+  [`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md)
+  factored into a shared helper; behaviour unchanged.
+
+## \[2026.11.2\] - 2026-11-05
+
+### Added
+
+- [`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md):
+  stand variable (default `H0`) predicted from foundation-model
+  embeddings around field plots, spatial block cross-validation (RMSE,
+  R2, bias), ranger or base-R ridge (GCV), prediction raster usable as
+  `chm =` for P1/P2/C1; `train_too_small` below 30 plots.
+- `ranger` in Suggests.
+
 ## \[2026.11.1\] - 2026-11-05
 
 ### Added

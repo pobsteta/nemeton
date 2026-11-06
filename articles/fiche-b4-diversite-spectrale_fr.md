@@ -120,6 +120,10 @@ lui, et non la mesure, qui rend deux projets incomparables.
 
 ## 8. Annexe — mode embedding (spec 064)
 
+> Voir aussi la fiche commune [Modèles de
+> fondation](https://pobsteta.github.io/nemeton/articles/fiche-modeles-de-fondation_fr.md)
+> (modèle, licence, angles morts).
+
 Depuis 2026.11.1, `indicateur_b4_div_spectrale(embedding =)` calcule B4
 sans biodivMapR, à partir des embeddings AlphaEarth
 (`alphaearthnemeton::aef_fetch()` ou couche `aef_embedding` du projet).

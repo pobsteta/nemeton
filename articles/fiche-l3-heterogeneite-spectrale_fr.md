@@ -112,6 +112,10 @@ l’hétérogénéité ; leur moyenne, elle, ne mesurait rien.
 
 ## 8. Annexe — mode embedding (spec 064)
 
+> Voir aussi la fiche commune [Modèles de
+> fondation](https://pobsteta.github.io/nemeton/articles/fiche-modeles-de-fondation_fr.md)
+> (modèle, licence, angles morts).
+
 Depuis 2026.11.1, `indicateur_l3_het_spectrale(embedding =)` calcule L3
 à partir des embeddings AlphaEarth, quand `spectral` et `reflectance`
 sont absents. L3 est alors la **dispersion multivariée** (même

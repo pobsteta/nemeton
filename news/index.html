@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.1.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -27,6 +27,8 @@
     <li><a class="dropdown-item" href="../articles/site-index-open-canopy_fr.html">Indicateurs P1/P2/C1/B2/R2 via CHM Open-Canopy</a></li>
     <li><a class="dropdown-item" href="../articles/temporal-analysis_fr.html">Analyse temporelle</a></li>
     <li><a class="dropdown-item" href="../articles/tarifs-schaeffer-ser_fr.html">Tarifs Schaeffer par sylvoecoregion</a></li>
+    <li><a class="dropdown-item" href="../articles/embeddings-alphaearth_fr.html">Embeddings AlphaEarth (N5, B4/L3, hauteur NDP 0)</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-modeles-de-fondation_fr.html">Fiche - Modeles de fondation</a></li>
   </ul></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-fiches-indicateurs" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Fiches indicateurs</button>
@@ -111,6 +113,31 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.3" id="nemeton-2026113-2026-11-06">nemeton 2026.11.3 (2026-11-06)<a class="anchor" aria-label="anchor" href="#nemeton-2026113-2026-11-06"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-3">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-3"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/probe_indicator.html">probe_indicator()</a></code></strong> (spec 066, chantier B) : ce que les modèles de fondation « voient » des indicateurs. Pour chaque indicateur déjà calculé sur les UGF du projet, une régression ridge de l’embedding moyen de l’UGF vers l’indicateur (normalisé 0-100 par défaut) est évaluée par validation croisée par blocs spatiaux de 2 km. La table rend le R², le RMSE et une lecture : <code>voit</code> (R² ≥ 0,5), <code>partiel</code> (0,2 à 0,5), <code>angle_mort</code> (&lt; 0,2), des conventions affichées comme telles. Le marqueur <code>source_commune</code> signale les indicateurs calculés, selon leur source, à partir de Sentinel-2 comme AlphaEarth (C2, B4, L3, A1, R5, T2) : un R² élevé peut y venir de l’entrée commune. Moins de 50 UGF utilisables : pas de sonde (<code>trop_peu_unites</code>). Une sonde est un diagnostic, pas un estimateur : elle ne remplace aucun indicateur.</li>
+<li>La validation croisée par blocs spatiaux d’<code><a href="../reference/embedding_regress.html">embedding_regress()</a></code> est factorisée dans un utilitaire commun ; comportement inchangé.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.2" id="nemeton-2026112-2026-11-05">nemeton 2026.11.2 (2026-11-05)<a class="anchor" aria-label="anchor" href="#nemeton-2026112-2026-11-05"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-2">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-2"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/embedding_regress.html">embedding_regress()</a></code></strong> (spec 064, chantier A) : prédit une variable de peuplement (par défaut la hauteur dominante <code>H0</code>) à partir des embeddings d’un modèle de fondation autour de placettes de terrain (placettes IFN du projet), et rend un raster prêt pour l’argument <code>chm =</code> des indicateurs qui lisent une hauteur (P1, P2, C1), avec <code>attr(, "chm_source") = "aef_regression"</code>. Hauteur de NDP 0 quand il n’y a ni CHM ni LiDAR.
+<ul><li>Modèle : ranger s’il est installé (<code>Suggests</code>), sinon <strong>ridge en base R</strong> (pénalité choisie par validation croisée généralisée).</li>
+<li>Évaluation par <strong>validation croisée par blocs spatiaux</strong> (blocs de 5 km, une placette et ses voisines tombent dans le même pli) : RMSE, R² et biais hors pli, à citer avec toute valeur dérivée.</li>
+<li>Moins de 30 placettes utilisables : aucun modèle, statut <code>train_too_small</code>.</li>
+<li>
+<strong>Piège documenté</strong> : la prédiction est lisse. Elle ne convient pas à B2, dont la composante structurelle est le coefficient de variation du CHM.</li>
+</ul></li>
+<li>
+<code>ranger</code> ajouté aux Suggests.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.1" id="nemeton-2026111-2026-11-05">nemeton 2026.11.1 (2026-11-05)<a class="anchor" aria-label="anchor" href="#nemeton-2026111-2026-11-05"></a></h2>
 <div class="section level3">
