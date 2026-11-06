@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.6] - 2026-11-06
+
+### Added
+- `simulate_density_sensitivity()`: B5 stability under thinning of the LiDAR cloud (by pulse with `gpstime`, else by return), per-density summary and a `densite_suffisante` / `densite_limite` / `non_simule` conclusion (spec 067, dimensioning).
+
+### Changed
+- B5 counting factored (per-return codes, tabulation, scoring) and LAZ tile reading isolated in an internal helper; behaviour unchanged.
+
 ## [2026.11.5] - 2026-11-06
 
 ### Added

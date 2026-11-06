@@ -127,7 +127,7 @@ terrain.
 | Étape | État |
 |---|---|
 | 1. B5 sans ForPT | ✅ **2026.11.5** — `indicateur_b5_stratification()`, fiche B5, écart n° 26 |
-| 2. `simulate_density_sensitivity()` | à faire |
+| 2. `simulate_density_sensitivity()` | ✅ **2026.11.6** — B5 seul ; N4 et N5 structurel à ajouter quand ils existeront |
 | 3. `forptnemeton` : `forpt_embed()`, `forpt_age()` ; N5 structurel, T1 désaturé | attend D-6 (licences) et D-7 (dépôt) |
 | 4. `forpt_segment()` (SelectAnyTree), N4 | N4 reporté (D-2) |
 
@@ -157,3 +157,13 @@ défaut plus tard serait un changement de sens (spec 057).
 non comprise, soit environ 6 min pour 1 000 ha à 10 retours/m² : l'objectif
 CPU du critère 1 tient pour B5 (D-4). Critère 1 lui-même (dalles d'un projet
 BFC réel) : non mesuré, faute de dalles LiDAR HD et de lidR dans la session.
+
+**Dimensionnement** (2026.11.6). Signature retenue :
+`simulate_density_sensitivity(units, nuage, densites = c(10, 5, 2), ...)`
+plutôt que `(laz_dir, aoi, ...)` du § 4 : même entrée que B5 (table, `LAS` ou
+dalles). Éclaircie par impulsion quand le nuage porte `gpstime`, sinon par
+retour. Vercors, 16 retours/m², 5 répétitions : écart au 90ᵉ centile de 0,8
+(10 retours/m²), 1,5 (5), 2,6 (2) et 3,9 points (1). B5 converge bien en
+dessous de la densité du LiDAR HD sur des placettes de 700 m² : le badge
+drone de l'app dira donc le plus souvent `densite_suffisante` pour B5 ; ce
+sera N4 (arbres morts, très gros bois) qui pourra justifier un drone.

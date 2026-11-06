@@ -159,23 +159,28 @@ indicateur_b5_stratification <- function(units,
   # 2. Comptes par UGF : colonne 1 = sol, colonnes 2..K+1 = strates
   bornes <- c(hauteur_sol, strates[-1])
   compter <- function(xyz) {
-    .b5_comptes(xyz, grille, n, bornes, hauteur_max, classes)
+    .b5_tabuler(.b5_codes(xyz, grille, bornes, hauteur_max, classes)$code, n, K)
   }
   comptes <- .b5_lire_et_compter(nuage, units, compter, normaliser, hauteur_max)
 
-  # 3. Parts et entropie
+  # 3. Parts, entropie et statuts
+  sc <- .b5_scores(comptes, profil, min_points)
+  aire <- as.numeric(sf::st_area(units))
+  sortie(sc$valeur, sc$statut, points = sc$total,
+         densite = ifelse(aire > 0, sc$total / aire, NA_real_), parts = sc$parts)
+}
+
+# Score B5, statut et parts a partir des comptes (n x (K+1)).
+.b5_scores <- function(comptes, profil, min_points) {
   total <- rowSums(comptes)
   parts <- .b5_parts(comptes, profil)
   H <- apply(parts, 1L, .b5_equitabilite)
-
-  aire <- as.numeric(sf::st_area(units))
   statut <- ifelse(total == 0, "skipped_no_coverage",
                    ifelse(total < min_points, "skipped_low_density", "calculated"))
   ok <- statut == "calculated"
-  valeur <- ifelse(ok, round(100 * H, 2), NA_real_)
   parts[!ok, ] <- NA_real_
-  sortie(valeur, statut, points = total,
-         densite = ifelse(aire > 0, total / aire, NA_real_), parts = parts)
+  list(valeur = ifelse(ok, round(100 * H, 2), NA_real_), statut = statut,
+       total = total, parts = parts)
 }
 
 # Grille de l'emprise des UGF, chaque cellule portant l'indice de son UGF.
@@ -186,33 +191,37 @@ indicateur_b5_stratification <- function(units,
   terra::rasterize(v, modele, field = ".b5_idx")
 }
 
-# Comptes de retours par UGF et par classe de hauteur pour un bloc de points.
-.b5_comptes <- function(xyz, grille, n, bornes, hauteur_max, classes) {
+# Code de chaque retour retenu : (UGF - 1) * (K + 1) + classe + 1, ou la
+# classe 0 est le sol (z < hauteur_sol) et 1..K les strates. Rend aussi
+# l'identifiant d'impulsion (gpstime) quand le nuage le porte.
+.b5_codes <- function(xyz, grille, bornes, hauteur_max, classes) {
   K <- length(bornes)
-  vide <- matrix(0, n, K + 1L)
+  vide <- list(code = integer(0), impulsion = NULL)
   if (!NROW(xyz)) return(vide)
   garde <- is.finite(xyz$Z) & xyz$Z >= -1 & xyz$Z <= hauteur_max
   if (!is.null(xyz$Classification) && length(classes)) {
     garde <- garde & xyz$Classification %in% classes
   }
   if (!any(garde)) return(vide)
-  x <- xyz$X[garde]
-  y <- xyz$Y[garde]
-  z <- xyz$Z[garde]
-  cellule <- terra::cellFromXY(grille, cbind(x, y))
+  cellule <- terra::cellFromXY(grille, cbind(xyz$X[garde], xyz$Y[garde]))
   ugf <- rep(NA_integer_, length(cellule))
   dedans <- !is.na(cellule)
   ugf[dedans] <- as.integer(terra::values(grille, mat = FALSE)[cellule[dedans]])
   ok <- !is.na(ugf)
   if (!any(ok)) return(vide)
-  # classe 0 = sol (z < hauteur_sol), 1..K = strates
-  classe <- findInterval(z[ok], bornes)
-  m <- tabulate((ugf[ok] - 1L) * (K + 1L) + classe + 1L, nbins = n * (K + 1L))
-  matrix(m, n, K + 1L, byrow = TRUE)
+  classe <- findInterval(xyz$Z[garde][ok], bornes)
+  impulsion <- if (!is.null(xyz$gpstime)) xyz$gpstime[garde][ok]
+  list(code = (ugf[ok] - 1L) * (K + 1L) + classe + 1L, impulsion = impulsion)
+}
+
+# Matrice des comptes (n x (K+1)) a partir des codes.
+.b5_tabuler <- function(code, n, K) {
+  matrix(tabulate(code, nbins = n * (K + 1L)), n, K + 1L, byrow = TRUE)
 }
 
 # Lit le nuage sous l'une de ses formes et cumule les comptes.
-.b5_lire_et_compter <- function(nuage, units, compter, normaliser, hauteur_max) {
+.b5_lire_et_compter <- function(nuage, units, compter, normaliser, hauteur_max,
+                                combiner = `+`) {
   verifier <- function(z) {
     if (length(z) && stats::median(z, na.rm = TRUE) > hauteur_max) {
       cli::cli_abort(c(
@@ -251,7 +260,7 @@ indicateur_b5_stratification <- function(units,
     if (!length(fichiers)) {
       cli::cli_abort("No {.file .laz} / {.file .las} file found in {.arg nuage}.")
     }
-    if (!requireNamespace("lidR", quietly = TRUE)) {
+    if (!.b5_lidr_ok()) {
       cli::cli_abort(c(
         "{.pkg lidR} is required to read LAZ files for B5.",
         i = "Install it: {.code install.packages('lidR')}, or pass a point table."
@@ -262,13 +271,11 @@ indicateur_b5_stratification <- function(units,
                       bb[["xmax"]], bb[["ymax"]])
     total <- NULL
     for (f in fichiers) {
-      las <- lidR::readLAS(f, select = "xyzc", filter = filtre)
-      if (lidR::is.empty(las)) next
-      if (isTRUE(normaliser)) las <- .b5_normaliser(las)
-      d <- as.data.frame(las@data)
+      d <- .b5_lire_dalle(f, filtre, normaliser)
+      if (is.null(d)) next
       verifier(d$Z)
       m <- compter(d)
-      total <- if (is.null(total)) m else total + m
+      total <- if (is.null(total)) m else combiner(total, m)
     }
     if (is.null(total)) total <- compter(data.frame(X = numeric(0), Y = numeric(0), Z = numeric(0)))
     return(total)
@@ -277,9 +284,21 @@ indicateur_b5_stratification <- function(units,
   cli::cli_abort("{.arg nuage} must be a point table, a LAS object, or LAZ files.")
 }
 
+# lidR est-il installe ? (fonction a part pour pouvoir la simuler en test)
+.b5_lidr_ok <- function() requireNamespace("lidR", quietly = TRUE)
+
+# Une dalle lue par lidR, rognee a l'emprise, normalisee si demande ; NULL
+# si elle ne contient aucun point dans l'emprise.
+.b5_lire_dalle <- function(fichier, filtre, normaliser) {
+  las <- lidR::readLAS(fichier, select = "xyztc", filter = filtre)
+  if (lidR::is.empty(las)) return(NULL)
+  if (isTRUE(normaliser)) las <- .b5_normaliser(las)
+  as.data.frame(las@data)
+}
+
 # Hauteurs au-dessus d'un TIN des retours sol (classe 2), par lidR.
 .b5_normaliser <- function(las) {
-  if (!requireNamespace("lidR", quietly = TRUE)) {
+  if (!.b5_lidr_ok()) {
     cli::cli_abort("{.pkg lidR} is required for {.code normaliser = TRUE}.")
   }
   lidR::normalize_height(las, lidR::tin())

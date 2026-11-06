@@ -1,6 +1,6 @@
 # Brief `nemetonshiny` — B5, stratification verticale (spec 067)
 
-> **Statut** : livré en cœur **2026.11.5**. Écart n° 26 de `PLAN.md`.
+> **Statut** : livré en cœur **2026.11.5** (B5) et **2026.11.6** (dimensionnement). Écart n° 26 de `PLAN.md`.
 
 ## Ce que l'app reçoit
 
@@ -25,3 +25,14 @@
 
 Badge de dimensionnement drone dans l'onglet terrain
 (`simulate_density_sensitivity()`), N5 structurel (`n5_source = "forpt"`), N4.
+
+## Ajout 2026.11.6 — badge de dimensionnement
+
+`simulate_density_sensitivity(units, nuage)` rend `conclusion`
+(`densite_suffisante`, `densite_limite`, `non_simule`), `densite_actuelle`
+et un `resume` par densité simulée (`ecart_median`, `ecart_p90`,
+`part_stable`, `part_perdue`). Proposé : un badge dans l'onglet terrain,
+« densité LiDAR suffisante pour B5 » ou « densité limite : un vol drone
+mérite d'être testé », avec le tableau `resume` en détail. Le calcul relit le
+nuage : à lancer à la demande (tâche longue), pas à chaque affichage. Seul B5
+est simulé pour l'instant.
