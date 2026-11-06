@@ -185,13 +185,29 @@ permet. SelectAnyTree resterait un appel optionnel, installé par
 l'utilisateur, pour un usage non commercial.
 
 **D-1 révisée, validée par Pascal le 2026-11-06 : instances d'arbres par
-lidR, dans le cœur, sans modèle.** SelectAnyTree est écarté (CC BY-NC 4.0,
-poids non publiés). `segment_houppiers()` fournit déjà les instances
+lidR par défaut, dans le cœur, sans modèle ; SelectAnyTree en option.** `segment_houppiers()` fournit déjà les instances
 nécessaires : un polygone par houppier, `h_max` (hauteur de l'apex) et
 `surface_m2` (d'où un diamètre de houppier `2 * sqrt(surface_m2 / pi)`), par
 `lmf` puis `dalponte2016` ou `silva2016` de lidR sur le MNH. Aucun code
-nouveau à ce stade : `forpt_segment()` n'est plus nécessaire dans
-`forptnemeton`. Le chemin par le nuage (`li2012`) et l'estimation du
+nouveau à ce stade pour le chemin par défaut.
+
+**SelectAnyTree en option** (demandé par Pascal le 2026-11-06), sous trois
+conditions dictées par sa licence et ADR-009 :
+
+1. **Hors du cœur** : c'est du Python (torch, ForestFormer3D) ; il vivra
+   dans `forptnemeton` comme `forpt_segment(methode = "selectanytree")`,
+   appelé par reticulate, comme `opencanopy`.
+2. **Jamais embarqué** : CC BY-NC 4.0 ajoute une restriction que la GPL-3
+   interdit ; `forptnemeton` ne copie ni son code ni ses poids. L'utilisateur
+   l'installe lui-même ; la fonction vérifie sa présence et rappelle la
+   licence (usage non commercial) au premier appel.
+3. **Quand les poids seront publiés** (annoncés « coming soon ») : sans
+   poids, il n'y a rien à appeler. Premier clic automatique sur les sommets
+   `lmf` du MNH, comme le décrivent les auteurs.
+
+Sortie identique au chemin lidR (un houppier par arbre, `h_max`,
+`surface_m2`, plus `methode`), pour que `segment_houppiers(tops =)` et N4 ne
+dépendent pas du choix. Le chemin par le nuage (`li2012`) et l'estimation du
 diamètre à 1,30 m pour le très gros bois viendront avec N4, qui reste
 reporté (D-2). ForPT remplacera lidR quand ses instances seront publiées, si
 leur licence le permet.
