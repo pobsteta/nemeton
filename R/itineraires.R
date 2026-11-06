@@ -215,7 +215,7 @@ comparer_itineraires <- function(units, poids, catalogue = itineraires_catalogue
   if (!is.null(trajectoires)) {
     cli::cli_abort(c(
       "{.arg trajectoires} is reserved for the FINN simulation (chantier D), not implemented yet.",
-      "i" = "Spec 065 § 6."
+      "i" = "Spec 065, section 6."
     ))
   }
   if (is.character(poids) && length(poids) == 1L) poids <- profils_poids(poids)
