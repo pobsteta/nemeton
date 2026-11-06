@@ -118,11 +118,23 @@ un raccourci.
 | 064 | Chantier A : `alphaearthnemeton`, `embedding_summary()`, `distance_reference()`, **N5**, B4/L3 `embedding =`, régressions NDP 0 | ✅ spec validée le 2026-11-05 (D-2 : GPL-3) ; 🟨 code : N5 + fonctions génériques + flag NDP → **2026.11.1** ; reste `alphaearthnemeton`, B4/L3, `embedding_regress()`, vignette |
 | 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 ; moteur → **2026.11.4** ; catalogue (squelette `a_sourcer`) à remplir par Pascal (D-4) |
 | 066 | Chantier B : sondes `probe_indicator()` (cœur, AlphaEarth d'abord) et MAESTRO en extracteur d'embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
+| 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; B5 en cours |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
 parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
 vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier remplissage du
 catalogue par Pascal.
+
+**Journal** — *2026-11-06* : 2026.11.4 mergée (pobsteta/nemeton#589) ; cycle
+dev `2026.11.4.9000`. **Spec 067** (chantier C) rédigée. Vérification des
+modèles du brief sur leurs publications : ForPT (`prs-eth/ForPT`) publie
+l'encodeur et des têtes de segmentation sémantique, d'essences et d'âge, mais
+**pas d'instances** (annoncées) ni de classifieur vivant / mort ;
+SelectAnyTree segmente un arbre sur clic, avec un premier clic automatique sur
+le MNH. Le `forpt_segment()` du brief n'existe donc pas tel quel, et N4
+dépend d'un classifieur à entraîner (D-2, proposé : reporter N4). Objectif
+« 30 min CPU / 1 000 ha » jugé non tenable pour le transformeur (D-4).
+Proposé : commencer par B5 sans ForPT (entropie des points par strate).
 
 **Journal** — *2026-11-06* (**2026.11.4**) : moteur des itinéraires (spec
 065) : catalogue, validateur de sourçage, admissibilité avec raisons fermées,
