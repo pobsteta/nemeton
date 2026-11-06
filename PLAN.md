@@ -120,11 +120,19 @@ un raccourci.
 | 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 ; moteur → **2026.11.4** ; catalogue (squelette `a_sourcer`) à remplir par Pascal (D-4) |
 | 066 | Chantier B : sondes `probe_indicator()` (cœur, AlphaEarth d'abord) et MAESTRO en extracteur d'embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
 | 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; **B5** → **2026.11.5** ; `simulate_density_sensitivity()` → **2026.11.6** ; T1 `age_structurel =` → **2026.11.7** ; D-6 : ForPT code MIT, poids à vérifier, SelectAnyTree CC BY-NC sans poids (D-1 à revoir : lidR proposé) ; reste `forptnemeton` (D-6 licences, D-7 dépôt), N5 structurel, T1 désaturé, N4 (reporté, D-2) |
+| 068 | Chantier D : trajectoires FINN (`calibrer_finn()`, `simuler_itineraire()`), T4, `effet_gestion()` | 🟨 brouillon, **8 décisions ouvertes** (§ 8) |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
 parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
 vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier remplissage du
 catalogue par Pascal.
+
+**Journal** — *2026-11-06* : 2026.11.7 mergée (pobsteta/nemeton#593) ; cycle
+dev `2026.11.7.9000`. **Spec 068** (chantier D) rédigée. FINN vérifié : CRAN
+v0.1.0 (2026-08-09), GPL-3, torch pour R ; API non lisible depuis la session
+(CRAN bloqué) et **aucune intervention sylvicole documentée**, d'où D-2 :
+retirer des cohortes entre deux pas, à prouver sur un prototype avant tout
+code. Proposé : `effet_gestion()` d'abord (ranger, sans FINN).
 
 **Journal** — *2026-11-06* (**2026.11.7**) : 2026.11.6 mergée
 (pobsteta/nemeton#592). T1 « désaturé » côté cœur : `age_structurel =`
