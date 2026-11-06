@@ -1,7 +1,7 @@
 # Spec 067 — ForPT : le LiDAR HD comme espace latent 3D (B5, N4, N5 structurel, T1 désaturé, dimensionnement)
 
-> **Statut** : **brouillon, à valider par Pascal**. Rien n'est implémenté avant
-> validation (procédure du brief du 2026-11-05, § 5).
+> **Statut** : **validée par Pascal le 2026-11-06** (décisions D-1 à D-7
+> retenues telles que proposées). Première étape codée : B5 sans ForPT.
 > **Origine** : brief « Modèles de fondation et raisonnement sylvicole » du
 > 2026-11-05, chantier C (priorité 2, « livrable central »).
 > **Dépôts** : `forptnemeton` (nouveau, amont, reticulate + torch, comme
@@ -106,7 +106,7 @@ du code SelectAnyTree **à vérifier** avant la première ligne (D-6).
 
 ## 8. Décisions ouvertes
 
-| # | Question | Proposition |
+| # | Question | Décision (validée le 2026-11-06) |
 |---|---|---|
 | D-1 | Instances d'arbres : ForPT n'en fournit pas encore | SelectAnyTree en mode automatique (premier clic sur les sommets du MNH) ; basculer sur ForPT quand ses instances seront publiées |
 | D-2 | Classifieur vivant / mort : aucun modèle publié | **reporter N4** : l'entraîner demande des étiquettes (placettes QField de bois mort) ; d'abord B5, N5 structurel, T1 |

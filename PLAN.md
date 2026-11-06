@@ -118,7 +118,7 @@ un raccourci.
 | 064 | Chantier A : `alphaearthnemeton`, `embedding_summary()`, `distance_reference()`, **N5**, B4/L3 `embedding =`, régressions NDP 0 | ✅ spec validée le 2026-11-05 (D-2 : GPL-3) ; 🟨 code : N5 + fonctions génériques + flag NDP → **2026.11.1** ; reste `alphaearthnemeton`, B4/L3, `embedding_regress()`, vignette |
 | 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 ; moteur → **2026.11.4** ; catalogue (squelette `a_sourcer`) à remplir par Pascal (D-4) |
 | 066 | Chantier B : sondes `probe_indicator()` (cœur, AlphaEarth d'abord) et MAESTRO en extracteur d'embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
-| 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | 🟨 brouillon, **7 décisions ouvertes** (§ 8) |
+| 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; B5 en cours |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
 parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
