@@ -28,3 +28,12 @@ L'itinéraire retenu, la famille qui gagne, la famille qui perd, puis
 « voulez-vous voir les alternatives ? ». Tout le reste va à l'écran. Aucun
 nombre prononcé qui ne vienne d'une sortie Néméton ; tant que la comparaison
 est qualitative, ne pas lire `score_global` comme une note.
+
+## Ajout du 2026-11-06 — effets de la gestion
+
+Outil optionnel `nemeton_effet_gestion(projet)` : tâche longue (quelques
+dizaines de secondes), à déléguer comme une comparaison, retour par
+`[SYSTÈME]`. À voix haute : la famille où l'effet est le plus net, son
+intervalle (« entre 3 et 9 points »), et « ce n'est pas une preuve de cause ».
+Statut autre que `calcule` : « ce projet ne permet pas de conclure sur
+l'effet de la gestion ». Aucun nombre prononcé qui ne vienne de `$resume`.
