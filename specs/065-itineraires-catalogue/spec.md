@@ -6,7 +6,7 @@
 > l'écosystème Néméton » du 2026-11-05, § 3.2 et étape 4 du § 4.
 > **Dépôts** : `nemeton` (cœur, ce qui calcule) ; `aigora` (agent, ce qui
 > raisonne) et `victor` (voix) par briefs dérivés.
-> **Décisions** : § 8, renvoyées par **[D-n]**.
+> **Décisions** : § 8, renvoyées par **[D-n]**. Avancement : § 11.
 
 ## 1. Pourquoi, et pourquoi avant FINN
 
@@ -200,3 +200,28 @@ Fixés ici pour ne pas changer de forme plus tard :
 Inscrits dans PLAN.md (n° 23 et 24) **avant** la première release : vue des
 itinéraires admissibles avec raisons d'exclusion ; table de comparaison
 pondérée par le profil (et origine des poids, D-1).
+
+## 11. Avancement (2026-11-06, **2026.11.4**)
+
+| Livrable | État |
+|---|---|
+| `itineraires_catalogue()`, `valider_catalogue_itineraires()` | ✅ ; catalogue livré = squelette des 11 itinéraires de D-4, tous `a_sourcer` (critère 1) |
+| `itineraires_admissibles()` | ✅ chaque code d'exclusion testé, `donnee_manquante` jamais silencieux (critère 2) |
+| `comparer_itineraires()` | ✅ classement inversé entre profils production et naturaliste sur `massif_demo_units` avec un catalogue de test fictif, citations sur chaque ligne (critère 3) ; contrat FINN dans l'aide (critère 5) |
+| `profils_poids()` (D-1 b) | ✅ 15 profils, poids **provisoires** (prioritaire = 3, autre = 1) |
+| Fiche « itinéraires » (critère 4) | ✅ `vignettes/fiche-itineraires_fr.Rmd` |
+| Remplissage du catalogue (D-4) | ⬜ Pascal, depuis des guides cités |
+
+**Écarts à la spec, décidés au codage :**
+
+- `domaine.desserte_max_m` ajouté : `desserte_requise` seul ne donnait pas de
+  seuil de débardage ; le seuil vient du catalogue, sourcé comme le reste.
+- `citations` : chaîne « référence, pages ; … » tirée du catalogue, et non
+  `format_citations()`, qui met en forme des résultats de recherche RAG.
+- `familles_evaluees` (colonne ajoutée) : les profils pèsent les 12 familles,
+  une entrée de catalogue en renseigne rarement autant. Une famille dont aucun
+  candidat ne connaît l'effet est mise de côté (elle ne départage rien) ; une
+  famille connue pour un candidat et inconnue (`?`) pour un autre rend le
+  score de ce dernier `NA`. Sans cette règle, tout score sous un profil aurait
+  été `NA`.
+- `rang` (colonne ajoutée) : 1 = meilleur score de l'UGF.

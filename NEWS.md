@@ -1,3 +1,34 @@
+# nemeton 2026.11.4 (2026-11-06)
+
+## Nouveautés
+
+- **Itinéraires sylvicoles** (spec 065, étape 4 du brief du 2026-11-05) : un
+  moteur déterministe, sans simulation, que l'agent `sylviculteur` (Aigora)
+  et la voix (Victor) appelleront.
+  - `itineraires_catalogue()` lit le catalogue
+    (`inst/extdata/itineraires_sylvicoles.json`) ; `valider_catalogue_itineraires()`
+    applique la règle de sourçage (une entrée `source` sans référence, ou un
+    effet connu sans source, est refusée). Le catalogue livré est le
+    **squelette** des onze premiers itinéraires de Bourgogne-Franche-Comté,
+    tous `a_sourcer` : aucun n'est admissible tant que ses paramètres n'ont
+    pas été remplis depuis des guides cités. Aucune valeur n'est inventée.
+  - `itineraires_admissibles()` : pour chaque UGF et chaque itinéraire,
+    admissible ou non et **pourquoi** (`source_manquante`,
+    `statut_protection`, `hors_ser`, `essence_absente`,
+    `station_insuffisante`, `pente`, `desserte`) ; une donnée manquante donne
+    `donnee_manquante` et `admissible = NA`, jamais une admission silencieuse.
+  - `comparer_itineraires()` : rang par UGF sous les poids d'un profil
+    (somme pondérée des effets qualitatifs `+`/`0`/`-`), front de Pareto,
+    familles gagnantes et perdantes face à l'itinéraire déclaré ou au
+    meilleur, familles évaluées, citations. `methode = "catalogue_qualitatif"`
+    ; l'argument `trajectoires =` est réservé à la simulation FINN
+    (chantier D).
+  - `profils_poids()` : poids par famille des 15 profils d'acteurs
+    (`inst/extdata/profils_poids.json`), **provisoires** (famille prioritaire
+    = 3, autre = 1, d'après la table des profils).
+  - Fiche `fiche-itineraires_fr` (pièges : effets qualitatifs, catalogue non
+    exhaustif, admissible n'est pas recommandé, poids provisoires).
+
 # nemeton 2026.11.3 (2026-11-06)
 
 ## Nouveautés

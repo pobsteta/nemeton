@@ -1,0 +1,308 @@
+{
+  "version": 1,
+  "description": "Catalogue des itinéraires sylvicoles (spec 065). Squelette du premier catalogue (D-4) : toutes les entrées sont « a_sourcer » et ne sont jamais admissibles tant que leurs règles, leur domaine et leurs effets attendus n'ont pas été remplis à partir de guides de sylviculture cités (ONF, DRA/SRA, Pro Silva, SRGS). Aucune valeur n'est inventée.",
+  "schema": {
+    "domaine": "essences_objectif (codes de la colonne essence du projet), ser (codes SER), p2_min/p2_max (unités de P2), pente_max_pct, desserte_requise (vrai/faux), desserte_max_m (distance de débardage), protections_exclues (codes de type de B1 : rnn, rb, coeur, apb, natura...)",
+    "effets_attendus": "par code de famille (C, B, W, A, F, L, T, R, S, P, E, N) : {sens: + | 0 | - | ?, horizon: court | moyen | long, source: référence}",
+    "statut_source": "source | a_sourcer"
+  },
+  "itineraires": [
+    {
+      "code": "bfc_chene_sessile_futaie_reguliere",
+      "famille_itineraire": "futaie_reguliere",
+      "libelle": {
+        "fr": "Futaie régulière de chêne sessile",
+        "en": "Even-aged sessile oak high forest"
+      },
+      "domaine": {
+        "essences_objectif": [],
+        "ser": [],
+        "p2_min": null,
+        "p2_max": null,
+        "pente_max_pct": null,
+        "desserte_requise": null,
+        "desserte_max_m": null,
+        "protections_exclues": []
+      },
+      "regles": {
+        "rotation_ans": null,
+        "diametre_exploitabilite_cm": null,
+        "surface_terriere_cible_m2ha": null,
+        "intensite_prelevement_pct": null
+      },
+      "effets_attendus": {},
+      "sources": [],
+      "statut_source": "a_sourcer"
+    },
+    {
+      "code": "bfc_hetre_futaie_reguliere",
+      "famille_itineraire": "futaie_reguliere",
+      "libelle": {
+        "fr": "Futaie régulière de hêtre",
+        "en": "Even-aged beech high forest"
+      },
+      "domaine": {
+        "essences_objectif": [],
+        "ser": [],
+        "p2_min": null,
+        "p2_max": null,
+        "pente_max_pct": null,
+        "desserte_requise": null,
+        "desserte_max_m": null,
+        "protections_exclues": []
+      },
+      "regles": {
+        "rotation_ans": null,
+        "diametre_exploitabilite_cm": null,
+        "surface_terriere_cible_m2ha": null,
+        "intensite_prelevement_pct": null
+      },
+      "effets_attendus": {},
+      "sources": [],
+      "statut_source": "a_sourcer"
+    },
+    {
+      "code": "bfc_sapin_futaie_reguliere",
+      "famille_itineraire": "futaie_reguliere",
+      "libelle": {
+        "fr": "Futaie régulière de sapin pectiné",
+        "en": "Even-aged silver fir high forest"
+      },
+      "domaine": {
+        "essences_objectif": [],
+        "ser": [],
+        "p2_min": null,
+        "p2_max": null,
+        "pente_max_pct": null,
+        "desserte_requise": null,
+        "desserte_max_m": null,
+        "protections_exclues": []
+      },
+      "regles": {
+        "rotation_ans": null,
+        "diametre_exploitabilite_cm": null,
+        "surface_terriere_cible_m2ha": null,
+        "intensite_prelevement_pct": null
+      },
+      "effets_attendus": {},
+      "sources": [],
+      "statut_source": "a_sourcer"
+    },
+    {
+      "code": "bfc_epicea_futaie_reguliere",
+      "famille_itineraire": "futaie_reguliere",
+      "libelle": {
+        "fr": "Futaie régulière d'épicéa commun",
+        "en": "Even-aged Norway spruce high forest"
+      },
+      "domaine": {
+        "essences_objectif": [],
+        "ser": [],
+        "p2_min": null,
+        "p2_max": null,
+        "pente_max_pct": null,
+        "desserte_requise": null,
+        "desserte_max_m": null,
+        "protections_exclues": []
+      },
+      "regles": {
+        "rotation_ans": null,
+        "diametre_exploitabilite_cm": null,
+        "surface_terriere_cible_m2ha": null,
+        "intensite_prelevement_pct": null
+      },
+      "effets_attendus": {},
+      "sources": [],
+      "statut_source": "a_sourcer"
+    },
+    {
+      "code": "bfc_douglas_futaie_reguliere",
+      "famille_itineraire": "futaie_reguliere",
+      "libelle": {
+        "fr": "Futaie régulière de douglas",
+        "en": "Even-aged Douglas fir high forest"
+      },
+      "domaine": {
+        "essences_objectif": [],
+        "ser": [],
+        "p2_min": null,
+        "p2_max": null,
+        "pente_max_pct": null,
+        "desserte_requise": null,
+        "desserte_max_m": null,
+        "protections_exclues": []
+      },
+      "regles": {
+        "rotation_ans": null,
+        "diametre_exploitabilite_cm": null,
+        "surface_terriere_cible_m2ha": null,
+        "intensite_prelevement_pct": null
+      },
+      "effets_attendus": {},
+      "sources": [],
+      "statut_source": "a_sourcer"
+    },
+    {
+      "code": "bfc_futaie_irreguliere_pro_silva",
+      "famille_itineraire": "futaie_irreguliere",
+      "libelle": {
+        "fr": "Futaie irrégulière (Pro Silva)",
+        "en": "Uneven-aged high forest (Pro Silva)"
+      },
+      "domaine": {
+        "essences_objectif": [],
+        "ser": [],
+        "p2_min": null,
+        "p2_max": null,
+        "pente_max_pct": null,
+        "desserte_requise": null,
+        "desserte_max_m": null,
+        "protections_exclues": []
+      },
+      "regles": {
+        "rotation_ans": null,
+        "diametre_exploitabilite_cm": null,
+        "surface_terriere_cible_m2ha": null,
+        "intensite_prelevement_pct": null
+      },
+      "effets_attendus": {},
+      "sources": [],
+      "statut_source": "a_sourcer"
+    },
+    {
+      "code": "bfc_taillis_sous_futaie",
+      "famille_itineraire": "taillis_sous_futaie",
+      "libelle": {
+        "fr": "Taillis-sous-futaie",
+        "en": "Coppice with standards"
+      },
+      "domaine": {
+        "essences_objectif": [],
+        "ser": [],
+        "p2_min": null,
+        "p2_max": null,
+        "pente_max_pct": null,
+        "desserte_requise": null,
+        "desserte_max_m": null,
+        "protections_exclues": []
+      },
+      "regles": {
+        "rotation_ans": null,
+        "diametre_exploitabilite_cm": null,
+        "surface_terriere_cible_m2ha": null,
+        "intensite_prelevement_pct": null
+      },
+      "effets_attendus": {},
+      "sources": [],
+      "statut_source": "a_sourcer"
+    },
+    {
+      "code": "bfc_conversion_tsf_futaie",
+      "famille_itineraire": "conversion",
+      "libelle": {
+        "fr": "Conversion du taillis-sous-futaie en futaie",
+        "en": "Conversion of coppice with standards to high forest"
+      },
+      "domaine": {
+        "essences_objectif": [],
+        "ser": [],
+        "p2_min": null,
+        "p2_max": null,
+        "pente_max_pct": null,
+        "desserte_requise": null,
+        "desserte_max_m": null,
+        "protections_exclues": []
+      },
+      "regles": {
+        "rotation_ans": null,
+        "diametre_exploitabilite_cm": null,
+        "surface_terriere_cible_m2ha": null,
+        "intensite_prelevement_pct": null
+      },
+      "effets_attendus": {},
+      "sources": [],
+      "statut_source": "a_sourcer"
+    },
+    {
+      "code": "bfc_libre_evolution",
+      "famille_itineraire": "libre_evolution",
+      "libelle": {
+        "fr": "Libre évolution",
+        "en": "Non-intervention (free development)"
+      },
+      "domaine": {
+        "essences_objectif": [],
+        "ser": [],
+        "p2_min": null,
+        "p2_max": null,
+        "pente_max_pct": null,
+        "desserte_requise": null,
+        "desserte_max_m": null,
+        "protections_exclues": []
+      },
+      "regles": {
+        "rotation_ans": null,
+        "diametre_exploitabilite_cm": null,
+        "surface_terriere_cible_m2ha": null,
+        "intensite_prelevement_pct": null
+      },
+      "effets_attendus": {},
+      "sources": [],
+      "statut_source": "a_sourcer"
+    },
+    {
+      "code": "bfc_ilot_senescence",
+      "famille_itineraire": "ilot_senescence",
+      "libelle": {
+        "fr": "Îlot de sénescence",
+        "en": "Senescence island"
+      },
+      "domaine": {
+        "essences_objectif": [],
+        "ser": [],
+        "p2_min": null,
+        "p2_max": null,
+        "pente_max_pct": null,
+        "desserte_requise": null,
+        "desserte_max_m": null,
+        "protections_exclues": []
+      },
+      "regles": {
+        "rotation_ans": null,
+        "diametre_exploitabilite_cm": null,
+        "surface_terriere_cible_m2ha": null,
+        "intensite_prelevement_pct": null
+      },
+      "effets_attendus": {},
+      "sources": [],
+      "statut_source": "a_sourcer"
+    },
+    {
+      "code": "bfc_plantation_diversification",
+      "famille_itineraire": "plantation_diversification",
+      "libelle": {
+        "fr": "Plantation avec essences de diversification",
+        "en": "Planting with diversification species"
+      },
+      "domaine": {
+        "essences_objectif": [],
+        "ser": [],
+        "p2_min": null,
+        "p2_max": null,
+        "pente_max_pct": null,
+        "desserte_requise": null,
+        "desserte_max_m": null,
+        "protections_exclues": []
+      },
+      "regles": {
+        "rotation_ans": null,
+        "diametre_exploitabilite_cm": null,
+        "surface_terriere_cible_m2ha": null,
+        "intensite_prelevement_pct": null
+      },
+      "effets_attendus": {},
+      "sources": [],
+      "statut_source": "a_sourcer"
+    }
+  ]
+}
