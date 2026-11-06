@@ -180,6 +180,9 @@ Une dispersion, pas une position. C'est exactement ce que le correctif 0.190.0 a
 
 ## 8. Annexe — mode embedding (spec 064)
 
+> Voir aussi la fiche commune [Modèles de fondation](fiche-modeles-de-fondation_fr.html)
+> (modèle, licence, angles morts).
+
 Depuis 2026.11.1, `indicateur_l3_het_spectrale(embedding =)` calcule L3 à
 partir des embeddings AlphaEarth, quand `spectral` et `reflectance` sont
 absents. L3 est alors la **dispersion multivariée** (même définition que

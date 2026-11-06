@@ -278,7 +278,7 @@ Brief app : `specs/064-alphaearth-n5/brief-nemetonshiny.md`.
 | Paquet `alphaearthnemeton` (`aef_fetch()`, GPL-3, D-2 tranchée le 2026-11-05) | 🟨 code poussé le 2026-11-05 (branche `claude/pensive-curie-yx018k`, R CMD check OK), en attente d'une branche `main` pour la PR |
 | B4/L3 `embedding =` + dictionnaire de clusters (D-6) | ✅ 2026.11.1 : `aef_clusters()` v1 (k = 32, 11 massifs, 2024), fenêtres de 100 m sur grille fixe, statut `calculated_embedding`. B4 : affectation souple (τ = 0,1) et divergence de Jensen-Shannon, échelle 0-100 sur les centiles 1/99 du corpus (0 ; 0,87). **Critère ± 2 points (2023 contre 2024, Dabo) : B4 écart médian 0,7, max 2,2** (affectation stricte : 4,3 et 12,8) ; L3 médiane 1,2, max 2,9 |
 | `embedding_regress()` (C1, P2, B2 sans CHM) | ✅ 2026.11.2 : ridge base R (GCV) ou ranger, validation croisée par blocs spatiaux de 5 km, raster prêt pour `chm =`. **Écart à la spec : pas pour B2** (CV d'une hauteur prédite = CV du modèle, pas du peuplement). Validé sur données synthétiques seulement : les serveurs IFN sont inaccessibles depuis la session de travail |
-| Vignette `embeddings-alphaearth_fr.Rmd`, fiche « modèles de fondation » | ⬜ |
+| Vignette `embeddings-alphaearth_fr.Rmd`, fiche « modèles de fondation » | ✅ 2026-11-06 (doc, cycle dev 2026.11.2.9000) ; fiche liée depuis N5, B4, L3 |
 
 ### Accès vérifié (2026-11-05)
 
