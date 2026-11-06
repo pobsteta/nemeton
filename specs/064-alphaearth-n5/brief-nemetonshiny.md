@@ -36,11 +36,11 @@
 
 ## Ce que l'app recevra (spec 065, étape 4)
 
-5. **Itinéraires admissibles** par UGF, avec la raison de chaque exclusion
+5. **Itinéraires admissibles** (**livré en cœur 2026.11.4**) par UGF, avec la raison de chaque exclusion
    (codes fermés : `station_insuffisante`, `hors_ser`, `essence_absente`,
    `pente`, `desserte`, `statut_protection`, `source_manquante`,
    `donnee_manquante`). Vue proposée : onglet plan d'actions. **Écart n° 23.**
-6. **Comparaison pondérée** des itinéraires sous un profil. Selon la
+6. **Comparaison pondérée** (**livrée en cœur 2026.11.4**, colonnes `rang`, `familles_evaluees` en plus) des itinéraires sous un profil. Les poids sont dans le cœur : `profils_poids()`, 15 profils, provisoires. Selon la
    décision D-1 de la spec 065, les **poids par famille** des profils
    pourraient migrer dans le cœur (`inst/extdata/profils_poids.json`) ; les
    prompts et libellés resteraient dans `inst/experts/`. Question à l'app :

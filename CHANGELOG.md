@@ -10,6 +10,12 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.4] - 2026-11-06
+
+### Added
+- Silvicultural itineraries engine (spec 065): `itineraires_catalogue()`, `valider_catalogue_itineraires()` (sourcing rule), `itineraires_admissibles()` (closed set of exclusion reasons, `donnee_manquante` never silent), `comparer_itineraires()` (qualitative weighted rank, Pareto, winners/losers, citations; `trajectoires =` reserved for FINN), `profils_poids()` (provisional family weights of 15 profiles).
+- Catalogue skeleton of 11 BFC itineraries, all `a_sourcer` (no invented values); fiche `fiche-itineraires_fr`.
+
 ## [2026.11.3] - 2026-11-06
 
 ### Added

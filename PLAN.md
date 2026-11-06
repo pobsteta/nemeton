@@ -40,8 +40,8 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 20 | N5 distance à la référence : colonnes `N5`, `n5_status` (5 statuts `skipped_*` / `calculated`), couche carte | cœur **2026.11.1** | `nemetonshiny` | **Ouvert avant le code** (2026-11-05), préavis `specs/064-alphaearth-n5/brief-nemetonshiny.md`. Libellés et sens viendront de `indicator_labels()` : rien à forker |
 | 21 | B4/L3 en mode embedding : `b4_methode` / `l3_methode`, statut `calculated_embedding` à passer à `normalize_indicator(statut =)` ; l'interdit de l'écart n° 6 ne tombe que pour `embedding` | cœur **2026.11.1** | `nemetonshiny` | **Ouvert avant le code** (2026-11-05), même préavis |
 | 22 | Flag NDP `embedding_ml` dans `detect_ndp()$augmented` | cœur **2026.11.1** | `nemetonshiny` (badge NDP) | **Ouvert avant le code** (2026-11-05), même préavis |
-| 23 | Itinéraires admissibles par UGF et raisons d'exclusion (`itineraires_admissibles()`) | cœur — **spec 065, non livrée** | `nemetonshiny`, `aigora`, `victor` | **Ouvert avant le code** (2026-11-05), préavis app + `specs/065-itineraires-catalogue/brief-aigora.md`, `brief-victor.md` |
-| 24 | Comparaison pondérée (`comparer_itineraires()`) et origine des poids des profils (spec 065 D-1 : migration des poids dans le cœur ?) | cœur — **spec 065, non livrée** | `nemetonshiny`, `aigora` | **Ouvert avant le code** (2026-11-05) ; question posée à l'app : les poids des 13 profils existent-ils sous forme numérique ? |
+| 23 | Itinéraires admissibles par UGF et raisons d'exclusion (`itineraires_admissibles()`) | cœur **2026.11.4** | `nemetonshiny`, `aigora`, `victor` | **Ouvert avant le code** (2026-11-05), préavis app + `specs/065-itineraires-catalogue/brief-aigora.md`, `brief-victor.md` |
+| 24 | Comparaison pondérée (`comparer_itineraires()`) ; poids des profils dans le cœur (`profils_poids()`, spec 065 D-1 b) | cœur **2026.11.4** | `nemetonshiny`, `aigora` | **Ouvert avant le code** (2026-11-05) ; question posée à l'app : les poids des 13 profils existent-ils sous forme numérique ? |
 | 25 | Table des sondes « Ce que les modèles voient » (`probe_indicator()`) | cœur **2026.11.3** | `nemetonshiny` | **Ouvert avant le code** (2026-11-06). Vue triée par R², lecture `voit` / `partiel` / `angle_mort`, marqueur `source_commune` |
 
 **Les n° 20 à 24 sont ouverts le 2026-11-05 avant toute ligne de code** (specs 064 et 065, brief « modèles de fondation »), pour que la leçon des n° 10 et 11 serve : un écart s'inscrit quand on le prévoit, pas quand on le découvre. **Trois écarts (n° 3, n° 6 résiduel, n° 16), aucun n'appelle plus de correctif dans le cœur.** Les n° 18 (T2) et 19 (`r1_status`) sont refermés par l'app v0.155.0 le 2026-10-05 ; `r1_fallback_reason` reste non transporté, à la demande (le rapport ne cite pas le motif exact). Le n° 13 est refermé le 2026-10-02 (cinq relances RECONFORT propres, table ci-dessous). Les n° 15 et 17 sont refermés par l'app v0.152.1 le 2026-10-02 (table ci-dessous).
@@ -116,13 +116,22 @@ un raccourci.
 | Spec | Objet | État |
 |---|---|---|
 | 064 | Chantier A : `alphaearthnemeton`, `embedding_summary()`, `distance_reference()`, **N5**, B4/L3 `embedding =`, régressions NDP 0 | ✅ spec validée le 2026-11-05 (D-2 : GPL-3) ; 🟨 code : N5 + fonctions génériques + flag NDP → **2026.11.1** ; reste `alphaearthnemeton`, B4/L3, `embedding_regress()`, vignette |
-| 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 (7 décisions) ; code ⬜ ; catalogue à sourcer par Pascal (D-4) |
+| 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 ; moteur → **2026.11.4** ; catalogue (squelette `a_sourcer`) à remplir par Pascal (D-4) |
 | 066 | Chantier B : sondes `probe_indicator()` (cœur, AlphaEarth d'abord) et MAESTRO en extracteur d'embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
 parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
 vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier remplissage du
 catalogue par Pascal.
+
+**Journal** — *2026-11-06* (**2026.11.4**) : moteur des itinéraires (spec
+065) : catalogue, validateur de sourçage, admissibilité avec raisons fermées,
+comparaison qualitative pondérée, poids des 15 profils (provisoires,
+prioritaire = 3). Catalogue livré = squelette de 11 itinéraires BFC, tous
+`a_sourcer` : rien d'admissible avant le remplissage par Pascal. Écarts à la
+spec notés au § 11 (seuil `desserte_max_m`, citations en chaîne,
+`familles_evaluees`, `rang`). 47 assertions. Écarts n° 23 et 24 livrés côté
+cœur. Aigora et Victor peuvent maintenant appeler les fonctions.
 
 **Journal** — *2026-11-06* (**2026.11.3**) : spec 066 validée par Pascal
 (« je valide, code »). `probe_indicator()` livré : ridge par indicateur sur

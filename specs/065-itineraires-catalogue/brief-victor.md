@@ -1,6 +1,6 @@
 # Brief `victor` — outils vocaux pour les itinéraires
 
-> **Statut** : **préavis**. Dépend de la spec 065 (validée le 2026-11-05) et du skill
+> **Statut** : **préavis** ; fonctions du cœur livrées en **2026.11.4** (`itineraires_admissibles()`, `comparer_itineraires()`, `profils_poids()`), catalogue encore vide de sources. Dépend de la spec 065 (validée le 2026-11-05) et du skill
 > `sylviculteur` d'`aigora`. Rien à coder avant la release cœur.
 > **Origine** : brief « Modèles de fondation… » du 2026-11-05, § 3.4.
 

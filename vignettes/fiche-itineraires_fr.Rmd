@@ -1,0 +1,101 @@
+---
+title: "Fiche - Itineraires sylvicoles : catalogue, admissibilite, comparaison"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche - Itineraires sylvicoles : catalogue, admissibilite, comparaison}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-11-06. Spec 065.
+> Fonctions **expérimentales** : elles peuvent changer à toute version.
+
+## 1. Trois fonctions, un moteur sans simulation
+
+| Étape | Fonction | Rend |
+|---|---|---|
+| Catalogue | `itineraires_catalogue()` | les itinéraires, leurs règles et leurs effets attendus, sourcés |
+| Admissibilité | `itineraires_admissibles(units)` | pour chaque UGF et chaque itinéraire : admissible ou non, et **pourquoi** |
+| Comparaison | `comparer_itineraires(units, poids)` | un rang par UGF sous les poids d'un profil, gagnants, perdants, citations |
+
+Le moteur est déterministe : il ne simule rien. L'effet d'un itinéraire sur
+une famille est **qualitatif** (`+`, `0`, `-`, `?`) et sourcé dans le
+catalogue. La simulation (FINN, chantier D) viendra remplir les mêmes sorties
+avec des trajectoires chiffrées, sans en changer la forme.
+
+```{r usage}
+cat <- itineraires_catalogue()
+adm <- itineraires_admissibles(ugf, cat, protected_areas = aires_protegees)
+table(adm$raison, useNA = "ifany")
+
+cmp <- comparer_itineraires(ugf, "profil_naturaliste", cat, admissibles = adm)
+cmp[cmp$rang == 1, c("unit_id", "itineraire", "familles_gagnantes", "citations")]
+```
+
+Colonnes lues sur les UGF (modifiables par `colonnes =`) : `P2`, `ser`,
+`essence`, `pente_pct`, `desserte_m` (distance de débardage).
+
+## 2. Le catalogue livré est un squelette
+
+`inst/extdata/itineraires_sylvicoles.json` contient les onze premiers
+itinéraires de Bourgogne-Franche-Comté (futaies régulières de chêne sessile,
+hêtre, sapin, épicéa et douglas ; futaie irrégulière Pro Silva ;
+taillis-sous-futaie et sa conversion ; libre évolution ; îlot de sénescence ;
+plantation de diversification). **Tous sont `a_sourcer`** : domaine, règles
+et effets attendus sont vides, et **aucun n'est admissible** tant qu'ils n'ont
+pas été remplis à partir de guides cités (ONF, DRA/SRA, Pro Silva, SRGS).
+
+**Règle de sourçage** : un paramètre numérique sans référence n'entre pas
+dans le catalogue ; `valider_catalogue_itineraires()` refuse une entrée
+`source` sans référence, ou un effet connu sans source.
+
+## 3. Admissibilité : chaque exclusion a sa raison
+
+Ordre des critères, et premier critère qui échoue rapporté : `source_manquante`,
+`statut_protection`, `hors_ser`, `essence_absente`, `station_insuffisante`,
+`pente`, `desserte`. Quand la donnée nécessaire à un critère manque, la ligne
+porte `donnee_manquante` et `admissible = NA` : **un itinéraire n'est jamais
+admis ni exclu en silence**.
+
+## 4. Comparaison
+
+- `score_global` = somme pondérée des effets (`+` = 1, `0` = 0, `-` = −1)
+  divisée par la somme des poids, dans [−1, 1]. C'est un **rang**, pas une
+  mesure : l'afficher comme tel.
+- Seules comptent les familles dont au moins un itinéraire candidat connaît
+  l'effet (`familles_evaluees`) : une famille qu'aucun itinéraire ne documente
+  ne départage rien.
+- Un itinéraire dont l'effet sur une famille évaluée est inconnu (`?`) a un
+  score `NA`, plutôt qu'une estimation.
+- `reference = "statu_quo"` : l'itinéraire déclaré de l'UGF (colonne
+  `itineraire_actuel`) s'il est candidat, sinon le meilleur score ; gagnants
+  et perdants se lisent face à lui.
+- Poids : `profils_poids()` (15 profils). **Provisoires** : famille prioritaire
+  du profil = 3, autre = 1, d'après la table des profils de CLAUDE.md.
+
+## 5. Pièges
+
+1. **Effets qualitatifs.** `+` sur la production pour deux itinéraires ne dit
+   pas lequel produit le plus. Le rang ne départage que ce que le catalogue
+   distingue.
+2. **Catalogue non exhaustif.** Un itinéraire absent du catalogue n'est ni
+   admis ni comparé : ce n'est pas un jugement sur lui.
+3. **Admissible n'est pas recommandé.** Admissible veut dire que rien, dans
+   les règles du catalogue et les données, ne l'exclut.
+4. **Poids provisoires.** Les poids des profils sont un point de départ, pas un
+   calibrage : à valider ou remplacer par des poids donnés par l'utilisateur.
+
+## 6. Références internes
+
+| Sujet | Fichier |
+|---|---|
+| Spécification | `specs/065-itineraires-catalogue/spec.md` |
+| Code | `R/itineraires.R` |
+| Catalogue, poids | `inst/extdata/itineraires_sylvicoles.json`, `inst/extdata/profils_poids.json` |
+| Agent, voix | `specs/065-itineraires-catalogue/brief-aigora.md`, `brief-victor.md` |

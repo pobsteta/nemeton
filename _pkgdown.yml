@@ -159,6 +159,8 @@ navbar:
         href: articles/embeddings-alphaearth_fr.html
       - text: Fiche - Modeles de fondation
         href: articles/fiche-modeles-de-fondation_fr.html
+      - text: Fiche - Itineraires sylvicoles
+        href: articles/fiche-itineraires_fr.html
 
 reference:
   - title: "API stable"
@@ -610,6 +612,17 @@ reference:
     - aef_clusters
     - embedding_regress
     - probe_indicator
+
+  - subtitle: "Itineraires sylvicoles (spec 065)"
+    desc: >
+      Catalogue d'itineraires source, admissibilite par UGF avec la raison de
+      chaque exclusion, comparaison qualitative ponderee par profil
+    contents:
+    - itineraires_catalogue
+    - valider_catalogue_itineraires
+    - itineraires_admissibles
+    - comparer_itineraires
+    - profils_poids
 
   - subtitle: "Corpus de connaissances et RAG"
     contents:
