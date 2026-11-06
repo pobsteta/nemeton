@@ -1,3 +1,19 @@
+# nemeton 2026.11.8 (2026-11-06)
+
+## Nouveautés
+
+- **`effet_gestion()`** (spec 068, chantier D, étape 1) : ce que le type de
+  gestion déclaré a produit sur chaque famille, estimé sur les UGF du projet
+  à station comparable (covariables P2, altitude, pente, SER présentes).
+  Score de propension et support commun ; **refus explicite** si moins de
+  70 % des UGF sont comparables (`recouvrement_insuffisant`) ou si un type a
+  moins de 10 UGF (`trop_peu_unites`). Effet moyen doublement robuste (AIPW,
+  intervalle à 90 %) ; effets par UGF par méta-apprenant X ou T (ranger,
+  sinon régression linéaire), intervalles par bootstrap. Sur données
+  simulées (effet réel 8, forte confusion par la station) : différence brute
+  18,5, AIPW 7,1, couverture de l'intervalle 93 %. Une association ajustée,
+  pas une preuve causale : la fiche `fiche-effet-gestion_fr` le dit.
+
 # nemeton 2026.11.7 (2026-11-06)
 
 ## Nouveautés
