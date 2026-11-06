@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.4.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -69,6 +69,7 @@
     <li><a class="dropdown-item" href="articles/fiche-b2-structure_fr.html">B2 - Diversite structurale</a></li>
     <li><a class="dropdown-item" href="articles/fiche-b3-connectivite_fr.html">B3 - Connectivite ecologique</a></li>
     <li><a class="dropdown-item" href="articles/fiche-b4-diversite-spectrale_fr.html">B4 - Diversite spectrale alpha</a></li>
+    <li><a class="dropdown-item" href="articles/fiche-b5-stratification_fr.html">B5 - Stratification verticale</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille W - Eau &amp; Regulation</h6></li>
     <li><a class="dropdown-item" href="articles/fiche-w1-reseau_fr.html">W1 - Reseau hydrographique</a></li>
@@ -155,7 +156,7 @@
 <div class="section level2">
 <h2 id="architecture-adr-009">Architecture (ADR-009)<a class="anchor" aria-label="anchor" href="#architecture-adr-009"></a>
 </h2>
-<pre><code>nemeton (ce repo)       -&gt; Package coeur R (GPL-3). 42 indicateurs, 12 familles, NDP, radar.
+<pre><code>nemeton (ce repo)       -&gt; Package coeur R (GPL-3). 43 indicateurs, 12 familles, NDP, radar.
 nemetonshiny            -&gt; Application Shiny (EUPL v1.2). Interface web interactive.
 tree_sat_nemeton        -&gt; Classification d'essences Sentinel-1/2. NDP 0. MIT.
 maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.</code></pre>
@@ -325,7 +326,7 @@ maestro_nemeton         -&gt; Classification MAESTRO ViT (ortho+MNT). NDP 1+. MI
 <p>L’application permet de :</p>
 <ul>
 <li>Rechercher et selectionner des parcelles cadastrales par commune</li>
-<li>Calculer automatiquement les 42 indicateurs (12 familles)</li>
+<li>Calculer automatiquement les 43 indicateurs (12 familles)</li>
 <li>Visualiser les resultats (radar avec NDP, cartes, tableaux)</li>
 <li>Generer des perspectives IA par profil d’acteur (18 profils)</li>
 <li>Exporter en PDF ou GeoPackage</li>

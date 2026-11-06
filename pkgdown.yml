@@ -15,6 +15,7 @@ articles:
   fiche-b2-structure_fr: fiche-b2-structure_fr.html
   fiche-b3-connectivite_fr: fiche-b3-connectivite_fr.html
   fiche-b4-diversite-spectrale_fr: fiche-b4-diversite-spectrale_fr.html
+  fiche-b5-stratification_fr: fiche-b5-stratification_fr.html
   fiche-c1-biomasse_fr: fiche-c1-biomasse_fr.html
   fiche-c2-ndvi_fr: fiche-c2-ndvi_fr.html
   fiche-e1-bois-energie_fr: fiche-e1-bois-energie_fr.html
@@ -58,7 +59,7 @@ articles:
   tarifs-schaeffer-ser_fr: tarifs-schaeffer-ser_fr.html
   temporal-analysis_fr: temporal-analysis_fr.html
   tutorial-guide: tutorial-guide.html
-last_built: 2026-11-06T08:28Z
+last_built: 2026-11-06T08:58Z
 urls:
   reference: https://pobsteta.github.io/nemeton/reference
   article: https://pobsteta.github.io/nemeton/articles

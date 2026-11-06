@@ -40,7 +40,7 @@ data(massif_demo_units)
 
 # Inspecter les parcelles
 print(massif_demo_units)
-#> Simple feature collection with 20 features and 125 fields
+#> Simple feature collection with 20 features and 128 fields
 #> Geometry type: POLYGON
 #> Dimension:     XY
 #> Bounding box:  xmin: 698041.8 ymin: 6499215 xmax: 702793.8 ymax: 6504159
@@ -68,17 +68,17 @@ print(massif_demo_units)
 #> 8                1955     169   27.2 38.8  228.3      3         2  montagnard
 #> 9                1978     369   24.8 34.0  349.0      4         3  atlantique
 #> 10               1861     632   25.7 34.0  619.4      2         2  montagnard
-#>    surface_ha couvert        C1 C2 B1 B2  B3 B4       W1 W2       W3 W4
-#> 1    4.989211    0.90  49.01124 NA NA NA 100 NA 0.000000  0 2.172398 NA
-#> 2    5.867935    0.75  17.78697 NA NA NA 100 NA 0.000000  0 2.079708 NA
-#> 3    6.557777    0.77  70.53634 NA NA NA 100 NA 0.000000  0 2.320038 NA
-#> 4    9.989553    0.86 134.98574 NA NA NA 100 NA 8.677353  0 2.179088 NA
-#> 5    5.906395    0.82  29.20340 NA NA NA 100 NA 0.000000  0 2.243098 NA
-#> 6    1.048296    0.87  56.77781 NA NA NA 100 NA 0.000000  0 2.081669 NA
-#> 7   17.079363    0.90  55.01833 NA NA NA 100 NA 0.000000  0 2.192747 NA
-#> 8   11.414577    0.76  44.44292 NA NA NA 100 NA 0.000000  0 2.238672 NA
-#> 9   16.105209    0.83  30.25904 NA NA NA 100 NA 0.000000  0 2.244686 NA
-#> 10  10.733433    0.75 118.81922 NA NA NA 100 NA 3.771602  0 2.261767 NA
+#>    surface_ha couvert        C1 C2 B1 B2  B3 B4 B5       W1 W2       W3 W4
+#> 1    4.989211    0.90  49.01124 NA NA NA 100 NA NA 0.000000  0 2.172398 NA
+#> 2    5.867935    0.75  17.78697 NA NA NA 100 NA NA 0.000000  0 2.079708 NA
+#> 3    6.557777    0.77  70.53634 NA NA NA 100 NA NA 0.000000  0 2.320038 NA
+#> 4    9.989553    0.86 134.98574 NA NA NA 100 NA NA 8.677353  0 2.179088 NA
+#> 5    5.906395    0.82  29.20340 NA NA NA 100 NA NA 0.000000  0 2.243098 NA
+#> 6    1.048296    0.87  56.77781 NA NA NA 100 NA NA 0.000000  0 2.081669 NA
+#> 7   17.079363    0.90  55.01833 NA NA NA 100 NA NA 0.000000  0 2.192747 NA
+#> 8   11.414577    0.76  44.44292 NA NA NA 100 NA NA 0.000000  0 2.238672 NA
+#> 9   16.105209    0.83  30.25904 NA NA NA 100 NA NA 0.000000  0 2.244686 NA
+#> 10  10.733433    0.75 118.81922 NA NA NA 100 NA NA 3.771602  0 2.261767 NA
 #>           A1    A2 A3 A4 A5 F1   F2   L1   L2 L3  T1 T2 T3        R1       R2
 #> 1   99.86906 100.0 NA NA NA NA 15.0 52.4 91.8 NA  68 NA NA  99.92593 35.25631
 #> 2   99.97049  99.4 NA NA NA NA 10.3 52.6 93.0 NA  33 NA NA 100.00000 41.96851
@@ -101,138 +101,138 @@ print(massif_demo_units)
 #> 8  75.01452 NA NA NA NA 1760.8281 NA NA  283.7285 6.5 100 0.849276 0.8484267 NA
 #> 9  74.15969 NA NA NA NA  167.4920 NA NA  391.4151  NA  85 1.298280 1.2969817 NA
 #> 10 74.08264 NA NA NA NA 1028.0662 NA NA  769.8248 6.5 100 2.304168 2.3018638 NA
-#>          N2 N3 N5           b4_status        w4_status        a3_status
-#> 1  60.00000 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro
-#> 2  60.00000 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro
-#> 3  60.00000 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro
-#> 4  60.00000 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro
-#> 5  60.00000 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro
-#> 6  60.00000 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro
-#> 7  60.00000 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro
-#> 8  59.49461 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro
-#> 9  60.00000 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro
-#> 10 60.00000 NA NA skipped_no_spectral skipped_no_micro skipped_no_micro
-#>           a4_status      a5_status           l3_status          t3_status
-#> 1  skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat
-#> 2  skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat
-#> 3  skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat
-#> 4  skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat
-#> 5  skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat
-#> 6  skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat
-#> 7  skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat
-#> 8  skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat
-#> 9  skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat
-#> 10 skipped_no_micro skipped_no_lst skipped_no_spectral skipped_no_sufosat
-#>    r1_status         r5_status        r6_status       r7_status     p3_status
-#> 1   fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul
-#> 2   fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul
-#> 3   fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul
-#> 4   fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul
-#> 5   fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul
-#> 6   fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul
-#> 7   fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul
-#> 8   fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul
-#> 9   fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul
-#> 10  fire_exp skipped_no_method skipped_no_micro skipped_no_tmin diametre_seul
-#>       n5_status  C1_norm C2_norm B1_norm B2_norm B3_norm B4_norm   W1_norm
-#> 1  no_embedding 32.67416      NA      NA      NA     100      NA  0.000000
-#> 2  no_embedding 11.85798      NA      NA      NA     100      NA  0.000000
-#> 3  no_embedding 47.02422      NA      NA      NA     100      NA  0.000000
-#> 4  no_embedding 89.99050      NA      NA      NA     100      NA 17.354705
-#> 5  no_embedding 19.46893      NA      NA      NA     100      NA  0.000000
-#> 6  no_embedding 37.85187      NA      NA      NA     100      NA  0.000000
-#> 7  no_embedding 36.67889      NA      NA      NA     100      NA  0.000000
-#> 8  no_embedding 29.62861      NA      NA      NA     100      NA  0.000000
-#> 9  no_embedding 20.17269      NA      NA      NA     100      NA  0.000000
-#> 10 no_embedding 79.21281      NA      NA      NA     100      NA  7.543203
-#>    W2_norm W3_norm W4_norm   A1_norm A2_norm A3_norm A4_norm A5_norm F1_norm
-#> 1        0       0      NA  99.86906   100.0      NA      NA      NA      NA
-#> 2        0       0      NA  99.97049    99.4      NA      NA      NA      NA
-#> 3        0       0      NA 100.00000    99.5      NA      NA      NA      NA
-#> 4        0       0      NA  99.84681    98.6      NA      NA      NA      NA
-#> 5        0       0      NA  99.77814    99.9      NA      NA      NA      NA
-#> 6        0       0      NA  99.76134    99.9      NA      NA      NA      NA
-#> 7        0       0      NA  99.73619   100.0      NA      NA      NA      NA
-#> 8        0       0      NA  99.73794   100.0      NA      NA      NA      NA
-#> 9        0       0      NA 100.00000    95.3      NA      NA      NA      NA
-#> 10       0       0      NA  99.76902    99.8      NA      NA      NA      NA
-#>    F2_norm L1_norm L2_norm L3_norm T1_norm T2_norm T3_norm      R1_norm
-#> 1     15.0    47.6    91.8      NA    34.0      NA      NA 7.406871e-02
-#> 2     10.3    47.4    93.0      NA    16.5      NA      NA 1.421085e-14
-#> 3     14.9    48.7    91.2      NA    52.0      NA      NA 1.421085e-14
-#> 4     13.7    48.5    94.5      NA    83.0      NA      NA 1.093308e-01
-#> 5     13.1    48.8    94.6      NA    23.5      NA      NA 4.761100e-01
-#> 6     11.1    49.0    94.6      NA    39.5      NA      NA 6.211201e-02
-#> 7     12.9    47.0    93.5      NA    37.5      NA      NA 1.328786e-02
-#> 8     15.0    47.2    94.2      NA    35.5      NA      NA 3.120502e-01
-#> 9     15.2    49.7    90.7      NA    24.0      NA      NA 1.005133e-01
-#> 10    15.0    48.5    93.8      NA    82.5      NA      NA 6.901821e-02
-#>     R2_norm  R3_norm R4_norm R5_norm R6_norm R7_norm  S1_norm S2_norm S3_norm
-#> 1  64.74369 23.07596      NA      NA      NA      NA  0.00000      NA      NA
-#> 2  58.03149 24.69214      NA      NA      NA      NA 74.04080      NA      NA
-#> 3  65.45109 26.71145      NA      NA      NA      NA 69.34694      NA      NA
-#> 4  64.38051 23.24987      NA      NA      NA      NA 84.23757      NA      NA
-#> 5  64.00225 25.70028      NA      NA      NA      NA 21.61254      NA      NA
-#> 6  64.87859 23.64086      NA      NA      NA      NA 38.40421      NA      NA
-#> 7  64.21776 25.52416      NA      NA      NA      NA  0.00000      NA      NA
-#> 8  67.07486 24.98548      NA      NA      NA      NA 11.95859      NA      NA
-#> 9  66.97304 25.84031      NA      NA      NA      NA 91.62540      NA      NA
-#> 10 64.71922 25.91736      NA      NA      NA      NA 48.59669      NA      NA
-#>      P1_norm  P2_norm P3_norm   E1_norm   E2_norm N1_norm  N2_norm N3_norm
-#> 1   78.19283       NA     100  78.58500  78.50642      NA 60.00000      NA
-#> 2  100.00000       NA     100 100.00000 100.00000      NA 60.00000      NA
-#> 3   32.63271 43.33333     100  32.78955  32.75676      NA 60.00000      NA
-#> 4   26.09970       NA     100  26.22318  26.19696      NA 60.00000      NA
-#> 5  100.00000 43.33333     100 100.00000 100.00000      NA 60.00000      NA
-#> 6  100.00000       NA     100 100.00000 100.00000      NA 60.00000      NA
-#> 7   63.99869       NA     100  64.32500  64.26068      NA 60.00000      NA
-#> 8   35.46606 43.33333     100  32.16955  32.13738      NA 59.49461      NA
-#> 9   48.92689       NA      85  49.17727  49.12810      NA 60.00000      NA
-#> 10  96.22810 43.33333     100  87.27909  87.19181      NA 60.00000      NA
-#>    N5_norm famille_carbone famille_biodiversite famille_eau famille_air
-#> 1       NA        32.67416                  100    0.000000    99.93453
-#> 2       NA        11.85798                  100    0.000000    99.68525
-#> 3       NA        47.02422                  100    0.000000    99.75000
-#> 4       NA        89.99050                  100    5.784902    99.22340
-#> 5       NA        19.46893                  100    0.000000    99.83907
-#> 6       NA        37.85187                  100    0.000000    99.83067
-#> 7       NA        36.67889                  100    0.000000    99.86809
-#> 8       NA        29.62861                  100    0.000000    99.86897
-#> 9       NA        20.17269                  100    0.000000    97.65000
-#> 10      NA        79.21281                  100    2.514401    99.78451
-#>    famille_sol famille_paysage famille_temporel famille_risque famille_social
-#> 1         15.0           69.70             34.0       29.29790        0.00000
-#> 2         10.3           70.20             16.5       27.57454       74.04080
-#> 3         14.9           69.95             52.0       30.72085       69.34694
-#> 4         13.7           71.50             83.0       29.24657       84.23757
-#> 5         13.1           71.70             23.5       30.05955       21.61254
-#> 6         11.1           71.80             39.5       29.52719       38.40421
-#> 7         12.9           70.25             37.5       29.91840        0.00000
-#> 8         15.0           70.70             35.5       30.79080       11.95859
-#> 9         15.2           70.20             24.0       30.97129       91.62540
-#> 10        15.0           71.15             82.5       30.23520       48.59669
-#>    famille_production famille_energie famille_naturalite
-#> 1            89.09642        78.54571           60.00000
-#> 2           100.00000       100.00000           60.00000
-#> 3            58.65535        32.77315           60.00000
-#> 4            63.04985        26.21007           60.00000
-#> 5            81.11111       100.00000           60.00000
-#> 6           100.00000       100.00000           60.00000
-#> 7            81.99934        64.29284           60.00000
-#> 8            59.59980        32.15346           59.49461
-#> 9            66.96345        49.15268           60.00000
-#> 10           79.85381        87.23545           60.00000
-#>                          geometry
-#> 1  POLYGON ((698299.9 6499928,...
-#> 2  POLYGON ((701702.2 6500418,...
-#> 3  POLYGON ((702240.4 6500270,...
-#> 4  POLYGON ((700641.3 6504129,...
-#> 5  POLYGON ((699268.2 6500307,...
-#> 6  POLYGON ((699943.5 6499421,...
-#> 7  POLYGON ((698500.5 6499360,...
-#> 8  POLYGON ((699061.9 6499649,...
-#> 9  POLYGON ((702258.5 6500666,...
-#> 10 POLYGON ((699897.1 6500739,...
+#>          N2 N3 N5           b4_status        b5_status        w4_status
+#> 1  60.00000 NA NA skipped_no_spectral skipped_no_lidar skipped_no_micro
+#> 2  60.00000 NA NA skipped_no_spectral skipped_no_lidar skipped_no_micro
+#> 3  60.00000 NA NA skipped_no_spectral skipped_no_lidar skipped_no_micro
+#> 4  60.00000 NA NA skipped_no_spectral skipped_no_lidar skipped_no_micro
+#> 5  60.00000 NA NA skipped_no_spectral skipped_no_lidar skipped_no_micro
+#> 6  60.00000 NA NA skipped_no_spectral skipped_no_lidar skipped_no_micro
+#> 7  60.00000 NA NA skipped_no_spectral skipped_no_lidar skipped_no_micro
+#> 8  59.49461 NA NA skipped_no_spectral skipped_no_lidar skipped_no_micro
+#> 9  60.00000 NA NA skipped_no_spectral skipped_no_lidar skipped_no_micro
+#> 10 60.00000 NA NA skipped_no_spectral skipped_no_lidar skipped_no_micro
+#>           a3_status        a4_status      a5_status           l3_status
+#> 1  skipped_no_micro skipped_no_micro skipped_no_lst skipped_no_spectral
+#> 2  skipped_no_micro skipped_no_micro skipped_no_lst skipped_no_spectral
+#> 3  skipped_no_micro skipped_no_micro skipped_no_lst skipped_no_spectral
+#> 4  skipped_no_micro skipped_no_micro skipped_no_lst skipped_no_spectral
+#> 5  skipped_no_micro skipped_no_micro skipped_no_lst skipped_no_spectral
+#> 6  skipped_no_micro skipped_no_micro skipped_no_lst skipped_no_spectral
+#> 7  skipped_no_micro skipped_no_micro skipped_no_lst skipped_no_spectral
+#> 8  skipped_no_micro skipped_no_micro skipped_no_lst skipped_no_spectral
+#> 9  skipped_no_micro skipped_no_micro skipped_no_lst skipped_no_spectral
+#> 10 skipped_no_micro skipped_no_micro skipped_no_lst skipped_no_spectral
+#>             t3_status r1_status         r5_status        r6_status
+#> 1  skipped_no_sufosat  fire_exp skipped_no_method skipped_no_micro
+#> 2  skipped_no_sufosat  fire_exp skipped_no_method skipped_no_micro
+#> 3  skipped_no_sufosat  fire_exp skipped_no_method skipped_no_micro
+#> 4  skipped_no_sufosat  fire_exp skipped_no_method skipped_no_micro
+#> 5  skipped_no_sufosat  fire_exp skipped_no_method skipped_no_micro
+#> 6  skipped_no_sufosat  fire_exp skipped_no_method skipped_no_micro
+#> 7  skipped_no_sufosat  fire_exp skipped_no_method skipped_no_micro
+#> 8  skipped_no_sufosat  fire_exp skipped_no_method skipped_no_micro
+#> 9  skipped_no_sufosat  fire_exp skipped_no_method skipped_no_micro
+#> 10 skipped_no_sufosat  fire_exp skipped_no_method skipped_no_micro
+#>          r7_status     p3_status    n5_status  C1_norm C2_norm B1_norm B2_norm
+#> 1  skipped_no_tmin diametre_seul no_embedding 32.67416      NA      NA      NA
+#> 2  skipped_no_tmin diametre_seul no_embedding 11.85798      NA      NA      NA
+#> 3  skipped_no_tmin diametre_seul no_embedding 47.02422      NA      NA      NA
+#> 4  skipped_no_tmin diametre_seul no_embedding 89.99050      NA      NA      NA
+#> 5  skipped_no_tmin diametre_seul no_embedding 19.46893      NA      NA      NA
+#> 6  skipped_no_tmin diametre_seul no_embedding 37.85187      NA      NA      NA
+#> 7  skipped_no_tmin diametre_seul no_embedding 36.67889      NA      NA      NA
+#> 8  skipped_no_tmin diametre_seul no_embedding 29.62861      NA      NA      NA
+#> 9  skipped_no_tmin diametre_seul no_embedding 20.17269      NA      NA      NA
+#> 10 skipped_no_tmin diametre_seul no_embedding 79.21281      NA      NA      NA
+#>    B3_norm B4_norm B5_norm   W1_norm W2_norm W3_norm W4_norm   A1_norm A2_norm
+#> 1      100      NA      NA  0.000000       0       0      NA  99.86906   100.0
+#> 2      100      NA      NA  0.000000       0       0      NA  99.97049    99.4
+#> 3      100      NA      NA  0.000000       0       0      NA 100.00000    99.5
+#> 4      100      NA      NA 17.354705       0       0      NA  99.84681    98.6
+#> 5      100      NA      NA  0.000000       0       0      NA  99.77814    99.9
+#> 6      100      NA      NA  0.000000       0       0      NA  99.76134    99.9
+#> 7      100      NA      NA  0.000000       0       0      NA  99.73619   100.0
+#> 8      100      NA      NA  0.000000       0       0      NA  99.73794   100.0
+#> 9      100      NA      NA  0.000000       0       0      NA 100.00000    95.3
+#> 10     100      NA      NA  7.543203       0       0      NA  99.76902    99.8
+#>    A3_norm A4_norm A5_norm F1_norm F2_norm L1_norm L2_norm L3_norm T1_norm
+#> 1       NA      NA      NA      NA    15.0    47.6    91.8      NA    34.0
+#> 2       NA      NA      NA      NA    10.3    47.4    93.0      NA    16.5
+#> 3       NA      NA      NA      NA    14.9    48.7    91.2      NA    52.0
+#> 4       NA      NA      NA      NA    13.7    48.5    94.5      NA    83.0
+#> 5       NA      NA      NA      NA    13.1    48.8    94.6      NA    23.5
+#> 6       NA      NA      NA      NA    11.1    49.0    94.6      NA    39.5
+#> 7       NA      NA      NA      NA    12.9    47.0    93.5      NA    37.5
+#> 8       NA      NA      NA      NA    15.0    47.2    94.2      NA    35.5
+#> 9       NA      NA      NA      NA    15.2    49.7    90.7      NA    24.0
+#> 10      NA      NA      NA      NA    15.0    48.5    93.8      NA    82.5
+#>    T2_norm T3_norm      R1_norm  R2_norm  R3_norm R4_norm R5_norm R6_norm
+#> 1       NA      NA 7.406871e-02 64.74369 23.07596      NA      NA      NA
+#> 2       NA      NA 1.421085e-14 58.03149 24.69214      NA      NA      NA
+#> 3       NA      NA 1.421085e-14 65.45109 26.71145      NA      NA      NA
+#> 4       NA      NA 1.093308e-01 64.38051 23.24987      NA      NA      NA
+#> 5       NA      NA 4.761100e-01 64.00225 25.70028      NA      NA      NA
+#> 6       NA      NA 6.211201e-02 64.87859 23.64086      NA      NA      NA
+#> 7       NA      NA 1.328786e-02 64.21776 25.52416      NA      NA      NA
+#> 8       NA      NA 3.120502e-01 67.07486 24.98548      NA      NA      NA
+#> 9       NA      NA 1.005133e-01 66.97304 25.84031      NA      NA      NA
+#> 10      NA      NA 6.901821e-02 64.71922 25.91736      NA      NA      NA
+#>    R7_norm  S1_norm S2_norm S3_norm   P1_norm  P2_norm P3_norm   E1_norm
+#> 1       NA  0.00000      NA      NA  78.19283       NA     100  78.58500
+#> 2       NA 74.04080      NA      NA 100.00000       NA     100 100.00000
+#> 3       NA 69.34694      NA      NA  32.63271 43.33333     100  32.78955
+#> 4       NA 84.23757      NA      NA  26.09970       NA     100  26.22318
+#> 5       NA 21.61254      NA      NA 100.00000 43.33333     100 100.00000
+#> 6       NA 38.40421      NA      NA 100.00000       NA     100 100.00000
+#> 7       NA  0.00000      NA      NA  63.99869       NA     100  64.32500
+#> 8       NA 11.95859      NA      NA  35.46606 43.33333     100  32.16955
+#> 9       NA 91.62540      NA      NA  48.92689       NA      85  49.17727
+#> 10      NA 48.59669      NA      NA  96.22810 43.33333     100  87.27909
+#>      E2_norm N1_norm  N2_norm N3_norm N5_norm famille_carbone
+#> 1   78.50642      NA 60.00000      NA      NA        32.67416
+#> 2  100.00000      NA 60.00000      NA      NA        11.85798
+#> 3   32.75676      NA 60.00000      NA      NA        47.02422
+#> 4   26.19696      NA 60.00000      NA      NA        89.99050
+#> 5  100.00000      NA 60.00000      NA      NA        19.46893
+#> 6  100.00000      NA 60.00000      NA      NA        37.85187
+#> 7   64.26068      NA 60.00000      NA      NA        36.67889
+#> 8   32.13738      NA 59.49461      NA      NA        29.62861
+#> 9   49.12810      NA 60.00000      NA      NA        20.17269
+#> 10  87.19181      NA 60.00000      NA      NA        79.21281
+#>    famille_biodiversite famille_eau famille_air famille_sol famille_paysage
+#> 1                   100    0.000000    99.93453        15.0           69.70
+#> 2                   100    0.000000    99.68525        10.3           70.20
+#> 3                   100    0.000000    99.75000        14.9           69.95
+#> 4                   100    5.784902    99.22340        13.7           71.50
+#> 5                   100    0.000000    99.83907        13.1           71.70
+#> 6                   100    0.000000    99.83067        11.1           71.80
+#> 7                   100    0.000000    99.86809        12.9           70.25
+#> 8                   100    0.000000    99.86897        15.0           70.70
+#> 9                   100    0.000000    97.65000        15.2           70.20
+#> 10                  100    2.514401    99.78451        15.0           71.15
+#>    famille_temporel famille_risque famille_social famille_production
+#> 1              34.0       29.29790        0.00000           89.09642
+#> 2              16.5       27.57454       74.04080          100.00000
+#> 3              52.0       30.72085       69.34694           58.65535
+#> 4              83.0       29.24657       84.23757           63.04985
+#> 5              23.5       30.05955       21.61254           81.11111
+#> 6              39.5       29.52719       38.40421          100.00000
+#> 7              37.5       29.91840        0.00000           81.99934
+#> 8              35.5       30.79080       11.95859           59.59980
+#> 9              24.0       30.97129       91.62540           66.96345
+#> 10             82.5       30.23520       48.59669           79.85381
+#>    famille_energie famille_naturalite                       geometry
+#> 1         78.54571           60.00000 POLYGON ((698299.9 6499928,...
+#> 2        100.00000           60.00000 POLYGON ((701702.2 6500418,...
+#> 3         32.77315           60.00000 POLYGON ((702240.4 6500270,...
+#> 4         26.21007           60.00000 POLYGON ((700641.3 6504129,...
+#> 5        100.00000           60.00000 POLYGON ((699268.2 6500307,...
+#> 6        100.00000           60.00000 POLYGON ((699943.5 6499421,...
+#> 7         64.29284           60.00000 POLYGON ((698500.5 6499360,...
+#> 8         32.15346           59.49461 POLYGON ((699061.9 6499649,...
+#> 9         49.15268           60.00000 POLYGON ((702258.5 6500666,...
+#> 10        87.23545           60.00000 POLYGON ((699897.1 6500739,...
 
 # Statistiques sommaires
 cat("\nSurface totale:", sum(massif_demo_units$surface_ha), "ha\n")
@@ -668,7 +668,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] ggplot2_4.0.3          nemeton_2026.11.4.9000
+#> [1] ggplot2_4.0.3     nemeton_2026.11.5
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] omnibus_1.2.15       rappdirs_0.3.4       sass_0.4.10         

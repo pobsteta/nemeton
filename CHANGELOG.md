@@ -13,6 +13,24 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.5\] - 2026-11-06
+
+### Added
+
+- B5, vertical stratification from the LiDAR point cloud (spec 067,
+  without ForPT):
+  [`indicateur_b5_stratification()`](https://pobsteta.github.io/nemeton/reference/indicateur_b5_stratification.md),
+  Shannon evenness of returns over five height strata (0-100),
+  `"points"` (default) or `"densite_foliaire"` (MacArthur-Horn gap
+  fraction) profile; point table, `LAS` object or LAZ tiles (lidR);
+  statuses `calculated`, `skipped_no_lidar`, `skipped_no_coverage`,
+  `skipped_low_density`. Fiche `fiche-b5-stratification_fr`.
+
+### Changed
+
+- 43 indicators (12 source-conditional); `massif_demo_units` carries
+  `B5`, `b5_status`, `B5_norm` (NA without LiDAR, families unchanged).
+
 ## \[2026.11.4\] - 2026-11-06
 
 ### Added

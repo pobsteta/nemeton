@@ -66,6 +66,8 @@ Protection, diversite structurelle et connectivite ecologique
   : Calculate Ecological Connectivity (B3)
 - [`indicateur_b4_div_spectrale()`](https://pobsteta.github.io/nemeton/reference/indicateur_b4_div_spectrale.md)
   : Indicator B4 — Spectral alpha diversity (family B)
+- [`indicateur_b5_stratification()`](https://pobsteta.github.io/nemeton/reference/indicateur_b5_stratification.md)
+  : B5: Vertical stratification from the LiDAR point cloud
 
 ### Famille W : Regulation de l’eau
 

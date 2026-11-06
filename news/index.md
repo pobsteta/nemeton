@@ -1,5 +1,34 @@
 # Changelog
 
+## nemeton 2026.11.5 (2026-11-06)
+
+### Nouveautés
+
+- **B5 — stratification verticale** (spec 067, chantier C, première
+  étape, sans ForPT) : nouvel indicateur conditionnel de la famille B,
+  lu dans le nuage de points LiDAR et non dans le MNH.
+  [`indicateur_b5_stratification()`](https://pobsteta.github.io/nemeton/reference/indicateur_b5_stratification.md)
+  affecte les retours aux UGF, les compte dans cinq strates (0-2, 2-5,
+  5-10, 10-20, \> 20 m, le sol sous 0,5 m à part) et rend l’équitabilité
+  de leur répartition (entropie de Shannon normalisée, 0-100). Entrées :
+  table `X, Y, Z`, objet `LAS` ou dalles `.laz` (lidR, en Suggests),
+  avec `normaliser = TRUE` pour des altitudes ; un nuage d’altitudes
+  passé comme des hauteurs est refusé. Classes LiDAR HD gardées : 1 à 5
+  et 9 (bâti, bruit, ponts et classes IGN 64-67 écartés). Profil
+  `"points"` par défaut (décision D-3) ; `"densite_foliaire"` (fraction
+  de trouée, MacArthur et Horn 1969) en option, qui corrige en partie
+  l’occultation des sous-étages. Colonnes `b5_status` (`calculated`,
+  `skipped_no_lidar`, `skipped_no_coverage`, `skipped_low_density`),
+  `b5_profil`, `b5_points`, `b5_densite`, `b5_s1` à `b5_s5`.
+  Normalisation native 0-100. B2 reste.
+- Confronté aux 96 placettes du Vercors (`inst/extdata/aba.model/`) :
+  corrélation de Spearman de 0,55 avec le coefficient de variation des
+  hauteurs d’arbres mesurées (0,62 en `"densite_foliaire"`), aucune avec
+  la hauteur maximale ; 2 millions de points en 7 s par profil.
+- **43 indicateurs**, dont 12 conditionnels. Fixture `massif_demo_units`
+  : `B5` à `NA` (`skipped_no_lidar`), familles inchangées. Fiche
+  `fiche-b5-stratification_fr`.
+
 ## nemeton 2026.11.4 (2026-11-06)
 
 ### Nouveautés

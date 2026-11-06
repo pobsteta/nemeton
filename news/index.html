@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.4.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.5</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,7 @@
     <li><a class="dropdown-item" href="../articles/fiche-b2-structure_fr.html">B2 - Diversite structurale</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-b3-connectivite_fr.html">B3 - Connectivite ecologique</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-b4-diversite-spectrale_fr.html">B4 - Diversite spectrale alpha</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-b5-stratification_fr.html">B5 - Stratification verticale</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille W - Eau &amp; Regulation</h6></li>
     <li><a class="dropdown-item" href="../articles/fiche-w1-reseau_fr.html">W1 - Reseau hydrographique</a></li>
@@ -114,6 +115,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.5" id="nemeton-2026115-2026-11-06">nemeton 2026.11.5 (2026-11-06)<a class="anchor" aria-label="anchor" href="#nemeton-2026115-2026-11-06"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-5">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-5"></a></h3>
+<ul><li>
+<strong>B5 — stratification verticale</strong> (spec 067, chantier C, première étape, sans ForPT) : nouvel indicateur conditionnel de la famille B, lu dans le nuage de points LiDAR et non dans le MNH. <code><a href="../reference/indicateur_b5_stratification.html">indicateur_b5_stratification()</a></code> affecte les retours aux UGF, les compte dans cinq strates (0-2, 2-5, 5-10, 10-20, &gt; 20 m, le sol sous 0,5 m à part) et rend l’équitabilité de leur répartition (entropie de Shannon normalisée, 0-100). Entrées : table <code>X, Y, Z</code>, objet <code>LAS</code> ou dalles <code>.laz</code> (lidR, en Suggests), avec <code>normaliser = TRUE</code> pour des altitudes ; un nuage d’altitudes passé comme des hauteurs est refusé. Classes LiDAR HD gardées : 1 à 5 et 9 (bâti, bruit, ponts et classes IGN 64-67 écartés). Profil <code>"points"</code> par défaut (décision D-3) ; <code>"densite_foliaire"</code> (fraction de trouée, MacArthur et Horn 1969) en option, qui corrige en partie l’occultation des sous-étages. Colonnes <code>b5_status</code> (<code>calculated</code>, <code>skipped_no_lidar</code>, <code>skipped_no_coverage</code>, <code>skipped_low_density</code>), <code>b5_profil</code>, <code>b5_points</code>, <code>b5_densite</code>, <code>b5_s1</code> à <code>b5_s5</code>. Normalisation native 0-100. B2 reste.</li>
+<li>Confronté aux 96 placettes du Vercors (<code>inst/extdata/aba.model/</code>) : corrélation de Spearman de 0,55 avec le coefficient de variation des hauteurs d’arbres mesurées (0,62 en <code>"densite_foliaire"</code>), aucune avec la hauteur maximale ; 2 millions de points en 7 s par profil.</li>
+<li>
+<strong>43 indicateurs</strong>, dont 12 conditionnels. Fixture <code>massif_demo_units</code> : <code>B5</code> à <code>NA</code> (<code>skipped_no_lidar</code>), familles inchangées. Fiche <code>fiche-b5-stratification_fr</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.4" id="nemeton-2026114-2026-11-06">nemeton 2026.11.4 (2026-11-06)<a class="anchor" aria-label="anchor" href="#nemeton-2026114-2026-11-06"></a></h2>
 <div class="section level3">

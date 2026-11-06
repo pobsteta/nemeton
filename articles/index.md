@@ -28,6 +28,8 @@
   ecologique](https://pobsteta.github.io/nemeton/articles/fiche-b3-connectivite_fr.md):
 - [Fiche indicateur B4 - Diversite spectrale
   alpha](https://pobsteta.github.io/nemeton/articles/fiche-b4-diversite-spectrale_fr.md):
+- [Fiche indicateur B5 - Stratification
+  verticale](https://pobsteta.github.io/nemeton/articles/fiche-b5-stratification_fr.md):
 - [Fiche indicateur C1 - Biomasse
   carbone](https://pobsteta.github.io/nemeton/articles/fiche-c1-biomasse_fr.md):
 - [Fiche indicateur C2 - NDVI -

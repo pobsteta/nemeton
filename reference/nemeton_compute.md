@@ -30,7 +30,7 @@ nemeton_compute(
 
 - indicators:
 
-  Character vector of indicator names to calculate, or "all" for all 42
+  Character vector of indicator names to calculate, or "all" for all 43
   indicators of
   [`list_indicators`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
   (the source-conditional ones included: without their source they come
