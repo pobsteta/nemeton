@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -253,6 +253,15 @@ jusqu’à la 0.211.0, la seule présence d’une BD Forêt faisait ignorer un
 <td><code>année_courante − année_installation</code></td>
 </tr>
 <tr class="odd">
+<td>2 bis</td>
+<td>
+<strong>Âge structurel</strong> (depuis 2026.11.7, spec 067)</td>
+<td>argument <code>age_structurel =</code> fourni (vecteur, colonne ou
+raster)</td>
+<td>tel quel ; <code>t1_source = "age_structurel"</code>
+</td>
+</tr>
+<tr class="even">
 <td>3</td>
 <td><strong>BD Forêt / TFV</strong></td>
 <td>couche <code>bdforet</code> avec un champ TFV reconnu</td>
@@ -260,14 +269,14 @@ jusqu’à la 0.211.0, la seule présence d’une BD Forêt faisait ignorer un
 pondérée par la surface des TFV <strong>reconnus</strong>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>4</td>
 <td><strong>NDVI</strong></td>
 <td>couche <code>ndvi</code>
 </td>
 <td><code>20 + max(0, NDVI − 0,2) / 0,6 × 100</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>—</td>
 <td><em>aucun</em></td>
 <td>—</td>
@@ -276,6 +285,19 @@ pondérée par la surface des TFV <strong>reconnus</strong>
 </tr>
 </tbody>
 </table>
+<p>La colonne <code>t1_source</code> dit quel chemin a daté chaque unité
+(<code>age</code>, <code>annee_installation</code>,
+<code>age_structurel</code>, <code>bdforet</code>, <code>ndvi</code>, ou
+<code>NA</code>).</p>
+<p><strong>L’âge structurel</strong> (« T1 désaturé », spec 067). La BD
+Forêt plafonne à 100 ans et le NDVI à 120 : toutes les vieilles forêts y
+paraissent centenaires. Un âge lu dans la structure du peuplement, par
+exemple la tête « âge » de ForPT sur le nuage LiDAR
+(<code>forptnemeton::forpt_age()</code>, à venir), peut aller au-delà.
+La borne de normalisation reste à 200 ans : le sens de T1 ne change pas.
+Un âge structurel n’est pas un âge : un peuplement de station pauvre
+paraît plus jeune, et la tête de ForPT a été entraînée hors de
+France.</p>
 <p>Champs TFV reconnus : <code>TFV</code>, <code>tfv</code>,
 <code>CODE_TFV</code>, <code>code_tfv</code>, <code>ESSENCE</code>,
 <code>essence</code>, <code>LIB_FV</code>, <code>lib_fv</code>,
@@ -342,8 +364,9 @@ aurait fait par le bas.</p>
 </tr>
 <tr class="even">
 <td><strong>1</strong></td>
-<td>3</td>
-<td>inchangé — l’âge ne se lit pas au LiDAR</td>
+<td>2 bis ou 3</td>
+<td>avec un âge structurel (LiDAR HD + ForPT), un âge <strong>estimé par
+la structure</strong>, non plafonné à 120 ans ; sinon inchangé</td>
 </tr>
 <tr class="odd">
 <td><strong>2</strong></td>

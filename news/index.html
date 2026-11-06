@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -115,6 +115,15 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.7" id="nemeton-2026117-2026-11-06">nemeton 2026.11.7 (2026-11-06)<a class="anchor" aria-label="anchor" href="#nemeton-2026117-2026-11-06"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-7">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-7"></a></h3>
+<ul><li>
+<strong>T1 « désaturé »</strong> (spec 067, décision D-5) : <code><a href="../reference/indicateur_t1_anciennete.html">indicateur_t1_anciennete()</a></code> accepte un nouvel argument <code>age_structurel =</code> (vecteur, nom de colonne ou raster moyenné par UGF), par exemple l’âge structurel de ForPT lu dans le nuage LiDAR. Il passe après un âge mesuré et une année d’installation, avant la BD Forêt (plafond 100 ans) et le NDVI (plafond 120 ans). Défaut <code>NULL</code> : T1 inchangé ; la normalisation garde sa borne de 200 ans, donc aucun changement de sens. Une valeur négative ou non finie est ignorée.</li>
+<li>T1 rend une colonne <strong><code>t1_source</code></strong> (<code>age</code>, <code>annee_installation</code>, <code>age_structurel</code>, <code>bdforet</code>, <code>ndvi</code> ou <code>NA</code>) : le chemin qui a daté chaque unité. Ajout sans rupture.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.6" id="nemeton-2026116-2026-11-06">nemeton 2026.11.6 (2026-11-06)<a class="anchor" aria-label="anchor" href="#nemeton-2026116-2026-11-06"></a></h2>
 <div class="section level3">
