@@ -14,7 +14,8 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
 > **Document de référence** — Néméton (package cœur), 2026-11-05. Spec 064.
-> Fonction **expérimentale** : elle peut changer à toute version.
+> Fonction **expérimentale** : elle peut changer à toute version. Voir aussi
+> la fiche commune [Modèles de fondation](fiche-modeles-de-fondation_fr.html).
 
 ---
 

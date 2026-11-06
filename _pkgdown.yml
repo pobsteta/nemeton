@@ -155,6 +155,10 @@ navbar:
         href: articles/temporal-analysis_fr.html
       - text: Tarifs Schaeffer par sylvoecoregion
         href: articles/tarifs-schaeffer-ser_fr.html
+      - text: Embeddings AlphaEarth (N5, B4/L3, hauteur NDP 0)
+        href: articles/embeddings-alphaearth_fr.html
+      - text: Fiche - Modeles de fondation
+        href: articles/fiche-modeles-de-fondation_fr.html
 
 reference:
   - title: "API stable"

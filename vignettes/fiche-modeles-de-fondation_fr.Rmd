@@ -1,0 +1,87 @@
+---
+title: "Fiche - Modeles de fondation"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche - Modeles de fondation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-11-06. Spec 064.
+> Fiche commune aux indicateurs qui lisent un modèle de fondation : N5, et B4
+> et L3 en mode embedding.
+
+Un modèle de fondation transforme une image (ou un nuage de points) en un
+**vecteur** qui résume ce qu'il y voit. Néméton ne fait tourner aucun de ces
+modèles (ADR-009 : pas de Python dans le cœur) : un paquet amont produit les
+vecteurs, le cœur les lit comme un raster d'autant de bandes que de
+dimensions.
+
+## 1. Modèles utilisés
+
+| Modèle | Statut | Paquet amont | Données | Licence des données |
+|---|---|---|---|---|
+| **AlphaEarth Foundations** (Google DeepMind, 2025) | en service (2026.11.1) | `alphaearthnemeton` (GPL-3) | `Satellite Embedding v1`, annuel 2017-2025, 64 dimensions, 10 m | **CC-BY 4.0** |
+| MAESTRO (IGN, 2025) | prévu (chantier B) | `maestronemeton` | ortho, MNT, S1, S2 | — |
+| ForPT (ETH / NIBIO, 2026) | prévu (chantier C) | `forptnemeton` (à créer) | LiDAR HD | — |
+
+**Attribution obligatoire** pour toute sortie qui dérive d'AlphaEarth :
+*« The AlphaEarth Foundations Satellite Embedding dataset is produced by Google
+and Google DeepMind. »* (`alphaearthnemeton::aef_info()$attribution`).
+
+## 2. AlphaEarth : ce que le cœur suppose
+
+- Accès : copie publique Google (`gs://alphaearth_foundations`, lue par
+  HTTP), miroir Source Cooperative en repli. Google déclare le bucket
+  « requester pays » ; les accès anonymes étaient servis le 2026-11-05.
+- Valeurs : entiers signés sur 8 bits, `-128` = absent, dé-quantifiés par
+  `sign(x) * (x / 127,5)²`. Chaque pixel est un vecteur de **norme 1**.
+- Reprojection au **plus proche voisin** : une interpolation casserait la
+  norme des vecteurs.
+- Dictionnaire de clusters `aef_clusters()` v1 (B4, L3) : 32 centroïdes ajustés
+  une fois sur 55 000 pixels de 11 massifs forestiers (8 en
+  Bourgogne-Franche-Comté, Forêt-Noire, Białowieża, forêt bavaroise),
+  AlphaEarth 2024 (`data-raw/aef_clusters.R`).
+
+## 3. Angles morts connus
+
+1. **Annuel.** Une coupe de l'année *n* n'apparaît que dans l'embedding *n* ou
+   *n + 1*. Ne remplace ni FAST, ni FORDEAD, ni T2.
+2. **Vu du ciel.** Pas de sous-étage, pas de bois mort au sol, pas de très
+   gros bois sous le couvert : c'est l'objet du chantier C (ForPT, LiDAR HD).
+3. **Appris ailleurs.** Le modèle n'a pas été entraîné pour la forêt
+   française ; ce qu'il « voit » d'un indicateur n'est pas connu d'avance.
+   Les sondes du chantier B (`probe_indicator()`, à venir) le mesureront,
+   indicateur par indicateur.
+4. **Distance n'est pas cause.** Deux UGF proches dans l'espace des
+   embeddings se ressemblent pour le modèle ; elles ne sont pas pour autant
+   gérées pareil, ni de même âge.
+5. **Corpus du dictionnaire.** Forêts tempérées d'Europe : un projet très
+   différent (outre-mer, forêt tropicale) se répartira mal entre les
+   clusters.
+6. **2017.** Le miroir Source Cooperative signale l'année 2017 retirée pour un
+   défaut de qualité : préférer 2018 et après.
+
+## 4. Où c'est utilisé
+
+| Indicateur ou fonction | Fiche |
+|---|---|
+| N5 — distance à la référence | [fiche N5](fiche-n5-distance-reference_fr.html) |
+| B4 — mode embedding | [fiche B4, annexe 8](fiche-b4-diversite-spectrale_fr.html) |
+| L3 — mode embedding | [fiche L3, annexe 8](fiche-l3-heterogeneite-spectrale_fr.html) |
+| `embedding_regress()` — hauteur de NDP 0 | [vignette embeddings](embeddings-alphaearth_fr.html) |
+
+## 5. Références internes
+
+| Sujet | Fichier |
+|---|---|
+| Spécification | `specs/064-alphaearth-n5/spec.md` |
+| Fonctions génériques | `R/embeddings.R`, `R/embedding_regress.R` |
+| Dictionnaire et bornes | `inst/extdata/aef_clusters_v1.*`, `data-raw/aef_clusters.R`, `data-raw/aef_bornes_b4.R` |
+| Paquet amont | <https://github.com/pobsteta/alphaearthnemeton> |

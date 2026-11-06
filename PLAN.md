@@ -122,6 +122,15 @@ parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
 vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier remplissage du
 catalogue par Pascal.
 
+**Journal** — *2026-11-06* : 2026.11.2 mergée (pobsteta/nemeton#586) ; cycle
+dev `2026.11.2.9000`. Vignette `embeddings-alphaearth_fr.Rmd` (récupération
+des embeddings, N5, B4/L3 en mode embedding, `embedding_regress()`, NDP) et
+fiche commune « Modèles de fondation » (modèles, licence et attribution,
+angles morts), liée depuis les fiches N5, B4 et L3. Reste du chantier A :
+validations sur données réelles (N5 sur Dabo et hors France,
+`embedding_regress()` sur placettes IFN), impossibles depuis la session de
+travail (IFN bloqué) ou faute du parcellaire.
+
 **Journal** — *2026-11-05* (**2026.11.2**) : `embedding_regress()`
 (spec 064 § 8). Variable de peuplement (H0 par défaut) prédite par l'embedding
 moyen dans le rayon des placettes ; ranger si installé, sinon ridge en base R
