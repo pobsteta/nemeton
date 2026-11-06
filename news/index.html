@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.7.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.8.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,6 +30,7 @@
     <li><a class="dropdown-item" href="../articles/embeddings-alphaearth_fr.html">Embeddings AlphaEarth (N5, B4/L3, hauteur NDP 0)</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-modeles-de-fondation_fr.html">Fiche - Modeles de fondation</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-itineraires_fr.html">Fiche - Itineraires sylvicoles</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-effet-gestion_fr.html">Fiche - Effets de la gestion</a></li>
   </ul></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-fiches-indicateurs" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Fiches indicateurs</button>
@@ -115,6 +116,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.8" id="nemeton-2026118-2026-11-06">nemeton 2026.11.8 (2026-11-06)<a class="anchor" aria-label="anchor" href="#nemeton-2026118-2026-11-06"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-8">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-8"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/effet_gestion.html">effet_gestion()</a></code></strong> (spec 068, chantier D, étape 1) : ce que le type de gestion déclaré a produit sur chaque famille, estimé sur les UGF du projet à station comparable (covariables P2, altitude, pente, SER présentes). Score de propension et support commun ; <strong>refus explicite</strong> si moins de 70 % des UGF sont comparables (<code>recouvrement_insuffisant</code>) ou si un type a moins de 10 UGF (<code>trop_peu_unites</code>). Effet moyen doublement robuste (AIPW, intervalle à 90 %) ; effets par UGF par méta-apprenant X ou T (ranger, sinon régression linéaire), intervalles par bootstrap. Sur données simulées (effet réel 8, forte confusion par la station) : différence brute 18,5, AIPW 7,1, couverture de l’intervalle 93 %. Une association ajustée, pas une preuve causale : la fiche <code>fiche-effet-gestion_fr</code> le dit.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.7" id="nemeton-2026117-2026-11-06">nemeton 2026.11.7 (2026-11-06)<a class="anchor" aria-label="anchor" href="#nemeton-2026117-2026-11-06"></a></h2>
 <div class="section level3">

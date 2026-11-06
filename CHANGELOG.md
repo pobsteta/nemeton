@@ -13,6 +13,17 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.8\] - 2026-11-06
+
+### Added
+
+- [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md):
+  effect of the declared management type on each family, estimated on
+  the project’s units with site covariates; propensity-score common
+  support with explicit refusal, doubly robust (AIPW) mean effect, X- or
+  T-learner individual effects (spec 068, step 1). Fiche
+  `fiche-effet-gestion_fr`.
+
 ## \[2026.11.7\] - 2026-11-06
 
 ### Added

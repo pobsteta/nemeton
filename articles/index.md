@@ -38,6 +38,8 @@
   bois-energie](https://pobsteta.github.io/nemeton/articles/fiche-e1-bois-energie_fr.md):
 - [Fiche indicateur E2 - Evitement
   carbone](https://pobsteta.github.io/nemeton/articles/fiche-e2-evitement_fr.md):
+- [Fiche - Effets de la
+  gestion](https://pobsteta.github.io/nemeton/articles/fiche-effet-gestion_fr.md):
 - [Fiche indicateur F1 - Fertilite des
   sols](https://pobsteta.github.io/nemeton/articles/fiche-f1-fertilite_fr.md):
 - [Fiche indicateur F2 - Resistance a

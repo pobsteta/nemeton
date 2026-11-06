@@ -768,6 +768,8 @@ chaque exclusion, comparaison qualitative ponderee par profil
   : Compare silvicultural itineraries under an actor profile
 - [`profils_poids()`](https://pobsteta.github.io/nemeton/reference/profils_poids.md)
   : Family weights of the actor profiles
+- [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md)
+  : Effects of management estimated from the project's own units
 
 ### Corpus de connaissances et RAG
 
