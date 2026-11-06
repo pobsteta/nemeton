@@ -15,7 +15,7 @@
 ## Architecture (ADR-009)
 
 ```
-nemeton (ce repo)       -> Package coeur R (GPL-3). 42 indicateurs, 12 familles, NDP, radar.
+nemeton (ce repo)       -> Package coeur R (GPL-3). 43 indicateurs, 12 familles, NDP, radar.
 nemetonshiny            -> Application Shiny (EUPL v1.2). Interface web interactive.
 tree_sat_nemeton        -> Classification d'essences Sentinel-1/2. NDP 0. MIT.
 maestro_nemeton         -> Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
@@ -147,7 +147,7 @@ nemetonshiny::run_app(language = "fr")
 L'application permet de :
 
 - Rechercher et selectionner des parcelles cadastrales par commune
-- Calculer automatiquement les 42 indicateurs (12 familles)
+- Calculer automatiquement les 43 indicateurs (12 familles)
 - Visualiser les resultats (radar avec NDP, cartes, tableaux)
 - Generer des perspectives IA par profil d'acteur (18 profils)
 - Exporter en PDF ou GeoPackage

@@ -6,7 +6,7 @@
 #' @param units A \code{nemeton_units} or \code{sf} object representing analysis units
 #' @param layers A \code{nemeton_layers} object containing spatial data layers
 #' @param indicators Character vector of indicator names to calculate, or "all" for all
-#'   42 indicators of \code{\link{list_indicators}} (the source-conditional ones
+#'   43 indicators of \code{\link{list_indicators}} (the source-conditional ones
 #'   included: without their source they come back \code{NA} with their status).
 #'   Use \code{list_indicators(conditionnels = FALSE)} for the 31 base indicators.
 #' @param preprocess Logical. Automatically harmonize CRS and crop layers? Default TRUE.
@@ -368,14 +368,15 @@ extract_indicator_value <- function(result, indicator,
 
 #' List available indicators
 #'
-#' Returns the indicators of the 12-family framework: the **42 indicators**
+#' Returns the indicators of the 12-family framework: the **43 indicators**
 #' of [indicator_families()], in the same order, including the
 #' source-conditional ones.
 #'
-#' Eleven indicators are **conditional**: they need a source that the public
+#' Twelve indicators are **conditional**: they need a source that the public
 #' NDP 0 layers do not provide, and return `NA` (with a `<code>_status`
 #' column such as `"skipped_no_micro"`) when it is absent, never an error.
-#' They are B4 and L3 (Sentinel-2 spectral diversity), W4, A3, A4 and R6
+#' They are B4 and L3 (Sentinel-2 spectral diversity), B5 (LiDAR point
+#' cloud, spec 067), W4, A3, A4 and R6
 #' (precomputed microclimate), A5 (land-surface temperature), R5 (FORDEAD or
 #' RECONFORT dieback), R7 (daily minimum temperature), T3 (SUFOSAT
 #' clear-cuts) and N5 (foundation-model embedding, spec 064). `conditionnels = FALSE` keeps only the 31 indicators that the
@@ -386,8 +387,8 @@ extract_indicator_value <- function(result, indicator,
 #'   `"productive"`, `"energy"`, `"naturalness"`.
 #' @param return_type Character. Return `"names"` (default) or `"details"`
 #'   (data.frame with descriptions).
-#' @param conditionnels Logical. Include the eleven source-conditional
-#'   indicators? Default `TRUE` (all 42).
+#' @param conditionnels Logical. Include the twelve source-conditional
+#'   indicators? Default `TRUE` (all 43).
 #'
 #' @return Character vector of indicator names, or a data.frame with columns
 #'   `name`, `code`, `family`, `category`, `description`, `conditionnel`
@@ -397,11 +398,11 @@ extract_indicator_value <- function(result, indicator,
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
 #' Since 1.0.0 the list holds all the indicators (31 before; 41 in 1.0.0,
-#' 42 since N5, spec 064) and the details
+#' 42 since N5, spec 064; 43 since B5, spec 067) and the details
 #' carry `code`, `conditionnel` and `source_conditionnelle`.
 #'
 #' @examples
-#' # All 42 indicator names
+#' # All 43 indicator names
 #' list_indicators()
 #'
 #' # Only those computable from the base layers
@@ -415,7 +416,7 @@ list_indicators <- function(category = "all", return_type = c("names", "details"
                             conditionnels = TRUE) {
   return_type <- match.arg(return_type)
 
-  # La liste vient de la table des familles (source unique, 42 indicateurs) ;
+  # La liste vient de la table des familles (source unique, 43 indicateurs) ;
   # seules la categorie, la description et la source conditionnelle sont
   # propres a cette fonction.
   lab <- indicator_labels(lang = "en")
@@ -460,6 +461,7 @@ list_indicators <- function(category = "all", return_type = c("names", "details"
     "B2", "biophysical", "Structural diversity (B2)", NA,
     "B3", "biophysical", "Habitat connectivity (B3)", NA,
     "B4", "biophysical", "Spectral alpha diversity, Sentinel-2 (B4)", "spectral",
+    "B5", "biophysical", "Vertical stratification from the LiDAR point cloud (B5)", "lidar",
     "W1", "biophysical", "Water regulation via stream network (W1)", NA,
     "W2", "biophysical", "Water regulation via wetlands (W2)", NA,
     "W3", "biophysical", "Water regulation via Topographic Wetness Index (W3)", NA,

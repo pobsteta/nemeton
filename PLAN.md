@@ -43,6 +43,7 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 23 | Itinéraires admissibles par UGF et raisons d'exclusion (`itineraires_admissibles()`) | cœur **2026.11.4** | `nemetonshiny`, `aigora`, `victor` | **Ouvert avant le code** (2026-11-05), préavis app + `specs/065-itineraires-catalogue/brief-aigora.md`, `brief-victor.md` |
 | 24 | Comparaison pondérée (`comparer_itineraires()`) ; poids des profils dans le cœur (`profils_poids()`, spec 065 D-1 b) | cœur **2026.11.4** | `nemetonshiny`, `aigora` | **Ouvert avant le code** (2026-11-05) ; question posée à l'app : les poids des 13 profils existent-ils sous forme numérique ? |
 | 25 | Table des sondes « Ce que les modèles voient » (`probe_indicator()`) | cœur **2026.11.3** | `nemetonshiny` | **Ouvert avant le code** (2026-11-06). Vue triée par R², lecture `voit` / `partiel` / `angle_mort`, marqueur `source_commune` |
+| 26 | B5 stratification verticale : colonnes `B5`, `b5_status` (4 statuts), `b5_s1`…`b5_s5` (profil vertical), `b5_densite` ; couche carte | cœur **2026.11.5** | `nemetonshiny` | Ouvert le 2026-11-06, préavis `specs/067-forpt-lidar-latent/brief-nemetonshiny.md`. Libellés, sens et `doc_url` viennent de `indicator_labels()` : rien à forker |
 
 **Les n° 20 à 24 sont ouverts le 2026-11-05 avant toute ligne de code** (specs 064 et 065, brief « modèles de fondation »), pour que la leçon des n° 10 et 11 serve : un écart s'inscrit quand on le prévoit, pas quand on le découvre. **Trois écarts (n° 3, n° 6 résiduel, n° 16), aucun n'appelle plus de correctif dans le cœur.** Les n° 18 (T2) et 19 (`r1_status`) sont refermés par l'app v0.155.0 le 2026-10-05 ; `r1_fallback_reason` reste non transporté, à la demande (le rapport ne cite pas le motif exact). Le n° 13 est refermé le 2026-10-02 (cinq relances RECONFORT propres, table ci-dessous). Les n° 15 et 17 sont refermés par l'app v0.152.1 le 2026-10-02 (table ci-dessous).
 Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR
@@ -118,12 +119,23 @@ un raccourci.
 | 064 | Chantier A : `alphaearthnemeton`, `embedding_summary()`, `distance_reference()`, **N5**, B4/L3 `embedding =`, régressions NDP 0 | ✅ spec validée le 2026-11-05 (D-2 : GPL-3) ; 🟨 code : N5 + fonctions génériques + flag NDP → **2026.11.1** ; reste `alphaearthnemeton`, B4/L3, `embedding_regress()`, vignette |
 | 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 ; moteur → **2026.11.4** ; catalogue (squelette `a_sourcer`) à remplir par Pascal (D-4) |
 | 066 | Chantier B : sondes `probe_indicator()` (cœur, AlphaEarth d'abord) et MAESTRO en extracteur d'embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
-| 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; B5 en cours |
+| 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; **B5** → **2026.11.5** ; reste `simulate_density_sensitivity()`, `forptnemeton` (D-6 licences, D-7 dépôt), N5 structurel, T1 désaturé, N4 (reporté, D-2) |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
 parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
 vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier remplissage du
 catalogue par Pascal.
+
+**Journal** — *2026-11-06* (**2026.11.5**) : spec 067 validée (D-1 à D-7
+telles que proposées), mergée (pobsteta/nemeton#590). **B5** codé sans ForPT
+(décision D-3) : entropie normalisée des retours par strate, profil `points`
+par défaut, `densite_foliaire` (MacArthur-Horn) en option. Confronté aux 96
+placettes du Vercors d'`aba.model` : ρ = 0,55 avec le CV des hauteurs
+d'arbres mesurées (0,62 en densité foliaire), ≈ 0 avec la hauteur maximale ;
+7 s par profil pour 2 M de points (≈ 6 min pour 1 000 ha à 10 pts/m², lecture
+LAZ non comprise : dans l'objectif CPU de D-4). lidR non installable dans la
+session (CRAN bloqué) : lecture LAZ testée en CI seulement. Écart n° 26 ouvert.
+Fixture complétée sans régénération (terra local trop ancien pour W2/W3).
 
 **Journal** — *2026-11-06* : 2026.11.4 mergée (pobsteta/nemeton#589) ; cycle
 dev `2026.11.4.9000`. **Spec 067** (chantier C) rédigée. Vérification des

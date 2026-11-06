@@ -121,3 +121,39 @@ du code SelectAnyTree **à vérifier** avant la première ligne (D-6).
 À ouvrir dans PLAN.md à la validation : B5 et N4 (couches, statuts), N5
 structurel (`n5_source`), badge de dimensionnement drone dans l'onglet
 terrain.
+
+## 10. Avancement
+
+| Étape | État |
+|---|---|
+| 1. B5 sans ForPT | ✅ **2026.11.5** — `indicateur_b5_stratification()`, fiche B5, écart n° 26 |
+| 2. `simulate_density_sensitivity()` | à faire |
+| 3. `forptnemeton` : `forpt_embed()`, `forpt_age()` ; N5 structurel, T1 désaturé | attend D-6 (licences) et D-7 (dépôt) |
+| 4. `forpt_segment()` (SelectAnyTree), N4 | N4 reporté (D-2) |
+
+**Écarts au § 4 lors du codage de B5.**
+
+- Strates : le sol (retours sous `hauteur_sol = 0,5 m`) n'est compté dans
+  aucune strate ; la première strate est donc 0,5-2 m. Sinon une UGF ouverte
+  compterait son sol comme une strate de végétation.
+- Deux profils, comme le § 4 l'autorisait (« points, ou densité foliaire ») :
+  `"points"` par défaut (D-3), `"densite_foliaire"` (MacArthur et Horn 1969)
+  en option.
+- Classes LiDAR HD gardées : 1 à 5 et 9 ; bâti, bruit, ponts et classes IGN
+  64-67 écartés.
+- Statuts : `calculated`, `skipped_no_lidar`, `skipped_no_coverage`,
+  `skipped_low_density` (moins de 100 retours).
+
+**Confrontation au terrain** (96 placettes du Vercors, `inst/extdata/aba.model/`,
+≈ 14 retours/m², Spearman) : B5 `points` contre CV des hauteurs d'arbres
+mesurées 0,55, contre hauteur maximale −0,07 ; `densite_foliaire` 0,62 et
+0,06. Part moyenne de la strate 0,5-2 m : 2,6 % en `points`, 6,3 % en
+`densite_foliaire`. **Question pour Pascal** (non bloquante) : le profil
+`densite_foliaire` suit un peu mieux le terrain et corrige en partie le piège
+n° 1 ; faut-il en faire le défaut avant que l'app n'affiche B5 ? Changer le
+défaut plus tard serait un changement de sens (spec 057).
+
+**Temps** : 7 s par profil pour 2 millions de points sur un cœur, lecture LAZ
+non comprise, soit environ 6 min pour 1 000 ha à 10 retours/m² : l'objectif
+CPU du critère 1 tient pour B5 (D-4). Critère 1 lui-même (dalles d'un projet
+BFC réel) : non mesuré, faute de dalles LiDAR HD et de lidR dans la session.

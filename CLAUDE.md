@@ -2,7 +2,7 @@
 
 ## Identité du projet
 
-Néméton est une plateforme d'analyse forestière systémique développée par Pascal Obstetar à titre personnel. Elle calcule **42 indicateurs** — 31 de base et 11 conditionnels, calculés seulement quand leur source est fournie (B4, L3, W4, A3, A4, A5, R5, R6, R7, T3, N5 ; `list_indicators(conditionnels = FALSE)` rend les 31) — organisés en **12 familles**, les affiche sur un radar, et génère des perspectives IA adaptées à 15 profils d'acteurs de la filière forêt-bois. Le nom vient du gaulois *nemeton* (sanctuaire en forêt).
+Néméton est une plateforme d'analyse forestière systémique développée par Pascal Obstetar à titre personnel. Elle calcule **43 indicateurs** — 31 de base et 12 conditionnels, calculés seulement quand leur source est fournie (B4, B5, L3, W4, A3, A4, A5, R5, R6, R7, T3, N5 ; `list_indicators(conditionnels = FALSE)` rend les 31) — organisés en **12 familles**, les affiche sur un radar, et génère des perspectives IA adaptées à 15 profils d'acteurs de la filière forêt-bois. Le nom vient du gaulois *nemeton* (sanctuaire en forêt).
 
 Le package R `nemeton` (v0.15.1.9000) est le **cœur métier** : indicateurs, familles, NDP, normalisation, visualisation. Depuis v0.15.0 (ADR-009), l'application Shiny/golem a été extraite dans un package séparé `nemetonshiny` (repo distinct). Ce repo-ci ne contient donc PLUS de modules Shiny, profils experts ni fichiers i18n — ils vivent dans `nemetonshiny`.
 
@@ -21,7 +21,7 @@ Cette convention s'applique aux nouveaux fichiers et fonctions. Le code existant
 ## Architecture (packages, ADR-009)
 
 ```
-nemeton (ce repo)     → Package cœur. 42 indicateurs, 12 familles, NDP, normalisation, viz.
+nemeton (ce repo)     → Package cœur. 43 indicateurs, 12 familles, NDP, normalisation, viz.
 nemetonshiny          → App Shiny/golem : UI, modules, i18n, profils experts, LLM, OAuth2.
 tree_sat_nemeton      → Classification d'essences par Sentinel-1/2. NDP 0.
 maestro_nemeton       → Classification d'essences par MAESTRO ViT (ortho+MNT). NDP 1+.
@@ -36,7 +36,7 @@ Règle : les dépendances vont toujours vers nemeton (cœur). Jamais d'inverse. 
 
 | Code | Famille | Indicateurs |
 |------|---------|-------------|
-| B | Biodiversité | B1 (protection), B2 (structure), B3 (connectivité) |
+| B | Biodiversité | B1 (protection), B2 (structure), B3 (connectivité), B4 (diversité spectrale, Sentinel-2 ou embedding — spec 028/064), B5 (stratification verticale, nuage LiDAR — spec 067) |
 | C | Carbone & Vitalité | C1 (biomasse), C2 (NDVI) |
 | W | Eau & Régulation | W1 (réseau hydro), W2 (zones humides), W3 (TWI) |
 | A | Air & Microclimat | A1 (couverture arborée), A2 (qualité air), A3 (microclimat sous couvert, spec 027), A4 (tamponnement canopée, spec 027), A5 (rafraîchissement urbain, LST-conditionné — spec 032) |
@@ -105,7 +105,7 @@ Les profils experts sont définis dans `nemetonshiny/inst/experts/*.yml` avec de
 ## 7 Bounded Contexts (DDD)
 
 1. **Inventaire** (contexte_inventaire) : collecte et validation des données terrain et satellite
-2. **Analyse systémique** (contexte_analyse) : calcul des 42 indicateurs, 12 familles, radar, Fibonacci
+2. **Analyse systémique** (contexte_analyse) : calcul des 43 indicateurs, 12 familles, radar, Fibonacci
 3. **Cartographie** (contexte_cartographie) : classification d'essences, cartes, LiDAR, satellite
 4. **Santé** (contexte_sante) : pipelines de détection sanitaire — rolling-window NDVI/NBR (surveillance rapide) et FORDEAD via reticulate (diagnostic), fusion des deux signaux, indicateur R5, workflow QField de validation. Voir spec 008 et ADR-013.
 5. **Aide à la décision** (contexte_aide_decision) : perspectives IA, interprétation par profil
@@ -286,10 +286,11 @@ R/indice_priorite_regen.R     → indice_priorite_regen() croisement exposition 
 R/regen_engines.R             → scaffolds moteurs reGénération : regen_bilan_hydrique (biljouR), regen_sensibilite (microclimf), pai_depuis_nuage (lasR) — chemin precomputed pur (spec 027 v2.1 L1/L2)
 R/embeddings.R                → embedding_summary(), distance_reference() : embeddings de modèles de fondation, génériques (spec 064)
 R/indicateur_n5_distance_reference.R → N5, distance à une référence peu perturbée (spec 064)
+R/indicateur_b5_stratification.R → B5, stratification verticale depuis le nuage LiDAR (spec 067)
 R/climat_cercle.R             → climat_ete_series() / climat_tendance_bivariee() / climat_nuages_annuels() : contexte climatique estival sur un cercle autour du projet, E-OBS / CHELSA / SAFRAN (spec 063)
 R/meteoland_grid.R            → meteoland_daily_grid() + build_safran_stations() : Tmin journalière SAFRAN → meteoland pour le gel R7
 R/family-system.R             → Agrégation des indicateurs en familles
-R/indicators-*.R              → Calcul des 42 indicateurs (air, biodiversity, energy,
+R/indicators-*.R              → Calcul des 43 indicateurs (air, biodiversity, energy,
                                  naturalness, productive, risk, social, temporal, core, families)
 R/normalization.R             → Normalisation des indicateurs en indices [0..1]
 R/indicator-config.R          → Configuration des indicateurs (sens, bornes, unité)
@@ -298,7 +299,7 @@ R/datasources.R               → Déclaration des sources de données par NDP
 R/species-config.R            → Configuration des essences (maestro, tree_sat)
 R/temporal.R                  → Analyse temporelle (T1, T2)
 R/visualization.R             → Helpers de visualisation (radar, etc.)
-R/data-massif_demo.R + data/  → Fixture massif_demo_units (20 unités, 42 indicateurs calculés par le paquet, data-raw/massif_demo.R)
+R/data-massif_demo.R + data/  → Fixture massif_demo_units (20 unités, 43 indicateurs calculés par le paquet, data-raw/massif_demo.R)
 R/i18n.R                      → Squelette i18n côté cœur (messages R uniquement)
 inst/tutorials/               → Tutoriels pédagogiques (acquisition, LiDAR, ABA, etc.)
 inst/extdata/aba.model/       → Modèle ABA (Area-Based Approach) + données LiDAR d'exemple
