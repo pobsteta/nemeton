@@ -128,6 +128,17 @@ parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
 vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier remplissage du
 catalogue par Pascal.
 
+**Journal** — *2026-11-06* : 2026.11.8 mergée (pobsteta/nemeton#595) ;
+cycle dev `2026.11.8.9000`. Briefs `aigora` et `victor` (spec 065) complétés :
+`effet_gestion()` citable comme résultat du projet seulement quand
+`statut == "calcule"`, `t1_source` et `b5_status` à dire avant usage.
+Chantier E : le cache d'`alphaearthnemeton` est déjà adressé par contenu
+(hash version, année, CRS, emprise). Reste bloqué sur Pascal : spec 067 D-1
+(lidR à la place de SelectAnyTree), licence des poids ForPT, dépôt
+`forptnemeton`, profil B5 par défaut ; spec 068 étape 2 (prototype FINN,
+CRAN bloqué depuis les sessions ; placettes IFN) ; relance du run
+42181439133 pour le tag `v2026.11.3`.
+
 **Journal** — *2026-11-06* (**2026.11.8**) : spec 068 validée (D-1 à D-8),
 mergée (pobsteta/nemeton#594). `effet_gestion()` : support commun par score
 de propension, refus explicites, effet moyen AIPW, effets par UGF par

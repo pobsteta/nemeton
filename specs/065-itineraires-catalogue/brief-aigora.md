@@ -45,3 +45,27 @@ forestier.
   `score_global` est un rang.
 - Dire quand une UGF a `admissible = NA` / `donnee_manquante`.
 - Refuser de conclure sur une UGF en NDP 0 **sans le dire**.
+
+## Ajout du 2026-11-06 — résultats du projet que le skill peut citer
+
+Livrés depuis ce préavis (cœur 2026.11.5 à 2026.11.8) :
+
+- **`nemeton::effet_gestion()`** (spec 068) : ce que le type de gestion
+  déclaré a produit sur chaque famille du projet, à station comparable.
+  À l'étape **Argumentation**, le skill peut le citer comme *résultat du
+  projet* (« sur ce massif, les UGF en irrégulier ont un indice de
+  biodiversité supérieur de X points, intervalle [a ; b] »), **seulement**
+  quand `statut == "calcule"`, toujours avec l'intervalle, et en disant que
+  c'est une association ajustée sur la station, pas une preuve causale.
+  Statut `recouvrement_insuffisant` ou `trop_peu_unites` : dire que le
+  projet ne permet pas de conclure, ne rien citer.
+- **Sources des valeurs** : T1 rend `t1_source` (âge relevé, année
+  d'installation, âge structurel, BD Forêt, NDVI) ; B5 rend `b5_status` et
+  `b5_densite`. Le skill dit d'où vient un âge avant de s'en servir (un âge
+  typologique de la BD Forêt n'est pas un âge relevé).
+- **Trajectoires** : toujours absentes (FINN, spec 068, étapes 2 à 4) ;
+  la comparaison reste qualitative (`methode = "catalogue_qualitatif"`).
+
+Garde-fou ajouté : **ne jamais présenter un effet de gestion comme la
+prévision d'un itinéraire**. L'un dit ce qui s'est passé sur le massif,
+l'autre ce que le catalogue attend ; s'ils divergent, le dire.
