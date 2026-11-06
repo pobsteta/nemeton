@@ -57,8 +57,10 @@ and Google DeepMind. »* (`alphaearthnemeton::aef_info()$attribution`).
    gros bois sous le couvert : c'est l'objet du chantier C (ForPT, LiDAR HD).
 3. **Appris ailleurs.** Le modèle n'a pas été entraîné pour la forêt
    française ; ce qu'il « voit » d'un indicateur n'est pas connu d'avance.
-   Les sondes du chantier B (`probe_indicator()`, à venir) le mesureront,
-   indicateur par indicateur.
+   Les sondes du chantier B (`probe_indicator()`, 2026.11.3) le mesurent,
+   indicateur par indicateur, sur un projet donné : R² en validation croisée
+   par blocs spatiaux, lecture `voit` / `partiel` / `angle_mort`, marqueur
+   `source_commune` pour les indicateurs issus de Sentinel-2.
 4. **Distance n'est pas cause.** Deux UGF proches dans l'espace des
    embeddings se ressemblent pour le modèle ; elles ne sont pas pour autant
    gérées pareil, ni de même âge.
@@ -76,6 +78,7 @@ and Google DeepMind. »* (`alphaearthnemeton::aef_info()$attribution`).
 | B4 — mode embedding | [fiche B4, annexe 8](fiche-b4-diversite-spectrale_fr.html) |
 | L3 — mode embedding | [fiche L3, annexe 8](fiche-l3-heterogeneite-spectrale_fr.html) |
 | `embedding_regress()` — hauteur de NDP 0 | [vignette embeddings](embeddings-alphaearth_fr.html) |
+| `probe_indicator()` — ce que les modèles voient | aide de la fonction, spec 066 |
 
 ## 5. Références internes
 

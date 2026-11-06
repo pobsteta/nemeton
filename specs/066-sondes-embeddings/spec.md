@@ -1,12 +1,12 @@
 # Spec 066 — Sondes « ce que les modèles voient » et MAESTRO en extracteur d'embeddings
 
-> **Statut** : **brouillon, à valider par Pascal**. Rien n'est implémenté avant
-> validation (procédure du brief du 2026-11-05, § 5).
+> **Statut** : **validé** par Pascal le 2026-11-06 (« je valide, code ») :
+> propositions du § 7 retenues. Sondes livrées en **2026.11.3** (§ 9).
 > **Origine** : brief « Modèles de fondation et raisonnement sylvicole » du
 > 2026-11-05, chantier B (priorité 2) ; préavis
 > `specs/064-alphaearth-n5/brief-maestronemeton.md`.
 > **Dépôts** : `nemeton` (sondes, génériques) et `maestronemeton` (extracteur).
-> **Décisions ouvertes** : § 7, renvoyées par **[D-n]**.
+> **Décisions** : § 7, renvoyées par **[D-n]**.
 
 ## 1. Pourquoi
 
@@ -101,9 +101,9 @@ Vue « Ce que les modèles voient » : la table des sondes du projet, triée par
 R², avec la lecture et le marqueur `source_commune`. **Écart n° 25**, ouvert
 dans PLAN.md dès cette spec.
 
-## 7. Décisions ouvertes
+## 7. Décisions (Pascal, 2026-11-06 : propositions validées)
 
-| # | Question | Proposition |
+| # | Question | Décision |
 |---|---|---|
 | D-1 | Seuils de lecture du R² | `voit` ≥ 0,5 ; `partiel` 0,2 à 0,5 ; `angle_mort` < 0,2. Conventions, affichées comme telles |
 | D-2 | Taille des blocs de la validation croisée | 2 km par défaut (UGF de quelques hectares) ; paramètre exposé |
@@ -122,3 +122,13 @@ dans PLAN.md dès cette spec.
 3. Table des sondes AlphaEarth sur un projet réel d'au moins 50 UGF, publiée
    dans la fiche « Modèles de fondation ».
 4. Fiche de la fonction avec les quatre pièges du § 4.
+
+## 9. Avancement
+
+| Livrable | État |
+|---|---|
+| `probe_indicator()` + `.cv_blocs_spatiaux()` commun | ✅ 2026.11.3 ; critères 1 et 2 tenus (21 assertions ; `embedding_regress()` inchangé, 24 assertions) |
+| Table des sondes AlphaEarth sur un projet réel ≥ 50 UGF (critère 3) | ⬜ à lancer sur un projet dont les indicateurs sont calculés (poste de Pascal) |
+| Fiche de la fonction (critère 4) | ✅ pièges dans l'aide de `probe_indicator()` et la fiche « Modèles de fondation » |
+| MAESTRO en extracteur (`maestronemeton`) | ⬜ brief `specs/064-alphaearth-n5/brief-maestronemeton.md` |
+| Vue app « Ce que les modèles voient » | ⬜ écart n° 25 |

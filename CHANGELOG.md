@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.3] - 2026-11-06
+
+### Added
+- `probe_indicator()`: per-indicator ridge probe of a foundation-model embedding with spatial block cross-validation (R2, RMSE, reading `voit` / `partiel` / `angle_mort`, `source_commune` flag); diagnostic only (spec 066).
+
+### Changed
+- Spatial block cross-validation of `embedding_regress()` factored into a shared helper; behaviour unchanged.
+
 ## [2026.11.2] - 2026-11-05
 
 ### Added
