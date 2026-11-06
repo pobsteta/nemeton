@@ -153,3 +153,20 @@ dans la synthèse ; T4 (couche, statut).
 | D-6 | T4 : nouveau code de la famille T, et son échelle | oui, T4 conditionnel ; décompte 43 → 44 (45 avec N4). Le brief le définit en signe (> 0 / < 0) ; proposé : score 0-100 centré sur 50 (rang de l'observé dans les trajectoires simulées), pour qu'il se normalise comme les autres |
 | D-7 | Données de calibration | placettes IFN de BFC fournies par Pascal (le site de l'IFN est bloqué depuis les sessions) ; FORMS-T pour T4 |
 | D-8 | TerraMind (optionnel du brief) | **hors de cette spec** : à n'ouvrir que si le besoin outre-mer se confirme |
+
+## 9. Avancement
+
+| Étape | État |
+|---|---|
+| 1. `effet_gestion()` | ✅ **2026.11.8** — fiche, écart n° 27 |
+| 2. Prototype FINN (`data-raw/`) | à faire ; CRAN bloqué depuis les sessions : le prototype se fera là où FINN s'installe |
+| 3. `calibrer_finn()`, `simuler_itineraire()` | attend le prototype et les placettes IFN (D-7) |
+| 4. T4, `comparer_itineraires(trajectoires =)` | après 3 |
+
+**Écart au § 3.1 lors du codage.** L'effet moyen n'est pas la moyenne des
+effets individuels du méta-apprenant : sur données simulées (150 UGF, effet
+8, forte confusion), cette moyenne valait 8,8 (X) ou 10,9 (T) avec des
+intervalles de bootstrap qui couvraient l'effet réel dans 60 % et 10 % des
+cas. Il est remplacé par un estimateur doublement robuste (AIPW, prédictions
+hors sac des forêts) : 7,1 en moyenne, couverture de 93 % pour un intervalle
+à 90 % (30 tirages). Les effets par UGF restent ceux du méta-apprenant.

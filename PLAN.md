@@ -44,6 +44,7 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 24 | Comparaison pondérée (`comparer_itineraires()`) ; poids des profils dans le cœur (`profils_poids()`, spec 065 D-1 b) | cœur **2026.11.4** | `nemetonshiny`, `aigora` | **Ouvert avant le code** (2026-11-05) ; question posée à l'app : les poids des 13 profils existent-ils sous forme numérique ? |
 | 25 | Table des sondes « Ce que les modèles voient » (`probe_indicator()`) | cœur **2026.11.3** | `nemetonshiny` | **Ouvert avant le code** (2026-11-06). Vue triée par R², lecture `voit` / `partiel` / `angle_mort`, marqueur `source_commune` |
 | 26 | B5 stratification verticale : colonnes `B5`, `b5_status` (4 statuts), `b5_s1`…`b5_s5` (profil vertical), `b5_densite` ; couche carte ; badge de dimensionnement drone (`simulate_density_sensitivity()$conclusion`) | cœur **2026.11.5** / **2026.11.6** | `nemetonshiny` | Ouvert le 2026-11-06, préavis `specs/067-forpt-lidar-latent/brief-nemetonshiny.md`. Libellés, sens et `doc_url` viennent de `indicator_labels()` : rien à forker |
+| 27 | Effets de la gestion (`effet_gestion()`) : table par famille (effet moyen, intervalle, statut `calcule` / `recouvrement_insuffisant` / `trop_peu_unites`) dans la synthèse ; à citer comme résultat du projet | cœur **2026.11.8** | `nemetonshiny`, `aigora` | Ouvert le 2026-11-06, préavis `specs/068-trajectoires-finn/brief-nemetonshiny.md` |
 
 **Les n° 20 à 24 sont ouverts le 2026-11-05 avant toute ligne de code** (specs 064 et 065, brief « modèles de fondation »), pour que la leçon des n° 10 et 11 serve : un écart s'inscrit quand on le prévoit, pas quand on le découvre. **Trois écarts (n° 3, n° 6 résiduel, n° 16), aucun n'appelle plus de correctif dans le cœur.** Les n° 18 (T2) et 19 (`r1_status`) sont refermés par l'app v0.155.0 le 2026-10-05 ; `r1_fallback_reason` reste non transporté, à la demande (le rapport ne cite pas le motif exact). Le n° 13 est refermé le 2026-10-02 (cinq relances RECONFORT propres, table ci-dessous). Les n° 15 et 17 sont refermés par l'app v0.152.1 le 2026-10-02 (table ci-dessous).
 Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR
@@ -120,12 +121,19 @@ un raccourci.
 | 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 ; moteur → **2026.11.4** ; catalogue (squelette `a_sourcer`) à remplir par Pascal (D-4) |
 | 066 | Chantier B : sondes `probe_indicator()` (cœur, AlphaEarth d'abord) et MAESTRO en extracteur d'embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
 | 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; **B5** → **2026.11.5** ; `simulate_density_sensitivity()` → **2026.11.6** ; T1 `age_structurel =` → **2026.11.7** ; D-6 : ForPT code MIT, poids à vérifier, SelectAnyTree CC BY-NC sans poids (D-1 à revoir : lidR proposé) ; reste `forptnemeton` (D-6 licences, D-7 dépôt), N5 structurel, T1 désaturé, N4 (reporté, D-2) |
-| 068 | Chantier D : trajectoires FINN (`calibrer_finn()`, `simuler_itineraire()`), T4, `effet_gestion()` | ✅ validée le 2026-11-06 (D-1 à D-8 telles que proposées) ; `effet_gestion()` en cours |
+| 068 | Chantier D : trajectoires FINN (`calibrer_finn()`, `simuler_itineraire()`), T4, `effet_gestion()` | ✅ validée le 2026-11-06 (D-1 à D-8 telles que proposées) ; `effet_gestion()` → **2026.11.8** ; reste le prototype FINN, trajectoires, T4 |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
 parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
 vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier remplissage du
 catalogue par Pascal.
+
+**Journal** — *2026-11-06* (**2026.11.8**) : spec 068 validée (D-1 à D-8),
+mergée (pobsteta/nemeton#594). `effet_gestion()` : support commun par score
+de propension, refus explicites, effet moyen AIPW, effets par UGF par
+méta-apprenant X ou T. La moyenne des effets du méta-apprenant était biaisée
+et mal couverte sur simulation (T : 10,9 pour 8, couverture 10 %) ; l'AIPW
+donne 7,1 et 93 %. Écart n° 27 ouvert.
 
 **Journal** — *2026-11-06* : 2026.11.7 mergée (pobsteta/nemeton#593) ; cycle
 dev `2026.11.7.9000`. **Spec 068** (chantier D) rédigée. FINN vérifié : CRAN

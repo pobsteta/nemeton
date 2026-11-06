@@ -163,6 +163,8 @@ navbar:
         href: articles/fiche-modeles-de-fondation_fr.html
       - text: Fiche - Itineraires sylvicoles
         href: articles/fiche-itineraires_fr.html
+      - text: Fiche - Effets de la gestion
+        href: articles/fiche-effet-gestion_fr.html
 
 reference:
   - title: "API stable"
@@ -627,6 +629,7 @@ reference:
     - itineraires_admissibles
     - comparer_itineraires
     - profils_poids
+    - effet_gestion
 
   - subtitle: "Corpus de connaissances et RAG"
     contents:
