@@ -148,10 +148,9 @@ terrain.
 ≈ 14 retours/m², Spearman) : B5 `points` contre CV des hauteurs d'arbres
 mesurées 0,55, contre hauteur maximale −0,07 ; `densite_foliaire` 0,62 et
 0,06. Part moyenne de la strate 0,5-2 m : 2,6 % en `points`, 6,3 % en
-`densite_foliaire`. **Question pour Pascal** (non bloquante) : le profil
-`densite_foliaire` suit un peu mieux le terrain et corrige en partie le piège
-n° 1 ; faut-il en faire le défaut avant que l'app n'affiche B5 ? Changer le
-défaut plus tard serait un changement de sens (spec 057).
+`densite_foliaire`. **Profil par défaut, tranché par Pascal le 2026-11-06 : `points`.**
+`densite_foliaire` reste une option ; changer le défaut plus tard serait un
+changement de sens (spec 057).
 
 **Temps** : 7 s par profil pour 2 millions de points sur un cœur, lecture LAZ
 non comprise, soit environ 6 min pour 1 000 ha à 10 retours/m² : l'objectif
@@ -184,3 +183,31 @@ utilisés par `segment_houppiers()` (sommets `lmf`, puis `dalponte2016` ou
 basculer sur ForPT quand ses instances seront publiées, si leur licence le
 permet. SelectAnyTree resterait un appel optionnel, installé par
 l'utilisateur, pour un usage non commercial.
+
+**D-1 révisée, validée par Pascal le 2026-11-06 : instances d'arbres par
+lidR par défaut, dans le cœur, sans modèle ; SelectAnyTree en option.** `segment_houppiers()` fournit déjà les instances
+nécessaires : un polygone par houppier, `h_max` (hauteur de l'apex) et
+`surface_m2` (d'où un diamètre de houppier `2 * sqrt(surface_m2 / pi)`), par
+`lmf` puis `dalponte2016` ou `silva2016` de lidR sur le MNH. Aucun code
+nouveau à ce stade pour le chemin par défaut.
+
+**SelectAnyTree en option** (demandé par Pascal le 2026-11-06), sous trois
+conditions dictées par sa licence et ADR-009 :
+
+1. **Hors du cœur** : c'est du Python (torch, ForestFormer3D) ; il vivra
+   dans `forptnemeton` comme `forpt_segment(methode = "selectanytree")`,
+   appelé par reticulate, comme `opencanopy`.
+2. **Jamais embarqué** : CC BY-NC 4.0 ajoute une restriction que la GPL-3
+   interdit ; `forptnemeton` ne copie ni son code ni ses poids. L'utilisateur
+   l'installe lui-même ; la fonction vérifie sa présence et rappelle la
+   licence (usage non commercial) au premier appel.
+3. **Quand les poids seront publiés** (annoncés « coming soon ») : sans
+   poids, il n'y a rien à appeler. Premier clic automatique sur les sommets
+   `lmf` du MNH, comme le décrivent les auteurs.
+
+Sortie identique au chemin lidR (un houppier par arbre, `h_max`,
+`surface_m2`, plus `methode`), pour que `segment_houppiers(tops =)` et N4 ne
+dépendent pas du choix. Le chemin par le nuage (`li2012`) et l'estimation du
+diamètre à 1,30 m pour le très gros bois viendront avec N4, qui reste
+reporté (D-2). ForPT remplacera lidR quand ses instances seront publiées, si
+leur licence le permet.
