@@ -1,3 +1,18 @@
+# nemeton 2026.11.7 (2026-11-06)
+
+## Nouveautés
+
+- **T1 « désaturé »** (spec 067, décision D-5) : `indicateur_t1_anciennete()`
+  accepte un nouvel argument `age_structurel =` (vecteur, nom de colonne ou
+  raster moyenné par UGF), par exemple l'âge structurel de ForPT lu dans le
+  nuage LiDAR. Il passe après un âge mesuré et une année d'installation,
+  avant la BD Forêt (plafond 100 ans) et le NDVI (plafond 120 ans). Défaut
+  `NULL` : T1 inchangé ; la normalisation garde sa borne de 200 ans, donc
+  aucun changement de sens. Une valeur négative ou non finie est ignorée.
+- T1 rend une colonne **`t1_source`** (`age`, `annee_installation`,
+  `age_structurel`, `bdforet`, `ndvi` ou `NA`) : le chemin qui a daté
+  chaque unité. Ajout sans rupture.
+
 # nemeton 2026.11.6 (2026-11-06)
 
 ## Nouveautés

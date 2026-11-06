@@ -14,10 +14,11 @@ NULL
 #' Calculate Stand Age Index (T1)
 #'
 #' Estimates stand age per unit, a measured age taking precedence over an
-#' estimate: direct age field, then establishment year, then BD Forêt TFV
-#' (Type de Formation Végétale, area-weighted, tuto 04 methodology), then an
-#' NDVI proxy. Each source only fills the units left \code{NA} by the
-#' previous ones.
+#' estimate: direct age field, then establishment year, then a structural
+#' age when one is given (e.g. ForPT from the LiDAR point cloud, spec 067),
+#' then BD Forêt TFV (Type de Formation Végétale, area-weighted, tuto 04
+#' methodology), then an NDVI proxy. Each source only fills the units left
+#' \code{NA} by the previous ones.
 #'
 #' @param units An sf object with forest parcels.
 #' @param layers A nemeton_layers object (optional). Used to resolve bdforet.
@@ -29,6 +30,13 @@ NULL
 #'   Used for units with no measured age.
 #' @param current_year Integer. Current year for age calculation from establishment year.
 #'   Default uses current system year.
+#' @param age_structurel Optional structural age (years), estimated from the
+#'   stand structure rather than dated: a numeric vector (one value per
+#'   unit), the name of a column of \code{units}, or a SpatRaster (mean over
+#'   each unit). Typically \code{forptnemeton::forpt_age()} from the LiDAR
+#'   point cloud (spec 067). It ranks after a measured age and an
+#'   establishment year and before BD Forêt and NDVI, which saturate at 100
+#'   and 120 years. \code{NULL} (default): T1 is unchanged.
 #'
 #' @return The input \code{units} (same class, rows and order) with an added numeric column \code{T1}: estimated age in years -- NOT a
 #' 0-100 score. **Higher = older = more favourable**, so it is not
@@ -37,10 +45,21 @@ NULL
 #' wrongly declared natively 0-100 and merely clamped, so 150 and 250 years
 #' both came out at 100. See spec 048 section 10.
 #'   \code{NA} for a unit no source can date (no default age).
+#'   A column \code{t1_source} says which source dated each unit:
+#'   \code{"age"}, \code{"annee_installation"}, \code{"age_structurel"},
+#'   \code{"bdforet"}, \code{"ndvi"}, or \code{NA}.
 #'
 #' @details
 #' **Order of precedence** (per unit): measured age, establishment year,
-#' BD Forêt TFV, NDVI proxy.
+#' structural age (when given), BD Forêt TFV, NDVI proxy.
+#'
+#' **Structural age** (spec 067, "T1 désaturé"): the BD Forêt TFV tops out
+#' at 100 years and the NDVI proxy at 120, so old stands are all read as
+#' about a century old. A structural age read in the LiDAR point cloud can
+#' go further; normalisation still rescales against 200 years (spec 048
+#' section 10), so the default meaning of T1 does not change. A structural
+#' age is not an age: a stand on a poor site looks younger, and the ForPT
+#' age head was trained outside France.
 #'
 #' **BD Forêt TFV method**:
 #' \itemize{
@@ -83,10 +102,15 @@ indicateur_t1_anciennete <- function(units,
                                    bdforet = NULL,
                                    age_field = "age",
                                    establishment_year_field = NULL,
-                                   current_year = NULL) {
+                                   current_year = NULL,
+                                   age_structurel = NULL) {
   # Validate inputs
   validate_sf(units)
   n <- nrow(units)
+  source_age <- rep(NA_character_, n)
+  marquer <- function(avant, nom) {
+    source_age[avant & !is.na(age_values)] <<- nom
+  }
 
   # Cascade PAR UNITE : une mesure (age, annee d'installation) passe avant
   # une estimation (TFV de la BD Foret, puis NDVI) ; chaque source ne comble
@@ -98,6 +122,7 @@ indicateur_t1_anciennete <- function(units,
   # --- 1. Age mesure ---
   if (!is.null(age_field) && age_field %in% names(units)) {
     age_values <- suppressWarnings(as.numeric(units[[age_field]]))
+    marquer(rep(TRUE, n), "age")
   }
 
   # --- 2. Annee d'installation ---
@@ -110,9 +135,19 @@ indicateur_t1_anciennete <- function(units,
       suppressWarnings(as.numeric(units[[establishment_year_field]]))
     k <- a_combler()
     age_values[k] <- depuis_annee[k]
+    marquer(k, "annee_installation")
   }
 
-  # --- 3. BD Foret TFV (tuto 04), moyenne ponderee par la surface ---
+  # --- 3. Age structurel (spec 067), avant les estimations qui saturent ---
+  if (any(a_combler()) && !is.null(age_structurel)) {
+    depuis_structure <- .t1_age_structurel(age_structurel, units)
+    k <- a_combler()
+    age_values[k] <- depuis_structure[k]
+    marquer(k, "age_structurel")
+  }
+
+  # --- 4. BD Foret TFV (tuto 04), moyenne ponderee par la surface ---
+  avant_tfv <- a_combler()
   if (any(a_combler())) {
     if (is.null(bdforet) && !is.null(layers) && inherits(layers, "nemeton_layers")) {
       bdforet <- resolve_vector_layer(layers, "bdforet")
@@ -150,7 +185,9 @@ indicateur_t1_anciennete <- function(units,
     }
   }
 
-  # --- 4. Proxy NDVI ---
+  marquer(avant_tfv, "bdforet")
+
+  # --- 5. Proxy NDVI ---
   if (any(a_combler())) {
     ndvi_raster <- if (!is.null(layers)) resolve_raster_layer(layers, "ndvi") else NULL
     if (!is.null(ndvi_raster)) {
@@ -161,6 +198,7 @@ indicateur_t1_anciennete <- function(units,
       depuis_ndvi <- 20 + pmax(0, ndvi_mean - 0.2) / 0.6 * 100
       k <- a_combler()
       age_values[k] <- depuis_ndvi[k]
+      marquer(k, "ndvi")
     }
   }
 
@@ -169,7 +207,33 @@ indicateur_t1_anciennete <- function(units,
   } else {
     msg_info("indicateur_t1_anciennete")
   }
-  .indicateur_resultat(units, "T1", age_values)
+  res <- .indicateur_resultat(units, "T1", age_values)
+  res$t1_source <- source_age
+  res
+}
+
+# Age structurel par UGF : vecteur, nom de colonne ou raster (moyenne zonale).
+# Une valeur negative ou non finie n'est pas un age : NA.
+.t1_age_structurel <- function(age_structurel, units) {
+  n <- nrow(units)
+  v <- if (inherits(age_structurel, "SpatRaster")) {
+    safe_extract(age_structurel, as_pure_sf(units), fun = "mean", progress = FALSE)
+  } else if (is.character(age_structurel) && length(age_structurel) == 1L) {
+    if (!age_structurel %in% names(units)) {
+      cli::cli_abort("Column {.field {age_structurel}} not found in {.arg units}.")
+    }
+    units[[age_structurel]]
+  } else if (is.numeric(age_structurel)) {
+    if (length(age_structurel) != n) {
+      cli::cli_abort("{.arg age_structurel} has {length(age_structurel)} values for {n} units.")
+    }
+    age_structurel
+  } else {
+    cli::cli_abort("{.arg age_structurel} must be a numeric vector, a column name or a SpatRaster.")
+  }
+  v <- suppressWarnings(as.numeric(v))
+  v[!is.finite(v) | v < 0] <- NA_real_
+  v
 }
 
 

@@ -10,6 +10,12 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.7] - 2026-11-06
+
+### Added
+- `indicateur_t1_anciennete(age_structurel =)`: structural age (vector, column or raster) ranked after measured ages and before BD Forêt / NDVI; default unchanged, normalisation bound unchanged (spec 067, D-5).
+- T1 returns a `t1_source` column naming the source that dated each unit.
+
 ## [2026.11.6] - 2026-11-06
 
 ### Added
