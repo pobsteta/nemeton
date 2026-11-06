@@ -1,7 +1,7 @@
 # Spec 068 — Dynamique et causalité : trajectoires FINN, T4, effets de la gestion
 
-> **Statut** : **brouillon, à valider par Pascal**. Rien n'est implémenté avant
-> validation (procédure du brief du 2026-11-05, § 5).
+> **Statut** : **validée par Pascal le 2026-11-06** (décisions D-1 à D-8
+> retenues telles que proposées). Première étape : `effet_gestion()`.
 > **Origine** : brief « Modèles de fondation et raisonnement sylvicole » du
 > 2026-11-05, chantier D (priorité 3, « année 2 ») et § 3.2.
 > **Dépôt** : `nemeton` (cœur). FINN reste un paquet R (torch pour R, pas de
@@ -143,7 +143,7 @@ dans la synthèse ; T4 (couche, statut).
 
 ## 8. Décisions ouvertes
 
-| # | Question | Proposition |
+| # | Question | Décision (validée le 2026-11-06) |
 |---|---|---|
 | D-1 | FINN (et torch pour R) dans le cœur ? | **Suggests** du cœur, fonctions qui s'arrêtent proprement sans FINN ; pas de paquet amont, puisqu'il n'y a pas de Python. Alternative : `finnnemeton` amont si l'installation de torch pèse trop sur la CI |
 | D-2 | Interventions sylvicoles : FINN n'en documente pas | simuler pas à pas et **retirer des cohortes entre deux pas** selon les règles de l'itinéraire ; à vérifier sur le prototype (étape 2) avant tout code dans le cœur |

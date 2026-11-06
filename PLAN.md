@@ -120,7 +120,7 @@ un raccourci.
 | 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 ; moteur → **2026.11.4** ; catalogue (squelette `a_sourcer`) à remplir par Pascal (D-4) |
 | 066 | Chantier B : sondes `probe_indicator()` (cœur, AlphaEarth d'abord) et MAESTRO en extracteur d'embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
 | 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; **B5** → **2026.11.5** ; `simulate_density_sensitivity()` → **2026.11.6** ; T1 `age_structurel =` → **2026.11.7** ; D-6 : ForPT code MIT, poids à vérifier, SelectAnyTree CC BY-NC sans poids (D-1 à revoir : lidR proposé) ; reste `forptnemeton` (D-6 licences, D-7 dépôt), N5 structurel, T1 désaturé, N4 (reporté, D-2) |
-| 068 | Chantier D : trajectoires FINN (`calibrer_finn()`, `simuler_itineraire()`), T4, `effet_gestion()` | 🟨 brouillon, **8 décisions ouvertes** (§ 8) |
+| 068 | Chantier D : trajectoires FINN (`calibrer_finn()`, `simuler_itineraire()`), T4, `effet_gestion()` | ✅ validée le 2026-11-06 (D-1 à D-8 telles que proposées) ; `effet_gestion()` en cours |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
 parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
