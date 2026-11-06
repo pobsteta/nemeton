@@ -197,7 +197,7 @@ FICHES <- list(
                                                   "faible 0,3 · inconnue 0,5"))
     ),
     aval = av("indicateur_b1_protection", "score 0–100, natif",
-              "écrêtage natif 0–100", "B", "famille_biodiversite", "B1 à B4"),
+              "écrêtage natif 0–100", "B", "famille_biodiversite", "B1 à B5"),
     notes = c(
       "Le poids ne hiérarchise pas : 100 % en ZNIEFF 2 rend 100, comme 100 % en réserve intégrale.",
       "Il ne joue qu'entre statuts croisés à couvertures différentes.",
@@ -230,7 +230,7 @@ FICHES <- list(
       list(titre = "NA", lignes = "aucune valeur fabriquée", tirets = TRUE)
     ),
     aval = av("indicateur_b2_structure", "score 0–100, natif",
-              "écrêtage natif 0–100", "B", "famille_biodiversite", "B1 à B4"),
+              "écrêtage natif 0–100", "B", "famille_biodiversite", "B1 à B5"),
     notes = c(
       "chm fourni ET Shannon servi : le CV du CHM entre en composante additive (cv_chm_weight = 0,20).",
       "Deux plafonds distincts — CV 0,4 sans dimension, σ 10 m en mètres : les scores ne se comparent pas.",
@@ -260,7 +260,7 @@ FICHES <- list(
       list(titre = "Mélange 70 / 30", lignes = "0,7 × global + 0,3 × local")
     ),
     aval = av("indicateur_b3_connectivite", "score 0–100, natif",
-              "écrêtage natif 0–100", "B", "famille_biodiversite", "B1 à B4"),
+              "écrêtage natif 0–100", "B", "famille_biodiversite", "B1 à B5"),
     notes = c(
       "Une composante absente vaut 50 en silence : le score reste plausible sans avoir été calculé.",
       "70 % du score est un score de paysage identique pour toutes les unités du projet.",
@@ -290,7 +290,7 @@ FICHES <- list(
       list(titre = "Moyenne des fenêtres", lignes = ".aggregate_diversity()")
     ),
     aval = av("indicateur_b4_div_spectrale", "indice de Shannon",
-              "H / log(10) × 100", "B", "famille_biodiversite", "B1 à B4"),
+              "H / log(10) × 100", "B", "famille_biodiversite", "B1 à B5"),
     notes = c(
       "Plafond = 10 espèces spectrales effectives, exp(H) — valeur provisoire, spec 028.",
       "Ni comparable entre projets, ni dans le temps ; l'interdit remonte à famille_biodiversite.",
@@ -299,6 +299,38 @@ FICHES <- list(
     legende = paste("Une chaîne à trois étages dont la dernière marche est conventionnelle.",
                     "Le plafond de dix espèces effectives fixe l'échelle du score : c'est lui,",
                     "et non la mesure, qui rend deux projets incomparables.")
+  ),
+
+  B5 = list(
+    code = "B5", fichier = "fiche-b5-stratification_fr.Rmd",
+    titre = paste("Chaine de calcul de B5 : les retours du nuage LiDAR sont affectes",
+                  "aux UGF, comptes dans cinq strates de hauteur, et l'equitabilite",
+                  "de leur repartition (entropie de Shannon normalisee) donne le",
+                  "score ; sans nuage, ou avec trop peu de retours, NA et un statut."),
+    liaison = "puis",
+    entrees = list(
+      list(titre = "Nuage LiDAR HD normalisé", lignes = c("table X, Y, Z, objet LAS",
+                                                          "ou dalles .laz (lidR)")),
+      list(titre = "Dalles brutes (altitudes)", lignes = "normaliser = TRUE, TIN du sol"),
+      list(titre = "Pas de nuage, < 100 retours", lignes = "B5 = NA + statut", tirets = TRUE)
+    ),
+    chemins = list(
+      list(titre = "Affectation aux UGF", lignes = c("grille de 1 m", "classes 1-5 et 9")),
+      list(titre = "Comptes par strate", lignes = c("sol < 0,5 m, puis 0-2, 2-5,",
+                                                    "5-10, 10-20, > 20 m")),
+      list(titre = "Équitabilité", lignes = c("100 × H / log(5)",
+                                              "\"densite_foliaire\" : en option"), tirets = TRUE)
+    ),
+    aval = av("indicateur_b5_stratification", "score 0–100, natif",
+              "écrêtage natif 0–100", "B", "famille_biodiversite", "B1 à B5"),
+    notes = c(
+      "À 10 retours par m², les sous-étages des peuplements fermés sont sous-échantillonnés : B5 y est sous-estimé.",
+      "Un vol en feuilles et un vol hors feuilles ne donnent pas le même profil.",
+      "B5 mesure l'équilibre du profil, pas la hauteur : un fourré de 2 m peut scorer comme une futaie."
+    ),
+    legende = paste("Un profil vertical lu dans le nuage, résumé par son équitabilité.",
+                    "Le score dit si les retours se répartissent entre les strates, pas ce",
+                    "qui les renvoie : feuillage, branches et troncs comptent pareil.")
   ),
 
   # ======================================================= A — Air & clim ====

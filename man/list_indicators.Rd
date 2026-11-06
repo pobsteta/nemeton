@@ -18,8 +18,8 @@ list_indicators(
 \item{return_type}{Character. Return \code{"names"} (default) or \code{"details"}
 (data.frame with descriptions).}
 
-\item{conditionnels}{Logical. Include the eleven source-conditional
-indicators? Default \code{TRUE} (all 42).}
+\item{conditionnels}{Logical. Include the twelve source-conditional
+indicators? Default \code{TRUE} (all 43).}
 }
 \value{
 Character vector of indicator names, or a data.frame with columns
@@ -28,15 +28,16 @@ Character vector of indicator names, or a data.frame with columns
 the indicator \code{NA}, \code{NA} for the base indicators).
 }
 \description{
-Returns the indicators of the 12-family framework: the \strong{42 indicators}
+Returns the indicators of the 12-family framework: the \strong{43 indicators}
 of \code{\link[=indicator_families]{indicator_families()}}, in the same order, including the
 source-conditional ones.
 }
 \details{
-Eleven indicators are \strong{conditional}: they need a source that the public
+Twelve indicators are \strong{conditional}: they need a source that the public
 NDP 0 layers do not provide, and return \code{NA} (with a \verb{<code>_status}
 column such as \code{"skipped_no_micro"}) when it is absent, never an error.
-They are B4 and L3 (Sentinel-2 spectral diversity), W4, A3, A4 and R6
+They are B4 and L3 (Sentinel-2 spectral diversity), B5 (LiDAR point
+cloud, spec 067), W4, A3, A4 and R6
 (precomputed microclimate), A5 (land-surface temperature), R5 (FORDEAD or
 RECONFORT dieback), R7 (daily minimum temperature), T3 (SUFOSAT
 clear-cuts) and N5 (foundation-model embedding, spec 064). \code{conditionnels = FALSE} keeps only the 31 indicators that the
@@ -46,12 +47,12 @@ base layers can compute.
 
 Stable: covered by the 1.0 API contract (spec 057).
 Since 1.0.0 the list holds all the indicators (31 before; 41 in 1.0.0,
-42 since N5, spec 064) and the details
+42 since N5, spec 064; 43 since B5, spec 067) and the details
 carry \code{code}, \code{conditionnel} and \code{source_conditionnelle}.
 }
 
 \examples{
-# All 42 indicator names
+# All 43 indicator names
 list_indicators()
 
 # Only those computable from the base layers

@@ -315,6 +315,7 @@ msg_error <- function(key, ...) {
 
     # Indicateurs ajoutes apres 0.4.0 (libelles manquants, audit 1.0)
     indicateur_b4_div_spectrale = "Spectral alpha diversity (B: Biodiversity/Vivant)",
+    indicateur_b5_stratification = "Vertical stratification from the LiDAR point cloud (B: Biodiversity/Vivant)",
     indicateur_w4_vpd = "Under-canopy vapour pressure deficit (W: Water/Infiltr\u00e9e)",
     indicateur_a3_microclimat = "Under-canopy microclimate (A: Air Quality/Vaporeuse)",
     indicateur_a4_tamponnement = "Canopy thermal buffering (A: Air Quality/Vaporeuse)",
@@ -548,6 +549,7 @@ msg_error <- function(key, ...) {
 
     # Indicateurs ajoutes apres 0.4.0 (libelles manquants, audit 1.0)
     indicateur_b4_div_spectrale = "Diversit\u00e9 spectrale alpha (B: Biodiversit\u00e9/Vivant)",
+    indicateur_b5_stratification = "Stratification verticale du nuage LiDAR (B: Biodiversit\u00e9/Vivant)",
     indicateur_w4_vpd = "D\u00e9ficit de pression de vapeur sous couvert (W: Water/Infiltr\u00e9e)",
     indicateur_a3_microclimat = "Microclimat sous couvert (A: Air/Vaporeuse)",
     indicateur_a4_tamponnement = "Tamponnement thermique de la canop\u00e9e (A: Air/Vaporeuse)",

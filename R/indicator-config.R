@@ -42,17 +42,18 @@ INDICATOR_FAMILIES <- list(
     code = "B",
     name_fr = "Biodiversit\u00e9",
     name_en = "Biodiversity",
-    description_fr = "Protection r\u00e9glementaire, diversit\u00e9 structurale, connectivit\u00e9 \u00e9cologique et diversit\u00e9 spectrale",
-    description_en = "Regulatory protection, structural diversity, ecological connectivity and spectral diversity",
+    description_fr = "Protection r\u00e9glementaire, diversit\u00e9 structurale, connectivit\u00e9 \u00e9cologique, diversit\u00e9 spectrale et stratification verticale",
+    description_en = "Regulatory protection, structural diversity, ecological connectivity, spectral diversity and vertical stratification",
     icon = "bug-fill",
     color = "#9932CC",
-    indicators = c("B1", "B2", "B3", "B4"),
-    column_names = c("indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite", "indicateur_b4_div_spectrale"),
+    indicators = c("B1", "B2", "B3", "B4", "B5"),
+    column_names = c("indicateur_b1_protection", "indicateur_b2_structure", "indicateur_b3_connectivite", "indicateur_b4_div_spectrale", "indicateur_b5_stratification"),
     indicator_labels = list(
       B1 = list(fr = "Protection biodiversit\u00e9", en = "Biodiversity Protection"),
       B2 = list(fr = "Diversit\u00e9 structurale", en = "Structural Diversity"),
       B3 = list(fr = "Connectivit\u00e9 \u00e9cologique", en = "Ecological Connectivity"),
-      B4 = list(fr = "Diversit\u00e9 spectrale", en = "Spectral Diversity")
+      B4 = list(fr = "Diversit\u00e9 spectrale", en = "Spectral Diversity"),
+      B5 = list(fr = "Stratification verticale", en = "Vertical Stratification")
     ),
     indicator_tooltips = list(
       B1 = list(
@@ -70,13 +71,18 @@ INDICATOR_FAMILIES <- list(
       B4 = list(
         fr = "Diversit\u00e9 spectrale (\u03b1) d\u00e9riv\u00e9e de Sentinel-2 : indice de Shannon des \u00ab spectral species \u00bb par fen\u00eatre de 100 m, moyenn\u00e9 sur l\u2019unit\u00e9. Le score atteint 100 pour l\u2019\u00e9quivalent de 10 spectral species \u00e9galement abondantes par hectare. Proxy \u00e0 valider terrain ; une futaie r\u00e9guli\u00e8re monosp\u00e9cifique l\u00e9gitime peut avoir un score bas.",
         en = "Spectral (\u03b1) diversity from Sentinel-2: Shannon index of spectral species over 100 m windows, averaged over the unit. The score reaches 100 for the equivalent of 10 equally abundant spectral species per hectare. Proxy pending field validation; a legitimate even-aged monospecific stand may score low."
+      ),
+      B5 = list(
+        fr = "R\u00e9partition des retours LiDAR entre cinq strates de hauteur (0-2, 2-5, 5-10, 10-20, > 20 m), lue dans le nuage de points et non dans le mod\u00e8le de hauteur : entropie de Shannon normalis\u00e9e, 100 = r\u00e9partition \u00e9gale entre strates. Le LiDAR HD sous-\u00e9chantillonne les sous-\u00e9tages des peuplements ferm\u00e9s : B5 y sous-estime la stratification. Mesure l'\u00e9quilibre du profil, pas la hauteur. Conditionnel : exige un nuage LiDAR.",
+        en = "Distribution of LiDAR returns between five height strata (0-2, 2-5, 5-10, 10-20, > 20 m), read in the point cloud rather than in the height model: normalised Shannon entropy, 100 = even distribution between strata. LiDAR HD under-samples the understorey of closed stands, where B5 underestimates the stratification. Measures the evenness of the profile, not height. Conditional: needs a LiDAR point cloud."
       )
     ),
     indicator_docs = list(
       B1 = list(fr = "articles/fiche-b1-protection_fr.html"),
       B2 = list(fr = "articles/fiche-b2-structure_fr.html"),
       B3 = list(fr = "articles/fiche-b3-connectivite_fr.html"),
-      B4 = list(fr = "articles/fiche-b4-diversite-spectrale_fr.html")
+      B4 = list(fr = "articles/fiche-b4-diversite-spectrale_fr.html"),
+      B5 = list(fr = "articles/fiche-b5-stratification_fr.html")
     )
   ),
 

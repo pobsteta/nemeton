@@ -559,7 +559,9 @@ invert_indicator <- function(data,
   "indicateur_p3_qualite_bois",
   "indicateur_n1_distance", "indicateur_n2_continuite", "indicateur_n3_naturalite",
   # N5 est un score 0-100 natif, haut = proche de la reference (spec 064).
-  "indicateur_n5_distance_reference"
+  "indicateur_n5_distance_reference",
+  # B5 est un score 0-100 natif, haut = profil vertical equilibre (spec 067).
+  "indicateur_b5_stratification"
 )
 
 # Indicateurs pour lesquels `normalize_indicator()` applique une règle EXPLICITE

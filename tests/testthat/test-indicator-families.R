@@ -158,7 +158,7 @@ test_that("indicator_labels() flattens the table consistently", {
 test_that("indicator_labels() expose doc_url selon ce que declare indicator_docs", {
   ind <- indicator_labels()
 
-  # La colonne existe pour les 42 indicateurs et reste du texte : l'aval teste
+  # La colonne existe pour les 43 indicateurs et reste du texte : l'aval teste
   # `is.na()` pour decider d'afficher le lien, il ne doit jamais recevoir NULL
   # ni une liste.
   expect_type(ind$doc_url, "character")
