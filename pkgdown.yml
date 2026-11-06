@@ -21,6 +21,7 @@ articles:
   fiche-e2-evitement_fr: fiche-e2-evitement_fr.html
   fiche-f1-fertilite_fr: fiche-f1-fertilite_fr.html
   fiche-f2-erosion_fr: fiche-f2-erosion_fr.html
+  fiche-itineraires_fr: fiche-itineraires_fr.html
   fiche-l1-effet-lisiere_fr: fiche-l1-effet-lisiere_fr.html
   fiche-l2-morcellement_fr: fiche-l2-morcellement_fr.html
   fiche-l3-heterogeneite-spectrale_fr: fiche-l3-heterogeneite-spectrale_fr.html
@@ -57,7 +58,7 @@ articles:
   tarifs-schaeffer-ser_fr: tarifs-schaeffer-ser_fr.html
   temporal-analysis_fr: temporal-analysis_fr.html
   tutorial-guide: tutorial-guide.html
-last_built: 2026-11-06T08:02Z
+last_built: 2026-11-06T08:19Z
 urls:
   reference: https://pobsteta.github.io/nemeton/reference
   article: https://pobsteta.github.io/nemeton/articles

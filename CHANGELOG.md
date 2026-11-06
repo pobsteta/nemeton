@@ -13,6 +13,24 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.4\] - 2026-11-06
+
+### Added
+
+- Silvicultural itineraries engine (spec 065):
+  [`itineraires_catalogue()`](https://pobsteta.github.io/nemeton/reference/itineraires_catalogue.md),
+  [`valider_catalogue_itineraires()`](https://pobsteta.github.io/nemeton/reference/valider_catalogue_itineraires.md)
+  (sourcing rule),
+  [`itineraires_admissibles()`](https://pobsteta.github.io/nemeton/reference/itineraires_admissibles.md)
+  (closed set of exclusion reasons, `donnee_manquante` never silent),
+  [`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md)
+  (qualitative weighted rank, Pareto, winners/losers, citations;
+  `trajectoires =` reserved for FINN),
+  [`profils_poids()`](https://pobsteta.github.io/nemeton/reference/profils_poids.md)
+  (provisional family weights of 15 profiles).
+- Catalogue skeleton of 11 BFC itineraries, all `a_sourcer` (no invented
+  values); fiche `fiche-itineraires_fr`.
+
 ## \[2026.11.3\] - 2026-11-06
 
 ### Added

@@ -40,6 +40,8 @@
   sols](https://pobsteta.github.io/nemeton/articles/fiche-f1-fertilite_fr.md):
 - [Fiche indicateur F2 - Resistance a
   l'erosion](https://pobsteta.github.io/nemeton/articles/fiche-f2-erosion_fr.md):
+- [Fiche - Itineraires sylvicoles : catalogue, admissibilite,
+  comparaison](https://pobsteta.github.io/nemeton/articles/fiche-itineraires_fr.md):
 - [Fiche indicateur L1 - Effet de
   lisiere](https://pobsteta.github.io/nemeton/articles/fiche-l1-effet-lisiere_fr.md):
 - [Fiche indicateur L2 - Morcellement du

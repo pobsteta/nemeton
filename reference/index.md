@@ -749,6 +749,22 @@ regularisee Ledoit-Wolf, et indicateur conditionnel N5
 - [`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md)
   : What foundation models see: probe indicators with an embedding
 
+### Itineraires sylvicoles (spec 065)
+
+Catalogue d’itineraires source, admissibilite par UGF avec la raison de
+chaque exclusion, comparaison qualitative ponderee par profil
+
+- [`itineraires_catalogue()`](https://pobsteta.github.io/nemeton/reference/itineraires_catalogue.md)
+  : Catalogue of silvicultural itineraries
+- [`valider_catalogue_itineraires()`](https://pobsteta.github.io/nemeton/reference/valider_catalogue_itineraires.md)
+  : Validate a catalogue of silvicultural itineraries
+- [`itineraires_admissibles()`](https://pobsteta.github.io/nemeton/reference/itineraires_admissibles.md)
+  : Admissible silvicultural itineraries per unit
+- [`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md)
+  : Compare silvicultural itineraries under an actor profile
+- [`profils_poids()`](https://pobsteta.github.io/nemeton/reference/profils_poids.md)
+  : Family weights of the actor profiles
+
 ### Corpus de connaissances et RAG
 
 - [`rag`](https://pobsteta.github.io/nemeton/reference/rag.md) : RAG

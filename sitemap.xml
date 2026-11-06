@@ -26,6 +26,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-e2-evitement_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-f1-fertilite_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-f2-erosion_fr.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/articles/fiche-itineraires_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-l1-effet-lisiere_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-l2-morcellement_fr.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/articles/fiche-l3-heterogeneite-spectrale_fr.html</loc></url>
@@ -117,6 +118,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/climate_ombrothermic_indices.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/cluster_parcels.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/communes_ser.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/comparer_itineraires.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/completer_volume_ifn.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_family_correlations.html</loc></url>
@@ -325,6 +327,8 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/inventaire_video.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/invert_indicator.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/is_conifer.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/itineraires_admissibles.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/itineraires_catalogue.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/knowledge-corpus.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/knowledge_manifest_path.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/knowledge_manifest_vocab.html</loc></url>
@@ -385,6 +389,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/print.nemeton_units.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/probe_ign_lidar_tiles.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/probe_indicator.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/profils_poids.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/project_lock_acquire.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/project_lock_heartbeat.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/project_lock_release.html</loc></url>
@@ -455,6 +460,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/utils-chm.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/validate_field_data.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/validate_knowledge_manifest.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/valider_catalogue_itineraires.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/valider_inventaire_video.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/volume_mobilisable.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/write_knowledge_manifest.html</loc></url>

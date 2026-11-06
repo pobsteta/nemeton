@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -29,6 +29,7 @@
     <li><a class="dropdown-item" href="../articles/tarifs-schaeffer-ser_fr.html">Tarifs Schaeffer par sylvoecoregion</a></li>
     <li><a class="dropdown-item" href="../articles/embeddings-alphaearth_fr.html">Embeddings AlphaEarth (N5, B4/L3, hauteur NDP 0)</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-modeles-de-fondation_fr.html">Fiche - Modeles de fondation</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-itineraires_fr.html">Fiche - Itineraires sylvicoles</a></li>
   </ul></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-fiches-indicateurs" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Fiches indicateurs</button>
@@ -113,6 +114,24 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.4" id="nemeton-2026114-2026-11-06">nemeton 2026.11.4 (2026-11-06)<a class="anchor" aria-label="anchor" href="#nemeton-2026114-2026-11-06"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-4">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-4"></a></h3>
+<ul><li>
+<strong>Itinéraires sylvicoles</strong> (spec 065, étape 4 du brief du 2026-11-05) : un moteur déterministe, sans simulation, que l’agent <code>sylviculteur</code> (Aigora) et la voix (Victor) appelleront.
+<ul><li>
+<code><a href="../reference/itineraires_catalogue.html">itineraires_catalogue()</a></code> lit le catalogue (<code>inst/extdata/itineraires_sylvicoles.json</code>) ; <code><a href="../reference/valider_catalogue_itineraires.html">valider_catalogue_itineraires()</a></code> applique la règle de sourçage (une entrée <code>source</code> sans référence, ou un effet connu sans source, est refusée). Le catalogue livré est le <strong>squelette</strong> des onze premiers itinéraires de Bourgogne-Franche-Comté, tous <code>a_sourcer</code> : aucun n’est admissible tant que ses paramètres n’ont pas été remplis depuis des guides cités. Aucune valeur n’est inventée.</li>
+<li>
+<code><a href="../reference/itineraires_admissibles.html">itineraires_admissibles()</a></code> : pour chaque UGF et chaque itinéraire, admissible ou non et <strong>pourquoi</strong> (<code>source_manquante</code>, <code>statut_protection</code>, <code>hors_ser</code>, <code>essence_absente</code>, <code>station_insuffisante</code>, <code>pente</code>, <code>desserte</code>) ; une donnée manquante donne <code>donnee_manquante</code> et <code>admissible = NA</code>, jamais une admission silencieuse.</li>
+<li>
+<code><a href="../reference/comparer_itineraires.html">comparer_itineraires()</a></code> : rang par UGF sous les poids d’un profil (somme pondérée des effets qualitatifs <code>+</code>/<code>0</code>/<code>-</code>), front de Pareto, familles gagnantes et perdantes face à l’itinéraire déclaré ou au meilleur, familles évaluées, citations. <code>methode = "catalogue_qualitatif"</code> ; l’argument <code>trajectoires =</code> est réservé à la simulation FINN (chantier D).</li>
+<li>
+<code><a href="../reference/profils_poids.html">profils_poids()</a></code> : poids par famille des 15 profils d’acteurs (<code>inst/extdata/profils_poids.json</code>), <strong>provisoires</strong> (famille prioritaire = 3, autre = 1, d’après la table des profils).</li>
+<li>Fiche <code>fiche-itineraires_fr</code> (pièges : effets qualitatifs, catalogue non exhaustif, admissible n’est pas recommandé, poids provisoires).</li>
+</ul></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.3" id="nemeton-2026113-2026-11-06">nemeton 2026.11.3 (2026-11-06)<a class="anchor" aria-label="anchor" href="#nemeton-2026113-2026-11-06"></a></h2>
 <div class="section level3">
