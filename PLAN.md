@@ -142,7 +142,7 @@ opposer au prochain fork qui se présentera comme un raccourci.
 | 064 | Chantier A : `alphaearthnemeton`, [`embedding_summary()`](https://pobsteta.github.io/nemeton/reference/embedding_summary.md), [`distance_reference()`](https://pobsteta.github.io/nemeton/reference/distance_reference.md), **N5**, B4/L3 `embedding =`, régressions NDP 0 | ✅ spec validée le 2026-11-05 (D-2 : GPL-3) ; 🟨 code : N5 + fonctions génériques + flag NDP → **2026.11.1** ; reste `alphaearthnemeton`, B4/L3, [`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md), vignette |
 | 065 | Étape 4 : catalogue d’itinéraires, [`itineraires_admissibles()`](https://pobsteta.github.io/nemeton/reference/itineraires_admissibles.md), [`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md) sans FINN | ✅ spec validée le 2026-11-05 ; moteur → **2026.11.4** ; catalogue (squelette `a_sourcer`) à remplir par Pascal (D-4) |
 | 066 | Chantier B : sondes [`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md) (cœur, AlphaEarth d’abord) et MAESTRO en extracteur d’embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
-| 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; **B5** → **2026.11.5** ; [`simulate_density_sensitivity()`](https://pobsteta.github.io/nemeton/reference/simulate_density_sensitivity.md) → **2026.11.6** ; T1 `age_structurel =` → **2026.11.7** ; D-6 : ForPT code MIT, poids à vérifier ; D-1 révisée et validée : instances par lidR ([`segment_houppiers()`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)) par défaut, SelectAnyTree en option dans `forptnemeton` (non embarqué, CC BY-NC, quand ses poids seront publiés) ; profil B5 par défaut `points` (validé) ; reste `forptnemeton` (D-6 licences, D-7 dépôt), N5 structurel, T1 désaturé, N4 (reporté, D-2) |
+| 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; **B5** → **2026.11.5** ; [`simulate_density_sensitivity()`](https://pobsteta.github.io/nemeton/reference/simulate_density_sensitivity.md) → **2026.11.6** ; T1 `age_structurel =` → **2026.11.7** ; D-6 : ForPT code MIT, poids à vérifier ; D-1 révisée et validée : instances par lidR ([`segment_houppiers()`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)) par défaut, SelectAnyTree en option dans `forptnemeton` (non embarqué, CC BY-NC, quand ses poids seront publiés) ; profil B5 par défaut `points` (validé) ; `forptnemeton` 2026.11.2 (`forpt_embed()`, `forpt_age()`, non exécutés sur GPU) ; reste (D-6 licences, D-7 dépôt), N5 structurel, T1 désaturé, N4 (reporté, D-2) |
 | 068 | Chantier D : trajectoires FINN (`calibrer_finn()`, `simuler_itineraire()`), T4, [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) | ✅ validée le 2026-11-06 (D-1 à D-8 telles que proposées) ; [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) → **2026.11.8** ; reste le prototype FINN, trajectoires, T4 |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
@@ -150,6 +150,14 @@ parcellaire de Dabo et un projet hors France ;
 [`embedding_regress()`](https://pobsteta.github.io/nemeton/reference/embedding_regress.md)
 et la vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier
 remplissage du catalogue par Pascal.
+
+**Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
+`forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
+version 2026.11.2. Lu dans le code ForPT : `flash_attn` obligatoire
+(GPU), tête d’âge par arbre (FORage), embedding = moyenne des 504
+sorties. Repère des nuages d’arbres FORage non documenté : hypothèse à
+vérifier. Jamais exécuté sur GPU (pas de GPU ni de Hugging Face dans la
+session).
 
 **Journal** — *2026-11-06* : \#596 mergée. Pascal valide la D-1 révisée
 de la spec 067 (instances d’arbres par lidR, dans le cœur, via
