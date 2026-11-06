@@ -609,6 +609,7 @@ reference:
     - indicateur_n5_distance_reference
     - aef_clusters
     - embedding_regress
+    - probe_indicator
 
   - subtitle: "Corpus de connaissances et RAG"
     contents:

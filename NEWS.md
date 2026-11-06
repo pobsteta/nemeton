@@ -1,3 +1,22 @@
+# nemeton 2026.11.3 (2026-11-06)
+
+## Nouveautés
+
+- **`probe_indicator()`** (spec 066, chantier B) : ce que les modèles de
+  fondation « voient » des indicateurs. Pour chaque indicateur déjà calculé
+  sur les UGF du projet, une régression ridge de l'embedding moyen de l'UGF
+  vers l'indicateur (normalisé 0-100 par défaut) est évaluée par validation
+  croisée par blocs spatiaux de 2 km. La table rend le R², le RMSE et une
+  lecture : `voit` (R² ≥ 0,5), `partiel` (0,2 à 0,5), `angle_mort` (< 0,2),
+  des conventions affichées comme telles. Le marqueur `source_commune` signale
+  les indicateurs calculés, selon leur source, à partir de Sentinel-2 comme
+  AlphaEarth (C2, B4, L3, A1, R5, T2) : un R² élevé peut y venir de l'entrée
+  commune. Moins de 50 UGF utilisables : pas de sonde (`trop_peu_unites`).
+  Une sonde est un diagnostic, pas un estimateur : elle ne remplace aucun
+  indicateur.
+- La validation croisée par blocs spatiaux d'`embedding_regress()` est
+  factorisée dans un utilitaire commun ; comportement inchangé.
+
 # nemeton 2026.11.2 (2026-11-05)
 
 ## Nouveautés

@@ -101,22 +101,6 @@ embedding_regress <- function(train, embedding, target = "H0",
   y <- y[ok]
   xy <- sf::st_coordinates(suppressWarnings(sf::st_centroid(sf::st_geometry(train)[ok])))
 
-  # Validation croisee par blocs spatiaux : les placettes d'un meme bloc
-  # tombent dans le meme pli.
-  bloc <- paste(floor(xy[, 1] / taille_bloc_m), floor(xy[, 2] / taille_bloc_m))
-  blocs <- unique(bloc)
-  n_plis <- max(2L, min(as.integer(n_plis), length(blocs)))
-  if (length(blocs) < 2L) {
-    cli::cli_abort(c(
-      "All plots fall in one {taille_bloc_m} m block: spatial cross-validation is impossible.",
-      "i" = "Lower {.arg taille_bloc_m}."
-    ))
-  }
-  withr::with_seed(graine, {
-    pli_bloc <- sample(rep_len(seq_len(n_plis), length(blocs)))
-  })
-  pli <- pli_bloc[match(bloc, blocs)]
-
   ajuste <- function(xa, ya) {
     if (methode == "ridge") .ridge_ajuste(xa, ya)
     else withr::with_seed(graine, ranger::ranger(
@@ -127,21 +111,9 @@ embedding_regress <- function(train, embedding, target = "H0",
     if (methode == "ridge") .ridge_predit(m, xp)
     else stats::predict(m, data = as.data.frame(xp))$predictions
   }
-  hors_pli <- rep(NA_real_, n)
-  for (k in seq_len(n_plis)) {
-    test <- pli == k
-    if (!any(test) || all(test)) next
-    m <- ajuste(x[!test, , drop = FALSE], y[!test])
-    hors_pli[test] <- predit(m, x[test, , drop = FALSE])
-  }
-  v <- is.finite(hors_pli)
-  out$cv <- list(
-    rmse = sqrt(mean((hors_pli[v] - y[v])^2)),
-    r2 = 1 - sum((hors_pli[v] - y[v])^2) / sum((y[v] - mean(y[v]))^2),
-    biais = mean(hors_pli[v] - y[v]),
-    n = sum(v), n_plis = n_plis, taille_bloc_m = taille_bloc_m,
-    observations = data.frame(observe = y, predit = hors_pli, pli = pli)
-  )
+  cv <- .cv_blocs_spatiaux(x, y, xy, ajuste, predit, taille_bloc_m = taille_bloc_m,
+                           n_plis = n_plis, graine = graine, quoi = "plots")
+  out$cv <- cv
 
   out$modele <- ajuste(x, y)
   if (isTRUE(predire)) {
@@ -205,4 +177,41 @@ print.embedding_regression <- function(x, ...) {
 .ridge_predit <- function(m, x) {
   z <- sweep(sweep(as.matrix(x), 2L, m$mu), 2L, m$s, "/")
   as.numeric(z %*% m$beta) + m$intercept
+}
+
+# Validation croisee par blocs spatiaux, commune a embedding_regress() et
+# probe_indicator() (spec 066). Les observations d'un meme bloc carre de
+# `taille_bloc_m` tombent dans le meme pli : des voisines partagent leurs
+# erreurs, un tirage aleatoire flatterait le modele.
+.cv_blocs_spatiaux <- function(x, y, xy, ajuste, predit, taille_bloc_m,
+                               n_plis = 5L, graine = 1L, quoi = "units") {
+  n <- length(y)
+  bloc <- paste(floor(xy[, 1] / taille_bloc_m), floor(xy[, 2] / taille_bloc_m))
+  blocs <- unique(bloc)
+  if (length(blocs) < 2L) {
+    cli::cli_abort(c(
+      "All {quoi} fall in one {taille_bloc_m} m block: spatial cross-validation is impossible.",
+      "i" = "Lower {.arg taille_bloc_m}."
+    ))
+  }
+  n_plis <- max(2L, min(as.integer(n_plis), length(blocs)))
+  withr::with_seed(graine, {
+    pli_bloc <- sample(rep_len(seq_len(n_plis), length(blocs)))
+  })
+  pli <- pli_bloc[match(bloc, blocs)]
+  hors_pli <- rep(NA_real_, n)
+  for (k in seq_len(n_plis)) {
+    test <- pli == k
+    if (!any(test) || all(test)) next
+    m <- ajuste(x[!test, , drop = FALSE], y[!test])
+    hors_pli[test] <- predit(m, x[test, , drop = FALSE])
+  }
+  v <- is.finite(hors_pli)
+  list(
+    rmse = sqrt(mean((hors_pli[v] - y[v])^2)),
+    r2 = 1 - sum((hors_pli[v] - y[v])^2) / sum((y[v] - mean(y[v]))^2),
+    biais = mean(hors_pli[v] - y[v]),
+    n = sum(v), n_plis = n_plis, taille_bloc_m = taille_bloc_m,
+    observations = data.frame(observe = y, predit = hors_pli, pli = pli)
+  )
 }
