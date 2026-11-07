@@ -172,7 +172,7 @@ sera N4 (arbres morts, très gros bois) qui pourra justifier un drone.
 | Élément | Licence | Conséquence |
 |---|---|---|
 | Code ForPT (`github.com/prs-eth/ForPT`) | **MIT** (fichier LICENSE du dépôt) | compatible avec `forptnemeton` en GPL-3 |
-| Poids ForPT (Hugging Face `prs-eth/ForPT`) | **non vérifiée** : Hugging Face est bloqué depuis la session ; la carte du modèle ne l'affiche pas dans les extraits trouvés. L'encodeur LitePT dont il dérive est sous MIT | **à lire par Pascal** sur la carte du modèle avant d'écrire `forpt_embed()` |
+| Poids ForPT (Hugging Face `prs-eth/ForPT`) | **aucune licence déclarée** (vérifié le 2026-11-07 : la carte du modèle n'a ni champ `license` ni conditions d'usage ; dépôt non restreint, `gated: False`). Le code est sous MIT | sans licence, rien n'autorise à **redistribuer** les poids : `forptnemeton` ne les embarque pas, `forpt_weights()` les télécharge chez l'utilisateur. Usage de recherche raisonnable ; un usage commercial demande l'accord des auteurs (ETH Zurich / NIBIO) |
 | SelectAnyTree (`github.com/thanhhff/SelectAnyTree`) | **CC BY-NC 4.0** (annoncée dans le README, héritée de ForestFormer3D / OneFormer3D) ; **poids non publiés** (« coming soon ») | non commercial, et incompatible avec la GPL-3 (une restriction de plus) : ne peut pas être embarqué dans `forptnemeton` |
 
 **Conséquence pour D-1 (instances d'arbres).** SelectAnyTree ne peut pas être
@@ -229,10 +229,15 @@ le code de ForPT a appris.**
   la médiane des arbres dont le houppier (`segment_houppiers()`, D-1) tombe
   dans l'UGF, prête pour `indicateur_t1_anciennete(age_structurel =)`.
   FORage contient des arbres de LiDAR HD aérien (`*_ALSHD_*`).
-- **Hypothèse à vérifier** : le repère des nuages d'arbres de FORage n'est
-  pas documenté (la configuration ne recentre pas, les coordonnées servent
-  de caractéristiques) ; `forpt_age()` recentre x, y sur l'arbre et garde la
-  hauteur au-dessus du sol. À contrôler sur un fichier `coord.npy` de FORage
-  avant de croire les âges.
-- **Reste** : un premier passage sur GPU (Pascal), la licence des poids
-  (D-6), SelectAnyTree en option quand ses poids seront publiés, N4 (D-2).
+- **Repère FORage vérifié le 2026-11-07** sur 6 fichiers `coord.npy` de
+  `pc.tar` (`prs-eth/forpt-forage`, lus par requêtes HTTP partielles) :
+  coordonnées ramenées à leur minimum sur les trois axes. L'hypothèse de la
+  2026.11.2 (x, y centrés sur la moyenne) était fausse ; corrigé dans
+  `forptnemeton` 2026.11.3 (pobsteta/forptnemeton#3).
+- **Domaine de la tête d'âge** : FORage = 1 521 arbres de Norvège, **épicéas
+  et pins seulement** (722 ALS HD, 538 MLS, 261 TLS), 1 à 348 ans, médiane
+  42. Un âge de feuillu (chêne, hêtre de BFC) est une extrapolation : T1
+  désaturé ne vaut, en l'état, que pour les résineux.
+- **Reste** : un premier passage sur GPU (la machine de Pascal n'a pas de
+  pilote NVIDIA chargé), SelectAnyTree en option quand ses poids seront
+  publiés, N4 (D-2).

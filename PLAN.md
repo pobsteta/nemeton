@@ -128,6 +128,14 @@ parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
 vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier remplissage du
 catalogue par Pascal.
 
+**Journal** — *2026-11-07* : tags `v2026.11.3` et `v2026.11.8` posés (relance
+`gh run rerun --failed` des runs 42181439133 et 42209277959, réussie au 2e
+essai). Spec 067 : licence des poids ForPT = **aucune déclarée** (D-6 :
+pas de redistribution, téléchargement chez l'utilisateur) ; repère FORage
+vérifié (minimum à 0 sur chaque axe), `forpt_age()` corrigé
+(pobsteta/forptnemeton#3) ; FORage = épicéas et pins de Norvège seulement.
+Branche par défaut de `forptnemeton` et `alphaearthnemeton` passée à `main`.
+
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
 version 2026.11.2. Lu dans le code ForPT : `flash_attn` obligatoire (GPU),
