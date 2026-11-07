@@ -159,7 +159,7 @@ dans la synthèse ; T4 (couche, statut).
 | Étape | État |
 |---|---|
 | 1. `effet_gestion()` | ✅ **2026.11.8** — fiche, écart n° 27 |
-| 2. Prototype FINN (`data-raw/`) | à faire ; CRAN bloqué depuis les sessions : le prototype se fera là où FINN s'installe |
+| 2. Prototype FINN (`data-raw/prototype_finn.R`) | ✅ 2026-11-07 — **D-2 tient** (voir ci-dessous) ; temps CPU très en dessous du critère 3 |
 | 3. `calibrer_finn()`, `simuler_itineraire()` | attend le prototype et les placettes IFN (D-7) |
 | 4. T4, `comparer_itineraires(trajectoires =)` | après 3 |
 
@@ -170,3 +170,33 @@ intervalles de bootstrap qui couvraient l'effet réel dans 60 % et 10 % des
 cas. Il est remplacé par un estimateur doublement robuste (AIPW, prédictions
 hors sac des forêts) : 7,1 en moyenne, couverture de 93 % pour un intervalle
 à 90 % (30 tirages). Les effets par UGF restent ceux du méta-apprenant.
+
+**Prototype FINN, 2026-11-07** (`data-raw/prototype_finn.R`, FINN 0.1.0 et
+torch installés dans une bibliothèque à part, CPU 8 cœurs, sans GPU ;
+paramètres mécanistes de la vignette A de FINN, **non calibrés** : ce sont
+des ordres de grandeur d'API, pas une forêt).
+
+- **Ce que FINN offre** : `disturbance` = fraction des placettes **vidées**
+  chaque année (tirage de Bernoulli par placette, `trees × 0`) ; c'est une
+  perturbation totale, l'équivalent d'une coupe rase par placette. **Aucune
+  coupe sélective.**
+- **D-2 vérifiée** : la simulation se reprend pas à pas. `return_cohorts =
+  "last"` rend les cohortes (format long `variable` / `value`, à passer en
+  large) ; on les modifie, puis `init_cohort = CohortMat$new(obs_df = ...)`
+  relance. Sans gestion, la surface terrière par pas de 10 ans (54,5 / 54,3 /
+  53,2 m²/ha aux années 50, 100, 150) reste dans le bruit de la simulation
+  continue (52,6 / 50,9 / 54,4).
+- **Une éclaircie se voit** : retirer 30 % des tiges ≥ 20 cm tous les 10 ans
+  à partir de 50 ans donne 47,9 et 45,5 m²/ha aux années 100 et 150 ; une
+  éclaircie fait passer G de 52,4 à 34,6 m²/ha, que FINN refait monter à
+  43,4 en 10 ans par la compétition pour la lumière.
+- **Piège trouvé** : sur des placettes de 0,1 ha, les gros arbres sont des
+  cohortes d'**une seule tige** ; arrondir `trees × (1 − taux)` ne coupe
+  rien. L'éclaircie doit tirer les tiges coupées (binomiale).
+- **Temps** : 100 sites × 100 placettes × 50 ans en **21 s de CPU** ; le
+  critère 3 (< 1 h) tient sans GPU. torch pour R (libtorch, ≈ 1 Go) suffit,
+  sans Python : D-1 (FINN en Suggests) confirmée.
+
+**Suite** : étape 3, `calibrer_finn()` et `simuler_itineraire()`, attend les
+placettes IFN de BFC (D-7) ; sans calibration, les trajectoires restent des
+ordres de grandeur.
