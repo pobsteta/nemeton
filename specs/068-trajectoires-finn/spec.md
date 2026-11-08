@@ -259,3 +259,25 @@ persistance y reste à 1,05 (1,04 avec l'altitude seule). Le gain ne se
 transfère pas ; avec 1 000 placettes et 16 essences, FINN apprend du bruit.
 Piste suivante : plus de placettes de calibration (6 600 disponibles hors
 test).
+
+**Piste 2, plus de placettes, 2026-11-08** (`FINN_N_TRAIN=5000`) : le tirage
+du test passe en premier, il ne dépend donc plus de la taille de la
+calibration (`FINN_N_TRAIN=0` prend tout le reste). 7 632 placettes
+disponibles, 5 000 en calibration, 1 000 tenues à l'écart, climat et sol,
+300 époques, 2 h de CPU.
+
+| Échantillon | Modèle | RMSE | Biais | R² |
+|---|---|---|---|---|
+| calibration | FINN | 4,40 | +1,84 | 0,88 |
+| calibration | persistance | 4,11 | −2,13 | 0,90 |
+| tenu à l'écart | FINN | 4,55 | +1,93 | 0,86 |
+| tenu à l'écart | persistance | 4,24 | −2,11 | 0,88 |
+
+Cinq fois plus de placettes ne rapprochent pas FINN de la persistance : il
+fait maintenant moins bien qu'elle **même sur sa calibration**, et son biais
+monte de +1,0 à +1,9 m²/ha (il surestime l'accroissement). Ce n'est donc pas
+seulement du sur-apprentissage : avec ces réglages (pas d'apprentissage 0,01,
+lots de 50, 300 époques), l'ajustement n'atteint pas la persistance. Pistes
+restantes : comparer d'abord à un modèle nul plus exigeant (persistance plus
+accroissement moyen observé), puis croissance hybride (vignette D) et
+placettes coupées écartées.
