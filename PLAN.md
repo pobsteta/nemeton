@@ -172,7 +172,10 @@ IFN déjà local). Sur 1 000 placettes tenues à l’écart, FINN fait 3,90
 m²/ha de RMSE sur la surface terrière à 5 ans contre 3,74 pour la
 persistance : **il ne bat pas encore le modèle nul**.
 `simuler_itineraire()` attend un modèle qui le bat (climat, sol,
-croissance hybride).
+croissance hybride). Piste 1 (climat E-OBS + profondeur de sol) : FINN
+passe devant la persistance sur la calibration (3,89 contre 4,24 m²/ha)
+mais pas sur les placettes tenues à l’écart (4,14 contre 3,94) : pas de
+transfert. Suite : plus de placettes de calibration.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
