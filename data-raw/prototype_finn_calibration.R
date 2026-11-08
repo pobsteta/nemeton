@@ -64,7 +64,15 @@ lr <- as.numeric(Sys.getenv("FINN_LR", "0.01"))
 env_mode <- Sys.getenv("FINN_ENV", "climat_sol")
 eobs_dir <- Sys.getenv("NEMETON_EOBS_CACHE",
                        unset = path.expand("~/.local/share/nemeton/cache/eobs"))
-patch_size <- pi * 15^2 / 1e4   # ha
+# FINN_PATCH_MULT : la placette FINN vaut k fois le cercle de 15 m (densite a
+# l'hectare inchangee). CohortMat arrondit les effectifs a l'entier
+# (FINN 0.1.0, CohortMat.R) : avec k = 1, un arbre du cercle de 6 m compte
+# 6,25 tiges arrondies a 6, un du cercle de 9 m 2,78 arrondies a 3, d'ou un
+# bruit de 1,4 m2/ha d'ecart-type sur G initiale par placette.
+patch_mult <- as.numeric(Sys.getenv("FINN_PATCH_MULT", "1"))
+patch_size <- patch_mult * pi * 15^2 / 1e4   # ha
+# FINN_N_PRED : predict() est stochastique ; G predite = moyenne de n tirages.
+n_pred <- as.integer(Sys.getenv("FINN_N_PRED", "1"))
 bfc <- c("21", "25", "39", "58", "70", "71", "89", "90")
 
 lire <- function(table, cols) {
@@ -218,12 +226,27 @@ m <- finn(
   regeneration_process = createProcess(f_env, FINN::regeneration, optimizeSpecies = TRUE, optimizeEnv = TRUE),
   mortality_process = createProcess(f_env, FINN::mortality, optimizeSpecies = TRUE, optimizeEnv = TRUE)
 )
+# FINN_MODELE : chemin d'un modele sauvegarde (.pt). S'il existe, il est
+# recharge et rien n'est ajuste ; sinon le modele ajuste y est ecrit, avec des
+# points de controle toutes les 100 epoques dans <FINN_MODELE>_ckpt/.
+modele_f <- Sys.getenv("FINN_MODELE", "")
+charge <- nzchar(modele_f) && file.exists(modele_f)
+ajuste <- charge || epochs > 0L
 t0 <- Sys.time()
-if (epochs > 0L) fit(m, env = train$env, data = train$obs[, .(siteID, year, species, ba, dbh, trees, growth,
+if (charge) {
+  m <- torch::torch_load(modele_f)
+  cat(sprintf("Modele recharge : %s\n", modele_f))
+} else if (epochs > 0L) fit(m, env = train$env, data = train$obs[, .(siteID, year, species, ba, dbh, trees, growth,
                                              growth_n, mort, n_at_risk, n_died, reg)],
     init_cohort = train$init, device = "cpu", epochs = epochs, batchsize = 50L,
-    patches = 1L, patch_size = patch_size, lr = lr, plot_progress = FALSE)
+    patches = 1L, patch_size = patch_size, lr = lr, plot_progress = FALSE,
+    folder = if (nzchar(modele_f)) paste0(modele_f, "_ckpt") else NULL,
+    checkpoints = min(100L, max(epochs, 1L)))
 duree <- Sys.time() - t0
+if (!charge && epochs > 0L && nzchar(modele_f)) {
+  torch::torch_save(m$clone(deep = FALSE), modele_f)
+  cat(sprintf("Modele sauvegarde : %s\n", modele_f))
+}
 
 # --- 5. Evaluation : surface terriere totale a 5 ans (m2/ha) ----------------------
 # Trois modeles nuls, ajustes sur les placettes de calibration seulement :
@@ -243,12 +266,14 @@ reg <- stats::lm(reformulate(c("persist", vars_env), "obs"), data = x_train)
 evaluer <- function(d, label) {
   x <- tableau(d)
   x[, `:=`(accr = persist + accr, lin = stats::predict(reg, newdata = x))]
-  if (epochs > 0L) {
+  if (ajuste) {
     m$eval()
-    sim <- predict(m, env = d$env, init_cohort = d$init, patches = 1L,
-                   patch_size = patch_size, device = "cpu")
-    pred <- sim$long$site[variable == "ba" & year == 1L,
-                          .(finn = sum(value) / patch_size), by = siteID]
+    pred <- rbindlist(lapply(seq_len(n_pred), function(i) {
+      sim <- predict(m, env = d$env, init_cohort = d$init, patches = 1L,
+                     patch_size = patch_size, device = "cpu")
+      sim$long$site[variable == "ba" & year == 1L,
+                    .(finn = sum(value) / patch_size), by = siteID]
+    }))[, .(finn = mean(finn)), by = siteID]
     x <- merge(x, pred, by = "siteID")
   }
   r <- function(p) c(rmse = sqrt(mean((x$obs - p)^2)), biais = mean(p - x$obs),

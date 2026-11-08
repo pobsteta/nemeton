@@ -160,7 +160,7 @@ dans la synthèse ; T4 (couche, statut).
 |---|---|
 | 1. `effet_gestion()` | ✅ **2026.11.8** — fiche, écart n° 27 |
 | 2. Prototype FINN (`data-raw/prototype_finn.R`) | ✅ 2026-11-07 — **D-2 tient** (voir ci-dessous) ; temps CPU très en dessous du critère 3 |
-| 3. `calibrer_finn()`, `simuler_itineraire()` | prototype de calibration ✅ 2026-11-08 (`data-raw/prototype_finn_calibration.R`) : FINN ne bat pas encore la persistance (voir ci-dessous) ; fonctions du cœur à faire |
+| 3. `calibrer_finn()`, `simuler_itineraire()` | prototype de calibration ✅ 2026-11-08 (`data-raw/prototype_finn_calibration.R`) : avec une placette FINN de 0,7 ha, FINN bat persistance et régression linéaire hors calibration (3,50 contre 3,58 m²/ha, voir ci-dessous) ; fonctions du cœur à faire |
 | 4. T4, `comparer_itineraires(trajectoires =)` | après 3 |
 
 **Écart au § 3.1 lors du codage.** L'effet moyen n'est pas la moyenne des
@@ -319,3 +319,47 @@ de façon systématique, ce que l'optimiseur seul ne corrige pas. Avant la
 croissance hybride, il faut savoir quel processus le produit : décomposer
 l'écart en croissance des survivants, mortalité et recrutement, observés
 contre simulés.
+
+**Arrondi des effectifs et décomposition, 2026-11-08.** `CohortMat` (FINN
+0.1.0, `CohortMat.R`) arrondit les effectifs des cohortes à l'entier. Sur une
+placette FINN de 0,0707 ha (le cercle de 15 m), un arbre du cercle de 6 m
+compte 6,25 tiges ramenées à 6, un du cercle de 9 m 2,78 ramenées à 3 : sans
+biais en moyenne (+0,07 m²/ha) mais avec 1,41 m²/ha d'écart-type par
+placette sur G initiale ; les recrutés, une tige entière au minimum, pèsent
+aussi trop lourd. `FINN_PATCH_MULT=10` prend une placette FINN de 0,707 ha à
+densité par hectare inchangée, et l'arrondi ne compte presque plus.
+`FINN_N_PRED=10` moyenne dix tirages de `predict()`, qui est stochastique.
+1 000 placettes de calibration, lr 0,003, 600 époques, 1 h ; même test :
+
+| Modèle (tenu à l'écart) | RMSE | Biais | R² |
+|---|---|---|---|
+| FINN, placette 0,0707 ha | 4,02 | +1,36 | 0,89 |
+| **FINN, placette 0,707 ha** | **3,50** | **+0,33** | **0,92** |
+| régression linéaire G0 + climat + sol | 3,58 | 0,00 | 0,91 |
+| persistance + accroissement moyen | 3,68 | −0,02 | 0,91 |
+| persistance | 4,24 | −2,11 | 0,88 |
+
+**FINN bat les trois modèles nuls sur des placettes qu'il n'a pas vues** : le
+critère d'acceptation 2 est rempli en mécaniste. L'écart à la régression est
+faible (0,08 m²/ha) et vient d'un seul tirage du test, sans intervalle de
+confiance.
+
+Décomposition de G5 − G0 (`data-raw/diagnostic_finn_processus.R`, modèles
+sauvegardés par `FINN_MODELE`), m²/ha, placettes tenues à l'écart, écart =
+FINN − observé :
+
+| Part | Observé | Écart, 0,0707 ha | Écart, 0,707 ha | RMSE, 0,707 ha |
+|---|---|---|---|---|
+| G0 (après arrondi) | 23,67 | +0,16 | −0,01 | 0,15 |
+| croissance des survivants | 2,90 | +0,24 | +0,20 | 1,93 |
+| mortalité (perte) | 1,05 | −0,30 | −0,06 | 2,58 |
+| recrutement | 0,26 | +0,66 | +0,08 | 0,57 |
+
+Avec la petite placette, la moitié du biais (+0,66 sur +1,36) venait du
+recrutement : une recrue y vaut au moins 14 tiges/ha. Les trois parts sont
+presque sans biais avec la grande placette ; l'erreur restante est surtout
+celle de la mortalité (RMSE 2,58 m²/ha), faite de quelques gros arbres qui
+meurent ou non, que la persistance et la régression ne prédisent pas mieux.
+**Conséquence pour `calibrer_finn()` et `simuler_itineraire()`** : placette
+FINN de 0,7 ha au moins (ou poids entiers par construction) et moyenne de
+plusieurs tirages ; à écrire dans la fiche.
