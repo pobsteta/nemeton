@@ -237,3 +237,25 @@ d'environnement).
   plus de l'altitude ; plus de placettes de calibration (7 635 disponibles) ;
   croissance hybride (réseau de neurones, vignette D de FINN) ; écarter les
   placettes coupées de la calibration pour voir si elles brouillent le signal.
+
+**Piste 1, climat et sol, 2026-11-08** (`FINN_ENV=climat_sol`, défaut du
+script) : moyenne des tx de juin-août et cumul annuel de rr sur les 5 ans de
+l'intervalle (E-OBS v33.0e mensuel, cache de la spec 063), profondeur de
+sondage PROF2 (ECOLOGIE). L'altitude sort : elle est corrélée à −0,77 avec tx
+et à 0,77 avec rr.
+
+| Échantillon | Modèle | RMSE | Biais | R² |
+|---|---|---|---|---|
+| calibration | FINN | 3,89 | +1,11 | 0,90 |
+| calibration | persistance | 4,24 | −2,11 | 0,88 |
+| tenu à l'écart | FINN | 4,14 | +0,98 | 0,90 |
+| tenu à l'écart | persistance | 3,94 | −2,08 | 0,91 |
+
+(1 000 / 1 000 placettes, 300 époques, 21 min de CPU ; le tirage diffère un
+peu de celui de l'altitude seule, d'où la persistance qui change.) Le climat
+et le sol font passer FINN devant la persistance **sur les placettes de
+calibration**, pas sur celles tenues à l'écart : le rapport RMSE FINN /
+persistance y reste à 1,05 (1,04 avec l'altitude seule). Le gain ne se
+transfère pas ; avec 1 000 placettes et 16 essences, FINN apprend du bruit.
+Piste suivante : plus de placettes de calibration (6 600 disponibles hors
+test).
