@@ -197,7 +197,7 @@ git merge feat/auto-coverage-boost
 
 | Problème | Solution |
 |----|----|
-| [`covr::package_coverage()`](http://covr.r-lib.org/reference/package_coverage.md) échoue | `Rscript -e 'devtools::check()'` pour voir les erreurs |
+| [`covr::package_coverage()`](https://covr.r-lib.org/reference/package_coverage.html) échoue | `Rscript -e 'devtools::check()'` pour voir les erreurs |
 | shinytest2 : “Chrome not found” | `export CHROMOTE_CHROME=/usr/bin/chromium` |
 | Tests existants cassés | Le script ne devrait jamais modifier R/ — vérifier |
 | Stagnation prolongée | Le script change automatiquement de cible |
