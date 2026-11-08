@@ -151,7 +151,7 @@ dans la synthèse ; T4 (couche, statut).
 | D-4 | Seuil de recouvrement d'`effet_gestion()` | refus si moins de 70 % des UGF sont dans le support commun ou si un traitement a moins de 10 UGF ; seuils affichés comme conventions |
 | D-5 | B5 et N4 dans les trajectoires | non en première version : FINN porte des cohortes (diamètre, hauteur), pas un nuage ; B2 oui (CV des hauteurs) |
 | D-6 | T4 : nouveau code de la famille T, et son échelle | oui, T4 conditionnel ; décompte 43 → 44 (45 avec N4). Le brief le définit en signe (> 0 / < 0) ; proposé : score 0-100 centré sur 50 (rang de l'observé dans les trajectoires simulées), pour qu'il se normalise comme les autres |
-| D-7 | Données de calibration | placettes IFN de BFC fournies par Pascal (le site de l'IFN est bloqué depuis les sessions) ; FORMS-T pour T4 |
+| D-7 | Données de calibration | export IFN déjà dans `data-raw/ifn/` (Licence Ouverte) : placettes de BFC revisitées à 5 ans, revisites 2015 et suivantes ; FORMS-T pour T4 |
 | D-8 | TerraMind (optionnel du brief) | **hors de cette spec** : à n'ouvrir que si le besoin outre-mer se confirme |
 
 ## 9. Avancement
@@ -160,7 +160,7 @@ dans la synthèse ; T4 (couche, statut).
 |---|---|
 | 1. `effet_gestion()` | ✅ **2026.11.8** — fiche, écart n° 27 |
 | 2. Prototype FINN (`data-raw/prototype_finn.R`) | ✅ 2026-11-07 — **D-2 tient** (voir ci-dessous) ; temps CPU très en dessous du critère 3 |
-| 3. `calibrer_finn()`, `simuler_itineraire()` | attend le prototype et les placettes IFN (D-7) |
+| 3. `calibrer_finn()`, `simuler_itineraire()` | prototype de calibration ✅ 2026-11-08 (`data-raw/prototype_finn_calibration.R`) : FINN ne bat pas encore la persistance (voir ci-dessous) ; fonctions du cœur à faire |
 | 4. T4, `comparer_itineraires(trajectoires =)` | après 3 |
 
 **Écart au § 3.1 lors du codage.** L'effet moyen n'est pas la moyenne des
@@ -200,3 +200,40 @@ des ordres de grandeur d'API, pas une forêt).
 **Suite** : étape 3, `calibrer_finn()` et `simuler_itineraire()`, attend les
 placettes IFN de BFC (D-7) ; sans calibration, les trajectoires restent des
 ordres de grandeur.
+
+**Prototype de calibration, 2026-11-08** (`data-raw/prototype_finn_calibration.R`,
+CPU, FINN 0.1.0, processus mécanistes, altitude seule comme variable
+d'environnement).
+
+- **Données** : 8 119 placettes de BFC revisitées à 5 ans (revisites
+  2015-2025), 85 exclues (arbre non retrouvé, accroissement hors de
+  [−5, +15] cm), 7 635 gardées ; 15 essences couvrant 90 % de la surface
+  terrière, le reste en « autres ». Un pas FINN = 5 ans, une placette FINN =
+  le cercle de 15 m, chaque arbre pèse W × 0,0707 tiges.
+- **Ce que l'export IFN ne donne pas** : la revisite ne porte **aucun poids
+  W** ; un arbre suivi garde celui de sa 1re visite, un recruté reçoit le
+  poids théorique de son cercle (6, 9 ou 15 m selon C13).
+- **Coupes** : les arbres coupés entre les deux visites sont retirés de
+  l'état initial (coupe supposée en début d'intervalle, comme D-2). FINN
+  n'apprend que la dynamique naturelle.
+- **Résultat** (1 000 placettes de calibration, 1 000 tenues à l'écart, 300
+  époques, 19 min de CPU), surface terrière totale à 5 ans, m²/ha :
+
+  | Échantillon | Modèle | RMSE | Biais | R² |
+  |---|---|---|---|---|
+  | calibration | FINN | 4,17 | +1,58 | 0,89 |
+  | calibration | persistance | 3,89 | −2,05 | 0,90 |
+  | tenu à l'écart | FINN | 3,90 | +1,33 | 0,91 |
+  | tenu à l'écart | persistance | 3,74 | −2,31 | 0,92 |
+
+  La persistance (G à 5 ans = G initiale après coupes) est le modèle nul.
+  **FINN ne la bat pas en RMSE** ; il réduit le biais (il fait croître le
+  peuplement, la persistance non) mais en surestimant la croissance.
+- **Critère 2** : l'erreur est publiée sur plus de 200 placettes, il est donc
+  formellement rempli ; mais tant que FINN ne fait pas mieux que la
+  persistance à 5 ans, une trajectoire à 50 ans n'a pas de valeur
+  démontrée. `simuler_itineraire()` ne doit pas sortir avant.
+- **Pistes, dans l'ordre** : climat (E-OBS, spec 063) et sol (ECOLOGIE) en
+  plus de l'altitude ; plus de placettes de calibration (7 635 disponibles) ;
+  croissance hybride (réseau de neurones, vignette D de FINN) ; écarter les
+  placettes coupées de la calibration pour voir si elles brouillent le signal.
