@@ -218,27 +218,47 @@ m <- finn(
   mortality_process = createProcess(f_env, FINN::mortality, optimizeSpecies = TRUE, optimizeEnv = TRUE)
 )
 t0 <- Sys.time()
-fit(m, env = train$env, data = train$obs[, .(siteID, year, species, ba, dbh, trees, growth,
+if (epochs > 0L) fit(m, env = train$env, data = train$obs[, .(siteID, year, species, ba, dbh, trees, growth,
                                              growth_n, mort, n_at_risk, n_died, reg)],
     init_cohort = train$init, device = "cpu", epochs = epochs, batchsize = 50L,
     patches = 1L, patch_size = patch_size, lr = 0.01, plot_progress = FALSE)
 duree <- Sys.time() - t0
 
 # --- 5. Evaluation : surface terriere totale a 5 ans (m2/ha) ----------------------
-evaluer <- function(d, label) {
-  m$eval()
-  sim <- predict(m, env = d$env, init_cohort = d$init, patches = 1L,
-                 patch_size = patch_size, device = "cpu")
-  pred <- sim$long$site[variable == "ba" & year == 1L, .(pred = sum(value) / patch_size), by = siteID]
+# Trois modeles nuls, ajustes sur les placettes de calibration seulement :
+#   persistance            G5 = G0 ;
+#   persistance + accr.    G5 = G0 + accroissement moyen observe en calibration ;
+#   regression lineaire    G5 ~ G0 + variables d'environnement.
+# FINN_EPOCHS = 0 : pas d'ajustement FINN, modeles nuls seuls.
+tableau <- function(d) {
   obs <- d$obs[, .(obs = sum(ba) / patch_size), by = siteID]
-  x <- merge(merge(obs, pred, by = "siteID"), d$ba0[, .(siteID, persist = ba0 / patch_size)],
-             by = "siteID")
+  x <- merge(obs, d$ba0[, .(siteID, persist = ba0 / patch_size)], by = "siteID")
+  merge(x, d$env[year == 1L, c("siteID", vars_env), with = FALSE], by = "siteID")
+}
+x_train <- tableau(train)
+accr <- x_train[, mean(obs - persist)]
+reg <- stats::lm(reformulate(c("persist", vars_env), "obs"), data = x_train)
+
+evaluer <- function(d, label) {
+  x <- tableau(d)
+  x[, `:=`(accr = persist + accr, lin = stats::predict(reg, newdata = x))]
+  if (epochs > 0L) {
+    m$eval()
+    sim <- predict(m, env = d$env, init_cohort = d$init, patches = 1L,
+                   patch_size = patch_size, device = "cpu")
+    pred <- sim$long$site[variable == "ba" & year == 1L,
+                          .(finn = sum(value) / patch_size), by = siteID]
+    x <- merge(x, pred, by = "siteID")
+  }
   r <- function(p) c(rmse = sqrt(mean((x$obs - p)^2)), biais = mean(p - x$obs),
                      r2 = 1 - sum((x$obs - p)^2) / sum((x$obs - mean(x$obs))^2))
-  rbind(data.table(echantillon = label, modele = "FINN", t(r(x$pred))),
-        data.table(echantillon = label, modele = "persistance", t(r(x$persist))))[
-          , n := nrow(x)][]
+  modeles <- c(FINN = "finn", persistance = "persist", `persistance + accr.` = "accr",
+               `regression lineaire` = "lin")
+  modeles <- modeles[modeles %in% names(x)]
+  rbindlist(lapply(names(modeles), function(k)
+    data.table(echantillon = label, modele = k, t(r(x[[modeles[[k]]]])))))[, n := nrow(x)][]
 }
+cat(sprintf("Accroissement moyen observe en calibration : %.2f m2/ha en 5 ans\n", accr))
 res <- rbind(evaluer(train, "calibration"), evaluer(test, "tenu a l'ecart"))
 cat(sprintf("\nCalibration : %d placettes, %d epoques, %s ; G moyenne a 5 ans %.1f m2/ha\n",
             n_train, epochs, format(round(duree, 1)), train$obs[, sum(ba)] / patch_size / n_train))
