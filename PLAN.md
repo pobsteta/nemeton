@@ -179,8 +179,11 @@ transfert. Suite : plus de placettes de calibration. Piste 2 (5 000
 placettes de calibration, 2 h de CPU) : FINN fait moins bien que la
 persistance même sur la calibration (4,40 contre 4,11 m²/ha ; tenu à
 l’écart 4,55 contre 4,24), biais +1,9 m²/ha. Plus de données ne suffit
-pas. forptnemeton : `release.yml` ajouté (pobsteta/forptnemeton#4), tag
-et release `v2026.11.3` posés par le CI.
+pas. Modèles nuls plus exigeants, même tirage : persistance +
+accroissement moyen 3,68 m²/ha, régression linéaire G0 + climat + sol
+3,58 m²/ha sur les placettes tenues à l’écart. C’est la barre à franchir
+; FINN est à 4,55. forptnemeton : `release.yml` ajouté
+(pobsteta/forptnemeton#4), tag et release `v2026.11.3` posés par le CI.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
