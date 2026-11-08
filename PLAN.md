@@ -121,12 +121,24 @@ un raccourci.
 | 065 | Étape 4 : catalogue d'itinéraires, `itineraires_admissibles()`, `comparer_itineraires()` sans FINN | ✅ spec validée le 2026-11-05 ; moteur → **2026.11.4** ; catalogue (squelette `a_sourcer`) à remplir par Pascal (D-4) |
 | 066 | Chantier B : sondes `probe_indicator()` (cœur, AlphaEarth d'abord) et MAESTRO en extracteur d'embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
 | 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; **B5** → **2026.11.5** ; `simulate_density_sensitivity()` → **2026.11.6** ; T1 `age_structurel =` → **2026.11.7** ; D-6 : ForPT code MIT, poids à vérifier ; D-1 révisée et validée : instances par lidR (`segment_houppiers()`) par défaut, SelectAnyTree en option dans `forptnemeton` (non embarqué, CC BY-NC, quand ses poids seront publiés) ; profil B5 par défaut `points` (validé) ; `forptnemeton` 2026.11.2 (`forpt_embed()`, `forpt_age()`, non exécutés sur GPU) ; reste (D-6 licences, D-7 dépôt), N5 structurel, T1 désaturé, N4 (reporté, D-2) |
-| 068 | Chantier D : trajectoires FINN (`calibrer_finn()`, `simuler_itineraire()`), T4, `effet_gestion()` | ✅ validée le 2026-11-06 (D-1 à D-8 telles que proposées) ; `effet_gestion()` → **2026.11.8** ; reste le prototype FINN, trajectoires, T4 |
+| 068 | Chantier D : trajectoires FINN (`calibrer_finn()`, `simuler_itineraire()`), T4, `effet_gestion()` | ✅ validée le 2026-11-06 (D-1 à D-8 telles que proposées) ; `effet_gestion()` → **2026.11.8** ; prototype FINN ✅ (D-2 tient) ; reste trajectoires (placettes IFN), T4 |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
 parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
 vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier remplissage du
 catalogue par Pascal.
+
+**Journal** — *2026-11-07* : tags `v2026.11.3` et `v2026.11.8` posés (relance
+`gh run rerun --failed` des runs 42181439133 et 42209277959, réussie au 2e
+essai). Spec 067 : licence des poids ForPT = **aucune déclarée** (D-6 :
+pas de redistribution, téléchargement chez l'utilisateur) ; repère FORage
+vérifié (minimum à 0 sur chaque axe), `forpt_age()` corrigé
+(pobsteta/forptnemeton#3) ; FORage = épicéas et pins de Norvège seulement.
+Branche par défaut de `forptnemeton` et `alphaearthnemeton` passée à `main`.
+Spec 068, étape 2 : prototype FINN (`data-raw/prototype_finn.R`), **D-2
+tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
+binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
+Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
