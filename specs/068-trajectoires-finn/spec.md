@@ -281,3 +281,20 @@ lots de 50, 300 époques), l'ajustement n'atteint pas la persistance. Pistes
 restantes : comparer d'abord à un modèle nul plus exigeant (persistance plus
 accroissement moyen observé), puis croissance hybride (vignette D) et
 placettes coupées écartées.
+
+**Modèles nuls plus exigeants, 2026-11-08** (même tirage que la piste 2,
+`FINN_EPOCHS=0` : modèles nuls seuls, quelques secondes). Ajustés sur les
+5 000 placettes de calibration, évalués sur les 1 000 tenues à l'écart :
+
+| Modèle | RMSE | Biais | R² |
+|---|---|---|---|
+| FINN (piste 2, 2 h de CPU) | 4,55 | +1,93 | 0,86 |
+| persistance (G5 = G0) | 4,24 | −2,11 | 0,88 |
+| persistance + accroissement moyen (+2,13 m²/ha) | 3,68 | +0,03 | 0,91 |
+| régression linéaire G5 ~ G0 + tx_ete + rr_an + prof | 3,58 | +0,05 | 0,91 |
+
+La barre que FINN doit franchir n'est pas 4,24 mais **3,58 m²/ha** : une
+régression linéaire sur la surface terrière de départ et l'environnement. FINN
+en est à 0,97 m²/ha (+27 %). Ce sont ces deux modèles nuls, pas la seule
+persistance, qui servent désormais de référence au critère de D-3 et à
+`calibrer_finn()`.
