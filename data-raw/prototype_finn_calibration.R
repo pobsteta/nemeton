@@ -155,11 +155,16 @@ sites[, new := .I]
 tr[sites, siteID := i.new, on = "siteID"]
 sites[, `:=`(siteID = new, new = NULL)]
 
-# split train / test aleatoire
+# split train / test aleatoire : le test est tire en premier, il reste donc le
+# meme quelle que soit la taille de la calibration (FINN_N_TRAIN = 0 : tout le
+# reste)
 ids <- sample(sites$siteID)
+if (n_train == 0L) n_train <- length(ids) - n_test
 stopifnot(length(ids) >= n_train + n_test)
-id_train <- ids[seq_len(n_train)]
-id_test <- ids[n_train + seq_len(n_test)]
+id_test <- ids[seq_len(n_test)]
+id_train <- ids[n_test + seq_len(n_train)]
+cat(sprintf("Placettes : %d disponibles, %d calibration, %d test\n",
+            length(ids), n_train, n_test))
 
 recruits_dbh <- tr[statut == "recrute", mean(d2)]
 ba_ha <- function(d, w) sum(w * pi * (d / 200)^2)
