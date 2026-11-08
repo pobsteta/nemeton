@@ -298,3 +298,24 @@ régression linéaire sur la surface terrière de départ et l'environnement. FI
 en est à 0,97 m²/ha (+27 %). Ce sont ces deux modèles nuls, pas la seule
 persistance, qui servent désormais de référence au critère de D-3 et à
 `calibrer_finn()`.
+
+**Réglages de l'ajustement, 2026-11-08** (`FINN_LR`, 1 000 placettes de
+calibration, même test de 1 000 placettes, 600 époques, deux runs en
+parallèle de 4 threads, 1,1 à 1,2 h chacun). Sur les placettes tenues à
+l'écart :
+
+| Modèle | RMSE | Biais |
+|---|---|---|
+| FINN, lr 0,01, 600 époques | 4,30 | +1,49 |
+| FINN, lr 0,003, 600 époques | 4,15 | +1,37 |
+| persistance | 4,24 | −2,11 |
+| persistance + accroissement moyen | 3,68 | −0,02 |
+| régression linéaire G0 + climat + sol | 3,58 | 0,00 |
+
+Un pas plus fin aide un peu (4,15, FINN passe juste devant la persistance),
+mais reste à 0,57 m²/ha de la régression linéaire. Le biais positif tient
+dans tous les réglages (+1,0 à +1,9 m²/ha) : FINN surestime l'accroissement
+de façon systématique, ce que l'optimiseur seul ne corrige pas. Avant la
+croissance hybride, il faut savoir quel processus le produit : décomposer
+l'écart en croissance des survivants, mortalité et recrutement, observés
+contre simulés.

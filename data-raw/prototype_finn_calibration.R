@@ -60,6 +60,7 @@ dem_f <- file.path(Sys.getenv("NEMETON_PROD_CACHE", unset = path.expand("~/.cach
 n_train <- as.integer(Sys.getenv("FINN_N_TRAIN", "1000"))
 n_test <- as.integer(Sys.getenv("FINN_N_TEST", "1000"))
 epochs <- as.integer(Sys.getenv("FINN_EPOCHS", "300"))
+lr <- as.numeric(Sys.getenv("FINN_LR", "0.01"))
 env_mode <- Sys.getenv("FINN_ENV", "climat_sol")
 eobs_dir <- Sys.getenv("NEMETON_EOBS_CACHE",
                        unset = path.expand("~/.local/share/nemeton/cache/eobs"))
@@ -221,7 +222,7 @@ t0 <- Sys.time()
 if (epochs > 0L) fit(m, env = train$env, data = train$obs[, .(siteID, year, species, ba, dbh, trees, growth,
                                              growth_n, mort, n_at_risk, n_died, reg)],
     init_cohort = train$init, device = "cpu", epochs = epochs, batchsize = 50L,
-    patches = 1L, patch_size = patch_size, lr = 0.01, plot_progress = FALSE)
+    patches = 1L, patch_size = patch_size, lr = lr, plot_progress = FALSE)
 duree <- Sys.time() - t0
 
 # --- 5. Evaluation : surface terriere totale a 5 ans (m2/ha) ----------------------
@@ -260,6 +261,6 @@ evaluer <- function(d, label) {
 }
 cat(sprintf("Accroissement moyen observe en calibration : %.2f m2/ha en 5 ans\n", accr))
 res <- rbind(evaluer(train, "calibration"), evaluer(test, "tenu a l'ecart"))
-cat(sprintf("\nCalibration : %d placettes, %d epoques, %s ; G moyenne a 5 ans %.1f m2/ha\n",
-            n_train, epochs, format(round(duree, 1)), train$obs[, sum(ba)] / patch_size / n_train))
+cat(sprintf("\nCalibration : %d placettes, %d epoques, lr %g, %s ; G moyenne a 5 ans %.1f m2/ha\n",
+            n_train, epochs, lr, format(round(duree, 1)), train$obs[, sum(ba)] / patch_size / n_train))
 print(res[, lapply(.SD, function(v) if (is.numeric(v)) round(v, 2) else v)])
