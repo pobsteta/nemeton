@@ -10,7 +10,10 @@
 #   placettes de 1re visite en t (CSA = 1, foret de production) revisitees en
 #   t + 5, revisites 2015 et suivantes (depuis 2015 tous les arbres sont revus,
 #   metadonnees IFN, VEGET5) ;
-#   altitude : MNT IGN 250 m du cache de la spec 054 (ser/dem_250m.tif).
+#   altitude : MNT IGN 250 m du cache de la spec 054 (ser/dem_250m.tif) ;
+#   climat : E-OBS v33.0e mensuel (tx, rr) du cache de la spec 063
+#   (~/.local/share/nemeton/cache/eobs/eobs_{tx,rr}_mensuel_france_v33.0e.tif) ;
+#   sol : profondeur de sondage PROF2 (dm) de la table ECOLOGIE de l'IFN.
 #
 # Choix (a relire, pas des valeurs tirees d'un modele) :
 #   - un site FINN = une placette IFN, une placette FINN de 0,0707 ha (cercle de
@@ -32,8 +35,11 @@
 #     diametre moyen observe ;
 #   - essences : les plus frequentes couvrant 90 % de la surface terriere
 #     initiale, le reste en "other" ;
-#   - environnement : altitude seule (gradient thermique de la BFC), en unites
-#     naturelles (FINN standardise).
+#   - environnement (FINN_ENV) : "alt" = altitude seule ; "climat_sol" =
+#     moyenne des tx de juin-aout et cumul annuel de rr sur les 5 ans de
+#     l'intervalle (E-OBS), profondeur de sol PROF2 ; en unites naturelles
+#     (FINN standardise). Altitude et temperature sont trop correlees pour
+#     entrer ensemble (vignette D de FINN).
 #
 # Lancement (FINN et torch installes) :
 #   Rscript data-raw/prototype_finn_calibration.R
@@ -54,6 +60,9 @@ dem_f <- file.path(Sys.getenv("NEMETON_PROD_CACHE", unset = path.expand("~/.cach
 n_train <- as.integer(Sys.getenv("FINN_N_TRAIN", "1000"))
 n_test <- as.integer(Sys.getenv("FINN_N_TEST", "1000"))
 epochs <- as.integer(Sys.getenv("FINN_EPOCHS", "300"))
+env_mode <- Sys.getenv("FINN_ENV", "climat_sol")
+eobs_dir <- Sys.getenv("NEMETON_EOBS_CACHE",
+                       unset = path.expand("~/.local/share/nemeton/cache/eobs"))
 patch_size <- pi * 15^2 / 1e4   # ha
 bfc <- c("21", "25", "39", "58", "70", "71", "89", "90")
 
@@ -121,7 +130,26 @@ tr <- tr[sites, on = "IDP"]
 xy <- paires[sites, on = "IDP"]
 alt <- terra::extract(rast(dem_f), vect(xy[, .(XL, YL)], geom = c("XL", "YL"), crs = "EPSG:2154"))[, 2]
 sites[, alt := alt]
-sites <- sites[is.finite(alt)]
+# climat E-OBS sur les 5 ans de l'intervalle (annees c1 .. c2 - 1)
+xy <- paires[sites, on = "IDP"]
+pts <- project(vect(xy[, .(XL, YL)], geom = c("XL", "YL"), crs = "EPSG:2154"), "EPSG:4326")
+climat <- function(var) {
+  r <- rast(file.path(eobs_dir, sprintf("eobs_%s_mensuel_france_v33.0e.tif", var)))
+  v <- as.matrix(terra::extract(r, pts, ID = FALSE))
+  an <- as.integer(substr(names(r), 1, 4)); mo <- as.integer(substr(names(r), 6, 7))
+  c1 <- as.integer(xy$c1)
+  vapply(seq_len(nrow(v)), function(i) {
+    k <- an >= c1[i] & an < c1[i] + 5L
+    if (var == "tx") mean(v[i, k & mo %in% 6:8]) else sum(v[i, k]) / 5
+  }, numeric(1))
+}
+sites[, `:=`(tx_ete = climat("tx"), rr_an = climat("rr"))]
+eco <- lire("ECOLOGIE", c("CAMPAGNE", "IDP", "PROF2"))
+sites[eco[paires, on = .(IDP, CAMPAGNE = c1), .(IDP, prof = as.numeric(PROF2))], prof := i.prof, on = "IDP"]
+vars_env <- if (env_mode == "alt") "alt" else c("tx_ete", "rr_an", "prof")
+sites <- sites[complete.cases(sites[, ..vars_env])]
+cat(sprintf("Environnement %s : %s\n", env_mode, paste(vars_env, collapse = ", ")))
+print(round(cor(sites[, .(alt, tx_ete, rr_an, prof)], use = "complete.obs"), 2))
 tr <- tr[siteID %in% sites$siteID]
 sites[, new := .I]
 tr[sites, siteID := i.new, on = "siteID"]
@@ -159,7 +187,8 @@ for (j in c("growth_n", "n_at_risk", "n_died")) set(obs_all, which(is.na(obs_all
 obs_all[, mort := fifelse(n_at_risk > 0, n_died / n_at_risk, NA_real_)]
 obs_all[, `:=`(year = 1L, species_name = especes[species])]
 
-env_all <- rbind(sites[, .(siteID, year = 0L, alt)], sites[, .(siteID, year = 1L, alt)])
+env_all <- rbind(sites[, c("siteID", vars_env), with = FALSE][, year := 0L],
+                 sites[, c("siteID", vars_env), with = FALSE][, year := 1L])
 
 decouper <- function(ids) {
   # renumerote 1..n pour FINN
@@ -174,13 +203,14 @@ train <- decouper(id_train)
 test <- decouper(id_test)
 
 # --- 4. Calibration (mecaniste, vignette D de FINN) ------------------------------
+f_env <- reformulate(vars_env)
 m <- finn(
   N_species = Nsp,
   recruits_dbh = recruits_dbh,
   competition_process = createProcess(~0, FINN::competition, optimizeSpecies = TRUE),
-  growth_process = createProcess(~alt, FINN::growth, optimizeSpecies = TRUE, optimizeEnv = TRUE),
-  regeneration_process = createProcess(~alt, FINN::regeneration, optimizeSpecies = TRUE, optimizeEnv = TRUE),
-  mortality_process = createProcess(~alt, FINN::mortality, optimizeSpecies = TRUE, optimizeEnv = TRUE)
+  growth_process = createProcess(f_env, FINN::growth, optimizeSpecies = TRUE, optimizeEnv = TRUE),
+  regeneration_process = createProcess(f_env, FINN::regeneration, optimizeSpecies = TRUE, optimizeEnv = TRUE),
+  mortality_process = createProcess(f_env, FINN::mortality, optimizeSpecies = TRUE, optimizeEnv = TRUE)
 )
 t0 <- Sys.time()
 fit(m, env = train$env, data = train$obs[, .(siteID, year, species, ba, dbh, trees, growth,
