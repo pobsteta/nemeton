@@ -162,6 +162,13 @@ Réglages de l'ajustement (1 000 placettes, 600 époques) : lr 0,003 donne
 4,15 m²/ha (lr 0,01 : 4,30), juste devant la persistance mais loin de la
 régression (3,58). Biais +1,4 m²/ha persistant : FINN surestime
 l'accroissement. Suite proposée : décomposer l'écart par processus.
+Cause trouvée : `CohortMat` (FINN) arrondit les effectifs à l'entier ; sur
+la placette de 0,07 ha, l'arrondi bruite G0 (1,4 m²/ha) et gonfle le
+recrutement (+0,66 m²/ha de biais). Placette FINN de 0,7 ha : **FINN 3,50
+m²/ha hors calibration, devant la régression (3,58) et la persistance
+(4,24)**, biais +0,33. Critère d'acceptation 2 de la spec 068 rempli en
+mécaniste. Décomposition (`data-raw/diagnostic_finn_processus.R`) : erreur
+restante surtout de la mortalité. Suite : `calibrer_finn()` dans le cœur.
 forptnemeton : `release.yml` ajouté (pobsteta/forptnemeton#4), tag et release
 `v2026.11.3` posés par le CI.
 
