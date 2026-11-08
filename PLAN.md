@@ -182,7 +182,11 @@ l’écart 4,55 contre 4,24), biais +1,9 m²/ha. Plus de données ne suffit
 pas. Modèles nuls plus exigeants, même tirage : persistance +
 accroissement moyen 3,68 m²/ha, régression linéaire G0 + climat + sol
 3,58 m²/ha sur les placettes tenues à l’écart. C’est la barre à franchir
-; FINN est à 4,55. forptnemeton : `release.yml` ajouté
+; FINN est à 4,55. Réglages de l’ajustement (1 000 placettes, 600
+époques) : lr 0,003 donne 4,15 m²/ha (lr 0,01 : 4,30), juste devant la
+persistance mais loin de la régression (3,58). Biais +1,4 m²/ha
+persistant : FINN surestime l’accroissement. Suite proposée : décomposer
+l’écart par processus. forptnemeton : `release.yml` ajouté
 (pobsteta/forptnemeton#4), tag et release `v2026.11.3` posés par le CI.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
