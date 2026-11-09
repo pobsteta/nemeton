@@ -12,6 +12,7 @@ calibrer_finn(
   epoques = 600L,
   taux_apprentissage = 0.003,
   part_essences = 0.9,
+  min_arbres_essence = 300L,
   pas_annees = 5,
   graine = 42L,
   dossier = NULL
@@ -59,6 +60,13 @@ held-out error than 0.01 on BFC, spec 068).}
 \item{part_essences}{Numeric in \verb{(0, 1]}. Species kept by decreasing
 initial basal area until they cover this share; the others are pooled
 in \code{"other"}. Default 0.9.}
+
+\item{min_arbres_essence}{Integer. Minimum number of initial trees (alive
+or dead at the first visit) for a species to get its own parameters;
+below it the species goes to \code{"other"}, even within \code{part_essences}.
+Default 300: on BFC, species with 130 to 140 trees gave unstable
+parameters (predictions of several hundred m2/ha on a few plots in two
+bootstrap calibrations out of four, spec 068).}
 
 \item{pas_annees}{Numeric. Years between the two visits, kept as metadata
 for the simulations. Default 5.}
