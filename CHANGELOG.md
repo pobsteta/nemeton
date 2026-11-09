@@ -13,6 +13,22 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.14\] - 2026-11-09
+
+### Added
+
+- [`infradensite_espar()`](https://pobsteta.github.io/nemeton/reference/infradensite_espar.md):
+  basic wood density of the 193 IFN species from the Global Wood Density
+  Database (CC0), with the level reached (spec 068).
+- `simuler_itineraire(carbone = TRUE)`: stem-wood carbon and harvested
+  carbon along the trajectories (spec 068).
+
+### Changed
+
+- [`indicateur_c1_biomasse()`](https://pobsteta.github.io/nemeton/reference/indicateur_c1_biomasse.md)
+  in CHM mode uses the basic wood density instead of the air-dry density
+  of `wood_density.csv`: C1 drops by 15 to 25 % in that mode.
+
 ## \[2026.11.13\] - 2026-11-09
 
 ### Added

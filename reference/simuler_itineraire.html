@@ -13,7 +13,7 @@ dynamics only, the cuts are imposed from outside."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.14</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -141,7 +141,10 @@ dynamics only, the cuts are imposed from outside.</p>
 <span>  n_tirages <span class="op">=</span> <span class="fl">20L</span>,</span>
 <span>  elargissement <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"racine"</span>, <span class="st">"lineaire"</span><span class="op">)</span>,</span>
 <span>  volume <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  unites <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  unites <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  carbone <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  bef <span class="op">=</span> <span class="fl">1.3</span>,</span>
+<span>  fraction_carbone <span class="op">=</span> <span class="fl">0.5</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -226,6 +229,26 @@ management unit (UGF). The output is then one row per unit, the mean of
 its plots (equal weights), with the half-width of a unit of <code>k</code> plots
 measured by <code><a href="conformer_finn.html">conformer_finn()</a></code> on groups of <code>k</code> held-out plots.</p></dd>
 
+
+<dt id="arg-carbone">carbone<a class="anchor" aria-label="anchor" href="#arg-carbone"></a></dt>
+<dd><p>Logical. Also compute the carbon of the merchantable stem
+wood (<code>"carbone"</code> and <code>"carbone_preleve"</code>, tC/ha): the volume of the
+same tariffs as <code>volume</code> (needed, computed even when <code>volume = FALSE</code>)
+times the basic wood density of the species (<code><a href="infradensite_espar.html">infradensite_espar()</a></code>,
+that of the tariff species for <code>"other"</code>), <code>bef</code> and
+<code>fraction_carbone</code>. Default <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-bef">bef<a class="anchor" aria-label="anchor" href="#arg-bef"></a></dt>
+<dd><p>Numeric. Biomass expansion factor from stem volume to total
+aboveground biomass. Default 1.30, as <code><a href="indicateur_c1_biomasse.html">indicateur_c1_biomasse()</a></code>.</p></dd>
+
+
+<dt id="arg-fraction-carbone">fraction_carbone<a class="anchor" aria-label="anchor" href="#arg-fraction-carbone"></a></dt>
+<dd><p>Numeric. Carbon fraction of the dry biomass.
+Default 0.50, the value of <code>inst/extdata/wood_density.csv</code> used by
+<code><a href="indicateur_c1_biomasse.html">indicateur_c1_biomasse()</a></code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -234,7 +257,8 @@ measured by <code><a href="conformer_finn.html">conformer_finn()</a></code> on g
 state), <code>variable</code> (<code>"g"</code>: basal area before the cut, m2/ha;
 <code>"tiges"</code>: stems/ha before the cut; <code>"g_prelevee"</code>: basal area
 removed at that date, m2/ha; with <code>volume = TRUE</code>, <code>"volume"</code> and
-<code>"volume_preleve"</code>, m3/ha), <code>moyenne</code> (mean of the trajectories),
+<code>"volume_preleve"</code>, m3/ha; with <code>carbone = TRUE</code>, <code>"carbone"</code> and
+<code>"carbone_preleve"</code>, tC/ha), <code>moyenne</code> (mean of the trajectories),
 <code>bas</code>, <code>haut</code> (interval, for <code>"g"</code> only) and <code>intervalle</code>
 (<code>"conforme"</code> at one step, <code>"conforme_racine"</code> or
 <code>"conforme_lineaire"</code> beyond, <code>"aucun"</code> without conformal residuals or
@@ -253,7 +277,10 @@ is, which is another hypothesis.</p>
 <p>The volume comes from the diameter only (FINN carries no height). On
 12 974 trees of 1000 IFN plots of BFC, the tariffs of the exact species
 give 1.8 % more than the IFN volumes in total, 9.6 % less between 7.5 and
-20 cm and 18.6 % more above 70 cm (<code>data-raw/prototype_finn_volume.R</code>).</p>
+20 cm and 18.6 % more above 70 cm (<code>data-raw/prototype_finn_volume.R</code>).
+The carbon inherits this volume (stems below 7.5 cm carry none) and holds
+the same <code>bef</code> and <code>fraction_carbone</code> as C1, so that year 0 compares with
+C1.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -295,7 +295,7 @@ units_c1 <- sf::st_sf(
   geometry = sf::st_sfc(polys[[1]], polys[[2]], crs = 2154)
 )
 indicateur_c1_biomasse(units_c1, chm = chm)$C1
-#> [1] 140.67656  93.62638
+#> [1] 114.17228  76.98169
 ```
 
 Si `stems_ha` est absent mais une colonne `density` (0-1) est présente,

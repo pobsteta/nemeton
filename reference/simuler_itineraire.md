@@ -17,7 +17,10 @@ simuler_itineraire(
   n_tirages = 20L,
   elargissement = c("racine", "lineaire"),
   volume = FALSE,
-  unites = NULL
+  unites = NULL,
+  carbone = FALSE,
+  bef = 1.3,
+  fraction_carbone = 0.5
 )
 ```
 
@@ -112,6 +115,28 @@ simuler_itineraire(
   [`conformer_finn()`](https://pobsteta.github.io/nemeton/reference/conformer_finn.md)
   on groups of `k` held-out plots.
 
+- carbone:
+
+  Logical. Also compute the carbon of the merchantable stem wood
+  (`"carbone"` and `"carbone_preleve"`, tC/ha): the volume of the same
+  tariffs as `volume` (needed, computed even when `volume = FALSE`)
+  times the basic wood density of the species
+  ([`infradensite_espar()`](https://pobsteta.github.io/nemeton/reference/infradensite_espar.md),
+  that of the tariff species for `"other"`), `bef` and
+  `fraction_carbone`. Default `FALSE`.
+
+- bef:
+
+  Numeric. Biomass expansion factor from stem volume to total
+  aboveground biomass. Default 1.30, as
+  [`indicateur_c1_biomasse()`](https://pobsteta.github.io/nemeton/reference/indicateur_c1_biomasse.md).
+
+- fraction_carbone:
+
+  Numeric. Carbon fraction of the dry biomass. Default 0.50, the value
+  of `inst/extdata/wood_density.csv` used by
+  [`indicateur_c1_biomasse()`](https://pobsteta.github.io/nemeton/reference/indicateur_c1_biomasse.md).
+
 ## Value
 
 data.frame in long format, one row per plot, year and variable:
@@ -119,7 +144,8 @@ data.frame in long format, one row per plot, year and variable:
 state), `variable` (`"g"`: basal area before the cut, m2/ha; `"tiges"`:
 stems/ha before the cut; `"g_prelevee"`: basal area removed at that
 date, m2/ha; with `volume = TRUE`, `"volume"` and `"volume_preleve"`,
-m3/ha), `moyenne` (mean of the trajectories), `bas`, `haut` (interval,
+m3/ha; with `carbone = TRUE`, `"carbone"` and `"carbone_preleve"`,
+tC/ha), `moyenne` (mean of the trajectories), `bas`, `haut` (interval,
 for `"g"` only) and `intervalle` (`"conforme"` at one step,
 `"conforme_racine"` or `"conforme_lineaire"` beyond, `"aucun"` without
 conformal residuals or at year 0). With `unites`: `unite` instead of
@@ -139,7 +165,9 @@ The volume comes from the diameter only (FINN carries no height). On 12
 974 trees of 1000 IFN plots of BFC, the tariffs of the exact species
 give 1.8 % more than the IFN volumes in total, 9.6 % less between 7.5
 and 20 cm and 18.6 % more above 70 cm
-(`data-raw/prototype_finn_volume.R`).
+(`data-raw/prototype_finn_volume.R`). The carbon inherits this volume
+(stems below 7.5 cm carry none) and holds the same `bef` and
+`fraction_carbone` as C1, so that year 0 compares with C1.
 
 ## See also
 

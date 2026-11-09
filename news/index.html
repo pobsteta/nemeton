@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.14</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +116,21 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.14" id="nemeton-20261114-2026-11-09">nemeton 2026.11.14 (2026-11-09)<a class="anchor" aria-label="anchor" href="#nemeton-20261114-2026-11-09"></a></h2>
+<div class="section level3">
+<h3 id="changements-de-résultat-2026-11-14">Changements de résultat<a class="anchor" aria-label="anchor" href="#changements-de-r%C3%A9sultat-2026-11-14"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/indicateur_c1_biomasse.html">indicateur_c1_biomasse()</a></code> en mode CHM</strong> (<code>chm =</code>) : la densité du bois est désormais l’<strong>infradensité</strong> (masse anhydre / volume frais) de <code><a href="../reference/infradensite_espar.html">infradensite_espar()</a></code>, et non plus la densité à l’air sec de <code>wood_density.csv</code>, 15 à 25 % plus forte. Le C1 en mode CHM baisse d’autant (rapport infradensité / densité à l’air sec : médiane 0,83 sur les 22 essences de <code>wood_density.csv</code>). Les autres voies du C1 (âge et couvert, LiDAR, NDVI) et la fixture <code>massif_demo_units</code> ne changent pas.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-14">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-14"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/infradensite_espar.html">infradensite_espar()</a></code></strong> (spec 068) : infradensité (g/cm³) des 193 essences IFN, depuis la Global Wood Density Database (Zanne et al. 2009, CC0), avec le niveau atteint : espèce en Europe (55), espèce toutes régions (55), genre en Europe et Amérique du Nord (61), groupe feuillus / résineux (22) ; accepte toute nomenclature de <code><a href="../reference/resoudre_espar.html">resoudre_espar()</a></code>. Construite par <code>data-raw/infradensite_espar.R</code>.</li>
+<li>
+<strong><code>simuler_itineraire(carbone = TRUE)</code></strong> : carbone du bois fort sur pied (<code>carbone</code>, tC/ha) et prélevé (<code>carbone_preleve</code>), volume des tarifs Schaeffer × infradensité de l’essence × BEF 1,30 × fraction de carbone 0,50, les paramètres du C1 (<code>bef</code>, <code>fraction_carbone</code>). Sur 100 placettes de BFC, 75 tC/ha au départ, 150 à 50 ans sans gestion ; avec l’éclaircie de test, 73 tC/ha prélevés en cumul sur 50 ans (0,344 tC/m³ au départ).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.13" id="nemeton-20261113-2026-11-09">nemeton 2026.11.13 (2026-11-09)<a class="anchor" aria-label="anchor" href="#nemeton-20261113-2026-11-09"></a></h2>
 <div class="section level3">

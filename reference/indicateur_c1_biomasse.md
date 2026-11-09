@@ -53,8 +53,9 @@ indicateur_c1_biomasse(
   Optional `SpatRaster` of canopy heights in metres. When supplied
   together with `dbh_col` and `species_col`, activates CHM mode (spec
   005 phase 4): biomass is derived from the IFN tarif \\V = a \cdot D^b
-  \cdot H^c\\ combined with wood density, a biomass expansion factor
-  (BEF) and the carbon fraction stored in
+  \cdot H^c\\ combined with the basic wood density of
+  [`infradensite_espar`](https://pobsteta.github.io/nemeton/reference/infradensite_espar.md),
+  a biomass expansion factor (BEF) and the carbon fraction stored in
   `inst/extdata/wood_density.csv`.
 
 - dbh_col:

@@ -444,6 +444,9 @@ atteint
 
   Resolve any species code to the IFN `espar` code
 
+- [`infradensite_espar()`](https://pobsteta.github.io/nemeton/reference/infradensite_espar.md)
+  : Basic wood density (infradensity) of IFN species
+
 - [`completer_volume_ifn()`](https://pobsteta.github.io/nemeton/reference/completer_volume_ifn.md)
   : Fill missing P1 volumes with the IFN regional reference
 

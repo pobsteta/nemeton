@@ -11,7 +11,7 @@ allometric equations from IGN/IFN literature. Requires BD Forêt v2 data
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.13</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.14</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -176,9 +176,10 @@ outside 0-1 are set to NA with a warning.</p></dd>
 metres. When supplied together with <code>dbh_col</code> and
 <code>species_col</code>, activates CHM mode (spec 005 phase 4):
 biomass is derived from the IFN tarif
-\(V = a \cdot D^b \cdot H^c\) combined with wood density,
-a biomass expansion factor (BEF) and the carbon fraction
-stored in <code>inst/extdata/wood_density.csv</code>.</p></dd>
+\(V = a \cdot D^b \cdot H^c\) combined with the basic wood
+density of <code><a href="infradensite_espar.html">infradensite_espar</a></code>, a biomass expansion
+factor (BEF) and the carbon fraction stored in
+<code>inst/extdata/wood_density.csv</code>.</p></dd>
 
 
 <dt id="arg-dbh-col">dbh_col<a class="anchor" aria-label="anchor" href="#arg-dbh-col"></a></dt>
