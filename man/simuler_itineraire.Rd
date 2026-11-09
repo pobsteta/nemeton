@@ -12,6 +12,7 @@ simuler_itineraire(
   horizon = 50,
   n_tirages = 20L,
   elargissement = c("racine", "lineaire"),
+  volume = FALSE,
   unites = NULL
 )
 }
@@ -56,6 +57,15 @@ Default 20.}
 step) or \code{"lineaire"} (\code{q * k}, errors that add up). Both are
 \strong{hypotheses}: no plot is revisited over 50 years.}
 
+\item{volume}{Logical. Also compute the merchantable volume (\code{"volume"}
+and \code{"volume_preleve"}, m3/ha) with the one-entry Schaeffer tariffs of
+the IFN (\code{\link[=ifn_tarif_schaeffer_reference]{ifn_tarif_schaeffer_reference()}}: number and advised type of
+each species, cascade SER -> GRECO -> France with the SER of the
+\code{ser} column of \code{environnement} when present). Stems below 7.5 cm (the
+IFN threshold) have no volume. The \code{"other"} group takes the tariff of
+the dominant \code{"other"} species (basal area) of the plot at the start
+that has a tariff, or of all plots. Default \code{FALSE}.}
+
 \item{unites}{data.frame or \code{NULL}. \code{placette}, \code{unite}: the plots of each
 management unit (UGF). The output is then one row per unit, the mean of
 its plots (equal weights), with the half-width of a unit of \code{k} plots
@@ -66,7 +76,8 @@ data.frame in long format, one row per plot, year and variable:
 \code{placette}, \code{itineraire}, \code{annee} (years from the start, 0 = initial
 state), \code{variable} (\code{"g"}: basal area before the cut, m2/ha;
 \code{"tiges"}: stems/ha before the cut; \code{"g_prelevee"}: basal area
-removed at that date, m2/ha), \code{moyenne} (mean of the trajectories),
+removed at that date, m2/ha; with \code{volume = TRUE}, \code{"volume"} and
+\code{"volume_preleve"}, m3/ha), \code{moyenne} (mean of the trajectories),
 \code{bas}, \code{haut} (interval, for \code{"g"} only) and \code{intervalle}
 (\code{"conforme"} at one step, \code{"conforme_racine"} or
 \code{"conforme_lineaire"} beyond, \code{"aucun"} without conformal residuals or
@@ -87,6 +98,11 @@ response of the stand to a thinning (faster growth) comes only from the
 competition FINN learnt on unthinned plots. The conformal interval is
 measured on the natural dynamics over one step; after a cut it is kept as
 is, which is another hypothesis.
+
+The volume comes from the diameter only (FINN carries no height). On
+12 974 trees of 1000 IFN plots of BFC, the tariffs of the exact species
+give 1.8 \% more than the IFN volumes in total, 9.6 \% less between 7.5 and
+20 cm and 18.6 \% more above 70 cm (\verb{data-raw/prototype_finn_volume.R}).
 }
 \seealso{
 \code{\link[=calibrer_finn]{calibrer_finn()}}, \code{\link[=conformer_finn]{conformer_finn()}}, \code{\link[=itineraires_catalogue]{itineraires_catalogue()}}
