@@ -212,6 +212,15 @@ placettes tenues à l’écart : 3,36 m²/ha (régression 3,58, persistance
 4,24), 40 min de CPU. Les quantiles des tirages ne sont pas un
 intervalle de prédiction (19 % de couverture). Suite :
 `simuler_itineraire()`, avec une source d’incertitude des paramètres.
+Incertitude (`data-raw/prototype_finn_incertitude.R`, 8 calibrations) :
+plusieurs graines ne changent rien (couverture 90 % à 26 %) ; le
+bootstrap fait exploser deux modèles sur quatre à cause des essences
+rares (54, 20G) ; l’intervalle **conforme** (résidus sur 1 000 autres
+placettes) couvre 92 %, demi-largeur 4,75 m²/ha, pour un seul modèle.
+Suite : garde-fou « arbres minimum par essence » dans
+[`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md),
+puis `simuler_itineraire()` avec intervalle conforme (hypothèse à écrire
+au-delà d’un pas).
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
