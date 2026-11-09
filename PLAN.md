@@ -8,7 +8,7 @@ chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
 > merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.18**
-> (release du 2026-10-19), relevée le 2026-10-19.
+> (release du 2026-10-19), relevée le 2026-11-09.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
@@ -143,7 +143,7 @@ opposer au prochain fork qui se présentera comme un raccourci.
 | 065 | Étape 4 : catalogue d’itinéraires, [`itineraires_admissibles()`](https://pobsteta.github.io/nemeton/reference/itineraires_admissibles.md), [`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md) sans FINN | ✅ spec validée le 2026-11-05 ; moteur → **2026.11.4** ; catalogue (squelette `a_sourcer`) à remplir par Pascal (D-4) |
 | 066 | Chantier B : sondes [`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md) (cœur, AlphaEarth d’abord) et MAESTRO en extracteur d’embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
 | 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; **B5** → **2026.11.5** ; [`simulate_density_sensitivity()`](https://pobsteta.github.io/nemeton/reference/simulate_density_sensitivity.md) → **2026.11.6** ; T1 `age_structurel =` → **2026.11.7** ; D-6 : ForPT code MIT, poids à vérifier ; D-1 révisée et validée : instances par lidR ([`segment_houppiers()`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)) par défaut, SelectAnyTree en option dans `forptnemeton` (non embarqué, CC BY-NC, quand ses poids seront publiés) ; profil B5 par défaut `points` (validé) ; `forptnemeton` 2026.11.2 (`forpt_embed()`, `forpt_age()`, non exécutés sur GPU) ; reste (D-6 licences, D-7 dépôt), N5 structurel, T1 désaturé, N4 (reporté, D-2) |
-| 068 | Chantier D : trajectoires FINN (`calibrer_finn()`, `simuler_itineraire()`), T4, [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) | ✅ validée le 2026-11-06 (D-1 à D-8 telles que proposées) ; [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) → **2026.11.8** ; prototype FINN ✅ (D-2 tient) ; calibration IFN BFC : FINN ≈ persistance à 5 ans ; reste trajectoires, T4 |
+| 068 | Chantier D : trajectoires FINN ([`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md), `simuler_itineraire()`), T4, [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) | ✅ validée le 2026-11-06 (D-1 à D-8 telles que proposées) ; [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) → **2026.11.8** ; prototype FINN ✅ (D-2 tient) ; calibration IFN BFC : FINN ≈ persistance à 5 ans ; reste trajectoires, T4 |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
 parcellaire de Dabo et un projet hors France ;
@@ -193,9 +193,25 @@ FINN de 0,7 ha : **FINN 3,50 m²/ha hors calibration, devant la
 régression (3,58) et la persistance (4,24)**, biais +0,33. Critère
 d’acceptation 2 de la spec 068 rempli en mécaniste. Décomposition
 (`data-raw/diagnostic_finn_processus.R`) : erreur restante surtout de la
-mortalité. Suite : `calibrer_finn()` dans le cœur. forptnemeton :
-`release.yml` ajouté (pobsteta/forptnemeton#4), tag et release
-`v2026.11.3` posés par le CI.
+mortalité. Suite :
+[`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md)
+dans le cœur. forptnemeton : `release.yml` ajouté
+(pobsteta/forptnemeton#4), tag et release `v2026.11.3` posés par le CI.
+
+### 2026-11-09
+
+Spec 068, étape 3 :
+**[`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md)
+et
+[`predire_finn()`](https://pobsteta.github.io/nemeton/reference/predire_finn.md)**
+dans le cœur (v2026.11.9), FINN et torch en Suggests (D-1). Table
+d’arbres appariée + table d’environnement en entrée ; placette FINN de
+0,7 ha par défaut ; processus neuronaux refusés (D-3). Préparation
+identique au prototype sur 7 632 placettes ; bout en bout, 1 000
+placettes tenues à l’écart : 3,36 m²/ha (régression 3,58, persistance
+4,24), 40 min de CPU. Les quantiles des tirages ne sont pas un
+intervalle de prédiction (19 % de couverture). Suite :
+`simuler_itineraire()`, avec une source d’incertitude des paramètres.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,

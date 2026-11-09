@@ -1019,6 +1019,10 @@ chaque exclusion, comparaison qualitative ponderee par profil
   : Family weights of the actor profiles
 - [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md)
   : Effects of management estimated from the project's own units
+- [`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md)
+  : Calibrate FINN on revisited plots
+- [`predire_finn()`](https://pobsteta.github.io/nemeton/reference/predire_finn.md)
+  : Predict basal area with a calibrated FINN model
 
 ### Corpus de connaissances et RAG
 

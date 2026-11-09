@@ -1,5 +1,31 @@
 # Changelog
 
+## nemeton 2026.11.9 (2026-11-09)
+
+### Nouveautés
+
+- **[`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md)**
+  et
+  **[`predire_finn()`](https://pobsteta.github.io/nemeton/reference/predire_finn.md)**
+  (spec 068, chantier D, étape 3) : calibration des processus mécanistes
+  de FINN (croissance, mortalité, recrutement, compétition) sur des
+  placettes mesurées deux fois, à partir d’une table d’arbres
+  (`placette`, `essence`, `d1`, `d2`, `poids`, `statut` vivant / mort /
+  coupe / recrute) et d’une table d’environnement par placette ;
+  prédiction de la surface terrière après un ou plusieurs pas, moyenne
+  de plusieurs tirages et quantiles 5-95 %. Placette FINN de 0,7 ha par
+  défaut : FINN arrondit les effectifs des cohortes, ce qui bruitait G
+  initiale (1,4 m²/ha d’écart-type) et biaisait le recrutement avec le
+  cercle de 15 m. Les arbres coupés sont retirés de l’état initial
+  (D-2). Processus neuronaux refusés tant qu’aucune validation croisée
+  ne montre de gain (D-3). FINN et torch passent en **Suggests** (D-1) :
+  sans eux, les deux fonctions s’arrêtent avec un message clair. Sur 1
+  000 placettes IFN de BFC revisitées à 5 ans (calibration sur 1 000
+  autres, 40 min de CPU) : RMSE de 3,36 m²/ha sur G à 5 ans, biais
+  +0,37, contre 3,58 pour la régression linéaire et 4,24 pour la
+  persistance. Les quantiles des tirages ne sont pas un intervalle de
+  prédiction (19 % des valeurs observées dedans).
+
 ## nemeton 2026.11.8 (2026-11-06)
 
 ### Nouveautés
