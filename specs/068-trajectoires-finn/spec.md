@@ -516,3 +516,30 @@ coordonnées IFN (floutées au kilomètre).
   à l'intérieur d'un peuplement rendrait l'intervalle trop étroit ; elle
   n'est pas mesurable avec l'IFN. La sous-corrélation observée sous 1,5 km
   (−0,06) n'en montre pas trace, sur peu de paires.
+
+### Volume le long des trajectoires (2026-11-09, v2026.11.13)
+
+FINN ne porte pas de hauteur : `simuler_itineraire(volume = TRUE)` cube les
+cohortes au diamètre seul, avec les tarifs Schaeffer à une entrée de l'IFN
+(spec 062 ; numéro et type conseillé par essence, cascade SER → GRECO →
+France). `"other"` : tarif de l'essence « other » dominante de la placette au
+départ (ou de l'ensemble) qui a un tarif.
+
+- **Contrôle des tarifs** (`data-raw/prototype_finn_volume.R`, 12 974 arbres
+  vifs de la première visite des 1 000 placettes « test », essence exacte,
+  SER de la placette) : +1,8 % sur le volume total ; par classe de
+  diamètre, −9,6 % sous 20 cm, +3,5 / +2,3 / +3,4 % de 20 à 70 cm, +18,6 %
+  au-delà de 70 cm. Les très gros bois sont surestimés : à dire dans la
+  fiche pour un itinéraire à diamètre d'exploitabilité élevé.
+- **« other »** : sur les mêmes placettes, le tarif de l'essence dominante
+  donne 207,0 m³/ha contre 206,8 avec l'essence exacte de chaque arbre.
+- **Piège trouvé** : une essence sans tarif rendait 0 au lieu de `NA` (somme
+  par placette) ; corrigé, et le groupe « other » ne retient que des
+  essences qui ont un tarif.
+- **Trajectoires** (100 placettes « test », 10 tirages) : 219 m³/ha au
+  départ, 261, 327 et 438 m³/ha à 10, 25 et 50 ans sans gestion ; avec
+  l'éclaircie de test (rotation 10 ans, exploitabilité 60 cm, cible
+  20 m²/ha), 195 à 211 m³/ha sur pied et 219 m³/ha prélevés en cumul.
+- **Reste** : C1 (infradensité, BEF, fraction de carbone) demande une
+  correspondance ESPAR → `wood_density.csv` (codes à 4 lettres, 22
+  essences) ; B2 n'a pas d'équivalent sans hauteurs.

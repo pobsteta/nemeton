@@ -135,6 +135,14 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #'   `"racine"` (default, `q * sqrt(k)`, independent errors from step to
 #'   step) or `"lineaire"` (`q * k`, errors that add up). Both are
 #'   **hypotheses**: no plot is revisited over 50 years.
+#' @param volume Logical. Also compute the merchantable volume (`"volume"`
+#'   and `"volume_preleve"`, m3/ha) with the one-entry Schaeffer tariffs of
+#'   the IFN ([ifn_tarif_schaeffer_reference()]: number and advised type of
+#'   each species, cascade SER -> GRECO -> France with the SER of the
+#'   `ser` column of `environnement` when present). Stems below 7.5 cm (the
+#'   IFN threshold) have no volume. The `"other"` group takes the tariff of
+#'   the dominant `"other"` species (basal area) of the plot at the start
+#'   that has a tariff, or of all plots. Default `FALSE`.
 #' @param unites data.frame or `NULL`. `placette`, `unite`: the plots of each
 #'   management unit (UGF). The output is then one row per unit, the mean of
 #'   its plots (equal weights), with the half-width of a unit of `k` plots
@@ -144,7 +152,8 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #'   `placette`, `itineraire`, `annee` (years from the start, 0 = initial
 #'   state), `variable` (`"g"`: basal area before the cut, m2/ha;
 #'   `"tiges"`: stems/ha before the cut; `"g_prelevee"`: basal area
-#'   removed at that date, m2/ha), `moyenne` (mean of the trajectories),
+#'   removed at that date, m2/ha; with `volume = TRUE`, `"volume"` and
+#'   `"volume_preleve"`, m3/ha), `moyenne` (mean of the trajectories),
 #'   `bas`, `haut` (interval, for `"g"` only) and `intervalle`
 #'   (`"conforme"` at one step, `"conforme_racine"` or
 #'   `"conforme_lineaire"` beyond, `"aucun"` without conformal residuals or
@@ -160,11 +169,17 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #' measured on the natural dynamics over one step; after a cut it is kept as
 #' is, which is another hypothesis.
 #'
+#' The volume comes from the diameter only (FINN carries no height). On
+#' 12 974 trees of 1000 IFN plots of BFC, the tariffs of the exact species
+#' give 1.8 % more than the IFN volumes in total, 9.6 % less between 7.5 and
+#' 20 cm and 18.6 % more above 70 cm (`data-raw/prototype_finn_volume.R`).
+#'
 #' @seealso [calibrer_finn()], [conformer_finn()], [itineraires_catalogue()]
 #' @export
 simuler_itineraire <- function(calibration, arbres, environnement, itineraire = NULL,
                                horizon = 50, n_tirages = 20L,
-                               elargissement = c("racine", "lineaire"), unites = NULL) {
+                               elargissement = c("racine", "lineaire"), volume = FALSE,
+                               unites = NULL) {
   if (!inherits(calibration, "finn_calibration")) {
     cli::cli_abort("{.arg calibration} must come from {.fn calibrer_finn}.")
   }
@@ -190,28 +205,32 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   sp <- calibration$surface_placette
   n_sites <- nrow(prep$sites)
   env1 <- prep$env[prep$env$year == 0L, , drop = FALSE]
+  tarif <- if (isTRUE(volume)) {
+    .itin_tarifs(arbres, environnement, prep, calibration$essences)
+  } else NULL
   m <- calibration$modele
   m$eval()
 
-  # une trajectoire : matrices site x pas (g, tiges, g prelevee)
+  # une trajectoire : matrices site x pas (g, tiges, g prelevee, volumes)
   une_trajectoire <- function() {
-    g <- tiges <- prel <- matrix(0, n_sites, n_pas + 1L)
+    g <- tiges <- prel <- vol <- vprel <- matrix(0, n_sites, n_pas + 1L)
     coh <- prep$init[, c("siteID", "species", "dbh", "trees")]
     coh$trees <- round(coh$trees)
-    etat <- .itin_etat(coh, n_sites, sp)
-    g[, 1] <- etat$g; tiges[, 1] <- etat$tiges
+    etat <- .itin_etat(coh, n_sites, sp, tarif)
+    g[, 1] <- etat$g; tiges[, 1] <- etat$tiges; vol[, 1] <- etat$v
     for (k in seq_len(n_pas)) {
-      sim <- .itin_un_pas(m, coh, env1, sp, length(calibration$essences))
-      coh <- sim
-      etat <- .itin_etat(coh, n_sites, sp)
-      g[, k + 1L] <- etat$g; tiges[, k + 1L] <- etat$tiges
+      coh <- .itin_un_pas(m, coh, env1, sp, length(calibration$essences))
+      etat <- .itin_etat(coh, n_sites, sp, tarif)
+      g[, k + 1L] <- etat$g; tiges[, k + 1L] <- etat$tiges; vol[, k + 1L] <- etat$v
       if (!is.null(regles) && (k * pas_a) %% regles$rotation_ans == 0 && k < n_pas) {
         coupe <- .itin_couper(coh, regles, n_sites, sp)
-        prel[, k + 1L] <- etat$g - .itin_etat(coupe, n_sites, sp)$g
+        apres <- .itin_etat(coupe, n_sites, sp, tarif)
+        prel[, k + 1L] <- etat$g - apres$g
+        vprel[, k + 1L] <- etat$v - apres$v
         coh <- coupe
       }
     }
-    list(g = g, tiges = tiges, prel = prel)
+    list(g = g, tiges = tiges, prel = prel, vol = vol, vprel = vprel)
   }
   traj <- lapply(seq_len(n_tirages), function(i) une_trajectoire())
   moy <- function(v) Reduce(`+`, lapply(traj, `[[`, v)) / n_tirages
@@ -224,6 +243,9 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   }
   out <- rbind(long(moy("g"), "g"), long(moy("tiges"), "tiges"),
                long(moy("prel"), "g_prelevee"))
+  if (!is.null(tarif)) {
+    out <- rbind(out, long(moy("vol"), "volume"), long(moy("vprel"), "volume_preleve"))
+  }
   conf <- calibration$conforme
   if (is.null(unites)) {
     k_unite <- rep(1L, nrow(out))
@@ -237,7 +259,8 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
                             FUN = mean)
     n_pla <- table(unites$unite[unites$placette %in% prep$sites$placette])
     out$n_placettes <- as.integer(n_pla[out$unite])
-    out <- out[order(match(out$variable, c("g", "tiges", "g_prelevee")), out$annee, out$unite), ]
+    out <- out[order(match(out$variable, c("g", "tiges", "g_prelevee", "volume", "volume_preleve")),
+                      out$annee, out$unite), ]
     out <- out[, c("unite", "n_placettes", "itineraire", "annee", "variable", "moyenne")]
     k_unite <- out$n_placettes
     out$groupes_conformes <- NA_character_
@@ -350,13 +373,84 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   regles
 }
 
-# G (m2/ha) et tiges/ha par site depuis une table de cohortes.
-.itin_etat <- function(coh, n_sites, sp) {
+# G (m2/ha), tiges/ha et volume (m3/ha, si tarif) par site depuis une table de
+# cohortes.
+.itin_etat <- function(coh, n_sites, sp, tarif = NULL) {
   f <- factor(coh$siteID, levels = seq_len(n_sites))
-  g <- tapply(coh$trees * .g_arbre(coh$dbh), f, sum)
-  n <- tapply(coh$trees, f, sum)
-  g[is.na(g)] <- 0; n[is.na(n)] <- 0
-  list(g = as.numeric(g) / sp, tiges = as.numeric(n) / sp)
+  vide <- !seq_len(n_sites) %in% coh$siteID
+  som <- function(x) {
+    v <- as.numeric(tapply(x, f, sum))
+    v[vide] <- 0
+    v
+  }
+  out <- list(g = som(coh$trees * .g_arbre(coh$dbh)) / sp, tiges = som(coh$trees) / sp,
+              v = 0)
+  if (!is.null(tarif) && nrow(coh)) {
+    ij <- cbind(coh$siteID, coh$species)
+    vu <- volume_tarif_schaeffer(tarif$numero[ij], coh$dbh, tarif$type[ij])
+    vu[coh$dbh < 7.5] <- 0
+    out$v <- som(coh$trees * vu) / sp
+  }
+  out
+}
+
+# Tarif Schaeffer (numero, type conseille) par site x essence FINN. "other" :
+# essence "other" dominante (G initiale) de la placette, sinon de l'ensemble.
+.itin_tarifs <- function(arbres, environnement, prep, essences) {
+  environnement <- as.data.frame(environnement)
+  ser <- if ("ser" %in% names(environnement)) {
+    as.character(environnement$ser)[match(prep$sites$placette,
+                                          as.character(environnement$placette))]
+  } else rep(NA_character_, nrow(prep$sites))
+  a <- as.data.frame(arbres)
+  a <- a[a$statut %in% c("vivant", "mort") & is.finite(a$d1) & is.finite(a$poids) &
+           as.character(a$placette) %in% prep$sites$placette, , drop = FALSE]
+  a$g <- a$poids * .g_arbre(a$d1)
+  autres <- a[!as.character(a$essence) %in% setdiff(essences, "other"), , drop = FALSE]
+  # essence dominante en G parmi celles qui ont un tarif (au moins France)
+  a_tarif <- function(e) !is.na(ifn_tarif_schaeffer_reference(e)$type_conseille[1])
+  avec <- Filter(a_tarif, unique(as.character(a$essence)))
+  dominante <- function(x) {
+    x <- x[as.character(x$essence) %in% avec, , drop = FALSE]
+    if (!nrow(x)) return(NA_character_)
+    g <- tapply(x$g, as.character(x$essence), sum)
+    names(g)[which.max(g)]
+  }
+  # sans aucune essence "other" au depart, ses recrues prennent le tarif de
+  # l'essence dominante de l'ensemble
+  autre_global <- dominante(autres)
+  if (is.na(autre_global)) autre_global <- dominante(a)
+  autre_site <- vapply(prep$sites$placette, function(p) {
+    dominante(autres[as.character(autres$placette) == p, , drop = FALSE])
+  }, character(1))
+  autre_site[is.na(autre_site)] <- autre_global
+  n_s <- nrow(prep$sites); n_sp <- length(essences)
+  espar <- matrix(rep(essences, each = n_s), n_s, n_sp)
+  espar[, essences == "other"] <- autre_site
+  cache <- new.env()
+  un_tarif <- function(e, s) {
+    cle <- paste(e, s)
+    if (is.null(cache[[cle]])) {
+      r <- if (is.na(e)) NULL else
+        ifn_tarif_schaeffer_reference(e, ser = if (is.na(s)) NULL else s)
+      cache[[cle]] <- if (is.null(r) || is.na(r$type_conseille[1])) c(NA, NA) else
+        c(r$numero[r$type == r$type_conseille[1]], r$type_conseille[1])
+    }
+    cache[[cle]]
+  }
+  numero <- matrix(NA_real_, n_s, n_sp); type <- matrix("SCHL", n_s, n_sp)
+  for (i in seq_len(n_s)) for (j in seq_len(n_sp)) {
+    t <- un_tarif(espar[i, j], ser[i])
+    numero[i, j] <- as.numeric(t[1]); if (!is.na(t[2])) type[i, j] <- t[2]
+  }
+  manque <- setdiff(unique(espar[is.na(numero)]), NA)
+  if (length(manque)) {
+    cli::cli_warn(c(
+      "No IFN Schaeffer tariff for species {.val {manque}}: volume is {.val NA} where they grow.",
+      "i" = "Check the species codes of {.arg arbres} (IFN ESPAR)."
+    ))
+  }
+  list(numero = numero, type = type)
 }
 
 # Coupe entre deux pas : exploitabilite puis eclaircie, tiges tirees.
