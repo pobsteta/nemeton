@@ -10,6 +10,15 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.11] - 2026-11-09
+
+### Added
+- `simuler_itineraire()`: FINN stand trajectories, step by step, with the rules of a sourced itinerary applied between steps by binomial removal of stems; long output with conformal interval on basal area (spec 068, step 3).
+- `conformer_finn()`: split conformal residuals of a FINN calibration on held-out revisited plots.
+
+### Changed
+- `calibrer_finn()` returns the identifiers of the calibration plots (`placettes`).
+
 ## [2026.11.10] - 2026-11-09
 
 ### Changed

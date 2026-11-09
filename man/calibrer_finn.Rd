@@ -81,7 +81,8 @@ A list of class \code{"finn_calibration"}: \code{modele} (the fitted FINN
 model, a torch object: save it with \code{torch::torch_save()}, not
 \code{saveRDS()}), \code{essences}, \code{variables_env}, \code{surface_placette},
 \code{pas_annees}, \code{recruits_dbh}, \code{n_placettes}, \code{epoques},
-\code{taux_apprentissage}, \code{processus}.
+\code{taux_apprentissage}, \code{processus}, \code{placettes} (identifiers of
+the calibration plots, checked by \code{\link[=conformer_finn]{conformer_finn()}}).
 }
 \description{
 Fits the mechanistic processes of FINN (Forest Informed Neural Networks,

@@ -160,7 +160,7 @@ dans la synthèse ; T4 (couche, statut).
 |---|---|
 | 1. `effet_gestion()` | ✅ **2026.11.8** — fiche, écart n° 27 |
 | 2. Prototype FINN (`data-raw/prototype_finn.R`) | ✅ 2026-11-07 — **D-2 tient** (voir ci-dessous) ; temps CPU très en dessous du critère 3 |
-| 3. `calibrer_finn()`, `simuler_itineraire()` | prototype de calibration ✅ 2026-11-08 ; **`calibrer_finn()` + `predire_finn()` ✅ 2026-11-09 (v2026.11.9)** : 3,36 m²/ha hors calibration (voir ci-dessous) ; `simuler_itineraire()` à faire |
+| 3. `calibrer_finn()`, `simuler_itineraire()` | prototype de calibration ✅ 2026-11-08 ; **`calibrer_finn()` + `predire_finn()` ✅ 2026-11-09 (v2026.11.9)** : 3,36 m²/ha hors calibration (voir ci-dessous) ; **`simuler_itineraire()` + `conformer_finn()` ✅ 2026-11-09 (v2026.11.11)** |
 | 4. T4, `comparer_itineraires(trajectoires =)` | après 3 |
 
 **Écart au § 3.1 lors du codage.** L'effet moyen n'est pas la moyenne des
@@ -456,3 +456,29 @@ les mêmes tirages, mêmes 1 000 placettes tenues à l'écart :
 Le garde-fou supprime les explosions sans dégrader le modèle principal. Le
 bootstrap reste une sous-estimation de l'incertitude (30 % de couverture pour
 l'ensemble de deux) : l'intervalle de `simuler_itineraire()` reste conforme.
+
+### `simuler_itineraire()` et `conformer_finn()` (2026-11-09, v2026.11.11)
+
+- **Pas à pas** : chaque pas FINN repart des cohortes du pas précédent
+  (`return_cohorts = "last"`, puis `makeInitCohorts`). Un pas redonne
+  `predire_finn()` (écart moyen 0,04 m²/ha sur 20 placettes) ; 50 ans pas à
+  pas, 43,5 m²/ha en moyenne sur 100 placettes, contre 43,1 en continu
+  (écart-type des écarts 0,84 : le bruit des tirages).
+- **Règles entre les pas** (sémantique écrite dans la doc, pas de valeur
+  par défaut) : à chaque rotation, tiges au-dessus du diamètre
+  d'exploitabilité récoltées, puis éclaircie uniforme de la part
+  `(G − cible) / G`, plafonnée par l'intensité ; tirage binomial par
+  cohorte. Itinéraire test (rotation 10 ans, exploitabilité 60 cm, cible
+  20 m²/ha, 30 % au plus ; valeurs de test, pas un itinéraire) : G moyenne
+  24,6 → 21,4 → 23,2 m²/ha aux années 0, 25 et 50, contre 24,6 → 34,2 → 43,4
+  sans gestion.
+- **Temps** : 100 placettes × 100 trajectoires × 50 ans en 16 min de CPU
+  (4 fils), avec ou sans éclaircie : critère 3 tenu.
+- **Intervalle** : `conformer_finn()` sur les 1 000 placettes « conformes »
+  donne 4,67 m²/ha à 90 % (4,70 dans le prototype, autres tirages). Au-delà
+  d'un pas, élargissement en racine du nombre de pas par défaut ;
+  hypothèse étiquetée dans la colonne `intervalle`.
+- **Reste** : aucun itinéraire du catalogue n'est sourcé, donc aucun n'est
+  simulable en dehors d'un catalogue fourni par le forestier ; résidu
+  agrégé à l'échelle de l'UGF (moyenne de placettes) ; variables dérivées
+  (volume, P1, C1, B2) ; puis `comparer_itineraires(trajectoires =)` et T4.

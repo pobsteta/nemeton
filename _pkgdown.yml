@@ -632,6 +632,8 @@ reference:
     - effet_gestion
     - calibrer_finn
     - predire_finn
+    - conformer_finn
+    - simuler_itineraire
 
   - subtitle: "Corpus de connaissances et RAG"
     contents:

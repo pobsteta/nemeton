@@ -57,7 +57,8 @@
 #'   model, a torch object: save it with `torch::torch_save()`, not
 #'   `saveRDS()`), `essences`, `variables_env`, `surface_placette`,
 #'   `pas_annees`, `recruits_dbh`, `n_placettes`, `epoques`,
-#'   `taux_apprentissage`, `processus`.
+#'   `taux_apprentissage`, `processus`, `placettes` (identifiers of the
+#'   calibration plots, checked by [conformer_finn()]).
 #'
 #' @details
 #' Requires the suggested packages \pkg{FINN}, \pkg{torch} (with libtorch,
@@ -124,6 +125,7 @@ calibrer_finn <- function(arbres, environnement, processus = "mecaniste",
     modele = m, essences = prep$essences, variables_env = prep$variables_env,
     surface_placette = surface_placette, pas_annees = pas_annees,
     recruits_dbh = prep$recruits_dbh, n_placettes = nrow(prep$sites),
+    placettes = prep$sites$placette,
     epoques = as.integer(epoques), taux_apprentissage = taux_apprentissage,
     processus = processus
   ), class = "finn_calibration")
