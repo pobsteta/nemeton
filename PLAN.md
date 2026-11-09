@@ -193,6 +193,12 @@ Garde-fou livré (v2026.11.10) : `min_arbres_essence = 300L`, les essences
 plus rares vont dans `"other"`. Les deux bootstraps qui explosaient
 (RMSE 6,23 et 13,84) passent à 3,49 et 3,51 ; graine 0 inchangé (3,37) ;
 conforme 91 %. Suite : `simuler_itineraire()`.
+`simuler_itineraire()` et `conformer_finn()` (v2026.11.11) : pas à pas avec
+règles entre les pas (binomial), intervalle conforme (4,7 m²/ha à 90 % pour
+5 ans, élargi en racine du nombre de pas : hypothèse). 100 placettes × 100
+trajectoires × 50 ans en 16 min de CPU. Suite : résidu agrégé à l'UGF,
+variables dérivées (volume, P1, C1, B2), puis `comparer_itineraires()` et T4 ;
+le catalogue d'itinéraires reste à sourcer par le forestier.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
