@@ -220,7 +220,11 @@ placettes) couvre 92 %, demi-largeur 4,75 m²/ha, pour un seul modèle.
 Suite : garde-fou « arbres minimum par essence » dans
 [`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md),
 puis `simuler_itineraire()` avec intervalle conforme (hypothèse à écrire
-au-delà d’un pas).
+au-delà d’un pas). Garde-fou livré (v2026.11.10) :
+`min_arbres_essence = 300L`, les essences plus rares vont dans
+`"other"`. Les deux bootstraps qui explosaient (RMSE 6,23 et 13,84)
+passent à 3,49 et 3,51 ; graine 0 inchangé (3,37) ; conforme 91 %. Suite
+: `simuler_itineraire()`.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,

@@ -1,5 +1,21 @@
 # Changelog
 
+## nemeton 2026.11.10 (2026-11-09)
+
+### Nouveautés
+
+- **`calibrer_finn(min_arbres_essence = 300L)`** (spec 068) : une
+  essence doit compter au moins 300 arbres dans l’état initial pour
+  recevoir ses propres paramètres ; en dessous, elle rejoint `"other"`,
+  même si elle fait partie des essences qui portent 90 % de G. Sur BFC,
+  les essences de 130 à 140 arbres (54, 20G) faisaient exploser deux
+  calibrations bootstrap sur quatre (RMSE 6,23 et 13,84 m²/ha à 5 ans,
+  jusqu’à 443 m²/ha prédits pour 13 au départ). Avec le seuil, ces deux
+  mêmes tirages donnent 3,49 et 3,51 ; le modèle principal ne perd rien
+  (3,37). L’intervalle conforme couvre toujours 91 % pour 90 % visés.
+  Les appels qui veulent l’ancien comportement passent
+  `min_arbres_essence = 1L`.
+
 ## nemeton 2026.11.9 (2026-11-09)
 
 ### Nouveautés

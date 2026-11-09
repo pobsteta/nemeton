@@ -15,7 +15,7 @@ the interval between the two visits."><meta property="og:image" content="https:/
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.9.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.10</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -143,6 +143,7 @@ the interval between the two visits.</p>
 <span>  epoques <span class="op">=</span> <span class="fl">600L</span>,</span>
 <span>  taux_apprentissage <span class="op">=</span> <span class="fl">0.003</span>,</span>
 <span>  part_essences <span class="op">=</span> <span class="fl">0.9</span>,</span>
+<span>  min_arbres_essence <span class="op">=</span> <span class="fl">300L</span>,</span>
 <span>  pas_annees <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  graine <span class="op">=</span> <span class="fl">42L</span>,</span>
 <span>  dossier <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -215,6 +216,15 @@ held-out error than 0.01 on BFC, spec 068).</p></dd>
 <dd><p>Numeric in <code>(0, 1]</code>. Species kept by decreasing
 initial basal area until they cover this share; the others are pooled
 in <code>"other"</code>. Default 0.9.</p></dd>
+
+
+<dt id="arg-min-arbres-essence">min_arbres_essence<a class="anchor" aria-label="anchor" href="#arg-min-arbres-essence"></a></dt>
+<dd><p>Integer. Minimum number of initial trees (alive
+or dead at the first visit) for a species to get its own parameters;
+below it the species goes to <code>"other"</code>, even within <code>part_essences</code>.
+Default 300: on BFC, species with 130 to 140 trees gave unstable
+parameters (predictions of several hundred m2/ha on a few plots in two
+bootstrap calibrations out of four, spec 068).</p></dd>
 
 
 <dt id="arg-pas-annees">pas_annees<a class="anchor" aria-label="anchor" href="#arg-pas-annees"></a></dt>

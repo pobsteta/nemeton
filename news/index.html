@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.9.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.10</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +116,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.10" id="nemeton-20261110-2026-11-09">nemeton 2026.11.10 (2026-11-09)<a class="anchor" aria-label="anchor" href="#nemeton-20261110-2026-11-09"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-10">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-10"></a></h3>
+<ul><li>
+<strong><code>calibrer_finn(min_arbres_essence = 300L)</code></strong> (spec 068) : une essence doit compter au moins 300 arbres dans l’état initial pour recevoir ses propres paramètres ; en dessous, elle rejoint <code>"other"</code>, même si elle fait partie des essences qui portent 90 % de G. Sur BFC, les essences de 130 à 140 arbres (54, 20G) faisaient exploser deux calibrations bootstrap sur quatre (RMSE 6,23 et 13,84 m²/ha à 5 ans, jusqu’à 443 m²/ha prédits pour 13 au départ). Avec le seuil, ces deux mêmes tirages donnent 3,49 et 3,51 ; le modèle principal ne perd rien (3,37). L’intervalle conforme couvre toujours 91 % pour 90 % visés. Les appels qui veulent l’ancien comportement passent <code>min_arbres_essence = 1L</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.9" id="nemeton-2026119-2026-11-09">nemeton 2026.11.9 (2026-11-09)<a class="anchor" aria-label="anchor" href="#nemeton-2026119-2026-11-09"></a></h2>
 <div class="section level3">
