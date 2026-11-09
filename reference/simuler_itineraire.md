@@ -16,6 +16,7 @@ simuler_itineraire(
   horizon = 50,
   n_tirages = 20L,
   elargissement = c("racine", "lineaire"),
+  volume = FALSE,
   unites = NULL
 )
 ```
@@ -89,6 +90,19 @@ simuler_itineraire(
   (`q * k`, errors that add up). Both are **hypotheses**: no plot is
   revisited over 50 years.
 
+- volume:
+
+  Logical. Also compute the merchantable volume (`"volume"` and
+  `"volume_preleve"`, m3/ha) with the one-entry Schaeffer tariffs of the
+  IFN
+  ([`ifn_tarif_schaeffer_reference()`](https://pobsteta.github.io/nemeton/reference/ifn_tarif_schaeffer_reference.md):
+  number and advised type of each species, cascade SER -\> GRECO -\>
+  France with the SER of the `ser` column of `environnement` when
+  present). Stems below 7.5 cm (the IFN threshold) have no volume. The
+  `"other"` group takes the tariff of the dominant `"other"` species
+  (basal area) of the plot at the start that has a tariff, or of all
+  plots. Default `FALSE`.
+
 - unites:
 
   data.frame or `NULL`. `placette`, `unite`: the plots of each
@@ -104,8 +118,9 @@ data.frame in long format, one row per plot, year and variable:
 `placette`, `itineraire`, `annee` (years from the start, 0 = initial
 state), `variable` (`"g"`: basal area before the cut, m2/ha; `"tiges"`:
 stems/ha before the cut; `"g_prelevee"`: basal area removed at that
-date, m2/ha), `moyenne` (mean of the trajectories), `bas`, `haut`
-(interval, for `"g"` only) and `intervalle` (`"conforme"` at one step,
+date, m2/ha; with `volume = TRUE`, `"volume"` and `"volume_preleve"`,
+m3/ha), `moyenne` (mean of the trajectories), `bas`, `haut` (interval,
+for `"g"` only) and `intervalle` (`"conforme"` at one step,
 `"conforme_racine"` or `"conforme_lineaire"` beyond, `"aucun"` without
 conformal residuals or at year 0). With `unites`: `unite` instead of
 `placette`, plus `n_placettes` and `groupes_conformes` (`"voisins"`,
@@ -119,6 +134,12 @@ response of the stand to a thinning (faster growth) comes only from the
 competition FINN learnt on unthinned plots. The conformal interval is
 measured on the natural dynamics over one step; after a cut it is kept
 as is, which is another hypothesis.
+
+The volume comes from the diameter only (FINN carries no height). On 12
+974 trees of 1000 IFN plots of BFC, the tariffs of the exact species
+give 1.8 % more than the IFN volumes in total, 9.6 % less between 7.5
+and 20 cm and 18.6 % more above 70 cm
+(`data-raw/prototype_finn_volume.R`).
 
 ## See also
 

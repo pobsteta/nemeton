@@ -13,6 +13,14 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.13\] - 2026-11-09
+
+### Added
+
+- `simuler_itineraire(volume = TRUE)`: merchantable volume and harvested
+  volume along the trajectories, from the cohort diameters with the IFN
+  one-entry Schaeffer tariffs (spec 068).
+
 ## \[2026.11.12\] - 2026-11-09
 
 ### Added

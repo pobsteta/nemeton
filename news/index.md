@@ -1,5 +1,25 @@
 # Changelog
 
+## nemeton 2026.11.13 (2026-11-09)
+
+### Nouveautés
+
+- **`simuler_itineraire(volume = TRUE)`** (spec 068) : volume bois fort
+  (`volume`, m³/ha) et volume prélevé (`volume_preleve`) le long des
+  trajectoires, à partir du seul diamètre des cohortes FINN, avec les
+  tarifs Schaeffer à une entrée de l’IFN
+  ([`ifn_tarif_schaeffer_reference()`](https://pobsteta.github.io/nemeton/reference/ifn_tarif_schaeffer_reference.md)
+  : numéro et type conseillé de chaque essence, cascade SER → GRECO →
+  France avec la colonne `ser` de `environnement`). Tiges de moins de
+  7,5 cm sans volume. Le groupe `"other"` prend le tarif de l’essence «
+  other » dominante (en G) de la placette au départ qui a un tarif.
+  Contrôle sur 12 974 arbres de 1 000 placettes IFN de BFC, tarif de
+  l’essence exacte contre volume IFN mesuré : +1,8 % au total, −9,6 %
+  sous 20 cm, +2 à +4 % de 20 à 70 cm, +18,6 % au-delà
+  (`data-raw/prototype_finn_volume.R`). Sur 100 placettes, 219 m³/ha au
+  départ, 438 à 50 ans sans gestion ; avec l’éclaircie de test, 219
+  m³/ha prélevés en cumul sur 50 ans.
+
 ## nemeton 2026.11.12 (2026-11-09)
 
 ### Nouveautés

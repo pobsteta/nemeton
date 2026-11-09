@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.12</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.13</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +116,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.13" id="nemeton-20261113-2026-11-09">nemeton 2026.11.13 (2026-11-09)<a class="anchor" aria-label="anchor" href="#nemeton-20261113-2026-11-09"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-13">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-13"></a></h3>
+<ul><li>
+<strong><code>simuler_itineraire(volume = TRUE)</code></strong> (spec 068) : volume bois fort (<code>volume</code>, m³/ha) et volume prélevé (<code>volume_preleve</code>) le long des trajectoires, à partir du seul diamètre des cohortes FINN, avec les tarifs Schaeffer à une entrée de l’IFN (<code><a href="../reference/ifn_tarif_schaeffer_reference.html">ifn_tarif_schaeffer_reference()</a></code> : numéro et type conseillé de chaque essence, cascade SER → GRECO → France avec la colonne <code>ser</code> de <code>environnement</code>). Tiges de moins de 7,5 cm sans volume. Le groupe <code>"other"</code> prend le tarif de l’essence « other » dominante (en G) de la placette au départ qui a un tarif. Contrôle sur 12 974 arbres de 1 000 placettes IFN de BFC, tarif de l’essence exacte contre volume IFN mesuré : +1,8 % au total, −9,6 % sous 20 cm, +2 à +4 % de 20 à 70 cm, +18,6 % au-delà (<code>data-raw/prototype_finn_volume.R</code>). Sur 100 placettes, 219 m³/ha au départ, 438 à 50 ans sans gestion ; avec l’éclaircie de test, 219 m³/ha prélevés en cumul sur 50 ans.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.12" id="nemeton-20261112-2026-11-09">nemeton 2026.11.12 (2026-11-09)<a class="anchor" aria-label="anchor" href="#nemeton-20261112-2026-11-09"></a></h2>
 <div class="section level3">

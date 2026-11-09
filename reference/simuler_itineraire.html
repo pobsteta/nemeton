@@ -13,7 +13,7 @@ dynamics only, the cuts are imposed from outside."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.12</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.13</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -140,6 +140,7 @@ dynamics only, the cuts are imposed from outside.</p>
 <span>  horizon <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  n_tirages <span class="op">=</span> <span class="fl">20L</span>,</span>
 <span>  elargissement <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"racine"</span>, <span class="st">"lineaire"</span><span class="op">)</span>,</span>
+<span>  volume <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  unites <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -208,6 +209,17 @@ step) or <code>"lineaire"</code> (<code>q * k</code>, errors that add up). Both 
 <strong>hypotheses</strong>: no plot is revisited over 50 years.</p></dd>
 
 
+<dt id="arg-volume">volume<a class="anchor" aria-label="anchor" href="#arg-volume"></a></dt>
+<dd><p>Logical. Also compute the merchantable volume (<code>"volume"</code>
+and <code>"volume_preleve"</code>, m3/ha) with the one-entry Schaeffer tariffs of
+the IFN (<code><a href="ifn_tarif_schaeffer_reference.html">ifn_tarif_schaeffer_reference()</a></code>: number and advised type of
+each species, cascade SER -&gt; GRECO -&gt; France with the SER of the
+<code>ser</code> column of <code>environnement</code> when present). Stems below 7.5 cm (the
+IFN threshold) have no volume. The <code>"other"</code> group takes the tariff of
+the dominant <code>"other"</code> species (basal area) of the plot at the start
+that has a tariff, or of all plots. Default <code>FALSE</code>.</p></dd>
+
+
 <dt id="arg-unites">unites<a class="anchor" aria-label="anchor" href="#arg-unites"></a></dt>
 <dd><p>data.frame or <code>NULL</code>. <code>placette</code>, <code>unite</code>: the plots of each
 management unit (UGF). The output is then one row per unit, the mean of
@@ -221,7 +233,8 @@ measured by <code><a href="conformer_finn.html">conformer_finn()</a></code> on g
 <code>placette</code>, <code>itineraire</code>, <code>annee</code> (years from the start, 0 = initial
 state), <code>variable</code> (<code>"g"</code>: basal area before the cut, m2/ha;
 <code>"tiges"</code>: stems/ha before the cut; <code>"g_prelevee"</code>: basal area
-removed at that date, m2/ha), <code>moyenne</code> (mean of the trajectories),
+removed at that date, m2/ha; with <code>volume = TRUE</code>, <code>"volume"</code> and
+<code>"volume_preleve"</code>, m3/ha), <code>moyenne</code> (mean of the trajectories),
 <code>bas</code>, <code>haut</code> (interval, for <code>"g"</code> only) and <code>intervalle</code>
 (<code>"conforme"</code> at one step, <code>"conforme_racine"</code> or
 <code>"conforme_lineaire"</code> beyond, <code>"aucun"</code> without conformal residuals or
@@ -237,6 +250,10 @@ response of the stand to a thinning (faster growth) comes only from the
 competition FINN learnt on unthinned plots. The conformal interval is
 measured on the natural dynamics over one step; after a cut it is kept as
 is, which is another hypothesis.</p>
+<p>The volume comes from the diameter only (FINN carries no height). On
+12 974 trees of 1000 IFN plots of BFC, the tariffs of the exact species
+give 1.8 % more than the IFN volumes in total, 9.6 % less between 7.5 and
+20 cm and 18.6 % more above 70 cm (<code>data-raw/prototype_finn_volume.R</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
