@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.9] - 2026-11-09
+
+### Added
+- `calibrer_finn()`, `predire_finn()`: calibration of FINN mechanistic processes on revisited plots and basal-area prediction averaged over draws; FINN patch of 0.7 ha by default, cut trees removed from the initial state, neural processes refused (spec 068, step 3).
+
+### Changed
+- FINN and torch added to Suggests (spec 068, D-1).
+
 ## [2026.11.8] - 2026-11-06
 
 ### Added

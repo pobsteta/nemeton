@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.18** (release du 2026-10-19), relevée le 2026-10-19.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.18** (release du 2026-10-19), relevée le 2026-11-09.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -171,6 +171,17 @@ mécaniste. Décomposition (`data-raw/diagnostic_finn_processus.R`) : erreur
 restante surtout de la mortalité. Suite : `calibrer_finn()` dans le cœur.
 forptnemeton : `release.yml` ajouté (pobsteta/forptnemeton#4), tag et release
 `v2026.11.3` posés par le CI.
+
+### 2026-11-09
+
+Spec 068, étape 3 : **`calibrer_finn()` et `predire_finn()`** dans le cœur
+(v2026.11.9), FINN et torch en Suggests (D-1). Table d'arbres appariée +
+table d'environnement en entrée ; placette FINN de 0,7 ha par défaut ;
+processus neuronaux refusés (D-3). Préparation identique au prototype sur
+7 632 placettes ; bout en bout, 1 000 placettes tenues à l'écart : 3,36 m²/ha
+(régression 3,58, persistance 4,24), 40 min de CPU. Les quantiles des tirages
+ne sont pas un intervalle de prédiction (19 % de couverture). Suite :
+`simuler_itineraire()`, avec une source d'incertitude des paramètres.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
