@@ -23,7 +23,7 @@ env_finn_demo <- function(n_pla = 6) {
 
 test_that(".finn_preparer builds consistent FINN tables", {
   a <- arbres_finn_demo(); e <- env_finn_demo()
-  p <- nemeton:::.finn_preparer(a, e, surface_placette = 0.7)
+  p <- nemeton:::.finn_preparer(a, e, surface_placette = 0.7, min_arbres_essence = 1L)
   expect_equal(nrow(p$sites), 6)
   expect_equal(p$variables_env, c("tx_ete", "rr_an"))
   expect_equal(tail(p$essences, 1), "other")
@@ -46,7 +46,8 @@ test_that(".finn_preparer builds consistent FINN tables", {
 test_that(".finn_preparer pools rare species and drops plots without environment", {
   a <- arbres_finn_demo(); e <- env_finn_demo()
   e$rr_an[2] <- NA
-  p <- nemeton:::.finn_preparer(a, e, surface_placette = 0.7, part_essences = 0.5)
+  p <- nemeton:::.finn_preparer(a, e, surface_placette = 0.7, part_essences = 0.5,
+                                min_arbres_essence = 1L)
   expect_equal(nrow(p$sites), 5)
   expect_false("P2" %in% p$sites$placette)
   expect_true(length(p$essences) < 5)
@@ -55,6 +56,20 @@ test_that(".finn_preparer pools rare species and drops plots without environment
   expect_null(p2$obs)
   expect_true(all(p2$init$species %in% 1:2))
   expect_equal(nrow(p2$sites), 6)
+})
+
+test_that(".finn_preparer pools species with too few trees in other", {
+  a <- arbres_finn_demo(); e <- env_finn_demo()
+  n <- table(a$essence[a$statut %in% c("vivant", "mort")])
+  p_tous <- nemeton:::.finn_preparer(a, e, 0.7, part_essences = 1, min_arbres_essence = 1L)
+  expect_setequal(p_tous$essences, c(names(n), "other"))
+  seuil <- max(n[names(n) != names(which.max(n))]) + 1L
+  p <- nemeton:::.finn_preparer(a, e, 0.7, part_essences = 1, min_arbres_essence = seuil)
+  expect_equal(p$essences, c(names(which.max(n)), "other"))
+  expect_equal(nrow(p$init), nrow(p_tous$init))
+  expect_equal(sum(p$obs$ba), sum(p_tous$obs$ba))
+  # defaut 300 : aucune essence de la demo ne passe
+  expect_equal(nemeton:::.finn_preparer(a, e, 0.7)$essences, "other")
 })
 
 test_that(".finn_preparer validates its inputs", {

@@ -436,3 +436,23 @@ modèle ; l'intervalle visé est à 90 %.
    essence avant de lui donner ses propres paramètres (sinon `"other"`). Les
    modèles « graine » n'ont pas explosé sur le test, mais le risque est le
    même pour une essence rare d'un projet.
+
+### Garde-fou « arbres minimum par essence » (2026-11-09, v2026.11.10)
+
+`calibrer_finn(min_arbres_essence = 300L)` : une essence de moins de
+300 arbres dans l'état initial rejoint `"other"`. Sur les 1 000 placettes de
+calibration BFC, cela renvoie dans `"other"` 52, 20G, 54, 12V et 24 (132 à
+224 arbres) ; 14 et 64 (320 et 323) gardent leurs paramètres. Le seuil vient
+de ce test : les essences qui ont explosé en avaient 130 à 140. Recalcul sur
+les mêmes tirages, mêmes 1 000 placettes tenues à l'écart :
+
+| Modèle | RMSE sans garde-fou | RMSE avec | Couverture 90 % avec |
+|---|---|---|---|
+| graine 0 | 3,37 | 3,37 | 0,21 |
+| bootstrap 1 | 6,23 | 3,49 | 0,21 |
+| bootstrap 3 | 13,84 | 3,51 | 0,23 |
+| conforme (graine 0) | 3,36 | 3,38 | 0,91 (demi-largeur 4,70) |
+
+Le garde-fou supprime les explosions sans dégrader le modèle principal. Le
+bootstrap reste une sous-estimation de l'incertitude (30 % de couverture pour
+l'ensemble de deux) : l'intervalle de `simuler_itineraire()` reste conforme.

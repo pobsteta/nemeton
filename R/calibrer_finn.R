@@ -41,6 +41,12 @@
 #' @param part_essences Numeric in `(0, 1]`. Species kept by decreasing
 #'   initial basal area until they cover this share; the others are pooled
 #'   in `"other"`. Default 0.9.
+#' @param min_arbres_essence Integer. Minimum number of initial trees (alive
+#'   or dead at the first visit) for a species to get its own parameters;
+#'   below it the species goes to `"other"`, even within `part_essences`.
+#'   Default 300: on BFC, species with 130 to 140 trees gave unstable
+#'   parameters (predictions of several hundred m2/ha on a few plots in two
+#'   bootstrap calibrations out of four, spec 068).
 #' @param pas_annees Numeric. Years between the two visits, kept as metadata
 #'   for the simulations. Default 5.
 #' @param graine Integer. Random seed (R and torch). Default 42.
@@ -71,6 +77,7 @@
 calibrer_finn <- function(arbres, environnement, processus = "mecaniste",
                           surface_placette = 0.7, epoques = 600L,
                           taux_apprentissage = 0.003, part_essences = 0.9,
+                          min_arbres_essence = 300L,
                           pas_annees = 5, graine = 42L, dossier = NULL) {
   processus <- match.arg(processus, c("mecaniste", "neuronal"))
   if (processus == "neuronal") {
@@ -80,7 +87,8 @@ calibrer_finn <- function(arbres, environnement, processus = "mecaniste",
     ))
   }
   .finn_verifier_installation()
-  prep <- .finn_preparer(arbres, environnement, surface_placette, part_essences)
+  prep <- .finn_preparer(arbres, environnement, surface_placette, part_essences,
+                         min_arbres_essence = min_arbres_essence)
 
   set.seed(graine)
   FINN::FINN.seed(graine)
@@ -217,7 +225,8 @@ print.finn_calibration <- function(x, ...) {
 # Construit les tables FINN (sites, init, obs, env) en R de base, sans FINN :
 # testable seul. `essences` / `variables_env` imposes en prediction.
 .finn_preparer <- function(arbres, environnement, surface_placette,
-                           part_essences = 0.9, essences = NULL,
+                           part_essences = 0.9, min_arbres_essence = 300L,
+                           essences = NULL,
                            variables_env = NULL, observations = TRUE) {
   arbres <- as.data.frame(arbres)
   environnement <- as.data.frame(environnement)
@@ -265,7 +274,11 @@ print.finn_calibration <- function(x, ...) {
     g <- tapply(arbres$poids[ok_init] * .g_arbre(arbres$d1[ok_init]), arbres$essence[ok_init], sum)
     g <- sort(g, decreasing = TRUE)
     n <- which(cumsum(g) / sum(g) >= part_essences)[1]
-    essences <- c(setdiff(names(g)[seq_len(n)], "other"), "other")
+    # une essence trop rare a des parametres instables : elle va dans "other"
+    n_arbres <- table(arbres$essence[ok_init])
+    gardees <- names(g)[seq_len(n)]
+    gardees <- gardees[n_arbres[gardees] >= min_arbres_essence]
+    essences <- c(setdiff(gardees, "other"), "other")
   }
   arbres$species <- match(ifelse(arbres$essence %in% essences, arbres$essence, "other"), essences)
 

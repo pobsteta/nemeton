@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.10] - 2026-11-09
+
+### Changed
+- `calibrer_finn()` gains `min_arbres_essence = 300L`: species with fewer trees in the initial state are pooled into `"other"` instead of getting their own parameters; it removes the bootstrap explosions seen on rare species (spec 068).
+
 ## [2026.11.9] - 2026-11-09
 
 ### Added
