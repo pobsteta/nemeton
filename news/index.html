@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.11.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.12</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +116,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.12" id="nemeton-20261112-2026-11-09">nemeton 2026.11.12 (2026-11-09)<a class="anchor" aria-label="anchor" href="#nemeton-20261112-2026-11-09"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-12">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-12"></a></h3>
+<ul><li>
+<strong><code>simuler_itineraire(unites =)</code></strong> (spec 068) : trajectoires par unité de gestion (UGF), moyenne de ses placettes, avec un intervalle propre à une unité de <code>k</code> placettes (colonnes <code>unite</code>, <code>n_placettes</code>, <code>groupes_conformes</code>). La demi-largeur est le quantile conforme de l’erreur moyenne de groupes de <code>k</code> placettes <strong>voisines</strong> tenues à l’écart, pas q/√k : sur BFC, les erreurs de deux placettes sont presque indépendantes (corrélation de 0,02 à 0,04 entre 1,5 et 20 km), mais le biais commun ne se moyenne pas. À 90 %, 4,57 m²/ha pour une placette, 2,93 pour 4 voisines, 1,79 pour 16 ; sur des groupes de 1 000 autres placettes, ces intervalles contiennent 91, 93 et 91 % des erreurs, contre 88 et 77 % pour la règle en √k et 94 et 86 % pour des groupes tirés au hasard (<code>data-raw/prototype_finn_unites.R</code>). Les placettes IFN sont distantes de plusieurs kilomètres : une corrélation à l’intérieur d’un peuplement n’est pas mesurée.</li>
+<li>
+<strong><code>conformer_finn(coordonnees =)</code></strong> : garde les résidus signés et, si on lui donne <code>placette</code>, <code>x</code>, <code>y</code> (mètres, CRS projeté), les coordonnées qui servent à former les groupes de voisines ; sans coordonnées, les groupes sont tirés au hasard et la sortie l’indique (<code>"hasard"</code>).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.11" id="nemeton-20261111-2026-11-09">nemeton 2026.11.11 (2026-11-09)<a class="anchor" aria-label="anchor" href="#nemeton-20261111-2026-11-09"></a></h2>
 <div class="section level3">

@@ -13,7 +13,7 @@ dynamics only, the cuts are imposed from outside."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.11.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.12</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -139,7 +139,8 @@ dynamics only, the cuts are imposed from outside.</p>
 <span>  itineraire <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  horizon <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  n_tirages <span class="op">=</span> <span class="fl">20L</span>,</span>
-<span>  elargissement <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"racine"</span>, <span class="st">"lineaire"</span><span class="op">)</span></span>
+<span>  elargissement <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"racine"</span>, <span class="st">"lineaire"</span><span class="op">)</span>,</span>
+<span>  unites <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -206,6 +207,13 @@ Default 20.</p></dd>
 step) or <code>"lineaire"</code> (<code>q * k</code>, errors that add up). Both are
 <strong>hypotheses</strong>: no plot is revisited over 50 years.</p></dd>
 
+
+<dt id="arg-unites">unites<a class="anchor" aria-label="anchor" href="#arg-unites"></a></dt>
+<dd><p>data.frame or <code>NULL</code>. <code>placette</code>, <code>unite</code>: the plots of each
+management unit (UGF). The output is then one row per unit, the mean of
+its plots (equal weights), with the half-width of a unit of <code>k</code> plots
+measured by <code><a href="conformer_finn.html">conformer_finn()</a></code> on groups of <code>k</code> held-out plots.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -217,7 +225,9 @@ removed at that date, m2/ha), <code>moyenne</code> (mean of the trajectories),
 <code>bas</code>, <code>haut</code> (interval, for <code>"g"</code> only) and <code>intervalle</code>
 (<code>"conforme"</code> at one step, <code>"conforme_racine"</code> or
 <code>"conforme_lineaire"</code> beyond, <code>"aucun"</code> without conformal residuals or
-at year 0).</p>
+at year 0). With <code>unites</code>: <code>unite</code> instead of <code>placette</code>, plus
+<code>n_placettes</code> and <code>groupes_conformes</code> (<code>"voisins"</code>, <code>"hasard"</code> or
+<code>"placette"</code> for a unit of one plot).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

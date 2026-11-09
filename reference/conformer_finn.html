@@ -19,7 +19,7 @@ least niveau on average."><meta property="og:image" content="https://pobsteta.gi
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.11.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.12</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -141,7 +141,14 @@ least <code>niveau</code> on average.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">conformer_finn</span><span class="op">(</span><span class="va">calibration</span>, <span class="va">arbres</span>, <span class="va">environnement</span>, niveau <span class="op">=</span> <span class="fl">0.9</span>, n_tirages <span class="op">=</span> <span class="fl">10L</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">conformer_finn</span><span class="op">(</span></span>
+<span>  <span class="va">calibration</span>,</span>
+<span>  <span class="va">arbres</span>,</span>
+<span>  <span class="va">environnement</span>,</span>
+<span>  niveau <span class="op">=</span> <span class="fl">0.9</span>,</span>
+<span>  n_tirages <span class="op">=</span> <span class="fl">10L</span>,</span>
+<span>  coordonnees <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -170,12 +177,22 @@ variables of the calibration.</p></dd>
 <dt id="arg-n-tirages">n_tirages<a class="anchor" aria-label="anchor" href="#arg-n-tirages"></a></dt>
 <dd><p>Integer. Draws averaged per plot. Default 10.</p></dd>
 
+
+<dt id="arg-coordonnees">coordonnees<a class="anchor" aria-label="anchor" href="#arg-coordonnees"></a></dt>
+<dd><p>data.frame or <code>NULL</code>. <code>placette</code>, <code>x</code>, <code>y</code> in a
+projected CRS (metres), for the interval of units of several plots in
+<code><a href="simuler_itineraire.html">simuler_itineraire()</a></code>: residuals are then averaged over groups of
+<strong>neighbouring</strong> plots. Without coordinates the groups are random, which
+ignores the spatial correlation of the errors and gives a narrower
+interval.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The calibration, with an element <code>conforme</code>: a list with
-<code>niveau</code>, <code>demi_largeur</code> (m2/ha, for one step), <code>n_placettes</code>,
-<code>pas_annees</code>.</p>
+<code>niveau</code>, <code>demi_largeur</code> (m2/ha, for one step and one plot),
+<code>n_placettes</code>, <code>pas_annees</code>, and the signed residuals <code>residus</code> (with
+<code>x</code>, <code>y</code> when <code>coordonnees</code> is given) for the units.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -186,6 +203,17 @@ interval under an explicit hypothesis. On BFC (1000 plots, 5 years, model
 calibrated with <code>min_arbres_essence = 300</code>), the half-width at 90 % was
 4.70 m2/ha and the interval held 91 % of the basal areas of 1000 other
 plots (spec 068).</p>
+<p>For a unit of <code>k</code> plots, the half-width is the conformal quantile of the
+mean residual of groups of <code>k</code> held-out plots. On BFC the residuals of
+two plots are barely correlated (0.02 to 0.04 between 1.5 and 20 km), but
+the mean error does not shrink as <code>1 / sqrt(k)</code>: the shared bias stays.
+At 90 %, measured on 1000 held-out plots: 4.57 m2/ha for one plot, 2.93
+for 4 neighbouring plots, 1.79 for 16; on groups of 1000 other plots they
+held 91, 93 and 91 % of the errors, against 88 and 77 % for
+<code>1 / sqrt(k)</code> (2.28 and 1.14) and 94 and 86 % for random groups
+(<code>data-raw/prototype_finn_unites.R</code>). IFN plots are kilometres apart
+and their coordinates are blurred: a correlation within a stand, at a few
+hundred metres, is not measured.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

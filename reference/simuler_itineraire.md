@@ -15,7 +15,8 @@ simuler_itineraire(
   itineraire = NULL,
   horizon = 50,
   n_tirages = 20L,
-  elargissement = c("racine", "lineaire")
+  elargissement = c("racine", "lineaire"),
+  unites = NULL
 )
 ```
 
@@ -88,6 +89,15 @@ simuler_itineraire(
   (`q * k`, errors that add up). Both are **hypotheses**: no plot is
   revisited over 50 years.
 
+- unites:
+
+  data.frame or `NULL`. `placette`, `unite`: the plots of each
+  management unit (UGF). The output is then one row per unit, the mean
+  of its plots (equal weights), with the half-width of a unit of `k`
+  plots measured by
+  [`conformer_finn()`](https://pobsteta.github.io/nemeton/reference/conformer_finn.md)
+  on groups of `k` held-out plots.
+
 ## Value
 
 data.frame in long format, one row per plot, year and variable:
@@ -97,7 +107,9 @@ stems/ha before the cut; `"g_prelevee"`: basal area removed at that
 date, m2/ha), `moyenne` (mean of the trajectories), `bas`, `haut`
 (interval, for `"g"` only) and `intervalle` (`"conforme"` at one step,
 `"conforme_racine"` or `"conforme_lineaire"` beyond, `"aucun"` without
-conformal residuals or at year 0).
+conformal residuals or at year 0). With `unites`: `unite` instead of
+`placette`, plus `n_placettes` and `groupes_conformes` (`"voisins"`,
+`"hasard"` or `"placette"` for a unit of one plot).
 
 ## Details
 

@@ -239,6 +239,13 @@ nombre de pas : hypothèse). 100 placettes × 100 trajectoires × 50 ans en
 (volume, P1, C1, B2), puis
 [`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md)
 et T4 ; le catalogue d’itinéraires reste à sourcer par le forestier.
+Intervalle par UGF (v2026.11.12) : `simuler_itineraire(unites =)` ; la
+demi-largeur d’une unité de k placettes vient de groupes de k voisines
+tenues à l’écart (91 à 95 % de couverture mesurée pour k = 1 à 33), pas
+de q/√k (65 % à k = 33) : le biais commun ne se moyenne pas. Suite :
+variables dérivées (volume, P1, C1, B2), puis
+[`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md)
+et T4.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,

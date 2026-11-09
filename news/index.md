@@ -1,5 +1,29 @@
 # Changelog
 
+## nemeton 2026.11.12 (2026-11-09)
+
+### Nouveautés
+
+- **`simuler_itineraire(unites =)`** (spec 068) : trajectoires par unité
+  de gestion (UGF), moyenne de ses placettes, avec un intervalle propre
+  à une unité de `k` placettes (colonnes `unite`, `n_placettes`,
+  `groupes_conformes`). La demi-largeur est le quantile conforme de
+  l’erreur moyenne de groupes de `k` placettes **voisines** tenues à
+  l’écart, pas q/√k : sur BFC, les erreurs de deux placettes sont
+  presque indépendantes (corrélation de 0,02 à 0,04 entre 1,5 et 20 km),
+  mais le biais commun ne se moyenne pas. À 90 %, 4,57 m²/ha pour une
+  placette, 2,93 pour 4 voisines, 1,79 pour 16 ; sur des groupes de 1
+  000 autres placettes, ces intervalles contiennent 91, 93 et 91 % des
+  erreurs, contre 88 et 77 % pour la règle en √k et 94 et 86 % pour des
+  groupes tirés au hasard (`data-raw/prototype_finn_unites.R`). Les
+  placettes IFN sont distantes de plusieurs kilomètres : une corrélation
+  à l’intérieur d’un peuplement n’est pas mesurée.
+- **`conformer_finn(coordonnees =)`** : garde les résidus signés et, si
+  on lui donne `placette`, `x`, `y` (mètres, CRS projeté), les
+  coordonnées qui servent à former les groupes de voisines ; sans
+  coordonnées, les groupes sont tirés au hasard et la sortie l’indique
+  (`"hasard"`).
+
 ## nemeton 2026.11.11 (2026-11-09)
 
 ### Nouveautés
