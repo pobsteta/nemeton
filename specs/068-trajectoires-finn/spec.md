@@ -393,3 +393,46 @@ Deux contraintes de FINN 0.1.0 trouvées en route : `createProcess()` évalue
 sa formule dans l'espace de noms de FINN (on la lui passe par `do.call`), et
 `fit()` jette le dernier lot incomplet (taille de lot bornée au nombre de
 placettes).
+
+### Incertitude des prédictions (2026-11-09)
+
+`data-raw/prototype_finn_incertitude.R` : trois sources d'incertitude
+comparées sur les mêmes 1 000 placettes tenues à l'écart. Chaque calibration
+porte sur 1 000 placettes, avec une placette FINN de 0,7 ha et 10 tirages par
+modèle ; l'intervalle visé est à 90 %.
+
+| Source | RMSE | Biais | Couverture 90 % | Largeur moyenne (m²/ha) |
+|---|---|---|---|---|
+| un modèle seul (tirages) | 3,35 à 3,41 | +0,37 à +0,45 | 0,21 | 1,0 |
+| 4 graines, ensemble | 3,37 | +0,42 | 0,26 | 1,25 |
+| 4 bootstraps, ensemble | 4,96 | +0,65 | 0,38 | 3,0 |
+| conforme (1 modèle, résidus sur 1 000 autres placettes) | 3,36 | +0,38 | **0,92** | 9,5 |
+
+- **Graines** : les quatre modèles sont presque identiques (écart-type entre
+  modèles de G prédite, médiane 0,15 m²/ha). La variance d'optimisation est
+  négligeable : plusieurs graines n'apportent pas d'incertitude utile.
+- **Bootstrap** : plus de variance de paramètres (0,42 m²/ha), mais deux
+  modèles sur quatre **explosent** sur quelques placettes. Exemple : 443 m²/ha
+  prédits pour 13 m²/ha au départ (RMSE 13,8, contre 2,7 sans le 1 % de
+  placettes extrêmes). Ces placettes portent des essences rares (54, 20G :
+  130 à 140 arbres en calibration) qui passent juste au-dessus du seuil de
+  90 % de G et reçoivent leurs propres paramètres. Le bootstrap rend ces
+  paramètres instables.
+- **Conforme** (split conformal, Lei et al. 2018) : la couverture est
+  atteinte (92 % pour 90 % visés) sans toucher à la prédiction centrale, pour
+  le coût d'un seul modèle. Demi-largeur 4,75 m²/ha : c'est l'erreur réelle
+  d'une placette à 5 ans, mortalité des gros arbres comprise.
+
+**Conséquences.**
+1. Pour `simuler_itineraire()`, l'intervalle viendra des **résidus conformes**,
+   pas d'un ensemble de modèles. Ils ne sont mesurés qu'à **un pas (5 ans)** :
+   on n'a pas de placettes revisitées à 50 ans. Pour un horizon de plusieurs
+   pas, il faut une hypothèse (cumul des résidus pas à pas, ou intervalle
+   élargi en racine du nombre de pas), à écrire dans la fiche comme une
+   hypothèse, pas comme une mesure. À l'échelle d'une UGF (moyenne de
+   placettes ou de pixels), l'intervalle d'une placette est trop large : il
+   faut un résidu agrégé.
+2. **Garde-fou à ajouter à `calibrer_finn()`** : un nombre minimal d'arbres par
+   essence avant de lui donner ses propres paramètres (sinon `"other"`). Les
+   modèles « graine » n'ont pas explosé sur le test, mais le risque est le
+   même pour une essence rare d'un projet.
