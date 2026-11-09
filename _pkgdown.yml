@@ -630,6 +630,8 @@ reference:
     - comparer_itineraires
     - profils_poids
     - effet_gestion
+    - calibrer_finn
+    - predire_finn
 
   - subtitle: "Corpus de connaissances et RAG"
     contents:

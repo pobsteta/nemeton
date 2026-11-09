@@ -160,7 +160,7 @@ dans la synthèse ; T4 (couche, statut).
 |---|---|
 | 1. `effet_gestion()` | ✅ **2026.11.8** — fiche, écart n° 27 |
 | 2. Prototype FINN (`data-raw/prototype_finn.R`) | ✅ 2026-11-07 — **D-2 tient** (voir ci-dessous) ; temps CPU très en dessous du critère 3 |
-| 3. `calibrer_finn()`, `simuler_itineraire()` | prototype de calibration ✅ 2026-11-08 (`data-raw/prototype_finn_calibration.R`) : avec une placette FINN de 0,7 ha, FINN bat persistance et régression linéaire hors calibration (3,50 contre 3,58 m²/ha, voir ci-dessous) ; fonctions du cœur à faire |
+| 3. `calibrer_finn()`, `simuler_itineraire()` | prototype de calibration ✅ 2026-11-08 ; **`calibrer_finn()` + `predire_finn()` ✅ 2026-11-09 (v2026.11.9)** : 3,36 m²/ha hors calibration (voir ci-dessous) ; `simuler_itineraire()` à faire |
 | 4. T4, `comparer_itineraires(trajectoires =)` | après 3 |
 
 **Écart au § 3.1 lors du codage.** L'effet moyen n'est pas la moyenne des
@@ -363,3 +363,33 @@ meurent ou non, que la persistance et la régression ne prédisent pas mieux.
 **Conséquence pour `calibrer_finn()` et `simuler_itineraire()`** : placette
 FINN de 0,7 ha au moins (ou poids entiers par construction) et moyenne de
 plusieurs tirages ; à écrire dans la fiche.
+
+### `calibrer_finn()` et `predire_finn()` dans le cœur (2026-11-09, v2026.11.9)
+
+Signature retenue, plus étroite que celle du § 3.2 : `calibrer_finn(arbres,
+environnement, processus = "mecaniste", surface_placette = 0.7, ...)`. La
+fonction prend une table d'arbres déjà appariée entre deux visites
+(`placette`, `essence`, `d1`, `d2`, `poids`, `statut`) et une table
+d'environnement par placette. Lire l'IFN, extraire le climat (E-OBS,
+`meteoland_daily_grid()`) et la SER reste en amont : la même fonction sert
+ainsi aux placettes IFN, QField ou d'inventaire. `predire_finn()` rend G après
+`pas` pas, en moyenne de `n_tirages` tirages. FINN et torch sont en Suggests
+(D-1) ; les processus neuronaux sont refusés (D-3).
+
+La préparation des tables (R de base, testée sans FINN) reproduit à
+l'identique celle du prototype sur les 7 632 placettes de BFC (obs, état
+initial, `recruits_dbh`). Calibration de bout en bout avec la fonction du cœur,
+même tirage (1 000 placettes de calibration, 1 000 tenues à l'écart, placette
+FINN de 0,7 ha, 600 époques, lr 0,003, 10 tirages, 40 min de CPU) : **RMSE
+3,36 m²/ha, biais +0,37** (prototype : 3,50 ; régression 3,58 ; persistance
+4,24). L'écart au prototype vient de la graine (posée juste avant `finn()`) :
+c'est un second tirage, pas un gain. Les quantiles 5-95 % des tirages ne
+contiennent que 19 % des valeurs observées : ils montrent la stochasticité
+démographique de FINN, pas l'incertitude des paramètres. Pour les
+trajectoires de `simuler_itineraire()`, il faudra donc une autre source
+d'incertitude (plusieurs calibrations, ou ré-échantillonnage des placettes).
+
+Deux contraintes de FINN 0.1.0 trouvées en route : `createProcess()` évalue
+sa formule dans l'espace de noms de FINN (on la lui passe par `do.call`), et
+`fit()` jette le dernier lot incomplet (taille de lot bornée au nombre de
+placettes).
