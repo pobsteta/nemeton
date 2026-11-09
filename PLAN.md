@@ -143,7 +143,7 @@ opposer au prochain fork qui se présentera comme un raccourci.
 | 065 | Étape 4 : catalogue d’itinéraires, [`itineraires_admissibles()`](https://pobsteta.github.io/nemeton/reference/itineraires_admissibles.md), [`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md) sans FINN | ✅ spec validée le 2026-11-05 ; moteur → **2026.11.4** ; catalogue (squelette `a_sourcer`) à remplir par Pascal (D-4) |
 | 066 | Chantier B : sondes [`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md) (cœur, AlphaEarth d’abord) et MAESTRO en extracteur d’embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
 | 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; **B5** → **2026.11.5** ; [`simulate_density_sensitivity()`](https://pobsteta.github.io/nemeton/reference/simulate_density_sensitivity.md) → **2026.11.6** ; T1 `age_structurel =` → **2026.11.7** ; D-6 : ForPT code MIT, poids à vérifier ; D-1 révisée et validée : instances par lidR ([`segment_houppiers()`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)) par défaut, SelectAnyTree en option dans `forptnemeton` (non embarqué, CC BY-NC, quand ses poids seront publiés) ; profil B5 par défaut `points` (validé) ; `forptnemeton` 2026.11.2 (`forpt_embed()`, `forpt_age()`, non exécutés sur GPU) ; reste (D-6 licences, D-7 dépôt), N5 structurel, T1 désaturé, N4 (reporté, D-2) |
-| 068 | Chantier D : trajectoires FINN ([`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md), `simuler_itineraire()`), T4, [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) | ✅ validée le 2026-11-06 (D-1 à D-8 telles que proposées) ; [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) → **2026.11.8** ; prototype FINN ✅ (D-2 tient) ; calibration IFN BFC : FINN ≈ persistance à 5 ans ; reste trajectoires, T4 |
+| 068 | Chantier D : trajectoires FINN ([`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md), [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)), T4, [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) | ✅ validée le 2026-11-06 (D-1 à D-8 telles que proposées) ; [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) → **2026.11.8** ; prototype FINN ✅ (D-2 tient) ; calibration IFN BFC : FINN ≈ persistance à 5 ans ; reste trajectoires, T4 |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
 parcellaire de Dabo et un projet hors France ;
@@ -171,27 +171,28 @@ BFC revisitées à 5 ans (`data-raw/prototype_finn_calibration.R`, export
 IFN déjà local). Sur 1 000 placettes tenues à l’écart, FINN fait 3,90
 m²/ha de RMSE sur la surface terrière à 5 ans contre 3,74 pour la
 persistance : **il ne bat pas encore le modèle nul**.
-`simuler_itineraire()` attend un modèle qui le bat (climat, sol,
-croissance hybride). Piste 1 (climat E-OBS + profondeur de sol) : FINN
-passe devant la persistance sur la calibration (3,89 contre 4,24 m²/ha)
-mais pas sur les placettes tenues à l’écart (4,14 contre 3,94) : pas de
-transfert. Suite : plus de placettes de calibration. Piste 2 (5 000
-placettes de calibration, 2 h de CPU) : FINN fait moins bien que la
-persistance même sur la calibration (4,40 contre 4,11 m²/ha ; tenu à
-l’écart 4,55 contre 4,24), biais +1,9 m²/ha. Plus de données ne suffit
-pas. Modèles nuls plus exigeants, même tirage : persistance +
-accroissement moyen 3,68 m²/ha, régression linéaire G0 + climat + sol
-3,58 m²/ha sur les placettes tenues à l’écart. C’est la barre à franchir
-; FINN est à 4,55. Réglages de l’ajustement (1 000 placettes, 600
-époques) : lr 0,003 donne 4,15 m²/ha (lr 0,01 : 4,30), juste devant la
-persistance mais loin de la régression (3,58). Biais +1,4 m²/ha
-persistant : FINN surestime l’accroissement. Suite proposée : décomposer
-l’écart par processus. Cause trouvée : `CohortMat` (FINN) arrondit les
-effectifs à l’entier ; sur la placette de 0,07 ha, l’arrondi bruite G0
-(1,4 m²/ha) et gonfle le recrutement (+0,66 m²/ha de biais). Placette
-FINN de 0,7 ha : **FINN 3,50 m²/ha hors calibration, devant la
-régression (3,58) et la persistance (4,24)**, biais +0,33. Critère
-d’acceptation 2 de la spec 068 rempli en mécaniste. Décomposition
+[`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
+attend un modèle qui le bat (climat, sol, croissance hybride). Piste 1
+(climat E-OBS + profondeur de sol) : FINN passe devant la persistance
+sur la calibration (3,89 contre 4,24 m²/ha) mais pas sur les placettes
+tenues à l’écart (4,14 contre 3,94) : pas de transfert. Suite : plus de
+placettes de calibration. Piste 2 (5 000 placettes de calibration, 2 h
+de CPU) : FINN fait moins bien que la persistance même sur la
+calibration (4,40 contre 4,11 m²/ha ; tenu à l’écart 4,55 contre 4,24),
+biais +1,9 m²/ha. Plus de données ne suffit pas. Modèles nuls plus
+exigeants, même tirage : persistance + accroissement moyen 3,68 m²/ha,
+régression linéaire G0 + climat + sol 3,58 m²/ha sur les placettes
+tenues à l’écart. C’est la barre à franchir ; FINN est à 4,55. Réglages
+de l’ajustement (1 000 placettes, 600 époques) : lr 0,003 donne 4,15
+m²/ha (lr 0,01 : 4,30), juste devant la persistance mais loin de la
+régression (3,58). Biais +1,4 m²/ha persistant : FINN surestime
+l’accroissement. Suite proposée : décomposer l’écart par processus.
+Cause trouvée : `CohortMat` (FINN) arrondit les effectifs à l’entier ;
+sur la placette de 0,07 ha, l’arrondi bruite G0 (1,4 m²/ha) et gonfle le
+recrutement (+0,66 m²/ha de biais). Placette FINN de 0,7 ha : **FINN
+3,50 m²/ha hors calibration, devant la régression (3,58) et la
+persistance (4,24)**, biais +0,33. Critère d’acceptation 2 de la spec
+068 rempli en mécaniste. Décomposition
 (`data-raw/diagnostic_finn_processus.R`) : erreur restante surtout de la
 mortalité. Suite :
 [`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md)
@@ -211,20 +212,33 @@ identique au prototype sur 7 632 placettes ; bout en bout, 1 000
 placettes tenues à l’écart : 3,36 m²/ha (régression 3,58, persistance
 4,24), 40 min de CPU. Les quantiles des tirages ne sont pas un
 intervalle de prédiction (19 % de couverture). Suite :
-`simuler_itineraire()`, avec une source d’incertitude des paramètres.
-Incertitude (`data-raw/prototype_finn_incertitude.R`, 8 calibrations) :
-plusieurs graines ne changent rien (couverture 90 % à 26 %) ; le
-bootstrap fait exploser deux modèles sur quatre à cause des essences
-rares (54, 20G) ; l’intervalle **conforme** (résidus sur 1 000 autres
-placettes) couvre 92 %, demi-largeur 4,75 m²/ha, pour un seul modèle.
-Suite : garde-fou « arbres minimum par essence » dans
+[`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md),
+avec une source d’incertitude des paramètres. Incertitude
+(`data-raw/prototype_finn_incertitude.R`, 8 calibrations) : plusieurs
+graines ne changent rien (couverture 90 % à 26 %) ; le bootstrap fait
+exploser deux modèles sur quatre à cause des essences rares (54, 20G) ;
+l’intervalle **conforme** (résidus sur 1 000 autres placettes) couvre 92
+%, demi-largeur 4,75 m²/ha, pour un seul modèle. Suite : garde-fou «
+arbres minimum par essence » dans
 [`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md),
-puis `simuler_itineraire()` avec intervalle conforme (hypothèse à écrire
-au-delà d’un pas). Garde-fou livré (v2026.11.10) :
-`min_arbres_essence = 300L`, les essences plus rares vont dans
-`"other"`. Les deux bootstraps qui explosaient (RMSE 6,23 et 13,84)
-passent à 3,49 et 3,51 ; graine 0 inchangé (3,37) ; conforme 91 %. Suite
-: `simuler_itineraire()`.
+puis
+[`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
+avec intervalle conforme (hypothèse à écrire au-delà d’un pas).
+Garde-fou livré (v2026.11.10) : `min_arbres_essence = 300L`, les
+essences plus rares vont dans `"other"`. Les deux bootstraps qui
+explosaient (RMSE 6,23 et 13,84) passent à 3,49 et 3,51 ; graine 0
+inchangé (3,37) ; conforme 91 %. Suite :
+[`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md).
+[`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
+et
+[`conformer_finn()`](https://pobsteta.github.io/nemeton/reference/conformer_finn.md)
+(v2026.11.11) : pas à pas avec règles entre les pas (binomial),
+intervalle conforme (4,7 m²/ha à 90 % pour 5 ans, élargi en racine du
+nombre de pas : hypothèse). 100 placettes × 100 trajectoires × 50 ans en
+16 min de CPU. Suite : résidu agrégé à l’UGF, variables dérivées
+(volume, P1, C1, B2), puis
+[`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md)
+et T4 ; le catalogue d’itinéraires reste à sourcer par le forestier.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,

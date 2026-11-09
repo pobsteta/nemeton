@@ -66,10 +66,11 @@ comparer_itineraires(
 - trajectoires:
 
   Reserved for the simulation of chantier D (FINN): the output of
-  `simuler_itineraire()` (unit x itinerary x horizon x indicator, with
-  `valeur`, `bas`, `haut`, `methode`). Then `methode` becomes `"finn"`
-  and `incertitude` numeric; the output columns do not change. Not
-  implemented yet: an error if given.
+  [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
+  (unit x itinerary x horizon x indicator, with `valeur`, `bas`, `haut`,
+  `methode`). Then `methode` becomes `"finn"` and `incertitude` numeric;
+  the output columns do not change. Not implemented yet: an error if
+  given.
 
 ## Value
 

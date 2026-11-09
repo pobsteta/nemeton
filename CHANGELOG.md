@@ -13,6 +13,23 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.11\] - 2026-11-09
+
+### Added
+
+- [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md):
+  FINN stand trajectories, step by step, with the rules of a sourced
+  itinerary applied between steps by binomial removal of stems; long
+  output with conformal interval on basal area (spec 068, step 3).
+- [`conformer_finn()`](https://pobsteta.github.io/nemeton/reference/conformer_finn.md):
+  split conformal residuals of a FINN calibration on held-out revisited
+  plots.
+
+### Changed
+
+- [`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md)
+  returns the identifiers of the calibration plots (`placettes`).
+
 ## \[2026.11.10\] - 2026-11-09
 
 ### Changed

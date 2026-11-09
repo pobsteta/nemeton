@@ -1023,6 +1023,10 @@ chaque exclusion, comparaison qualitative ponderee par profil
   : Calibrate FINN on revisited plots
 - [`predire_finn()`](https://pobsteta.github.io/nemeton/reference/predire_finn.md)
   : Predict basal area with a calibrated FINN model
+- [`conformer_finn()`](https://pobsteta.github.io/nemeton/reference/conformer_finn.md)
+  : Conformal residuals of a FINN calibration
+- [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
+  : Simulate stand trajectories under a silvicultural itinerary
 
 ### Corpus de connaissances et RAG
 

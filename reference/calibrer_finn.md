@@ -124,7 +124,9 @@ torch object: save it with
 [`torch::torch_save()`](https://torch.mlverse.org/docs/reference/torch_save.html),
 not [`saveRDS()`](https://rdrr.io/r/base/readRDS.html)), `essences`,
 `variables_env`, `surface_placette`, `pas_annees`, `recruits_dbh`,
-`n_placettes`, `epoques`, `taux_apprentissage`, `processus`.
+`n_placettes`, `epoques`, `taux_apprentissage`, `processus`, `placettes`
+(identifiers of the calibration plots, checked by
+[`conformer_finn()`](https://pobsteta.github.io/nemeton/reference/conformer_finn.md)).
 
 ## Details
 

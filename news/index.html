@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.10.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.11</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +116,20 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.11" id="nemeton-20261111-2026-11-09">nemeton 2026.11.11 (2026-11-09)<a class="anchor" aria-label="anchor" href="#nemeton-20261111-2026-11-09"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-11">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-11"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/simuler_itineraire.html">simuler_itineraire()</a></code></strong> (spec 068, chantier D, étape 3) : trajectoires de peuplement par FINN, pas à pas depuis l’état initial de chaque placette. Les règles d’un itinéraire du catalogue (rotation, diamètre d’exploitabilité, surface terrière cible, intensité maximale de prélèvement) sont appliquées <strong>entre les pas</strong>, en retirant des tiges des cohortes par tirage binomial (D-2). Sortie en table longue : <code>placette</code>, <code>itineraire</code>, <code>annee</code>, <code>variable</code> (<code>g</code>, <code>tiges</code>, <code>g_prelevee</code>), <code>moyenne</code>, <code>bas</code>, <code>haut</code>, <code>intervalle</code>. Seul un itinéraire <code>statut_source = "source"</code> est simulé : le catalogue livré, encore « a_sourcer », est refusé ; sans itinéraire, la simulation est sans gestion. Le climat de <code>environnement</code> est tenu constant. Sur 100 placettes IFN de BFC, 100 trajectoires × 50 ans prennent 16 min de CPU (critère 3 : moins d’une heure). Un pas de <code><a href="../reference/simuler_itineraire.html">simuler_itineraire()</a></code> redonne <code><a href="../reference/predire_finn.html">predire_finn()</a></code> (écart moyen 0,04 m²/ha), et 50 ans pas à pas redonnent la simulation continue (43,5 contre 43,1 m²/ha en moyenne).</li>
+<li>
+<strong><code><a href="../reference/conformer_finn.html">conformer_finn()</a></code></strong> : intervalle de prédiction conforme (Lei et al.
+<ol start="2018" style="list-style-type: decimal"><li>mesuré sur des placettes revisitées hors calibration, refusé si des placettes ont servi à la calibration. Sur BFC, demi-largeur de 4,7 m²/ha à 90 % pour un pas de 5 ans, et 91 % des valeurs observées dedans. Au-delà d’un pas, <code><a href="../reference/simuler_itineraire.html">simuler_itineraire()</a></code> élargit l’intervalle en racine du nombre de pas (<code>elargissement = "racine"</code>) ou linéairement (<code>"lineaire"</code>) : ce sont des <strong>hypothèses</strong>, signalées dans la colonne <code>intervalle</code>, faute de placettes revisitées à 50 ans.</li>
+</ol></li>
+<li>
+<code><a href="../reference/calibrer_finn.html">calibrer_finn()</a></code> garde les identifiants des placettes de calibration (<code>placettes</code>), lus par <code><a href="../reference/conformer_finn.html">conformer_finn()</a></code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.10" id="nemeton-20261110-2026-11-09">nemeton 2026.11.10 (2026-11-09)<a class="anchor" aria-label="anchor" href="#nemeton-20261110-2026-11-09"></a></h2>
 <div class="section level3">

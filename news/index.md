@@ -1,5 +1,44 @@
 # Changelog
 
+## nemeton 2026.11.11 (2026-11-09)
+
+### Nouveautés
+
+- **[`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)**
+  (spec 068, chantier D, étape 3) : trajectoires de peuplement par FINN,
+  pas à pas depuis l’état initial de chaque placette. Les règles d’un
+  itinéraire du catalogue (rotation, diamètre d’exploitabilité, surface
+  terrière cible, intensité maximale de prélèvement) sont appliquées
+  **entre les pas**, en retirant des tiges des cohortes par tirage
+  binomial (D-2). Sortie en table longue : `placette`, `itineraire`,
+  `annee`, `variable` (`g`, `tiges`, `g_prelevee`), `moyenne`, `bas`,
+  `haut`, `intervalle`. Seul un itinéraire `statut_source = "source"`
+  est simulé : le catalogue livré, encore « a_sourcer », est refusé ;
+  sans itinéraire, la simulation est sans gestion. Le climat de
+  `environnement` est tenu constant. Sur 100 placettes IFN de BFC, 100
+  trajectoires × 50 ans prennent 16 min de CPU (critère 3 : moins d’une
+  heure). Un pas de
+  [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
+  redonne
+  [`predire_finn()`](https://pobsteta.github.io/nemeton/reference/predire_finn.md)
+  (écart moyen 0,04 m²/ha), et 50 ans pas à pas redonnent la simulation
+  continue (43,5 contre 43,1 m²/ha en moyenne).
+- **[`conformer_finn()`](https://pobsteta.github.io/nemeton/reference/conformer_finn.md)**
+  : intervalle de prédiction conforme (Lei et al.
+  2018. mesuré sur des placettes revisitées hors calibration, refusé si
+        des placettes ont servi à la calibration. Sur BFC, demi-largeur
+        de 4,7 m²/ha à 90 % pour un pas de 5 ans, et 91 % des valeurs
+        observées dedans. Au-delà d’un pas,
+        [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
+        élargit l’intervalle en racine du nombre de pas
+        (`elargissement = "racine"`) ou linéairement (`"lineaire"`) : ce
+        sont des **hypothèses**, signalées dans la colonne `intervalle`,
+        faute de placettes revisitées à 50 ans.
+- [`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md)
+  garde les identifiants des placettes de calibration (`placettes`), lus
+  par
+  [`conformer_finn()`](https://pobsteta.github.io/nemeton/reference/conformer_finn.md).
+
 ## nemeton 2026.11.10 (2026-11-09)
 
 ### Nouveautés
