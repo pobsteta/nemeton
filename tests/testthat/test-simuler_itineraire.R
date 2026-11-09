@@ -105,3 +105,69 @@ test_that("simuler_itineraire runs end to end with FINN", {
   expect_true(all(g$bas <= g$moyenne & g$moyenne <= g$haut))
   expect_true(any(s2$moyenne[s2$variable == "g_prelevee"] > 0))
 })
+
+# Sans FINN : le pas FINN est remplace par une croissance fixe (+1 cm), pour
+# tester la boucle, les coupes et l'intervalle.
+calibration_factice <- function(conforme = NULL) {
+  structure(list(modele = list(eval = function() invisible(NULL)),
+                 essences = c("09", "other"), variables_env = c("tx_ete", "rr_an"),
+                 surface_placette = 0.7, pas_annees = 5, placettes = paste0("P", 1:6),
+                 conforme = conforme), class = "finn_calibration")
+}
+
+test_that("simuler_itineraire loops over steps and applies the cuts (FINN mocked)", {
+  local_mocked_bindings(
+    .finn_verifier_installation = function() invisible(TRUE),
+    .itin_un_pas = function(m, coh, env1, sp, n_sp) transform(coh, dbh = dbh + 1)
+  )
+  a <- arbres_finn_demo(); e <- env_finn_demo()
+  s <- simuler_itineraire(calibration_factice(), a, e, horizon = 20, n_tirages = 2L)
+  g <- s[s$variable == "g", ]
+  expect_equal(sort(unique(g$annee)), c(0, 5, 10, 15, 20))
+  # croissance seule : G augmente a chaque pas, rien n'est preleve
+  croit <- tapply(g$moyenne, g$placette, function(v) all(diff(v) > 0))
+  expect_true(all(croit))
+  expect_true(all(s$moyenne[s$variable == "g_prelevee"] == 0))
+  expect_true(all(is.na(g$bas)))
+
+  # coupe rase tous les 10 ans (diametre 0) : tout part a l'annee 10, pas a 20
+  it <- itin_demo(diametre_exploitabilite_cm = 0)
+  s2 <- simuler_itineraire(calibration_factice(), a, e, itineraire = it, horizon = 20,
+                           n_tirages = 1L)
+  p <- s2[s2$variable == "g_prelevee", ]
+  g2 <- s2[s2$variable == "g", ]
+  expect_true(all(p$moyenne[p$annee == 10] > 0))
+  expect_true(all(p$moyenne[p$annee %in% c(5, 15, 20)] == 0))
+  expect_equal(p$moyenne[p$annee == 10], g2$moyenne[g2$annee == 10])
+  expect_true(all(g2$moyenne[g2$annee == 15] == 0))
+  expect_equal(unique(s2$itineraire), "demo")
+
+  # intervalle conforme : racine puis lineaire, borne basse a 0
+  conf <- list(niveau = 0.9, demi_largeur = 2, n_placettes = 100, pas_annees = 5)
+  s3 <- simuler_itineraire(calibration_factice(conf), a, e, horizon = 15, n_tirages = 1L)
+  g3 <- s3[s3$variable == "g" & s3$annee > 0, ]
+  expect_equal(g3$haut - g3$moyenne, 2 * sqrt(g3$annee / 5))
+  expect_true(all(g3$bas >= 0))
+  expect_equal(unique(g3$intervalle[g3$annee == 5]), "conforme")
+  s4 <- simuler_itineraire(calibration_factice(conf), a, e, horizon = 15, n_tirages = 1L,
+                           elargissement = "lineaire")
+  g4 <- s4[s4$variable == "g" & s4$annee > 0, ]
+  expect_equal(g4$haut - g4$moyenne, 2 * g4$annee / 5)
+  expect_equal(unique(g4$intervalle[g4$annee == 15]), "conforme_lineaire")
+})
+
+test_that("conformer_finn takes the residual quantile (predire_finn mocked)", {
+  pla <- paste0("Q", 1:40)
+  a <- data.frame(placette = pla, essence = "09", d1 = 20, d2 = 20, poids = 100,
+                  statut = "vivant")
+  g_obs <- 100 * pi * 0.1^2
+  local_mocked_bindings(predire_finn = function(calibration, arbres, environnement, ...) {
+    data.frame(placette = pla, g_predite = g_obs + seq_along(pla) / 10)
+  })
+  cal <- conformer_finn(calibration_factice(), a, data.frame(placette = pla, x = 1))
+  expect_equal(cal$conforme$n_placettes, 40)
+  expect_equal(cal$conforme$demi_largeur,
+               unname(stats::quantile((1:40) / 10, 0.9 * (1 + 1 / 40))))
+  expect_error(conformer_finn(calibration_factice(), a[1:10, ], data.frame(placette = pla, x = 1)),
+               "at least 30")
+})
