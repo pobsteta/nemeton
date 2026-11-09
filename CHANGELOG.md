@@ -10,6 +10,12 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.12] - 2026-11-09
+
+### Added
+- `simuler_itineraire(unites =)`: trajectories per management unit (mean of its plots) with the conformal half-width of a unit of k plots, measured on groups of k neighbouring held-out plots (spec 068).
+- `conformer_finn(coordonnees =)`: keeps the signed residuals and plot coordinates used to form those groups.
+
 ## [2026.11.11] - 2026-11-09
 
 ### Added

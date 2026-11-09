@@ -482,3 +482,37 @@ l'ensemble de deux) : l'intervalle de `simuler_itineraire()` reste conforme.
   simulable en dehors d'un catalogue fourni par le forestier ; résidu
   agrégé à l'échelle de l'UGF (moyenne de placettes) ; variables dérivées
   (volume, P1, C1, B2) ; puis `comparer_itineraires(trajectoires =)` et T4.
+
+### Intervalle à l'échelle de l'UGF (2026-11-09, v2026.11.12)
+
+`data-raw/prototype_finn_unites.R` : résidus à 5 ans du modèle « graine 0 »
+(seuil de 300 arbres par essence) sur les 2 000 placettes tenues à l'écart,
+coordonnées IFN (floutées au kilomètre).
+
+- **Corrélation spatiale des résidus** presque nulle : −0,06 sous 1,5 km
+  (318 paires), 0,03 à 0,04 de 1,5 à 5 km, 0,02 à 0,03 de 5 à 20 km, 0
+  au-delà.
+- **Mais l'erreur moyenne de k placettes ne baisse pas en 1/√k** : le biais
+  commun (+0,44 m²/ha) reste. Demi-largeur 90 % mesurée sur les 1 000
+  placettes « conforme », couverture sur des groupes de k voisines des 1 000
+  placettes « test » :
+
+  | k | voisines : q (couverture) | hasard : q (couverture) | q/√k (couverture) |
+  |---|---|---|---|
+  | 1 | 4,57 (0,91) | 4,57 (0,91) | 4,57 (0,91) |
+  | 2 | 3,30 (0,89) | 3,57 (0,92) | 3,23 (0,89) |
+  | 4 | 2,93 (0,93) | 3,01 (0,94) | 2,28 (0,88) |
+  | 8 | 2,30 (0,93) | 1,93 (0,90) | 1,61 (0,85) |
+  | 16 | 1,79 (0,91) | 1,49 (0,86) | 1,14 (0,77) |
+  | 33 | 1,66 (0,95) | 1,29 (0,87) | 0,80 (0,65) |
+
+- **Décision** : `simuler_itineraire(unites =)` prend la demi-largeur des
+  groupes de k voisines (`conformer_finn(coordonnees =)`) ; sans
+  coordonnées, des groupes au hasard, signalés `"hasard"` (sous-couverture
+  dès 16 placettes). Il faut au moins 30 groupes : une unité de k placettes
+  demande 30·k placettes tenues à l'écart.
+- **Limite** : les placettes d'une vraie UGF sont à quelques centaines de
+  mètres, celles de l'IFN à plusieurs kilomètres. Une corrélation plus forte
+  à l'intérieur d'un peuplement rendrait l'intervalle trop étroit ; elle
+  n'est pas mesurable avec l'IFN. La sous-corrélation observée sous 1,5 km
+  (−0,06) n'en montre pas trace, sur peu de paires.

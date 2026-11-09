@@ -4,7 +4,14 @@
 \alias{conformer_finn}
 \title{Conformal residuals of a FINN calibration}
 \usage{
-conformer_finn(calibration, arbres, environnement, niveau = 0.9, n_tirages = 10L)
+conformer_finn(
+  calibration,
+  arbres,
+  environnement,
+  niveau = 0.9,
+  n_tirages = 10L,
+  coordonnees = NULL
+)
 }
 \arguments{
 \item{calibration}{A \code{"finn_calibration"} object from \code{\link[=calibrer_finn]{calibrer_finn()}}.}
@@ -19,11 +26,19 @@ variables of the calibration.}
 \item{niveau}{Numeric in \verb{(0, 1)}. Target coverage. Default 0.9.}
 
 \item{n_tirages}{Integer. Draws averaged per plot. Default 10.}
+
+\item{coordonnees}{data.frame or \code{NULL}. \code{placette}, \code{x}, \code{y} in a
+projected CRS (metres), for the interval of units of several plots in
+\code{\link[=simuler_itineraire]{simuler_itineraire()}}: residuals are then averaged over groups of
+\strong{neighbouring} plots. Without coordinates the groups are random, which
+ignores the spatial correlation of the errors and gives a narrower
+interval.}
 }
 \value{
 The calibration, with an element \code{conforme}: a list with
-\code{niveau}, \code{demi_largeur} (m2/ha, for one step), \code{n_placettes},
-\code{pas_annees}.
+\code{niveau}, \code{demi_largeur} (m2/ha, for one step and one plot),
+\code{n_placettes}, \code{pas_annees}, and the signed residuals \code{residus} (with
+\code{x}, \code{y} when \code{coordonnees} is given) for the units.
 }
 \description{
 Measures the error of a calibrated FINN model on plots that took no part
@@ -42,6 +57,18 @@ interval under an explicit hypothesis. On BFC (1000 plots, 5 years, model
 calibrated with \code{min_arbres_essence = 300}), the half-width at 90 \% was
 4.70 m2/ha and the interval held 91 \% of the basal areas of 1000 other
 plots (spec 068).
+
+For a unit of \code{k} plots, the half-width is the conformal quantile of the
+mean residual of groups of \code{k} held-out plots. On BFC the residuals of
+two plots are barely correlated (0.02 to 0.04 between 1.5 and 20 km), but
+the mean error does not shrink as \code{1 / sqrt(k)}: the shared bias stays.
+At 90 \%, measured on 1000 held-out plots: 4.57 m2/ha for one plot, 2.93
+for 4 neighbouring plots, 1.79 for 16; on groups of 1000 other plots they
+held 91, 93 and 91 \% of the errors, against 88 and 77 \% for
+\code{1 / sqrt(k)} (2.28 and 1.14) and 94 and 86 \% for random groups
+(\verb{data-raw/prototype_finn_unites.R}). IFN plots are kilometres apart
+and their coordinates are blurred: a correlation within a stand, at a few
+hundred metres, is not measured.
 }
 \references{
 Lei J., G'Sell M., Rinaldo A., Tibshirani R.J., Wasserman L.

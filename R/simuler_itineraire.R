@@ -16,10 +16,17 @@
 #'   variables of the calibration.
 #' @param niveau Numeric in `(0, 1)`. Target coverage. Default 0.9.
 #' @param n_tirages Integer. Draws averaged per plot. Default 10.
+#' @param coordonnees data.frame or `NULL`. `placette`, `x`, `y` in a
+#'   projected CRS (metres), for the interval of units of several plots in
+#'   [simuler_itineraire()]: residuals are then averaged over groups of
+#'   **neighbouring** plots. Without coordinates the groups are random, which
+#'   ignores the spatial correlation of the errors and gives a narrower
+#'   interval.
 #'
 #' @return The calibration, with an element `conforme`: a list with
-#'   `niveau`, `demi_largeur` (m2/ha, for one step), `n_placettes`,
-#'   `pas_annees`.
+#'   `niveau`, `demi_largeur` (m2/ha, for one step and one plot),
+#'   `n_placettes`, `pas_annees`, and the signed residuals `residus` (with
+#'   `x`, `y` when `coordonnees` is given) for the units.
 #'
 #' @details
 #' Stops if some plots were used in the calibration (their residuals are
@@ -30,13 +37,25 @@
 #' 4.70 m2/ha and the interval held 91 % of the basal areas of 1000 other
 #' plots (spec 068).
 #'
+#' For a unit of `k` plots, the half-width is the conformal quantile of the
+#' mean residual of groups of `k` held-out plots. On BFC the residuals of
+#' two plots are barely correlated (0.02 to 0.04 between 1.5 and 20 km), but
+#' the mean error does not shrink as `1 / sqrt(k)`: the shared bias stays.
+#' At 90 %, measured on 1000 held-out plots: 4.57 m2/ha for one plot, 2.93
+#' for 4 neighbouring plots, 1.79 for 16; on groups of 1000 other plots they
+#' held 91, 93 and 91 % of the errors, against 88 and 77 % for
+#' `1 / sqrt(k)` (2.28 and 1.14) and 94 and 86 % for random groups
+#' (`data-raw/prototype_finn_unites.R`). IFN plots are kilometres apart
+#' and their coordinates are blurred: a correlation within a stand, at a few
+#' hundred metres, is not measured.
+#'
 #' @references Lei J., G'Sell M., Rinaldo A., Tibshirani R.J., Wasserman L.
 #'   (2018). Distribution-free predictive inference for regression. Journal
 #'   of the American Statistical Association 113(523), 1094-1111.
 #' @seealso [calibrer_finn()], [simuler_itineraire()]
 #' @export
 conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
-                           n_tirages = 10L) {
+                           n_tirages = 10L, coordonnees = NULL) {
   if (!inherits(calibration, "finn_calibration")) {
     cli::cli_abort("{.arg calibration} must come from {.fn calibrer_finn}.")
   }
@@ -53,14 +72,26 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
   }
   pred <- predire_finn(calibration, arbres, environnement, n_tirages = n_tirages)
   obs <- .finn_g_observee(arbres)
-  r <- abs(pred$g_predite - obs[match(pred$placette, names(obs))])
-  r <- r[is.finite(r)]
+  r <- pred$g_predite - obs[match(pred$placette, names(obs))]
+  ok <- is.finite(r)
+  r <- as.numeric(r[ok]); pla <- pred$placette[ok]
   if (length(r) < 30L) {
     cli::cli_abort("Only {length(r)} plot{?s} with an observed basal area: at least 30 needed.")
   }
-  q <- stats::quantile(r, min(1, niveau * (1 + 1 / length(r))), names = FALSE)
-  calibration$conforme <- list(niveau = niveau, demi_largeur = q,
-                               n_placettes = length(r), pas_annees = calibration$pas_annees)
+  q <- stats::quantile(abs(r), min(1, niveau * (1 + 1 / length(r))), names = FALSE)
+  conf <- list(niveau = niveau, demi_largeur = q, n_placettes = length(r),
+               pas_annees = calibration$pas_annees, residus = r, x = NULL, y = NULL)
+  if (!is.null(coordonnees)) {
+    coordonnees <- as.data.frame(coordonnees)
+    manq <- setdiff(c("placette", "x", "y"), names(coordonnees))
+    if (length(manq)) cli::cli_abort("{.arg coordonnees} lacks {.field {manq}}.")
+    k <- match(pla, as.character(coordonnees$placette))
+    if (anyNA(k) || any(!is.finite(coordonnees$x[k]) | !is.finite(coordonnees$y[k]))) {
+      cli::cli_abort("{.arg coordonnees} must give finite {.field x}, {.field y} for every plot.")
+    }
+    conf$x <- coordonnees$x[k]; conf$y <- coordonnees$y[k]
+  }
+  calibration$conforme <- conf
   calibration
 }
 
@@ -104,6 +135,10 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #'   `"racine"` (default, `q * sqrt(k)`, independent errors from step to
 #'   step) or `"lineaire"` (`q * k`, errors that add up). Both are
 #'   **hypotheses**: no plot is revisited over 50 years.
+#' @param unites data.frame or `NULL`. `placette`, `unite`: the plots of each
+#'   management unit (UGF). The output is then one row per unit, the mean of
+#'   its plots (equal weights), with the half-width of a unit of `k` plots
+#'   measured by [conformer_finn()] on groups of `k` held-out plots.
 #'
 #' @return data.frame in long format, one row per plot, year and variable:
 #'   `placette`, `itineraire`, `annee` (years from the start, 0 = initial
@@ -113,7 +148,9 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #'   `bas`, `haut` (interval, for `"g"` only) and `intervalle`
 #'   (`"conforme"` at one step, `"conforme_racine"` or
 #'   `"conforme_lineaire"` beyond, `"aucun"` without conformal residuals or
-#'   at year 0).
+#'   at year 0). With `unites`: `unite` instead of `placette`, plus
+#'   `n_placettes` and `groupes_conformes` (`"voisins"`, `"hasard"` or
+#'   `"placette"` for a unit of one plot).
 #'
 #' @details
 #' The climate is the one of `environnement`, held constant: without an
@@ -127,7 +164,7 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #' @export
 simuler_itineraire <- function(calibration, arbres, environnement, itineraire = NULL,
                                horizon = 50, n_tirages = 20L,
-                               elargissement = c("racine", "lineaire")) {
+                               elargissement = c("racine", "lineaire"), unites = NULL) {
   if (!inherits(calibration, "finn_calibration")) {
     cli::cli_abort("{.arg calibration} must come from {.fn calibrer_finn}.")
   }
@@ -136,6 +173,12 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   n_pas <- .itin_nombre_pas(horizon, pas_a, "horizon")
   regles <- .itin_regles(itineraire, pas_a)
   code <- if (is.null(itineraire)) "sans_gestion" else itineraire$code
+  if (!is.null(unites)) {
+    unites <- as.data.frame(unites)
+    manq <- setdiff(c("placette", "unite"), names(unites))
+    if (length(manq)) cli::cli_abort("{.arg unites} lacks {.field {manq}}.")
+    if (anyDuplicated(unites$placette)) cli::cli_abort("A plot belongs to one unit only in {.arg unites}.")
+  }
   .finn_verifier_installation()
 
   if (!"statut" %in% names(arbres)) arbres$statut <- "vivant"
@@ -181,12 +224,35 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   }
   out <- rbind(long(moy("g"), "g"), long(moy("tiges"), "tiges"),
                long(moy("prel"), "g_prelevee"))
-  out$bas <- NA_real_; out$haut <- NA_real_; out$intervalle <- "aucun"
   conf <- calibration$conforme
+  if (is.null(unites)) {
+    k_unite <- rep(1L, nrow(out))
+  } else {
+    out$unite <- as.character(unites$unite)[match(out$placette, as.character(unites$placette))]
+    sans <- unique(out$placette[is.na(out$unite)])
+    if (length(sans)) {
+      cli::cli_abort("{length(sans)} simulated plot{?s} without a unit in {.arg unites}.")
+    }
+    out <- stats::aggregate(moyenne ~ unite + itineraire + annee + variable, data = out,
+                            FUN = mean)
+    n_pla <- table(unites$unite[unites$placette %in% prep$sites$placette])
+    out$n_placettes <- as.integer(n_pla[out$unite])
+    out <- out[order(match(out$variable, c("g", "tiges", "g_prelevee")), out$annee, out$unite), ]
+    out <- out[, c("unite", "n_placettes", "itineraire", "annee", "variable", "moyenne")]
+    k_unite <- out$n_placettes
+    out$groupes_conformes <- NA_character_
+  }
+  out$bas <- NA_real_; out$haut <- NA_real_; out$intervalle <- "aucun"
   if (!is.null(conf)) {
     k <- out$annee / pas_a
     sel <- out$variable == "g" & k > 0
-    h <- conf$demi_largeur * if (elargissement == "racine") sqrt(k[sel]) else k[sel]
+    q <- numeric(nrow(out))
+    for (n in unique(k_unite[sel])) {
+      dl <- .finn_demi_largeur(conf, n)
+      q[sel & k_unite == n] <- dl$q
+      if (!is.null(unites)) out$groupes_conformes[sel & k_unite == n] <- dl$groupes
+    }
+    h <- q[sel] * if (elargissement == "racine") sqrt(k[sel]) else k[sel]
     out$bas[sel] <- pmax(0, out$moyenne[sel] - h)
     out$haut[sel] <- out$moyenne[sel] + h
     out$intervalle[sel] <- ifelse(k[sel] == 1, "conforme", paste0("conforme_", elargissement))
@@ -196,6 +262,43 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
 }
 
 # --- interne ------------------------------------------------------------------
+
+# Demi-largeur conforme d'une unite de k placettes : quantile de |residu moyen|
+# sur des groupes disjoints de k placettes tenues a l'ecart, voisines si les
+# coordonnees sont connues (glouton, depuis l'ouest), au hasard sinon.
+.finn_demi_largeur <- function(conf, k) {
+  if (k <= 1L) return(list(q = conf$demi_largeur, groupes = "placette"))
+  r <- conf$residus
+  if (is.null(r)) {
+    cli::cli_abort("The conformal residuals were not kept: run {.fn conformer_finn} again.")
+  }
+  n_g <- length(r) %/% k
+  if (n_g < 30L) {
+    cli::cli_abort(c(
+      "A unit of {k} plots needs at least {30 * k} held-out plots in {.fn conformer_finn}.",
+      "i" = "{length(r)} were used: {n_g} group{?s} of {k}, 30 needed."
+    ))
+  }
+  g <- integer(length(r))
+  if (!is.null(conf$x)) {
+    reste <- order(conf$x, conf$y)
+    for (id in seq_len(n_g)) {
+      i <- reste[1L]
+      d2 <- (conf$x[reste] - conf$x[i])^2 + (conf$y[reste] - conf$y[i])^2
+      j <- reste[order(d2)[seq_len(k)]]
+      g[j] <- id
+      reste <- setdiff(reste, j)
+    }
+    groupes <- "voisins"
+  } else {
+    o <- withr::with_seed(k, sample.int(length(r)))
+    g[o[seq_len(n_g * k)]] <- rep(seq_len(n_g), each = k)
+    groupes <- "hasard"
+  }
+  m <- tapply(r[g > 0], g[g > 0], mean)
+  q <- stats::quantile(abs(m), min(1, conf$niveau * (1 + 1 / n_g)), names = FALSE)
+  list(q = q, groupes = groupes)
+}
 
 # G observee a la seconde visite (vivants + recrutes), m2/ha, par placette.
 .finn_g_observee <- function(arbres) {

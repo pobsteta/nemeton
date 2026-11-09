@@ -11,7 +11,8 @@ simuler_itineraire(
   itineraire = NULL,
   horizon = 50,
   n_tirages = 20L,
-  elargissement = c("racine", "lineaire")
+  elargissement = c("racine", "lineaire"),
+  unites = NULL
 )
 }
 \arguments{
@@ -54,6 +55,11 @@ Default 20.}
 \code{"racine"} (default, \code{q * sqrt(k)}, independent errors from step to
 step) or \code{"lineaire"} (\code{q * k}, errors that add up). Both are
 \strong{hypotheses}: no plot is revisited over 50 years.}
+
+\item{unites}{data.frame or \code{NULL}. \code{placette}, \code{unite}: the plots of each
+management unit (UGF). The output is then one row per unit, the mean of
+its plots (equal weights), with the half-width of a unit of \code{k} plots
+measured by \code{\link[=conformer_finn]{conformer_finn()}} on groups of \code{k} held-out plots.}
 }
 \value{
 data.frame in long format, one row per plot, year and variable:
@@ -64,7 +70,9 @@ removed at that date, m2/ha), \code{moyenne} (mean of the trajectories),
 \code{bas}, \code{haut} (interval, for \code{"g"} only) and \code{intervalle}
 (\code{"conforme"} at one step, \code{"conforme_racine"} or
 \code{"conforme_lineaire"} beyond, \code{"aucun"} without conformal residuals or
-at year 0).
+at year 0). With \code{unites}: \code{unite} instead of \code{placette}, plus
+\code{n_placettes} and \code{groupes_conformes} (\code{"voisins"}, \code{"hasard"} or
+\code{"placette"} for a unit of one plot).
 }
 \description{
 Runs a calibrated FINN model step by step from the initial state of each
