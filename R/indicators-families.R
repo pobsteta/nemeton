@@ -425,9 +425,10 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
 #'   metres. When supplied together with \code{dbh_col} and
 #'   \code{species_col}, activates CHM mode (spec 005 phase 4):
 #'   biomass is derived from the IFN tarif
-#'   \eqn{V = a \cdot D^b \cdot H^c} combined with wood density,
-#'   a biomass expansion factor (BEF) and the carbon fraction
-#'   stored in \code{inst/extdata/wood_density.csv}.
+#'   \eqn{V = a \cdot D^b \cdot H^c} combined with the basic wood
+#'   density of \code{\link{infradensite_espar}}, a biomass expansion
+#'   factor (BEF) and the carbon fraction stored in
+#'   \code{inst/extdata/wood_density.csv}.
 #' @param dbh_col Character. Column name for mean stand DBH in
 #'   cm. Used only in CHM mode. Default \code{"dbh"}.
 #' @param stems_col Character. Column name for stand density in
@@ -529,8 +530,9 @@ indicateur_c1_biomasse <- function(units,
       if (is.null(eq)) return(NA_real_)
       v_per_tree <- as.numeric(eq$a) * dbh[i]^as.numeric(eq$b) *
         h_dom[i]^as.numeric(eq$c)
-      rho <- lookup_species_threshold(sp[i], "density_kg_m3",
-                                      "wood_density")
+      # infradensite (masse anhydre / volume frais), pas la densite a l'air
+      # sec de wood_density.csv, 15 a 25 % plus forte (spec 068)
+      rho <- infradensite_espar(sp[i])$infradensite_g_cm3 * 1000
       cf  <- lookup_species_threshold(sp[i], "carbon_content_fraction",
                                       "wood_density")
       if (is.na(rho) || is.na(cf)) return(NA_real_)

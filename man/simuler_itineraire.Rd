@@ -13,7 +13,10 @@ simuler_itineraire(
   n_tirages = 20L,
   elargissement = c("racine", "lineaire"),
   volume = FALSE,
-  unites = NULL
+  unites = NULL,
+  carbone = FALSE,
+  bef = 1.3,
+  fraction_carbone = 0.5
 )
 }
 \arguments{
@@ -70,6 +73,20 @@ that has a tariff, or of all plots. Default \code{FALSE}.}
 management unit (UGF). The output is then one row per unit, the mean of
 its plots (equal weights), with the half-width of a unit of \code{k} plots
 measured by \code{\link[=conformer_finn]{conformer_finn()}} on groups of \code{k} held-out plots.}
+
+\item{carbone}{Logical. Also compute the carbon of the merchantable stem
+wood (\code{"carbone"} and \code{"carbone_preleve"}, tC/ha): the volume of the
+same tariffs as \code{volume} (needed, computed even when \code{volume = FALSE})
+times the basic wood density of the species (\code{\link[=infradensite_espar]{infradensite_espar()}},
+that of the tariff species for \code{"other"}), \code{bef} and
+\code{fraction_carbone}. Default \code{FALSE}.}
+
+\item{bef}{Numeric. Biomass expansion factor from stem volume to total
+aboveground biomass. Default 1.30, as \code{\link[=indicateur_c1_biomasse]{indicateur_c1_biomasse()}}.}
+
+\item{fraction_carbone}{Numeric. Carbon fraction of the dry biomass.
+Default 0.50, the value of \code{inst/extdata/wood_density.csv} used by
+\code{\link[=indicateur_c1_biomasse]{indicateur_c1_biomasse()}}.}
 }
 \value{
 data.frame in long format, one row per plot, year and variable:
@@ -77,7 +94,8 @@ data.frame in long format, one row per plot, year and variable:
 state), \code{variable} (\code{"g"}: basal area before the cut, m2/ha;
 \code{"tiges"}: stems/ha before the cut; \code{"g_prelevee"}: basal area
 removed at that date, m2/ha; with \code{volume = TRUE}, \code{"volume"} and
-\code{"volume_preleve"}, m3/ha), \code{moyenne} (mean of the trajectories),
+\code{"volume_preleve"}, m3/ha; with \code{carbone = TRUE}, \code{"carbone"} and
+\code{"carbone_preleve"}, tC/ha), \code{moyenne} (mean of the trajectories),
 \code{bas}, \code{haut} (interval, for \code{"g"} only) and \code{intervalle}
 (\code{"conforme"} at one step, \code{"conforme_racine"} or
 \code{"conforme_lineaire"} beyond, \code{"aucun"} without conformal residuals or
@@ -103,6 +121,9 @@ The volume comes from the diameter only (FINN carries no height). On
 12 974 trees of 1000 IFN plots of BFC, the tariffs of the exact species
 give 1.8 \% more than the IFN volumes in total, 9.6 \% less between 7.5 and
 20 cm and 18.6 \% more above 70 cm (\verb{data-raw/prototype_finn_volume.R}).
+The carbon inherits this volume (stems below 7.5 cm carry none) and holds
+the same \code{bef} and \code{fraction_carbone} as C1, so that year 0 compares with
+C1.
 }
 \seealso{
 \code{\link[=calibrer_finn]{calibrer_finn()}}, \code{\link[=conformer_finn]{conformer_finn()}}, \code{\link[=itineraires_catalogue]{itineraires_catalogue()}}

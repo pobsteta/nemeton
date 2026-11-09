@@ -288,3 +288,57 @@ test_that("simuler_itineraire adds volume and harvested volume (FINN mocked)", {
   s0 <- simuler_itineraire(calibration_factice(), a, e, horizon = 5, n_tirages = 1L)
   expect_false("volume" %in% s0$variable)
 })
+
+test_that(".itin_tarifs gives the infradensity of each plot x species, other = tariff species", {
+  a <- arbres_finn_demo(); e <- env_finn_demo(); e$ser <- "C20"
+  a$d2 <- NA_real_
+  prep <- nemeton:::.finn_preparer(a, e, 0.7, essences = c("09", "03", "other"),
+                                   observations = FALSE)
+  tar <- nemeton:::.itin_tarifs(a, e, prep, c("09", "03", "other"))
+  expect_equal(dim(tar$rho), c(6L, 3L))
+  expect_equal(tar$rho[1, 1], infradensite_espar("09")$infradensite_g_cm3)
+  expect_equal(tar$rho[1, 2], infradensite_espar("03")$infradensite_g_cm3)
+  a0 <- a[a$placette == "P1" & a$essence %in% c("62", "51") & a$statut != "recrute", ]
+  dom <- a0$essence[which.max(a0$d1)]
+  expect_equal(tar$rho[1, 3], infradensite_espar(dom)$infradensite_g_cm3)
+})
+
+test_that(".itin_etat computes the dry stem mass, zero below 7.5 cm", {
+  tar <- list(numero = matrix(c(10, 12), 1), type = matrix(c("SCHL", "SCHR"), 1),
+              rho = matrix(c(0.5, 0.4), 1))
+  coh <- data.frame(siteID = 1L, species = c(1L, 2L, 1L), dbh = c(30, 40, 5),
+                    trees = c(7, 7, 100))
+  et <- nemeton:::.itin_etat(coh, 2L, 0.7, tar)
+  m <- (7 * volume_tarif_schaeffer(10, 30, "SCHL") * 0.5 +
+          7 * volume_tarif_schaeffer(12, 40, "SCHR") * 0.4) / 0.7
+  expect_equal(et$c, c(m, 0))
+})
+
+test_that("simuler_itineraire adds carbon and harvested carbon (FINN mocked)", {
+  local_mocked_bindings(
+    .finn_verifier_installation = function() invisible(TRUE),
+    .itin_un_pas = function(m, coh, env1, sp, n_sp) transform(coh, dbh = dbh + 1)
+  )
+  a <- arbres_finn_demo(); e <- env_finn_demo(); e$ser <- "C20"
+  it <- itin_demo(diametre_exploitabilite_cm = 0)
+  # carbone seul : le tarif est calcule, le volume n'est pas rendu
+  s <- simuler_itineraire(calibration_factice(), a, e, itineraire = it, horizon = 20,
+                          n_tirages = 1L, carbone = TRUE)
+  expect_true(all(c("carbone", "carbone_preleve") %in% s$variable))
+  expect_false("volume" %in% s$variable)
+  cb <- s[s$variable == "carbone", ]; cp <- s[s$variable == "carbone_preleve", ]
+  expect_true(all(cb$moyenne[cb$annee == 5] > cb$moyenne[cb$annee == 0]))
+  expect_equal(cp$moyenne[cp$annee == 10], cb$moyenne[cb$annee == 10])
+  # proportionnel a bef x fraction_carbone
+  s2 <- simuler_itineraire(calibration_factice(), a, e, itineraire = it, horizon = 20,
+                           n_tirages = 1L, carbone = TRUE, bef = 2.6, fraction_carbone = 0.25)
+  c2 <- s2[s2$variable == "carbone", ]
+  expect_equal(c2$moyenne, cb$moyenne)
+  # carbone / volume = infradensite x 1,30 x 0,50, entre bois leger et lourd
+  sv <- simuler_itineraire(calibration_factice(), a, e, horizon = 5, n_tirages = 1L,
+                           volume = TRUE, carbone = TRUE)
+  v0 <- sv$moyenne[sv$variable == "volume" & sv$annee == 0]
+  c0 <- sv$moyenne[sv$variable == "carbone" & sv$annee == 0]
+  r <- c0[v0 > 0] / v0[v0 > 0] / (1.30 * 0.50)
+  expect_true(all(r > 0.3 & r < 0.8))
+})

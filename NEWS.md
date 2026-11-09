@@ -1,3 +1,30 @@
+# nemeton 2026.11.14 (2026-11-09)
+
+## Changements de résultat
+
+- **`indicateur_c1_biomasse()` en mode CHM** (`chm =`) : la densité du bois
+  est désormais l'**infradensité** (masse anhydre / volume frais) de
+  `infradensite_espar()`, et non plus la densité à l'air sec de
+  `wood_density.csv`, 15 à 25 % plus forte. Le C1 en mode CHM baisse
+  d'autant (rapport infradensité / densité à l'air sec : médiane 0,83 sur
+  les 22 essences de `wood_density.csv`). Les autres voies du C1 (âge et
+  couvert, LiDAR, NDVI) et la fixture `massif_demo_units` ne changent pas.
+
+## Nouveautés
+
+- **`infradensite_espar()`** (spec 068) : infradensité (g/cm³) des 193
+  essences IFN, depuis la Global Wood Density Database (Zanne et al. 2009,
+  CC0), avec le niveau atteint : espèce en Europe (55), espèce toutes
+  régions (55), genre en Europe et Amérique du Nord (61), groupe feuillus /
+  résineux (22) ; accepte toute nomenclature de `resoudre_espar()`.
+  Construite par `data-raw/infradensite_espar.R`.
+- **`simuler_itineraire(carbone = TRUE)`** : carbone du bois fort sur pied
+  (`carbone`, tC/ha) et prélevé (`carbone_preleve`), volume des tarifs
+  Schaeffer × infradensité de l'essence × BEF 1,30 × fraction de carbone
+  0,50, les paramètres du C1 (`bef`, `fraction_carbone`). Sur 100 placettes
+  de BFC, 75 tC/ha au départ, 150 à 50 ans sans gestion ; avec l'éclaircie
+  de test, 73 tC/ha prélevés en cumul sur 50 ans (0,344 tC/m³ au départ).
+
 # nemeton 2026.11.13 (2026-11-09)
 
 ## Nouveautés

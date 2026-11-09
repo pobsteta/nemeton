@@ -286,6 +286,7 @@ reference:
     - ifn_taux_prelevement
     - ifn_espar_correspondance
     - resoudre_espar
+    - infradensite_espar
     - completer_volume_ifn
 
   - subtitle: "Production IFN par petits domaines (Fay-Herriot)"
