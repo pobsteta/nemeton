@@ -166,8 +166,74 @@ test_that("conformer_finn takes the residual quantile (predire_finn mocked)", {
   })
   cal <- conformer_finn(calibration_factice(), a, data.frame(placette = pla, x = 1))
   expect_equal(cal$conforme$n_placettes, 40)
+  expect_equal(cal$conforme$residus, seq_along(pla) / 10)
+  expect_null(cal$conforme$x)
+  xy <- data.frame(placette = pla, x = seq_along(pla), y = 0)
+  cal2 <- conformer_finn(calibration_factice(), a, data.frame(placette = pla, x = 1),
+                         coordonnees = xy)
+  expect_equal(cal2$conforme$x, seq_along(pla))
+  expect_error(conformer_finn(calibration_factice(), a, data.frame(placette = pla, x = 1),
+                              coordonnees = xy[-1, ]), "every plot")
+  expect_error(conformer_finn(calibration_factice(), a, data.frame(placette = pla, x = 1),
+                              coordonnees = xy[, 1:2]), "lacks")
   expect_equal(cal$conforme$demi_largeur,
                unname(stats::quantile((1:40) / 10, 0.9 * (1 + 1 / 40))))
   expect_error(conformer_finn(calibration_factice(), a[1:10, ], data.frame(placette = pla, x = 1)),
                "at least 30")
+})
+
+test_that(".finn_demi_largeur averages residuals over groups of k plots", {
+  set.seed(5)
+  n <- 300
+  conf <- list(niveau = 0.9, demi_largeur = 4, residus = rnorm(n, 0.5, 3),
+               x = runif(n, 0, 1e5), y = runif(n, 0, 1e5))
+  expect_equal(nemeton:::.finn_demi_largeur(conf, 1L), list(q = 4, groupes = "placette"))
+  v <- nemeton:::.finn_demi_largeur(conf, 4L)
+  expect_equal(v$groupes, "voisins")
+  expect_lt(v$q, quantile(abs(conf$residus), 0.9))
+  # sans coordonnees : groupes au hasard, reproductibles, RNG global intact
+  conf$x <- conf$y <- NULL
+  set.seed(1); avant <- runif(1); set.seed(1)
+  h <- nemeton:::.finn_demi_largeur(conf, 4L)
+  expect_equal(runif(1), avant)
+  expect_equal(h$groupes, "hasard")
+  expect_equal(nemeton:::.finn_demi_largeur(conf, 4L)$q, h$q)
+  expect_error(nemeton:::.finn_demi_largeur(conf, 20L), "at least 600")
+  expect_error(nemeton:::.finn_demi_largeur(list(demi_largeur = 1), 2L), "conformer_finn")
+})
+
+test_that("simuler_itineraire aggregates plots into units (FINN mocked)", {
+  local_mocked_bindings(
+    .finn_verifier_installation = function() invisible(TRUE),
+    .itin_un_pas = function(m, coh, env1, sp, n_sp) transform(coh, dbh = dbh + 1)
+  )
+  a <- arbres_finn_demo(); e <- env_finn_demo()
+  set.seed(2)
+  conf <- list(niveau = 0.9, demi_largeur = 4, n_placettes = 200, pas_annees = 5,
+               residus = rnorm(200), x = runif(200, 0, 1e5), y = runif(200, 0, 1e5))
+  u <- data.frame(placette = paste0("P", 1:6), unite = c("U1", "U1", "U1", "U2", "U2", "U3"))
+  s <- simuler_itineraire(calibration_factice(conf), a, e, horizon = 10, n_tirages = 1L,
+                          unites = u)
+  expect_true(all(c("unite", "n_placettes", "groupes_conformes") %in% names(s)))
+  expect_false("placette" %in% names(s))
+  expect_equal(nrow(s), 3 * 3 * 3)
+  g5 <- s[s$variable == "g" & s$annee == 5, ]
+  expect_equal(g5$n_placettes[g5$unite == "U1"], 3L)
+  expect_equal(g5$groupes_conformes[g5$unite == "U3"], "placette")
+  expect_equal(g5$groupes_conformes[g5$unite == "U1"], "voisins")
+  # la moyenne de l'unite est celle de ses placettes
+  p <- simuler_itineraire(calibration_factice(conf), a, e, horizon = 10, n_tirages = 1L)
+  gp <- p[p$variable == "g" & p$annee == 0, ]
+  g0 <- s[s$variable == "g" & s$annee == 0, ]
+  expect_equal(g0$moyenne[g0$unite == "U2"], mean(gp$moyenne[gp$placette %in% c("P4", "P5")]))
+  # demi-largeur d'une unite de 3 placettes : celle des groupes de 3
+  h <- g5$haut - g5$moyenne
+  expect_equal(h[g5$unite == "U1"], nemeton:::.finn_demi_largeur(conf, 3L)$q)
+  expect_equal(h[g5$unite == "U3"], 4)
+  expect_error(simuler_itineraire(calibration_factice(conf), a, e, horizon = 10,
+                                  unites = u[1:5, ]), "without a unit")
+  expect_error(simuler_itineraire(calibration_factice(conf), a, e, horizon = 10,
+                                  unites = rbind(u, u[1, ])), "one unit only")
+  expect_error(simuler_itineraire(calibration_factice(conf), a, e, unites = u["placette"]),
+               "unite")
 })
