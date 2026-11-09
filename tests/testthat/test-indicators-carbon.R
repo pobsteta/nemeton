@@ -309,6 +309,24 @@ test_that("C1 CHM mode returns positive biomass for 3 species", {
   expect_true(all(c1 > 0))
 })
 
+test_that("C1 CHM mode uses the basic wood density (infradensity)", {
+  skip_if_not_installed("terra")
+  chm <- terra::rast(nrows = 10, ncols = 10, xmin = 0, xmax = 100, ymin = 0,
+                     ymax = 100, crs = "EPSG:2154", vals = rep(25, 100))
+  units <- sf::st_sf(
+    species = "QUPE", dbh = 40, stems_ha = 180,
+    geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+      c(10, 10), c(90, 10), c(90, 90), c(10, 90), c(10, 10)))), crs = 2154)
+  )
+  c1 <- indicateur_c1_biomasse(units, chm = chm)$C1
+  # proportionnel a l'infradensite rendue par infradensite_espar()
+  local_mocked_bindings(infradensite_espar = function(espar) {
+    data.frame(infradensite_g_cm3 = 0.280)
+  })
+  c1_demi <- indicateur_c1_biomasse(units, chm = chm)$C1
+  expect_equal(c1 / c1_demi, 0.560 / 0.280, tolerance = 1e-8)
+})
+
 test_that("C1 CHM mode propagates NA on missing inputs", {
   skip_if_not_installed("terra")
   chm <- terra::rast(nrows = 20, ncols = 20,

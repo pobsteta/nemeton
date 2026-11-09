@@ -540,6 +540,34 @@ départ (ou de l'ensemble) qui a un tarif.
   départ, 261, 327 et 438 m³/ha à 10, 25 et 50 ans sans gestion ; avec
   l'éclaircie de test (rotation 10 ans, exploitabilité 60 cm, cible
   20 m²/ha), 195 à 211 m³/ha sur pied et 219 m³/ha prélevés en cumul.
-- **Reste** : C1 (infradensité, BEF, fraction de carbone) demande une
-  correspondance ESPAR → `wood_density.csv` (codes à 4 lettres, 22
-  essences) ; B2 n'a pas d'équivalent sans hauteurs.
+- **Reste** : C1 (traité ci-dessous, v2026.11.14) ; B2 n'a pas d'équivalent
+  sans hauteurs.
+
+### Carbone le long des trajectoires (2026-11-09, v2026.11.14)
+
+`simuler_itineraire(carbone = TRUE)` : carbone (tC/ha) = volume des tarifs
+Schaeffer × infradensité de l'essence × BEF × fraction de carbone, avec le
+BEF (1,30, IPCC 2006) et la fraction (0,50) du C1, pour que l'année 0 se
+compare au C1. `"other"` : infradensité de l'essence du tarif.
+
+- **Source de l'infradensité** (décision de Pascal, 2026-11-09) : Global
+  Wood Density Database (Chave et al. 2009, Zanne et al. 2009,
+  doi:10.5061/dryad.234, CC0), densité basale = infradensité. Dryad exige un
+  jeton pour le fichier ; la même donnée est lue dans `data/wdData.rda` du
+  paquet CRAN BIOMASS (on ne reprend que la donnée CC0).
+  `data-raw/infradensite_espar.R` → `inst/extdata/infradensite_espar.csv`.
+- **Cascade** : espèce en Europe (55 essences IFN), espèce toutes régions
+  (55), genre en Europe et Amérique du Nord (61 ; le genre mondial tire
+  *Quercus* à 0,70 avec les chênes tropicaux, 0,67 en tempéré), groupe
+  feuillus / résineux (22 ; 0,539 et 0,413).
+- **Biais trouvé dans le C1** : `wood_density.csv` est une densité à l'air
+  sec, employée comme masse sèche en mode CHM ; l'infradensité est 0,79 à
+  0,87 fois plus faible (médiane 0,83). Le C1 CHM passe à l'infradensité
+  (décision de Pascal) ; E1 garde la densité à l'air sec (hors chantier).
+- **Trajectoires** (100 placettes « test », 10 tirages) : 75 tC/ha au
+  départ, 89, 112 et 150 tC/ha à 10, 25 et 50 ans sans gestion ; avec
+  l'éclaircie de test, 67 à 89 tC/ha sur pied et 73 tC/ha prélevés en
+  cumul ; 0,344 tC/m³ au départ (infradensité moyenne pondérée 0,53).
+- **Reste** : BEF et fraction de carbone sont des constantes du C1 (BEF
+  IPCC générique, fraction non sourcée) ; les rendre par essence est un
+  chantier distinct.

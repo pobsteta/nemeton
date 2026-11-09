@@ -147,13 +147,25 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #'   management unit (UGF). The output is then one row per unit, the mean of
 #'   its plots (equal weights), with the half-width of a unit of `k` plots
 #'   measured by [conformer_finn()] on groups of `k` held-out plots.
+#' @param carbone Logical. Also compute the carbon of the merchantable stem
+#'   wood (`"carbone"` and `"carbone_preleve"`, tC/ha): the volume of the
+#'   same tariffs as `volume` (needed, computed even when `volume = FALSE`)
+#'   times the basic wood density of the species ([infradensite_espar()],
+#'   that of the tariff species for `"other"`), `bef` and
+#'   `fraction_carbone`. Default `FALSE`.
+#' @param bef Numeric. Biomass expansion factor from stem volume to total
+#'   aboveground biomass. Default 1.30, as [indicateur_c1_biomasse()].
+#' @param fraction_carbone Numeric. Carbon fraction of the dry biomass.
+#'   Default 0.50, the value of `inst/extdata/wood_density.csv` used by
+#'   [indicateur_c1_biomasse()].
 #'
 #' @return data.frame in long format, one row per plot, year and variable:
 #'   `placette`, `itineraire`, `annee` (years from the start, 0 = initial
 #'   state), `variable` (`"g"`: basal area before the cut, m2/ha;
 #'   `"tiges"`: stems/ha before the cut; `"g_prelevee"`: basal area
 #'   removed at that date, m2/ha; with `volume = TRUE`, `"volume"` and
-#'   `"volume_preleve"`, m3/ha), `moyenne` (mean of the trajectories),
+#'   `"volume_preleve"`, m3/ha; with `carbone = TRUE`, `"carbone"` and
+#'   `"carbone_preleve"`, tC/ha), `moyenne` (mean of the trajectories),
 #'   `bas`, `haut` (interval, for `"g"` only) and `intervalle`
 #'   (`"conforme"` at one step, `"conforme_racine"` or
 #'   `"conforme_lineaire"` beyond, `"aucun"` without conformal residuals or
@@ -173,13 +185,17 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #' 12 974 trees of 1000 IFN plots of BFC, the tariffs of the exact species
 #' give 1.8 % more than the IFN volumes in total, 9.6 % less between 7.5 and
 #' 20 cm and 18.6 % more above 70 cm (`data-raw/prototype_finn_volume.R`).
+#' The carbon inherits this volume (stems below 7.5 cm carry none) and holds
+#' the same `bef` and `fraction_carbone` as C1, so that year 0 compares with
+#' C1.
 #'
 #' @seealso [calibrer_finn()], [conformer_finn()], [itineraires_catalogue()]
 #' @export
 simuler_itineraire <- function(calibration, arbres, environnement, itineraire = NULL,
                                horizon = 50, n_tirages = 20L,
                                elargissement = c("racine", "lineaire"), volume = FALSE,
-                               unites = NULL) {
+                               unites = NULL, carbone = FALSE, bef = 1.30,
+                               fraction_carbone = 0.50) {
   if (!inherits(calibration, "finn_calibration")) {
     cli::cli_abort("{.arg calibration} must come from {.fn calibrer_finn}.")
   }
@@ -205,7 +221,7 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   sp <- calibration$surface_placette
   n_sites <- nrow(prep$sites)
   env1 <- prep$env[prep$env$year == 0L, , drop = FALSE]
-  tarif <- if (isTRUE(volume)) {
+  tarif <- if (isTRUE(volume) || isTRUE(carbone)) {
     .itin_tarifs(arbres, environnement, prep, calibration$essences)
   } else NULL
   m <- calibration$modele
@@ -213,24 +229,26 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
 
   # une trajectoire : matrices site x pas (g, tiges, g prelevee, volumes)
   une_trajectoire <- function() {
-    g <- tiges <- prel <- vol <- vprel <- matrix(0, n_sites, n_pas + 1L)
+    g <- tiges <- prel <- vol <- vprel <- carb <- cprel <- matrix(0, n_sites, n_pas + 1L)
     coh <- prep$init[, c("siteID", "species", "dbh", "trees")]
     coh$trees <- round(coh$trees)
     etat <- .itin_etat(coh, n_sites, sp, tarif)
-    g[, 1] <- etat$g; tiges[, 1] <- etat$tiges; vol[, 1] <- etat$v
+    g[, 1] <- etat$g; tiges[, 1] <- etat$tiges; vol[, 1] <- etat$v; carb[, 1] <- etat$c
     for (k in seq_len(n_pas)) {
       coh <- .itin_un_pas(m, coh, env1, sp, length(calibration$essences))
       etat <- .itin_etat(coh, n_sites, sp, tarif)
       g[, k + 1L] <- etat$g; tiges[, k + 1L] <- etat$tiges; vol[, k + 1L] <- etat$v
+      carb[, k + 1L] <- etat$c
       if (!is.null(regles) && (k * pas_a) %% regles$rotation_ans == 0 && k < n_pas) {
         coupe <- .itin_couper(coh, regles, n_sites, sp)
         apres <- .itin_etat(coupe, n_sites, sp, tarif)
         prel[, k + 1L] <- etat$g - apres$g
         vprel[, k + 1L] <- etat$v - apres$v
+        cprel[, k + 1L] <- etat$c - apres$c
         coh <- coupe
       }
     }
-    list(g = g, tiges = tiges, prel = prel, vol = vol, vprel = vprel)
+    list(g = g, tiges = tiges, prel = prel, vol = vol, vprel = vprel, carb = carb, cprel = cprel)
   }
   traj <- lapply(seq_len(n_tirages), function(i) une_trajectoire())
   moy <- function(v) Reduce(`+`, lapply(traj, `[[`, v)) / n_tirages
@@ -243,8 +261,13 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   }
   out <- rbind(long(moy("g"), "g"), long(moy("tiges"), "tiges"),
                long(moy("prel"), "g_prelevee"))
-  if (!is.null(tarif)) {
+  if (isTRUE(volume)) {
     out <- rbind(out, long(moy("vol"), "volume"), long(moy("vprel"), "volume_preleve"))
+  }
+  if (isTRUE(carbone)) {
+    # tC/ha = V (m3/ha) x infradensite (t/m3) x BEF x fraction de carbone
+    k_c <- bef * fraction_carbone
+    out <- rbind(out, long(moy("carb") * k_c, "carbone"), long(moy("cprel") * k_c, "carbone_preleve"))
   }
   conf <- calibration$conforme
   if (is.null(unites)) {
@@ -259,7 +282,8 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
                             FUN = mean)
     n_pla <- table(unites$unite[unites$placette %in% prep$sites$placette])
     out$n_placettes <- as.integer(n_pla[out$unite])
-    out <- out[order(match(out$variable, c("g", "tiges", "g_prelevee", "volume", "volume_preleve")),
+    out <- out[order(match(out$variable, c("g", "tiges", "g_prelevee", "volume", "volume_preleve",
+                                            "carbone", "carbone_preleve")),
                       out$annee, out$unite), ]
     out <- out[, c("unite", "n_placettes", "itineraire", "annee", "variable", "moyenne")]
     k_unite <- out$n_placettes
@@ -384,12 +408,14 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     v
   }
   out <- list(g = som(coh$trees * .g_arbre(coh$dbh)) / sp, tiges = som(coh$trees) / sp,
-              v = 0)
+              v = 0, c = 0)
   if (!is.null(tarif) && nrow(coh)) {
     ij <- cbind(coh$siteID, coh$species)
     vu <- volume_tarif_schaeffer(tarif$numero[ij], coh$dbh, tarif$type[ij])
     vu[coh$dbh < 7.5] <- 0
     out$v <- som(coh$trees * vu) / sp
+    # masse anhydre de bois fort (t/ha) : volume x infradensite (g/cm3 = t/m3)
+    if (!is.null(tarif$rho)) out$c <- som(coh$trees * vu * tarif$rho[ij]) / sp
   }
   out
 }
@@ -450,7 +476,10 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
       "i" = "Check the species codes of {.arg arbres} (IFN ESPAR)."
     ))
   }
-  list(numero = numero, type = type)
+  # infradensite de l'essence (celle du tarif pour "other"), repli
+  # feuillus / resineux dans infradensite_espar()
+  rho <- matrix(infradensite_espar(as.vector(espar))$infradensite_g_cm3, n_s, n_sp)
+  list(numero = numero, type = type, rho = rho)
 }
 
 # Coupe entre deux pas : exploitabilite puis eclaircie, tiges tirees.

@@ -36,9 +36,10 @@ outside 0-1 are set to NA with a warning.}
 metres. When supplied together with \code{dbh_col} and
 \code{species_col}, activates CHM mode (spec 005 phase 4):
 biomass is derived from the IFN tarif
-\eqn{V = a \cdot D^b \cdot H^c} combined with wood density,
-a biomass expansion factor (BEF) and the carbon fraction
-stored in \code{inst/extdata/wood_density.csv}.}
+\eqn{V = a \cdot D^b \cdot H^c} combined with the basic wood
+density of \code{\link{infradensite_espar}}, a biomass expansion
+factor (BEF) and the carbon fraction stored in
+\code{inst/extdata/wood_density.csv}.}
 
 \item{dbh_col}{Character. Column name for mean stand DBH in
 cm. Used only in CHM mode. Default \code{"dbh"}.}

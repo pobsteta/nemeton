@@ -208,6 +208,12 @@ Volume (v2026.11.13) : `simuler_itineraire(volume = TRUE)`, tarifs Schaeffer
 IFN au diamètre seul ; contrôle +1,8 % sur 12 974 arbres (+18,6 % au-delà de
 70 cm). Suite : C1 (correspondance ESPAR → infradensité à sourcer), puis
 `comparer_itineraires()` et T4.
+Carbone (v2026.11.14) : `infradensite_espar()` (Global Wood Density
+Database, CC0, 193 essences IFN) et `simuler_itineraire(carbone = TRUE)` ;
+75 → 150 tC/ha à 50 ans sans gestion sur 100 placettes. Le C1 CHM passe de
+la densité à l'air sec à l'infradensité (−15 à −25 %). Suite :
+`comparer_itineraires()` et T4 ; BEF / fraction de carbone par essence à
+sourcer.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
