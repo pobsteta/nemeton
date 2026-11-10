@@ -28,7 +28,7 @@ test_that(".itin_regles accepts no management and checks the itinerary", {
 
 test_that("the shipped catalogue, not yet sourced, is refused", {
   cat <- itineraires_catalogue()
-  expect_error(nemeton:::.itin_regles(cat$bfc_sapin_futaie_reguliere, 5), "not sourced")
+  expect_error(nemeton:::.itin_regles(cat$bfc_hetre_futaie_reguliere, 5), "not sourced")
 })
 
 test_that("the sourced beech uneven-aged entry gives the engine its rules", {
@@ -67,12 +67,22 @@ test_that("a thinning norm by mean diameter sets the target per plot (D-10)", {
   ch <- nemeton:::.itin_regles(itineraires_catalogue()$bfc_chene_sessile_futaie_reguliere, 5)
   expect_equal(ch$diametre, 75)
   expect_equal(range(ch$norme$g), c(14.7, 20.2))
+  # l'epicea (SFFC 2012) : Dg 30 cm et G 40 m2/ha ramenes vers la norme,
+  # interpolee entre 29,4 cm (28,0) et 38,2 cm (31,3)
+  ep <- nemeton:::.itin_regles(itineraires_catalogue()$bfc_epicea_futaie_reguliere, 5)
+  expect_equal(ep$diametre, 55)
+  n40 <- round(40 / (pi * 0.15^2))
+  coh <- data.frame(siteID = 1L, species = 1L, dbh = 30, trees = rep(1, n40))
+  set.seed(4)
+  g2 <- nemeton:::.itin_etat(nemeton:::.itin_couper(coh, ep, 1L, 1), 1L, 1)$g
+  cible <- stats::approx(c(29.4, 38.2), c(28.0, 31.3), xout = 30)$y
+  expect_equal(g2, cible, tolerance = 0.1)
 })
 
 test_that("every sourced entry of the shipped catalogue is accepted by the engine", {
   cat <- itineraires_catalogue()
   sources <- Filter(function(it) identical(it$statut_source, "source"), cat)
-  expect_gte(length(sources), 4L)
+  expect_gte(length(sources), 7L)
   for (it in sources) {
     r <- nemeton:::.itin_regles(it, 5)
     expect_equal(r$rotation_ans %% 5, 0, label = it$code)
@@ -121,7 +131,7 @@ test_that("simuler_itineraire and conformer_finn check their inputs", {
   expect_error(conformer_finn(faux, a, e), "used in the calibration")
   expect_error(simuler_itineraire(list(), a, e), "calibrer_finn")
   expect_error(simuler_itineraire(faux, a, e, horizon = 12), "multiple")
-  expect_error(simuler_itineraire(faux, a, e, itineraire = itineraires_catalogue()$bfc_sapin_futaie_reguliere),
+  expect_error(simuler_itineraire(faux, a, e, itineraire = itineraires_catalogue()$bfc_hetre_futaie_reguliere),
                "not sourced")
 })
 

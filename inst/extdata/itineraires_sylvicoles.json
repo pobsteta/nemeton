@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Catalogue des itinéraires sylvicoles (spec 065). Premier catalogue (D-4) : une entrée « a_sourcer » n'est jamais admissible tant que ses règles, son domaine et ses effets attendus n'ont pas été remplis à partir de guides de sylviculture cités (ONF, DRA/SRA, Pro Silva, SRGS). Entrées sourcées : bfc_hetre_futaie_irreguliere (ONF 2013) ; bfc_chene_sessile_futaie_reguliere, bfc_chene_futaie_irreguliere, bfc_conversion_tsf_futaie (Sardin 2008). Le champ notes, facultatif, dit comment chaque règle a été tirée du guide. Aucune valeur n'est inventée.",
+  "description": "Catalogue des itinéraires sylvicoles (spec 065). Premier catalogue (D-4) : une entrée « a_sourcer » n'est jamais admissible tant que ses règles, son domaine et ses effets attendus n'ont pas été remplis à partir de guides de sylviculture cités (ONF, DRA/SRA, Pro Silva, SRGS). Entrées sourcées : bfc_hetre_futaie_irreguliere (ONF 2013) ; bfc_chene_sessile_futaie_reguliere, bfc_chene_futaie_irreguliere, bfc_conversion_tsf_futaie (Sardin 2008) ; bfc_epicea_futaie_reguliere, bfc_sapin_futaie_reguliere, bfc_douglas_futaie_reguliere (SFFC 2012). Le champ notes, facultatif, dit comment chaque règle a été tirée du guide. Aucune valeur n'est inventée.",
   "schema": {
     "domaine": "essences_objectif (codes de la colonne essence du projet), ser (codes SER), p2_min/p2_max (unités de P2), pente_max_pct, desserte_requise (vrai/faux), desserte_max_m (distance de débardage), protections_exclues (codes de type de B1 : rnn, rb, coeur, apb, natura...)",
     "effets_attendus": "par code de famille (C, B, W, A, F, L, T, R, S, P, E, N) : {sens: + | 0 | - | ?, horizon: court | moyen | long, source: référence}",
@@ -115,7 +115,9 @@
         "en": "Even-aged silver fir high forest"
       },
       "domaine": {
-        "essences_objectif": [],
+        "essences_objectif": [
+          "61"
+        ],
         "ser": [],
         "p2_min": null,
         "p2_max": null,
@@ -125,14 +127,58 @@
         "protections_exclues": []
       },
       "regles": {
-        "rotation_ans": null,
-        "diametre_exploitabilite_cm": null,
+        "rotation_ans": 10,
+        "diametre_exploitabilite_cm": 55,
         "surface_terriere_cible_m2ha": null,
-        "intensite_prelevement_pct": null
+        "intensite_prelevement_pct": null,
+        "norme_g_selon_dg": {
+          "dg_cm": [
+            14.0,
+            19.0,
+            23.6,
+            29.4,
+            38.2,
+            45.0,
+            50.0,
+            55.0
+          ],
+          "g_m2ha": [
+            23.1,
+            25.4,
+            26.2,
+            28.0,
+            31.3,
+            43.7,
+            54.0,
+            65.3
+          ]
+        }
       },
-      "effets_attendus": {},
-      "sources": [],
-      "statut_source": "a_sourcer"
+      "effets_attendus": {
+        "P": {
+          "sens": "+",
+          "horizon": "long",
+          "source": "SFFC 2012, p. 8 : grumes de volume unitaire plus important aux cernes réguliers, production concentrée sur les plus belles tiges ; p. 18 : meilleure rentabilité entre 45 et 65 cm"
+        },
+        "R": {
+          "sens": "+",
+          "horizon": "moyen",
+          "source": "SFFC 2012, p. 8 : stabilité face aux aléas climatiques et résistance aux attaques parasitaires améliorées, risques de chablis minimisés ; p. 22 : aucun chablis récolté dans l'exemple d'épicéa éclairci"
+        },
+        "B": {
+          "sens": "+",
+          "horizon": "moyen",
+          "source": "SFFC 2012, p. 7 : un sous-bois lumineux améliore l'humus et la biodiversité floristique et faunistique ; p. 22 : régénération abondante et diversifiée de feuillus sous l'épicéa éclairci"
+        }
+      },
+      "sources": [
+        {
+          "ref": "SFFC (2012). Les éclaircies résineuses en Franche-Comté. Société forestière de Franche-Comté et CRPF de Franche-Comté, 32 p.",
+          "pages": "p. 2-3, 7-8, 10-11, 16, 18, 21-23"
+        }
+      ],
+      "statut_source": "source",
+      "notes": "Éclaircies résineuses de Franche-Comté (SFFC 2012), futaie régulière seulement (p. 2 ; la futaie jardinée de sapin relève d'un autre guide SFFC, 2010, non disponible). Même norme que l'épicéa : le guide donne une seule ligne de densités finales pour l'épicéa et le sapin (p. 18) et les mêmes seuils de facteur d'espacement (p. 11) ; l'exemple chiffré est un épicéa (p. 22), transposé tel quel au sapin. norme_g_selon_dg tirée de l'exemple de sylviculture dynamique de l'épicéa des pentes intermédiaires jurassiennes (p. 22 ; plantation à 2 500 plants/ha) : à chaque éclaircie (19, 24, 28, 33, 42 ans), Dg avant éclaircie (14 ; 19 ; 23,6 ; 29,4 ; 38,2 cm) et G avant = N·π·Dg²/40 000 (36,9 ; 34,6 ; 36,5 ; 37,3 ; 44,1 m²/ha), puis G après = G avant × (1 − part de G enlevée). Le tableau donne la part des tiges enlevées (50, 32, 34, 30, 35 %) ; la part de G en est tirée par le rapport des fourchettes du guide : 30-45 % de G pour 40-60 % des tiges en première éclaircie (p. 16), soit × 0,75 ; 20-30 % de G pour 25-35 % des tiges ensuite (p. 21), soit × 0,83. Au-delà de la dernière éclaircie (Dg 38,2 cm), le nombre de tiges est tenu à la densité du peuplement final du tableau p. 18 pour un diamètre d'exploitabilité de 55 cm (G = N·π·Dg²/40 000 à 45, 50 et 55 cm) ; à 38,2 cm cette densité redonne le G de l'exemple à 0,2 m²/ha près. Densité finale à 55 cm : 250-300 tiges/ha, valeur centrale 275 (p. 18). diametre_exploitabilite_cm : 55 cm, valeur centrale de la fourchette de meilleure rentabilité 45-65 cm (p. 18, D-11). rotation_ans : 10 ans au lieu de 4-6 ans jusque vers 40 ans puis 7-10 ans (p. 21, D-9) ; la norme dépend de l'état du peuplement, sans conversion du prélèvement. Domaine non restreint : le guide déconseille le sapin sous 400 m (p. 3), ce que le catalogue ne filtre pas (pas de critère d'altitude). Limites : le guide indexe ses critères sur la hauteur dominante (facteur d'espacement S = 10 746/(Ho·√N) ≥ 25 % après éclaircie pour l'épicéa et le sapin, 30 % pour le douglas et le mélèze, p. 10-11 ; Ho/Dg < 80), que FINN ne simule pas (D-10) : la norme par Dg n'en est qu'une traduction, valable pour la croissance du peuplement de l'exemple ; le Dg et le G de FINN comptent toutes les tiges (sous-étage et feuillus compris), ce qui abaisse le Dg et avance les éclaircies ; l'éclaircie du moteur est proportionnelle dans toutes les grosseurs, pas sélective par le haut au profit des tiges désignées (p. 21) ; dépressage, élagage, cloisonnements et éclaircie de rattrapage (Ho/Dg 80-100 : 25 % des tiges au plus tous les 3-4 ans, p. 23) ne sont pas représentés ; le renouvellement après la coupe finale n'est pas décrit par le guide, le recrutement vient de FINN."
     },
     {
       "code": "bfc_epicea_futaie_reguliere",
@@ -142,7 +188,9 @@
         "en": "Even-aged Norway spruce high forest"
       },
       "domaine": {
-        "essences_objectif": [],
+        "essences_objectif": [
+          "62"
+        ],
         "ser": [],
         "p2_min": null,
         "p2_max": null,
@@ -152,14 +200,58 @@
         "protections_exclues": []
       },
       "regles": {
-        "rotation_ans": null,
-        "diametre_exploitabilite_cm": null,
+        "rotation_ans": 10,
+        "diametre_exploitabilite_cm": 55,
         "surface_terriere_cible_m2ha": null,
-        "intensite_prelevement_pct": null
+        "intensite_prelevement_pct": null,
+        "norme_g_selon_dg": {
+          "dg_cm": [
+            14.0,
+            19.0,
+            23.6,
+            29.4,
+            38.2,
+            45.0,
+            50.0,
+            55.0
+          ],
+          "g_m2ha": [
+            23.1,
+            25.4,
+            26.2,
+            28.0,
+            31.3,
+            43.7,
+            54.0,
+            65.3
+          ]
+        }
       },
-      "effets_attendus": {},
-      "sources": [],
-      "statut_source": "a_sourcer"
+      "effets_attendus": {
+        "P": {
+          "sens": "+",
+          "horizon": "long",
+          "source": "SFFC 2012, p. 8 : grumes de volume unitaire plus important aux cernes réguliers, production concentrée sur les plus belles tiges ; p. 18 : meilleure rentabilité entre 45 et 65 cm"
+        },
+        "R": {
+          "sens": "+",
+          "horizon": "moyen",
+          "source": "SFFC 2012, p. 8 : stabilité face aux aléas climatiques et résistance aux attaques parasitaires améliorées, risques de chablis minimisés ; p. 22 : aucun chablis récolté dans l'exemple d'épicéa éclairci"
+        },
+        "B": {
+          "sens": "+",
+          "horizon": "moyen",
+          "source": "SFFC 2012, p. 7 : un sous-bois lumineux améliore l'humus et la biodiversité floristique et faunistique ; p. 22 : régénération abondante et diversifiée de feuillus sous l'épicéa éclairci"
+        }
+      },
+      "sources": [
+        {
+          "ref": "SFFC (2012). Les éclaircies résineuses en Franche-Comté. Société forestière de Franche-Comté et CRPF de Franche-Comté, 32 p.",
+          "pages": "p. 2, 4, 7-8, 10-11, 16, 18, 21-23"
+        }
+      ],
+      "statut_source": "source",
+      "notes": "Éclaircies résineuses de Franche-Comté (SFFC 2012), futaie régulière seulement (p. 2). norme_g_selon_dg tirée de l'exemple de sylviculture dynamique de l'épicéa des pentes intermédiaires jurassiennes (p. 22 ; plantation à 2 500 plants/ha) : à chaque éclaircie (19, 24, 28, 33, 42 ans), Dg avant éclaircie (14 ; 19 ; 23,6 ; 29,4 ; 38,2 cm) et G avant = N·π·Dg²/40 000 (36,9 ; 34,6 ; 36,5 ; 37,3 ; 44,1 m²/ha), puis G après = G avant × (1 − part de G enlevée). Le tableau donne la part des tiges enlevées (50, 32, 34, 30, 35 %) ; la part de G en est tirée par le rapport des fourchettes du guide : 30-45 % de G pour 40-60 % des tiges en première éclaircie (p. 16), soit × 0,75 ; 20-30 % de G pour 25-35 % des tiges ensuite (p. 21), soit × 0,83. Au-delà de la dernière éclaircie (Dg 38,2 cm), le nombre de tiges est tenu à la densité du peuplement final du tableau p. 18 pour un diamètre d'exploitabilité de 55 cm (G = N·π·Dg²/40 000 à 45, 50 et 55 cm) ; à 38,2 cm cette densité redonne le G de l'exemple à 0,2 m²/ha près. Densité finale de l'épicéa à 55 cm : 250-300 tiges/ha, valeur centrale 275 (p. 18). diametre_exploitabilite_cm : 55 cm, valeur centrale de la fourchette de meilleure rentabilité 45-65 cm (p. 18, D-11). rotation_ans : 10 ans au lieu de 4-6 ans jusque vers 40 ans puis 7-10 ans (p. 21, D-9) ; la norme dépend de l'état du peuplement, sans conversion du prélèvement. Domaine non restreint : l'épicéa planté en plaine, hors de son aire jurassienne (700-1 300 m), est exposé aux scolytes et aux chablis (p. 4), ce que le catalogue ne filtre pas (pas de critère d'altitude ni de pluviosité ≥ 1 000 mm). Limites : le guide indexe ses critères sur la hauteur dominante (facteur d'espacement S = 10 746/(Ho·√N) ≥ 25 % après éclaircie pour l'épicéa et le sapin, 30 % pour le douglas et le mélèze, p. 10-11 ; Ho/Dg < 80), que FINN ne simule pas (D-10) : la norme par Dg n'en est qu'une traduction, valable pour la croissance du peuplement de l'exemple ; le Dg et le G de FINN comptent toutes les tiges (sous-étage et feuillus compris), ce qui abaisse le Dg et avance les éclaircies ; l'éclaircie du moteur est proportionnelle dans toutes les grosseurs, pas sélective par le haut au profit des tiges désignées (p. 21) ; dépressage, élagage, cloisonnements et éclaircie de rattrapage (Ho/Dg 80-100 : 25 % des tiges au plus tous les 3-4 ans, p. 23) ne sont pas représentés ; le renouvellement après la coupe finale n'est pas décrit par le guide, le recrutement vient de FINN."
     },
     {
       "code": "bfc_douglas_futaie_reguliere",
@@ -169,7 +261,9 @@
         "en": "Even-aged Douglas fir high forest"
       },
       "domaine": {
-        "essences_objectif": [],
+        "essences_objectif": [
+          "64"
+        ],
         "ser": [],
         "p2_min": null,
         "p2_max": null,
@@ -179,14 +273,58 @@
         "protections_exclues": []
       },
       "regles": {
-        "rotation_ans": null,
-        "diametre_exploitabilite_cm": null,
+        "rotation_ans": 10,
+        "diametre_exploitabilite_cm": 55,
         "surface_terriere_cible_m2ha": null,
-        "intensite_prelevement_pct": null
+        "intensite_prelevement_pct": null,
+        "norme_g_selon_dg": {
+          "dg_cm": [
+            14.0,
+            19.0,
+            23.6,
+            29.4,
+            38.2,
+            45.0,
+            50.0,
+            55.0
+          ],
+          "g_m2ha": [
+            17.2,
+            18.9,
+            19.5,
+            20.9,
+            23.3,
+            32.6,
+            40.3,
+            48.7
+          ]
+        }
       },
-      "effets_attendus": {},
-      "sources": [],
-      "statut_source": "a_sourcer"
+      "effets_attendus": {
+        "P": {
+          "sens": "+",
+          "horizon": "long",
+          "source": "SFFC 2012, p. 8 : grumes de volume unitaire plus important aux cernes réguliers, production concentrée sur les plus belles tiges ; p. 18 : meilleure rentabilité entre 45 et 65 cm"
+        },
+        "R": {
+          "sens": "+",
+          "horizon": "moyen",
+          "source": "SFFC 2012, p. 8 : stabilité face aux aléas climatiques et résistance aux attaques parasitaires améliorées, risques de chablis minimisés ; p. 22 : aucun chablis récolté dans l'exemple d'épicéa éclairci"
+        },
+        "B": {
+          "sens": "+",
+          "horizon": "moyen",
+          "source": "SFFC 2012, p. 7 : un sous-bois lumineux améliore l'humus et la biodiversité floristique et faunistique ; p. 22 : régénération abondante et diversifiée de feuillus sous l'épicéa éclairci"
+        }
+      },
+      "sources": [
+        {
+          "ref": "SFFC (2012). Les éclaircies résineuses en Franche-Comté. Société forestière de Franche-Comté et CRPF de Franche-Comté, 32 p.",
+          "pages": "p. 2, 6-8, 10-11, 13, 16, 18, 21-23"
+        }
+      ],
+      "statut_source": "source",
+      "notes": "Éclaircies résineuses de Franche-Comté (SFFC 2012), futaie régulière seulement (p. 2). Le guide ne chiffre pas d'exemple de douglas : la norme de l'épicéa est multipliée par 205/275 = 0,745, rapport des densités finales centrales douglas-mélèze (180-230 tiges/ha) et épicéa-sapin (250-300) pour un diamètre d'exploitabilité de 55 cm (p. 18). Le même ordre de grandeur sort des autres règles du guide : 700 contre 1 000 tiges/ha au plus après dépressage (0,70, p. 13) ; facteur d'espacement 30 % contre 25 % à hauteur égale, (25/30)² = 0,69 (p. 11). norme_g_selon_dg tirée de l'exemple de sylviculture dynamique de l'épicéa des pentes intermédiaires jurassiennes (p. 22 ; plantation à 2 500 plants/ha) : à chaque éclaircie (19, 24, 28, 33, 42 ans), Dg avant éclaircie (14 ; 19 ; 23,6 ; 29,4 ; 38,2 cm) et G avant = N·π·Dg²/40 000 (36,9 ; 34,6 ; 36,5 ; 37,3 ; 44,1 m²/ha), puis G après = G avant × (1 − part de G enlevée). Le tableau donne la part des tiges enlevées (50, 32, 34, 30, 35 %) ; la part de G en est tirée par le rapport des fourchettes du guide : 30-45 % de G pour 40-60 % des tiges en première éclaircie (p. 16), soit × 0,75 ; 20-30 % de G pour 25-35 % des tiges ensuite (p. 21), soit × 0,83. Au-delà de la dernière éclaircie (Dg 38,2 cm), le nombre de tiges est tenu à la densité du peuplement final du tableau p. 18 pour un diamètre d'exploitabilité de 55 cm (G = N·π·Dg²/40 000 à 45, 50 et 55 cm) ; à 38,2 cm cette densité redonne le G de l'exemple à 0,2 m²/ha près. Pour le douglas, la densité finale tenue au-delà de 38,2 cm est 205 tiges/ha. diametre_exploitabilite_cm : 55 cm, valeur centrale de la fourchette de meilleure rentabilité 45-65 cm (p. 18, D-11). rotation_ans : 10 ans au lieu de 4-6 ans jusque vers 40 ans puis 7-10 ans (p. 21, D-9) ; la norme dépend de l'état du peuplement, sans conversion du prélèvement. Domaine non restreint : le douglas refuse les sols superficiels, calcaires, compacts ou hydromorphes (p. 6), ce que le catalogue ne filtre pas. Limites : le guide indexe ses critères sur la hauteur dominante (facteur d'espacement S = 10 746/(Ho·√N) ≥ 25 % après éclaircie pour l'épicéa et le sapin, 30 % pour le douglas et le mélèze, p. 10-11 ; Ho/Dg < 80), que FINN ne simule pas (D-10) : la norme par Dg n'en est qu'une traduction, valable pour la croissance du peuplement de l'exemple ; le Dg et le G de FINN comptent toutes les tiges (sous-étage et feuillus compris), ce qui abaisse le Dg et avance les éclaircies ; l'éclaircie du moteur est proportionnelle dans toutes les grosseurs, pas sélective par le haut au profit des tiges désignées (p. 21) ; dépressage, élagage, cloisonnements et éclaircie de rattrapage (Ho/Dg 80-100 : 25 % des tiges au plus tous les 3-4 ans, p. 23) ne sont pas représentés ; le renouvellement après la coupe finale n'est pas décrit par le guide, le recrutement vient de FINN."
     },
     {
       "code": "bfc_hetre_futaie_irreguliere",
