@@ -1,7 +1,7 @@
 # Spec 065 — Règles chiffrées tirées des guides (relevé du 2026-11-10)
 
 > **Statut** : relevé de travail, **aucune entrée du catalogue n'est encore
-> remplie**. Décisions D-9 à D-11 ci-dessous à valider par Pascal.
+> remplie**. Décisions D-9 à D-11 validées le 2026-11-10 (§ 6).
 > Les guides sont sous droits : textes et PDF restent dans
 > `data-raw/references/itineraires/` (ignoré par git) ; leurs citations
 > complètes sont dans `data-raw/references/README.md`. Ici, seulement les
@@ -44,15 +44,47 @@ essences objectif associées favorisées (p. 11).
 | Accroissement en G, fertilité bonne à moyenne | 0,4-0,6 m²/ha/an | tab. 1, p. 17 |
 | Capital à l'équilibre, échelle forêt (précomptables) | 15-17 m²/ha cas général ; 17-19 excellent ; 13-15 médiocre | tab. 7, p. 29 |
 | Étage non précomptable à maintenir | 2-3 m²/ha (3-4 à l'équilibre) | p. 10, p. 29 |
-| G cible après coupe en fonction de G avant coupe | **courbe, illisible dans le texte extrait** | fig. 2, p. 17 |
+| G cible après coupe en fonction de G avant coupe | fuseau, voir § 2.1 | fig. 2, p. 17 |
 | Structure cible (Dexp ≥ 55 cm) | PB 15-20 %, BM 30-45 %, GB 40-50 % de G | tab. 8, p. 30 |
 | Perches (essences objectif) | ≥ 120 /ha, dont ≥ 40 d'avenir | tab. 9, p. 31 |
 | Première coupe de conversion d'un TSF (charme > 7 m²/ha) | rotation suivante 7-8 ans ; 10 ans si station pauvre ou G < 10 m²/ha | p. 15 |
 
+### 2.1 G après coupe selon G avant coupe, par type de parcelle
+
+Figures 2, 4, 6, 8, 10 (p. 17-25), numérisées à l'œil le 2026-11-10 sur
+les captures des pages (précision ± 0,3 m²/ha). Courbes « toutes autres
+fertilités » : le guide donne un fuseau (borne basse, borne haute) ; on
+note ici son milieu, et entre parenthèses le taux de prélèvement en G
+qu'il implique. Tiges précomptables seulement (hors 2-3 m²/ha non
+précomptables). Le fuseau « fertilité excellente » est au plus 1 m²/ha
+au-dessus, et confondu pour les types 3 et 6.
+
+| Type (page) | G avant → G après, milieu du fuseau (prélèvement) | Fuseau |
+|---|---|---|
+| 2, équilibré PB-BM-GB (fig. 2, p. 17) | 14 → 11,3 (19 %) ; 16 → 12,4 (22 %) ; 18 → 13,9 (23 %) ; 20 → 15,3 (24 %) ; 22 → 17,0 (23 %) ; 24 → 18,9 (21 %) ; 26 → 20,9 (20 %) | ± 1,0-1,1 |
+| 3, PB dominants (fig. 4, p. 19) | 12 → 7,5 (37 %) ; 15 → 9,6 (36 %) ; 18 → 12,1 (33 %) ; 20 → 13,9 (30 %) ; 22 → 15,8 (28 %) ; 25 → 18,4 (26 %) | ± 1,0-1,6 |
+| 4, BM dominants (fig. 6, p. 21) | 18 → 15,4 (14 %) ; 20 → 16,1 (19 %) ; 22 → 17,2 (22 %) ; 24 → 18,8 (22 %) ; 26 → 20,7 (20 %) ; 28 → 22,7 (19 %) | ± 0,5-1,0 |
+| 5, BM et GB (fig. 8, p. 23) | 18 → 15,4 (14 %) ; 20 → 16,1 (20 %) ; 22 → 17,5 (20 %) ; 24 → 19,2 (20 %) ; 26 → 20,8 (20 %) ; 28 → 22,4 (20 %) | ± 0,5-0,7 |
+| 6, GB dominants (fig. 10, p. 25) | 15 → 10,9 (27 %) ; 18 → 13,6 (24 %) ; 20 → 15,5 (22 %) ; 22 → 17,3 (21 %) ; 25 → 20,1 (20 %) ; 28 → 22,9 (18 %) | ± 0,6-1,0 |
+
+Rotations des types 3 à 6 (fertilité bonne à moyenne, tab. 2-5) :
+type 3, G < 24 : 7-8 ans, ≥ 24 : 6-7 ; type 4, G < 23 : 8-9, 23-26 : 8,
+≥ 26 : 6-7 ; type 5, G < 24 : 9-10, 24-27 : 8-9, ≥ 28 : 6-7 ; type 6,
+G < 24 : 8, 24-27 : 7-8, ≥ 27 : 6-7. Accroissement courant (bonne à
+moyenne) : 0,5-0,8 (type 3), 0,4-0,6 (4), 0,3-0,5 (5), 0,3-0,4 m²/ha/an (6).
+Type 3 : prélèvement 40-50 % dans les PB et perches si jamais éclairci,
+30-40 % si BM ≥ 30 % de G, sinon 25-33 % (p. 19).
+
+Lecture : hors type 3, le fuseau revient à un **prélèvement quasi
+constant de 20 à 24 % de G** entre 18 et 28 m²/ha. Le type 3 se comporte
+comme une première éclaircie (26 à 37 %).
+
 Adéquation au moteur (`simuler_itineraire()`) : **bonne**. Les règles sont
 en surface terrière, diamètre, intensité et rotation, ce que le moteur
-applique. Deux écarts : la rotation (D-9) et la courbe de la figure 2, à
-lire sur le PDF.
+applique. Une intensité constante (≈ 22 % pour le type 2) reproduit le
+fuseau à ± 1 m²/ha sans extension du moteur ; la courbe exacte demanderait
+une règle « G après = f(G avant »), à ne faire que si l'écart compte.
+Rotation : D-9.
 
 ## 3. Futaie régulière de chêne sessile (*Chênaies continentales*, 2008)
 
@@ -104,9 +136,11 @@ fertilité. Exemple F1 : 28 ans, Ho 20,8 m, 612 tiges, G 17,1, Dg 19 cm
 après éclaircie ; 74 ans, Ho 37,4 m, 58 tiges, G 19,4, Dg 65 cm. C'est le
 format qu'il faudrait pour les futaies régulières de BFC.
 
-## 6. Décisions proposées
+## 6. Décisions (validées par Pascal le 2026-11-10)
 
-| # | Question | Proposition |
+D-9, D-10 et D-11 sont **retenues telles que proposées** ci-dessous.
+
+| # | Question | Décision |
 |---|---|---|
 | D-9 | Rotation du guide (6-9 ans) contre pas de FINN (5 ans, fixé par les revisites IFN) | **(b)** couper tous les 10 ans avec un prélèvement × 10 / rotation du guide, plafonné à 25 % de G (FI, p. 7) ; rotation d'origine et conversion écrites dans l'entrée. Alternatives : (a) arrondir à 5 ou 10 ans ; (c) ne retenir que les cas à 10 ans |
 | D-10 | Futaie régulière : toutes les normes sont en fonction de Ho, que FINN ne porte pas | indexer les règles sur le **diamètre quadratique moyen Dg**, que FINN porte : les tables des guides (âge, Ho, N, G, Dg) donnent N et G cibles par Dg sans passer par la hauteur. Demande d'étendre `simuler_itineraire()` (règle `norme_densite` : table Dg → N ou G après éclaircie). Alternative : relation hauteur-diamètre (même question que D-9 de la spec 068, T4) |
@@ -114,9 +148,18 @@ format qu'il faudrait pour les futaies régulières de BFC.
 
 ## 7. Ce qui débloque la suite
 
-1. Captures des figures 2, 4, 6, 8, 10 du référentiel FI (p. 17, 19, 21,
-   23, 25) → première entrée réelle : futaie irrégulière de hêtre.
-2. PDF complet de *Chênaies continentales* (extraction locale) → tableaux
-   28-29, conversion du TSF, futaie irrégulière à chêne.
-3. *Hêtraies continentales FR* (2012), *Douglasaies françaises*, guide de
-   l'arc jurassien, mémento des sapinières du Morvan.
+1. ~~Captures des figures 2, 4, 6, 8, 10 du référentiel FI~~ : lues le
+   2026-11-10 (§ 2.1). Plus rien ne bloque la première entrée réelle :
+   futaie irrégulière de hêtre.
+2. PDF complet de *Chênaies continentales* : il est sur le Drive (18 Mo),
+   seul le connecteur bloque au-delà de 10 Mo. À télécharger depuis le
+   navigateur dans `data-raw/references/itineraires/` pour une extraction
+   locale (`pdftotext`) → tableaux 28-29, conversion du TSF, futaie
+   irrégulière à chêne.
+3. *Hêtraies continentales FR* (ONF 2012), *Douglasaies françaises*
+   (Angelier 2007, ISBN 978-2-84207-315-2), guide de l'arc jurassien,
+   mémento des sapinières du Morvan : **aucune version libre en ligne**
+   (recherche du 2026-11-10). Ouvrages ONF-Lavoisier vendus ou documents
+   internes ONF : à demander à l'ONF (agence BFC) ou à emprunter
+   (bibliothèque AgroParisTech Nancy). En attendant, les futaies
+   régulières résineuses s'appuient sur le SFFC 2012 (§ 4).
