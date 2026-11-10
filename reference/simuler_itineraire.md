@@ -53,6 +53,12 @@ simuler_itineraire(
   with `statut_source = "source"`. Rules used (`regles`), all optional
   except the rotation:
 
+  aucune_coupe
+
+  :   `TRUE`: no cut at all (free development, senescence island);
+      FINN's dynamics alone, reported under the itinerary's code.
+      Excludes every other rule, the rotation included.
+
   rotation_ans
 
   :   years between two interventions; a multiple of

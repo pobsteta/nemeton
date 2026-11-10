@@ -48,7 +48,7 @@ sessile, hêtre, sapin, épicéa et douglas ; futaie irrégulière de hêtre ;
 taillis-sous-futaie et sa conversion ; libre évolution ; îlot de
 sénescence ; plantation de diversification).
 
-**Huit sont sourcés.** `bfc_hetre_futaie_irreguliere` est tiré du
+**Dix sont sourcés.** `bfc_hetre_futaie_irreguliere` est tiré du
 référentiel ONF de futaie irrégulière des hêtraies continentales (2013).
 Ses règles sont celles d’une parcelle équilibrée de fertilité bonne à
 moyenne, adaptées au pas de 5 ans de FINN : une coupe tous les 10 ans,
@@ -103,7 +103,23 @@ hêtraies du sud Massif central (2018) : diamètre moyen avant éclaircie
 et surface terrière après, de 17,6 m²/ha à 16 cm à 18,4 m²/ha à 44 cm,
 récolte à 55 cm.
 
-**Les quatre autres sont `a_sourcer`** : domaine, règles et effets
+Deux itinéraires n’ont **aucune coupe** (règle `aucune_coupe`) et sont
+admissibles sur toute UGF :
+
+- `bfc_libre_evolution` : parties boisées « exemptes de toute
+  intervention sur le long terme » (règlements types de gestion de l’ONF
+  en Bourgogne et Franche-Comté, 2021) ;
+- `bfc_ilot_senescence` : peuplement conservé jusqu’à son effondrement,
+  de 0,5 ha à quelques hectares, au moins 1 % de la forêt domaniale
+  (instruction biodiversité de l’ONF, présentée en 2011).
+
+Leur trajectoire est celle de la dynamique de FINN seule, comme le
+candidat `sans_gestion` de
+[`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md)
+; leurs effets attendus (biodiversité et naturalité `+`, production `-`)
+sont sourcés.
+
+**Les deux autres sont `a_sourcer`** : domaine, règles et effets
 attendus sont vides, et **aucun n’est admissible** tant qu’ils n’ont pas
 été remplis à partir de guides cités (ONF, DRA/SRA, Pro Silva, SRGS). Le
 relevé des règles déjà lues, page par page, est dans

@@ -328,6 +328,12 @@ avant → G après, Dexp 55). 8 entrées sur 12. Restent TSF maintenu, libre
 évolution, îlot de sénescence, plantation : sources trouvées mais
 extension du moteur nécessaire (coupe du taillis, itinéraire sans coupe,
 plantation). Version nemetonshiny vérifiée : v2026.10.18.
+**v2026.11.20** : règle moteur `aucune_coupe` ; `bfc_libre_evolution`
+(RTG 2021 § 3.13) et `bfc_ilot_senescence` (instruction ONF,
+présentation 2011) sourcées, admissibles partout, effets B/N `+` et P
+`-`. 10 entrées sur 12. Restent TSF maintenu (coupe du taillis, rejets
+absents de FINN) et plantation (FINN ne plante pas). Version
+nemetonshiny vérifiée : v2026.10.18.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,

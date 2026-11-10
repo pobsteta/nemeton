@@ -13,7 +13,7 @@ dynamics only, the cuts are imposed from outside."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.19</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.20</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -171,7 +171,13 @@ variables of the calibration. Held constant over the horizon.</p></dd>
 <dt id="arg-itineraire">itineraire<a class="anchor" aria-label="anchor" href="#arg-itineraire"></a></dt>
 <dd><p><code>NULL</code> (no management) or one entry of
 <code><a href="itineraires_catalogue.html">itineraires_catalogue()</a></code> with <code>statut_source = "source"</code>. Rules used
-(<code>regles</code>), all optional except the rotation:</p><dl><dt>rotation_ans</dt>
+(<code>regles</code>), all optional except the rotation:</p><dl><dt>aucune_coupe</dt>
+<dd><p><code>TRUE</code>: no cut at all (free development,
+senescence island); FINN's dynamics alone, reported under the
+itinerary's code. Excludes every other rule, the rotation
+included.</p></dd>
+
+<dt>rotation_ans</dt>
 <dd><p>years between two interventions; a multiple of
 <code>calibration$pas_annees</code>.</p></dd>
 

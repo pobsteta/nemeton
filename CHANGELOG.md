@@ -13,6 +13,15 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.20\] - 2026-11-10
+
+### Added
+
+- [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md):
+  rule `aucune_coupe`, an itinerary without any cut (spec 065).
+- Itinerary catalogue: sourced entries `bfc_libre_evolution` and
+  `bfc_ilot_senescence` (ONF 2011, RTG 2021), admissible on every unit.
+
 ## \[2026.11.19\] - 2026-11-10
 
 ### Added

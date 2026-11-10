@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.19</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.20</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -230,7 +230,7 @@ onze premiers itinéraires de Bourgogne-Franche-Comté (futaies régulières
 de chêne sessile, hêtre, sapin, épicéa et douglas ; futaie irrégulière
 de hêtre ; taillis-sous-futaie et sa conversion ; libre évolution ; îlot
 de sénescence ; plantation de diversification).</p>
-<p><strong>Huit sont sourcés.</strong>
+<p><strong>Dix sont sourcés.</strong>
 <code>bfc_hetre_futaie_irreguliere</code> est tiré du référentiel ONF de
 futaie irrégulière des hêtraies continentales (2013). Ses règles sont
 celles d’une parcelle équilibrée de fertilité bonne à moyenne, adaptées
@@ -294,7 +294,24 @@ libre. En attendant, l’entrée reprend la table de production de la
 fertilité 2 du mémento ONF des hêtraies du sud Massif central (2018) :
 diamètre moyen avant éclaircie et surface terrière après, de 17,6 m²/ha
 à 16 cm à 18,4 m²/ha à 44 cm, récolte à 55 cm.</p>
-<p><strong>Les quatre autres sont <code>a_sourcer</code></strong> :
+<p>Deux itinéraires n’ont <strong>aucune coupe</strong> (règle
+<code>aucune_coupe</code>) et sont admissibles sur toute UGF :</p>
+<ul>
+<li>
+<code>bfc_libre_evolution</code> : parties boisées « exemptes de
+toute intervention sur le long terme » (règlements types de gestion de
+l’ONF en Bourgogne et Franche-Comté, 2021) ;</li>
+<li>
+<code>bfc_ilot_senescence</code> : peuplement conservé jusqu’à son
+effondrement, de 0,5 ha à quelques hectares, au moins 1 % de la forêt
+domaniale (instruction biodiversité de l’ONF, présentée en 2011).</li>
+</ul>
+<p>Leur trajectoire est celle de la dynamique de FINN seule, comme le
+candidat <code>sans_gestion</code> de
+<code><a href="../reference/comparer_itineraires.html">comparer_itineraires()</a></code> ; leurs effets attendus
+(biodiversité et naturalité <code>+</code>, production <code>-</code>)
+sont sourcés.</p>
+<p><strong>Les deux autres sont <code>a_sourcer</code></strong> :
 domaine, règles et effets attendus sont vides, et <strong>aucun n’est
 admissible</strong> tant qu’ils n’ont pas été remplis à partir de guides
 cités (ONF, DRA/SRA, Pro Silva, SRGS). Le relevé des règles déjà lues,
