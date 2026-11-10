@@ -69,6 +69,16 @@ test_that("a thinning norm by mean diameter sets the target per plot (D-10)", {
   expect_equal(range(ch$norme$g), c(14.7, 20.2))
 })
 
+test_that("every sourced entry of the shipped catalogue is accepted by the engine", {
+  cat <- itineraires_catalogue()
+  sources <- Filter(function(it) identical(it$statut_source, "source"), cat)
+  expect_gte(length(sources), 4L)
+  for (it in sources) {
+    r <- nemeton:::.itin_regles(it, 5)
+    expect_equal(r$rotation_ans %% 5, 0, label = it$code)
+  }
+})
+
 test_that(".itin_couper harvests above the diameter and thins towards the target", {
   coh <- data.frame(siteID = c(1L, 1L, 2L, 2L), species = 1L,
                     dbh = c(30, 70, 30, 30), trees = c(100, 10, 100, 100))

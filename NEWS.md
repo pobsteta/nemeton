@@ -1,4 +1,28 @@
-# nemeton 2026.11.16 (2026-11-10)
+# nemeton 2026.11.17 (2026-11-10)
+
+## Nouveautés
+
+- **Catalogue d'itinéraires : deux entrées sourcées de plus** (spec 065),
+  tirées de *Chênaies continentales* (Sardin, ONF 2008), désormais lu en
+  entier. Chaque nombre est expliqué dans le champ `notes`.
+  - `bfc_chene_futaie_irreguliere` (nouvelle entrée) : futaie irrégulière
+    de chêne, fertilité bonne. 15 m²/ha après coupe (12 de tiges
+    précomptables plus 3 de taillis et perches, p. 274), 20 % de G prélevés
+    (15-25 %, p. 273), une coupe tous les 10 ans (8-12 ans, tab. 48),
+    récolte à 65 cm (qualité C, p. 73). Admissible sur une UGF à chêne
+    sessile ou pédonculé (`03`, `02`). Effet P `+`.
+  - `bfc_conversion_tsf_futaie` : conversion du taillis-sous-futaie en
+    futaie régulière de chêne sessile. 19 m²/ha après coupe (milieu de la
+    fourchette du tab. 44, qui monte avec la hauteur dominante), environ
+    20 % de G prélevés (p. 256), 10 ans (tab. 46), récolte à 65 cm
+    (hypothèse, le guide ne chiffrant pas les diamètres « sensiblement
+    réduits » des chênes issus de rejets). Effets P et C `+`.
+
+## Changements de résultat
+
+- `itineraires_admissibles()` sur le catalogue livré admet ces deux
+  entrées sur une UGF à chêne. Sept entrées restent `a_sourcer`.
+
 
 ## Nouveautés
 
