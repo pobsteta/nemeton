@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.19] - 2026-11-10
+
+### Added
+- Itinerary catalogue: sourced entry `bfc_hetre_futaie_reguliere` from the ONF 2018 southern Massif Central beech memento (fertility 2 production table), a substitute for the unavailable continental beech guide (spec 065).
+
 ## [2026.11.18] - 2026-11-10
 
 ### Added
