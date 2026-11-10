@@ -183,11 +183,21 @@ itineraires_admissibles <- function(units, catalogue = itineraires_catalogue(),
 #'   (spec 065, D-6). Or the code of an itinerary.
 #' @param col_actuel Column of the declared current itinerary.
 #' @param protected_areas Passed to [itineraires_admissibles()].
-#' @param trajectoires Reserved for the simulation of chantier D (FINN):
-#'   the output of `simuler_itineraire()` (unit x itinerary x horizon x
-#'   indicator, with `valeur`, `bas`, `haut`, `methode`). Then `methode`
-#'   becomes `"finn"` and `incertitude` numeric; the output columns do not
-#'   change. Not implemented yet: an error if given.
+#' @param trajectoires `NULL` (default): compare on the qualitative effects
+#'   of the catalogue. Or the simulated trajectories of chantier D: the
+#'   output of [simuler_itineraire()], one call per itinerary bound with
+#'   `rbind()`, with `volume = TRUE` and `carbone = TRUE` for the two
+#'   families it carries (see Details). The rows of `simuler_itineraire()`
+#'   without management (`itineraire = "sans_gestion"`) are a candidate of
+#'   every unit. Then `methode` becomes `"finn"` and `incertitude` numeric;
+#'   the output columns do not change.
+#' @param horizon Numeric or `NULL`. Year of the trajectories read with
+#'   `trajectoires`. `NULL`: the longest horizon simulated for every
+#'   itinerary.
+#' @param tolerance Numeric. With `trajectoires`, a family is won or lost
+#'   against the reference only when the values differ by more than this
+#'   share of the reference value (FINN trajectories are stochastic means).
+#'   Default 0.05, a convention.
 #'
 #' @return A data frame, one row per unit x candidate itinerary: `unit_id`,
 #'   `itineraire`, `score_global` (in `[-1, 1]`, `NA` if an evaluated family
@@ -195,12 +205,34 @@ itineraires_admissibles <- function(units, catalogue = itineraires_catalogue(),
 #'   `reference`, `familles_gagnantes`, `familles_perdantes` (against the
 #'   reference, comma-separated codes), `familles_evaluees` (weighted
 #'   families documented by at least one candidate; the others are set
-#'   aside, since they rank nothing), `incertitude` (`"qualitative"`),
-#'   `methode` (`"catalogue_qualitatif"`), `citations`.
+#'   aside, since they rank nothing), `incertitude` (`"qualitative"`; with
+#'   `trajectoires`, the half-width of the conformal interval of the basal
+#'   area at the horizon, m2/ha, `NA` without conformal residuals),
+#'   `methode` (`"catalogue_qualitatif"` or `"finn"`), `citations`. With
+#'   `trajectoires`, `attr(, "valeurs")` holds the simulated values behind
+#'   the score: `unit_id`, `itineraire`, `famille`, `variable`, `valeur`,
+#'   `unite_mesure`, `horizon`.
 #'
 #' @details `score_global` is an **order**, not a measure: the effects are
 #' qualitative and sourced, not simulated. Display it as a rank. The
 #' catalogue is not exhaustive; an itinerary absent from it is not compared.
+#'
+#' **With `trajectoires`** (spec 068), two families are read from the
+#' simulation, the others weighted by the profile are set aside (said in
+#' `familles_evaluees`):
+#' \describe{
+#'   \item{P}{volume harvested, summed up to the horizon (`volume_preleve`,
+#'     m3/ha; `g_prelevee`, m2/ha, when the volume was not simulated).}
+#'   \item{C}{carbon standing at the horizon (`carbone`, tC/ha).}
+#' }
+#' Within a unit, each family is rescaled to `[-1, 1]` across the candidates
+#' (`-1` the lowest value, `1` the highest, `0` for all when they are
+#' equal), then weighted as the qualitative effects. The score is still an
+#' order: it depends on the candidates compared, and the rescaling gives the
+#' same weight to a small and to a large difference. The values are in
+#' `attr(, "valeurs")`. The pitfalls of [simuler_itineraire()] hold: recent
+#' climate held constant, response to thinning not learnt, interval widened
+#' under a hypothesis beyond one step.
 #'
 #' @section Lifecycle:
 #' Experimental (spec 065): may change in any release.
@@ -211,13 +243,8 @@ comparer_itineraires <- function(units, poids, catalogue = itineraires_catalogue
                                  admissibles = NULL, itineraires = NULL,
                                  reference = "statu_quo",
                                  col_actuel = "itineraire_actuel",
-                                 protected_areas = NULL, trajectoires = NULL) {
-  if (!is.null(trajectoires)) {
-    cli::cli_abort(c(
-      "{.arg trajectoires} is reserved for the FINN simulation (chantier D), not implemented yet.",
-      "i" = "Spec 065, section 6."
-    ))
-  }
+                                 protected_areas = NULL, trajectoires = NULL,
+                                 horizon = NULL, tolerance = 0.05) {
   if (is.character(poids) && length(poids) == 1L) poids <- profils_poids(poids)
   if (!is.numeric(poids) || is.null(names(poids))) {
     cli::cli_abort("{.arg poids} must be a named numeric vector or a profile key.")
@@ -231,6 +258,21 @@ comparer_itineraires <- function(units, poids, catalogue = itineraires_catalogue
   actuel <- if (col_actuel %in% names(units)) {
     stats::setNames(as.character(units[[col_actuel]]), .itin_ids(units, NULL))
   } else NULL
+  simule <- !is.null(trajectoires)
+  if (simule) {
+    if (!is.numeric(tolerance) || length(tolerance) != 1L || !is.finite(tolerance) ||
+        tolerance < 0) {
+      cli::cli_abort("{.arg tolerance} must be a non-negative number.")
+    }
+    valeurs <- .itin_valeurs_trajectoires(trajectoires, horizon)
+    absentes <- setdiff(unique(valeurs$unit_id), ids)
+    if (length(absentes) == length(unique(valeurs$unit_id))) {
+      cli::cli_abort(c(
+        "No unit of {.arg trajectoires} is a unit of {.arg admissibles}.",
+        "i" = "Simulate with {.code simuler_itineraire(unites =)} and the unit ids of {.arg units}."
+      ))
+    }
+  }
 
   effet_num <- function(it, f) {
     e <- it$effets_attendus[[f]]$sens %||% "?"
@@ -238,30 +280,49 @@ comparer_itineraires <- function(units, poids, catalogue = itineraires_catalogue
   }
   res <- lapply(ids, function(uid) {
     a <- admissibles[admissibles$unit_id == uid & admissibles$admissible %in% TRUE, ]
-    cand <- a$itineraire
+    cand <- intersect(a$itineraire, names(catalogue))
+    if (simule) {
+      vu <- valeurs[valeurs$unit_id == uid, , drop = FALSE]
+      # « sans_gestion » n'est pas au catalogue : candidat des qu'il est simule
+      cand <- c(intersect(cand, vu$itineraire),
+                intersect(.ITIN_SANS_GESTION, setdiff(vu$itineraire, cand)))
+    }
     if (!is.null(itineraires)) cand <- intersect(cand, itineraires)
-    cand <- intersect(cand, names(catalogue))
     if (!length(cand)) return(NULL)
-    # Familles evaluees : celles dont au moins un candidat connait l'effet
-    # (+, 0 ou -). Une
-    # famille qu'aucun itineraire ne documente ne departage rien : elle est
-    # mise de cote (et dite dans `familles_evaluees`). Une famille renseignee
-    # pour certains candidats mais inconnue pour un autre rend son score NA.
-    doc <- familles[vapply(familles, function(f) any(vapply(cand, function(cd)
-      !is.na(effet_num(catalogue[[cd]], f)), TRUE)), TRUE)]
-    if (!length(doc)) return(NULL)
+    if (simule) {
+      brut <- .itin_matrice_valeurs(vu, cand, familles)
+      doc <- colnames(brut)
+      if (!length(doc)) return(NULL)
+      # note par famille, ramenee a [-1, 1] entre les candidats de l'UGF
+      eff <- apply(brut, 2L, function(v) {
+        r <- range(v, na.rm = TRUE)
+        if (!all(is.finite(r)) || r[2] - r[1] <= 0) return(ifelse(is.na(v), NA_real_, 0))
+        2 * (v - r[1]) / (r[2] - r[1]) - 1
+      })
+      eff <- matrix(eff, nrow = length(cand), dimnames = list(cand, doc))
+    } else {
+      # Familles evaluees : celles dont au moins un candidat connait l'effet
+      # (+, 0 ou -). Une famille qu'aucun itineraire ne documente ne departage
+      # rien : elle est mise de cote (et dite dans `familles_evaluees`). Une
+      # famille renseignee pour certains candidats mais inconnue pour un autre
+      # rend son score NA.
+      doc <- familles[vapply(familles, function(f) any(vapply(cand, function(cd)
+        !is.na(effet_num(catalogue[[cd]], f)), TRUE)), TRUE)]
+      if (!length(doc)) return(NULL)
+      eff <- matrix(vapply(cand, function(cd) {
+        vapply(doc, function(f) effet_num(catalogue[[cd]], f), 0)
+      }, numeric(length(doc))), nrow = length(cand), byrow = TRUE,
+      dimnames = list(cand, doc))
+      brut <- eff
+    }
     w <- poids[doc]
-    eff <- matrix(vapply(cand, function(cd) {
-      vapply(doc, function(f) effet_num(catalogue[[cd]], f), 0)
-    }, numeric(length(doc))), nrow = length(cand), byrow = TRUE,
-    dimnames = list(cand, doc))
     score <- apply(eff, 1L, function(e) {
       if (anyNA(e)) NA_real_ else sum(e * w) / sum(w)
     })
-    complet <- stats::complete.cases(eff)
+    complet <- stats::complete.cases(brut)
     pareto <- rep(NA, length(cand))
     if (any(complet)) {
-      df <- as.data.frame(eff[complet, , drop = FALSE])
+      df <- as.data.frame(brut[complet, , drop = FALSE])
       pareto[complet] <- identify_pareto_optimal(df, objectives = doc)$is_optimal
     }
     ref <- if (identical(reference, "statu_quo")) {
@@ -269,18 +330,30 @@ comparer_itineraires <- function(units, poids, catalogue = itineraires_catalogue
       if (!is.na(sq %||% NA) && sq %in% cand) sq
       else if (any(!is.na(score))) cand[which.max(score)] else cand[1]
     } else reference
-    eref <- if (ref %in% cand) eff[ref, ] else
-      vapply(doc, function(f) effet_num(catalogue[[ref]], f), 0)
-    gagne <- apply(eff, 1L, function(e) paste(doc[which(e > eref)], collapse = ", "))
-    perd <- apply(eff, 1L, function(e) paste(doc[which(e < eref)], collapse = ", "))
+    if (ref %in% cand) {
+      bref <- brut[ref, ]
+    } else if (simule) {
+      cli::cli_abort("Reference {.val {ref}} is not a simulated candidate of unit {.val {uid}}.")
+    } else {
+      bref <- vapply(doc, function(f) effet_num(catalogue[[ref]], f), 0)
+    }
+    seuil <- if (simule) tolerance * pmax(abs(bref), .Machine$double.eps) else 0
+    gagne <- apply(brut, 1L, function(e) paste(doc[which(e - bref > seuil)], collapse = ", "))
+    perd <- apply(brut, 1L, function(e) paste(doc[which(bref - e > seuil)], collapse = ", "))
+    incert <- if (simule) {
+      unname(attr(valeurs, "incertitude")[paste(uid, cand)])
+    } else "qualitative"
     data.frame(
       unit_id = uid, itineraire = cand, score_global = unname(score),
       rang = rank(-ifelse(is.na(score), -Inf, score), ties.method = "min"),
       pareto = pareto, reference = ref,
       familles_gagnantes = unname(gagne), familles_perdantes = unname(perd),
       familles_evaluees = paste(sort(doc), collapse = ", "),
-      incertitude = "qualitative", methode = "catalogue_qualitatif",
-      citations = vapply(cand, function(cd) .itin_citations(catalogue[[cd]]), ""),
+      incertitude = incert,
+      methode = if (simule) "finn" else "catalogue_qualitatif",
+      citations = vapply(cand, function(cd) {
+        if (cd %in% names(catalogue)) .itin_citations(catalogue[[cd]]) else ""
+      }, ""),
       stringsAsFactors = FALSE, row.names = NULL
     )
   })
@@ -290,6 +363,12 @@ comparer_itineraires <- function(units, poids, catalogue = itineraires_catalogue
     return(data.frame())
   }
   rownames(out) <- NULL
+  if (simule) {
+    v <- valeurs[paste(valeurs$unit_id, valeurs$itineraire) %in%
+                   paste(out$unit_id, out$itineraire) & valeurs$famille %in% familles, ]
+    rownames(v) <- NULL
+    attr(out, "valeurs") <- v
+  }
   out
 }
 
@@ -401,4 +480,80 @@ profils_poids <- function(profil = NULL) {
     if (nzchar(p)) paste0(s$ref, ", ", p) else s$ref
   }, "")
   paste(refs, collapse = "; ")
+}
+
+# ------------------------------------------------- trajectoires (spec 068)
+
+.ITIN_SANS_GESTION <- "sans_gestion"
+
+# Familles lues dans les trajectoires de simuler_itineraire() : variable(s)
+# par ordre de preference, cumul jusqu'a l'horizon ou valeur a l'horizon.
+.ITIN_FAMILLES_SIMULEES <- list(
+  P = list(variables = c(volume_preleve = "m3/ha", g_prelevee = "m2/ha"), cumul = TRUE),
+  C = list(variables = c(carbone = "tC/ha"), cumul = FALSE)
+)
+
+# Valeurs par UGF x itineraire x famille a l'horizon, depuis la table longue
+# de simuler_itineraire() (plusieurs itineraires lies par rbind). L'attribut
+# « incertitude » porte la demi-largeur conforme de G a l'horizon.
+.itin_valeurs_trajectoires <- function(trajectoires, horizon) {
+  t <- as.data.frame(trajectoires)
+  id <- if ("unite" %in% names(t)) "unite" else "placette"
+  manq <- setdiff(c(id, "itineraire", "annee", "variable", "moyenne"), names(t))
+  if (length(manq)) {
+    cli::cli_abort(c(
+      "{.arg trajectoires} lacks {.field {manq}}.",
+      "i" = "It must be the output of {.fn simuler_itineraire}."
+    ))
+  }
+  if (!nrow(t)) cli::cli_abort("{.arg trajectoires} has no row.")
+  t$unit_id <- as.character(t[[id]])
+  fin <- tapply(t$annee, t$itineraire, max)
+  if (is.null(horizon)) horizon <- min(fin)
+  if (!is.numeric(horizon) || length(horizon) != 1L || !is.finite(horizon)) {
+    cli::cli_abort("{.arg horizon} must be a single year.")
+  }
+  courts <- names(fin)[fin < horizon]
+  if (length(courts)) {
+    cli::cli_abort("{.val {courts}} not simulated up to year {horizon}.")
+  }
+  t <- t[t$annee <= horizon, , drop = FALSE]
+  lignes <- list()
+  for (f in names(.ITIN_FAMILLES_SIMULEES)) {
+    spec <- .ITIN_FAMILLES_SIMULEES[[f]]
+    var <- intersect(names(spec$variables), unique(t$variable))[1]
+    if (is.na(var)) next
+    x <- t[t$variable == var, , drop = FALSE]
+    if (!spec$cumul) x <- x[x$annee == horizon, , drop = FALSE]
+    if (!nrow(x)) next
+    a <- stats::aggregate(moyenne ~ unit_id + itineraire, data = x, FUN = sum)
+    lignes[[f]] <- data.frame(unit_id = a$unit_id, itineraire = a$itineraire, famille = f,
+                              variable = var, valeur = a$moyenne,
+                              unite_mesure = unname(spec$variables[var]), horizon = horizon,
+                              stringsAsFactors = FALSE)
+  }
+  if (!length(lignes)) {
+    cli::cli_abort(c(
+      "{.arg trajectoires} carries no variable read by the comparison.",
+      "i" = "Simulate with {.code volume = TRUE, carbone = TRUE} (P: {.field volume_preleve}, C: {.field carbone})."
+    ))
+  }
+  v <- do.call(rbind, lignes)
+  rownames(v) <- NULL
+  g <- t[t$variable == "g" & t$annee == horizon, , drop = FALSE]
+  dl <- if (nrow(g) && all(c("bas", "haut") %in% names(g))) (g$haut - g$bas) / 2 else
+    rep(NA_real_, nrow(g))
+  attr(v, "incertitude") <- stats::setNames(as.numeric(dl), paste(g$unit_id, g$itineraire))
+  v
+}
+
+# Matrice candidats x familles ponderees renseignees par la simulation.
+.itin_matrice_valeurs <- function(vu, cand, familles) {
+  doc <- intersect(familles, unique(vu$famille))
+  m <- matrix(NA_real_, length(cand), length(doc), dimnames = list(cand, doc))
+  for (f in doc) {
+    x <- vu[vu$famille == f, , drop = FALSE]
+    m[, f] <- x$valeur[match(cand, x$itineraire)]
+  }
+  m
 }

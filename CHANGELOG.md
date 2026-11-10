@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.15] - 2026-11-10
+
+### Added
+- `comparer_itineraires(trajectoires =)`: compares itineraries on FINN trajectories from `simuler_itineraire()` (P: harvested volume summed to the horizon; C: standing carbon at the horizon), `methode = "finn"`, numeric `incertitude`, simulated values in `attr(, "valeurs")`; new arguments `horizon` and `tolerance` (spec 068).
+
 ## [2026.11.14] - 2026-11-09
 
 ### Added

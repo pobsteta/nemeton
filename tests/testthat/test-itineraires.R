@@ -149,9 +149,106 @@ test_that("an unknown effect on a weighted family gives an NA score, not a guess
   expect_equal(res2$familles_evaluees[1], "P")
 })
 
-test_that("trajectoires is reserved for chantier D", {
-  expect_error(comparer_itineraires(.unites(1), c(P = 1), .catalogue_test(),
-                                    trajectoires = data.frame()), "FINN")
+# Trajectoires FICTIVES a la forme de simuler_itineraire(unites =) : P lu sur
+# le volume preleve cumule, C sur le carbone a l'horizon (spec 068).
+.traj <- function(itin, prel, carb, unites = c("1", "2"), annees = c(0, 5, 10),
+                  dl = 2) {
+  do.call(rbind, lapply(unites, function(u) {
+    n <- length(annees)
+    rbind(
+      data.frame(unite = u, n_placettes = 4L, itineraire = itin, annee = annees,
+                 variable = "g", moyenne = 20 + annees,
+                 bas = ifelse(annees > 0, 20 + annees - dl, NA),
+                 haut = ifelse(annees > 0, 20 + annees + dl, NA)),
+      data.frame(unite = u, n_placettes = 4L, itineraire = itin, annee = annees,
+                 variable = "volume_preleve", moyenne = c(0, rep(prel, n - 1)),
+                 bas = NA, haut = NA),
+      data.frame(unite = u, n_placettes = 4L, itineraire = itin, annee = annees,
+                 variable = "carbone", moyenne = carb * annees / max(annees) + 50,
+                 bas = NA, haut = NA)
+    )
+  }))
+}
+.traj_test <- function() {
+  rbind(.traj("production", prel = 40, carb = 10),
+        .traj("conservation", prel = 0, carb = 60),
+        .traj("sans_gestion", prel = 0, carb = 59, dl = 3))
+}
+
+test_that("trajectoires: FINN values rank the itineraries, method and interval say so", {
+  u <- .unites(2)
+  tr <- .traj_test()
+  prod <- comparer_itineraires(u, c(P = 3, C = 1, B = 2), .catalogue_test(), trajectoires = tr)
+  carb <- comparer_itineraires(u, c(P = 1, C = 3), .catalogue_test(), trajectoires = tr)
+  # « mixte » est admissible mais pas simule : il n'est pas candidat ;
+  # « sans_gestion » n'est pas au catalogue mais l'est
+  expect_setequal(prod$itineraire[prod$unit_id == "1"],
+                  c("production", "conservation", "sans_gestion"))
+  expect_true(all(prod$methode == "finn"))
+  expect_type(prod$incertitude, "double")
+  expect_equal(prod$incertitude[prod$itineraire == "sans_gestion"], c(3, 3))
+  expect_equal(prod$incertitude[prod$itineraire == "production"], c(2, 2))
+  # B est ponderee mais non simulee : mise de cote, dite
+  expect_true(all(prod$familles_evaluees == "C, P"))
+  meilleur <- function(x) x$itineraire[x$unit_id == "1" & x$rang == 1]
+  expect_equal(meilleur(prod), "production")
+  expect_equal(meilleur(carb), "conservation")
+  expect_true(all(prod$score_global >= -1 & prod$score_global <= 1))
+  expect_equal(prod$citations[prod$itineraire == "sans_gestion"], c("", ""))
+  expect_match(prod$citations[prod$itineraire == "production"][1], "^Test ")
+  # valeurs derriere la note : P cumule jusqu'a l'horizon, C a l'horizon
+  v <- attr(prod, "valeurs")
+  expect_setequal(names(v), c("unit_id", "itineraire", "famille", "variable", "valeur",
+                              "unite_mesure", "horizon"))
+  vp <- v[v$unit_id == "1" & v$itineraire == "production", ]
+  expect_equal(vp$valeur[vp$famille == "P"], 80)
+  expect_equal(vp$valeur[vp$famille == "C"], 60)
+  expect_equal(vp$unite_mesure[vp$famille == "C"], "tC/ha")
+  expect_true(all(v$horizon == 10))
+})
+
+test_that("trajectoires: the tolerance keeps stochastic noise out of wins and losses", {
+  u <- .unites(1, itineraire_actuel = "sans_gestion")
+  tr <- .traj_test()
+  tr <- tr[tr$unite == "1", ]
+  r <- comparer_itineraires(u, c(P = 1, C = 1), .catalogue_test(), trajectoires = tr)
+  expect_true(all(r$reference == "sans_gestion"))
+  cons <- r[r$itineraire == "conservation", ]
+  # 110 contre 109 tC/ha : moins de 5 %, ni gagne ni perdu
+  expect_equal(cons$familles_gagnantes, "")
+  expect_equal(cons$familles_perdantes, "")
+  r0 <- comparer_itineraires(u, c(P = 1, C = 1), .catalogue_test(), trajectoires = tr,
+                             tolerance = 0)
+  expect_equal(r0$familles_gagnantes[r0$itineraire == "conservation"], "C")
+  prod <- r[r$itineraire == "production", ]
+  expect_equal(prod$familles_gagnantes, "P")
+  expect_equal(prod$familles_perdantes, "C")
+  expect_error(comparer_itineraires(u, c(P = 1), .catalogue_test(), trajectoires = tr,
+                                    tolerance = -1), "tolerance")
+})
+
+test_that("trajectoires: horizon, missing variables and unknown units are refused", {
+  u <- .unites(2)
+  tr <- .traj_test()
+  r5 <- comparer_itineraires(u, c(P = 1, C = 1), .catalogue_test(), trajectoires = tr,
+                             horizon = 5)
+  v5 <- attr(r5, "valeurs")
+  expect_equal(v5$valeur[v5$unit_id == "1" & v5$itineraire == "production" & v5$famille == "P"], 40)
+  expect_error(comparer_itineraires(u, c(P = 1), .catalogue_test(), trajectoires = tr,
+                                    horizon = 50), "not simulated up to")
+  expect_error(comparer_itineraires(u, c(P = 1), .catalogue_test(),
+                                    trajectoires = tr[tr$variable == "g", ]), "carbone = TRUE")
+  expect_error(comparer_itineraires(u, c(P = 1), .catalogue_test(),
+                                    trajectoires = tr[, c("unite", "annee")]), "simuler_itineraire")
+  autre <- tr; autre$unite <- paste0("x", autre$unite)
+  expect_error(comparer_itineraires(u, c(P = 1), .catalogue_test(), trajectoires = autre),
+               "No unit")
+  # sans volume simule, P se lit sur la surface terriere prelevee
+  g <- tr[tr$variable != "volume_preleve", ]
+  gp <- tr[tr$variable == "volume_preleve", ]
+  gp$variable <- "g_prelevee"; gp$moyenne <- gp$moyenne / 10
+  r <- comparer_itineraires(u, c(P = 1, C = 1), .catalogue_test(), trajectoires = rbind(g, gp))
+  expect_true(all(attr(r, "valeurs")$unite_mesure[attr(r, "valeurs")$famille == "P"] == "m2/ha"))
 })
 
 test_that("profils_poids gives 12 family weights per profile", {
