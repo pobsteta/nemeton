@@ -1,5 +1,49 @@
 # Changelog
 
+## nemeton 2026.11.16 (2026-11-10)
+
+### Nouveautés
+
+- **Première entrée sourcée du catalogue d’itinéraires** (spec 065) :
+  `bfc_hetre_futaie_irreguliere`, futaie irrégulière de hêtre tirée du
+  référentiel ONF *Hêtraies continentales, futaie irrégulière* (2013).
+  Règles d’une parcelle équilibrée de fertilité bonne à moyenne,
+  adaptées au pas de 5 ans de FINN (décisions D-9 à D-11 validées par
+  Pascal) : une coupe tous les 10 ans (`rotation_ans`), au plus 25 % de
+  G (20 % du guide × 10 / 8 ans, plafond du guide), récolte des tiges de
+  60 cm et plus, pas d’éclaircie sous 16,5 m²/ha (14 m²/ha de tiges
+  précomptables plus 2,5 m²/ha non précomptables). Effets attendus
+  sourcés : P, B, R en `+`. Admissible sur une UGF à hêtre (code essence
+  `09`). Un nouveau champ facultatif `notes` dit d’où vient chaque
+  nombre.
+- **Deuxième entrée sourcée** : `bfc_chene_sessile_futaie_reguliere`,
+  référentiel de « sylviculture dynamique » du chêne sessile, classe de
+  fertilité 2 (Sardin, *Chênaies continentales*, ONF 2008, tableau 28
+  p. 199). Les normes du guide (N et G après éclaircie selon la hauteur
+  dominante) sont converties en diamètre quadratique moyen (D-10) : 12
+  lignes de 13,7 cm / 14,7 m²/ha à 65,5 cm / 20,2 m²/ha. Récolte à 75
+  cm, un passage tous les 10 ans, effet P `+`. Admissible sur une UGF à
+  chêne sessile (code `03`). Les neuf autres entrées restent
+  `a_sourcer`.
+- **[`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
+  : règle `norme_g_selon_dg`** (spec 065, D-10) : une table `dg_cm` →
+  `g_m2ha` donne la surface terrière à laisser après éclaircie selon le
+  diamètre quadratique moyen de la placette (toutes tiges), interpolée ;
+  pas d’éclaircie sous le premier diamètre, dernière valeur au-delà.
+  Exclusive de `surface_terriere_cible_m2ha`.
+
+### Changements de résultat
+
+- [`itineraires_admissibles()`](https://pobsteta.github.io/nemeton/reference/itineraires_admissibles.md)
+  sur le catalogue livré n’est plus entièrement `source_manquante` : la
+  futaie irrégulière de hêtre est admissible sur une UGF à hêtre,
+  `essence_absente` ailleurs, `donnee_manquante` sans colonne `essence`
+  ; de même pour le chêne sessile (code `03`).
+- Le code `bfc_futaie_irreguliere_pro_silva` devient
+  `bfc_hetre_futaie_irreguliere` : l’entrée porte sur le hêtre et non
+  sur la futaie irrégulière en général. Aucun appelant connu
+  (expérimental).
+
 ## nemeton 2026.11.15 (2026-11-10)
 
 ### Nouveautés

@@ -13,7 +13,7 @@ dynamics only, the cuts are imposed from outside."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.15.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.16</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -188,6 +188,14 @@ removed (thinning across all sizes).</p></dd>
 <dd><p>maximum share of the stems removed
 by the thinning; alone (no target), the share removed at every
 intervention.</p></dd>
+
+<dt>norme_g_selon_dg</dt>
+<dd><p>a thinning norm by quadratic mean diameter:
+<code>dg_cm</code> (increasing) and <code>g_m2ha</code>, the basal area left after
+thinning at that mean diameter. The target is interpolated on the
+plot's Dg (all stems); below the first <code>dg_cm</code> there is no thinning,
+beyond the last one its value holds. Replaces
+<code>surface_terriere_cible_m2ha</code> (not both).</p></dd>
 
 
 </dl><p>Stems removed are drawn (binomial per cohort): rounding would never cut

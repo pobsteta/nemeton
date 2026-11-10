@@ -274,7 +274,35 @@ famille ramenée sur \[-1, 1\] entre candidats ; `methode = "finn"`,
 (spec 068, note du 2026-11-10). Testé sur trajectoires synthétiques
 seulement (FINN absent de la session, catalogue non sourcé). Écart n° 24
 étendu : l’app et `aigora` devront lire `methode` et
-`attr(, "valeurs")`. Suite : T4.
+`attr(, "valeurs")`. Suite : T4. Catalogue d’itinéraires (spec 065 D-4)
+: 20 guides sylvicoles (ONF, SFFC) fournis par Pascal via Google Drive,
+texte extrait dans `data-raw/references/itineraires/` (dossier entier
+ignoré par git : sous droits) ; 9 extraits tronqués par le connecteur
+(dont *Chênaies continentales* à la p. 200). Relevé des règles chiffrées
+: `specs/065-itineraires-catalogue/sources-regles-guides.md`. Seule la
+futaie irrégulière de hêtre (ONF 2013) colle au moteur ; toutes les
+futaies régulières sont indexées sur Ho, absent de FINN. Décisions D-9
+(rotation contre pas de 5 ans), D-10 (règles par Dg), D-11 (valeur
+centrale des fourchettes) proposées. Attend : captures des figures du
+référentiel FI, PDF complet des chênaies, quatre guides BFC manquants.
+Pascal valide D-9 à D-11 et dépose les captures des p. 17-25 : fuseaux G
+après / G avant des types 2 à 6 numérisés (§ 2.1 du relevé ; 20-24 % de
+G par coupe hors type 3). **Première entrée sourcée** (v2026.11.16) :
+`bfc_hetre_futaie_irreguliere` (ex-`…_pro_silva`), rotation 10 ans, 25
+%, Dexp 60 cm, cible 16,5 m²/ha, effets P/B/R `+`, champ `notes`. Pas
+encore simulée sur FINN réel (torch absent). Les quatre guides BFC
+manquants (*Hêtraies continentales FR*, *Douglasaies françaises*, arc
+jurassien, sapinières du Morvan) n’existent pas en accès libre ;
+*Chênaies continentales* complet est sur le Drive (18 Mo, au-delà du
+connecteur) : Pascal le dépose découpé en 4 sur le Drive ; parties 2-4
+extraites (la 1, chap. 1-2, fait planter le connecteur, déjà couverte
+par le texte tronqué). **Deuxième entrée sourcée** (même version) :
+`bfc_chene_sessile_futaie_reguliere`, sylviculture dynamique classe 2
+(tab. 28 p. 199), normes N(Ho)/G(Ho) converties en Dg ; nouvelle règle
+moteur `norme_g_selon_dg` (D-10). Suite : résineux sur SFFC 2012 (norme
+par Dg à construire depuis les densités finales), conversion du TSF et
+futaie irrégulière à chêne (parties 3-4 désormais lisibles), simulation
+réelle des deux entrées.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,

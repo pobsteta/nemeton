@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.15.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.16</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -223,17 +223,38 @@ candidate de chaque UGF.</p>
 débardage).</p>
 </div>
 <div class="section level2">
-<h2 id="le-catalogue-livré-est-un-squelette">2. Le catalogue livré est un squelette<a class="anchor" aria-label="anchor" href="#le-catalogue-livr%C3%A9-est-un-squelette"></a>
+<h2 id="le-catalogue-livré-se-remplit-guide-par-guide">2. Le catalogue livré se remplit guide par guide<a class="anchor" aria-label="anchor" href="#le-catalogue-livr%C3%A9-se-remplit-guide-par-guide"></a>
 </h2>
 <p><code>inst/extdata/itineraires_sylvicoles.json</code> contient les
 onze premiers itinéraires de Bourgogne-Franche-Comté (futaies régulières
 de chêne sessile, hêtre, sapin, épicéa et douglas ; futaie irrégulière
-Pro Silva ; taillis-sous-futaie et sa conversion ; libre évolution ;
-îlot de sénescence ; plantation de diversification). <strong>Tous sont
-<code>a_sourcer</code></strong> : domaine, règles et effets attendus
-sont vides, et <strong>aucun n’est admissible</strong> tant qu’ils n’ont
-pas été remplis à partir de guides cités (ONF, DRA/SRA, Pro Silva,
-SRGS).</p>
+de hêtre ; taillis-sous-futaie et sa conversion ; libre évolution ; îlot
+de sénescence ; plantation de diversification).</p>
+<p><strong>Deux sont sourcés.</strong>
+<code>bfc_hetre_futaie_irreguliere</code> est tiré du référentiel ONF de
+futaie irrégulière des hêtraies continentales (2013). Ses règles sont
+celles d’une parcelle équilibrée de fertilité bonne à moyenne, adaptées
+au pas de 5 ans de FINN : une coupe tous les 10 ans, au plus 25 % de G,
+récolte des tiges de 60 cm et plus, pas d’éclaircie sous 16,5 m²/ha (14
+m²/ha de tiges précomptables plus l’étage non précomptable). Le champ
+<code>notes</code> de l’entrée dit d’où vient chaque nombre. Il n’est
+admissible que sur une UGF à hêtre (code essence <code>09</code>).</p>
+<p><code>bfc_chene_sessile_futaie_reguliere</code> suit le référentiel
+de « sylviculture dynamique » du chêne sessile en bonne fertilité
+(<em>Chênaies continentales</em>, 2008, tableau 28). Le guide donne le
+nombre de tiges et la surface terrière après éclaircie selon la hauteur
+dominante, que FINN ne simule pas : chaque ligne est convertie en
+diamètre moyen, et la règle <code>norme_g_selon_dg</code> dit quelle
+surface terrière laisser pour un diamètre moyen donné (de 14,7 m²/ha à
+14 cm à 20,2 m²/ha à 65 cm). Pas d’éclaircie sous 14 cm, récolte à 75
+cm, un passage tous les 10 ans. Admissible sur une UGF à chêne sessile
+(<code>03</code>).</p>
+<p><strong>Les neuf autres sont <code>a_sourcer</code></strong> :
+domaine, règles et effets attendus sont vides, et <strong>aucun n’est
+admissible</strong> tant qu’ils n’ont pas été remplis à partir de guides
+cités (ONF, DRA/SRA, Pro Silva, SRGS). Le relevé des règles déjà lues,
+page par page, est dans
+<code>specs/065-itineraires-catalogue/sources-regles-guides.md</code>.</p>
 <p><strong>Règle de sourçage</strong> : un paramètre numérique sans
 référence n’entre pas dans le catalogue ;
 <code><a href="../reference/valider_catalogue_itineraires.html">valider_catalogue_itineraires()</a></code> refuse une entrée

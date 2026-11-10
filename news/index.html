@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.15.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.16</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +116,24 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.16" id="nemeton-20261116-2026-11-10">nemeton 2026.11.16 (2026-11-10)<a class="anchor" aria-label="anchor" href="#nemeton-20261116-2026-11-10"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-16">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-16"></a></h3>
+<ul><li>
+<strong>Première entrée sourcée du catalogue d’itinéraires</strong> (spec 065) : <code>bfc_hetre_futaie_irreguliere</code>, futaie irrégulière de hêtre tirée du référentiel ONF <em>Hêtraies continentales, futaie irrégulière</em> (2013). Règles d’une parcelle équilibrée de fertilité bonne à moyenne, adaptées au pas de 5 ans de FINN (décisions D-9 à D-11 validées par Pascal) : une coupe tous les 10 ans (<code>rotation_ans</code>), au plus 25 % de G (20 % du guide × 10 / 8 ans, plafond du guide), récolte des tiges de 60 cm et plus, pas d’éclaircie sous 16,5 m²/ha (14 m²/ha de tiges précomptables plus 2,5 m²/ha non précomptables). Effets attendus sourcés : P, B, R en <code>+</code>. Admissible sur une UGF à hêtre (code essence <code>09</code>). Un nouveau champ facultatif <code>notes</code> dit d’où vient chaque nombre.</li>
+<li>
+<strong>Deuxième entrée sourcée</strong> : <code>bfc_chene_sessile_futaie_reguliere</code>, référentiel de « sylviculture dynamique » du chêne sessile, classe de fertilité 2 (Sardin, <em>Chênaies continentales</em>, ONF 2008, tableau 28 p. 199). Les normes du guide (N et G après éclaircie selon la hauteur dominante) sont converties en diamètre quadratique moyen (D-10) : 12 lignes de 13,7 cm / 14,7 m²/ha à 65,5 cm / 20,2 m²/ha. Récolte à 75 cm, un passage tous les 10 ans, effet P <code>+</code>. Admissible sur une UGF à chêne sessile (code <code>03</code>). Les neuf autres entrées restent <code>a_sourcer</code>.</li>
+<li>
+<strong><code><a href="../reference/simuler_itineraire.html">simuler_itineraire()</a></code> : règle <code>norme_g_selon_dg</code></strong> (spec 065, D-10) : une table <code>dg_cm</code> → <code>g_m2ha</code> donne la surface terrière à laisser après éclaircie selon le diamètre quadratique moyen de la placette (toutes tiges), interpolée ; pas d’éclaircie sous le premier diamètre, dernière valeur au-delà. Exclusive de <code>surface_terriere_cible_m2ha</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changements-de-résultat-2026-11-16">Changements de résultat<a class="anchor" aria-label="anchor" href="#changements-de-r%C3%A9sultat-2026-11-16"></a></h3>
+<ul><li>
+<code><a href="../reference/itineraires_admissibles.html">itineraires_admissibles()</a></code> sur le catalogue livré n’est plus entièrement <code>source_manquante</code> : la futaie irrégulière de hêtre est admissible sur une UGF à hêtre, <code>essence_absente</code> ailleurs, <code>donnee_manquante</code> sans colonne <code>essence</code> ; de même pour le chêne sessile (code <code>03</code>).</li>
+<li>Le code <code>bfc_futaie_irreguliere_pro_silva</code> devient <code>bfc_hetre_futaie_irreguliere</code> : l’entrée porte sur le hêtre et non sur la futaie irrégulière en général. Aucun appelant connu (expérimental).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.15" id="nemeton-20261115-2026-11-10">nemeton 2026.11.15 (2026-11-10)<a class="anchor" aria-label="anchor" href="#nemeton-20261115-2026-11-10"></a></h2>
 <div class="section level3">

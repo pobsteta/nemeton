@@ -73,6 +73,15 @@ simuler_itineraire(
   :   maximum share of the stems removed by the thinning; alone (no
       target), the share removed at every intervention.
 
+  norme_g_selon_dg
+
+  :   a thinning norm by quadratic mean diameter: `dg_cm` (increasing)
+      and `g_m2ha`, the basal area left after thinning at that mean
+      diameter. The target is interpolated on the plot's Dg (all stems);
+      below the first `dg_cm` there is no thinning, beyond the last one
+      its value holds. Replaces `surface_terriere_cible_m2ha` (not
+      both).
+
   Stems removed are drawn (binomial per cohort): rounding would never
   cut a cohort of a single large stem.
 
