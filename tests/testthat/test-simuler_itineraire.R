@@ -28,7 +28,7 @@ test_that(".itin_regles accepts no management and checks the itinerary", {
 
 test_that("the shipped catalogue, not yet sourced, is refused", {
   cat <- itineraires_catalogue()
-  expect_error(nemeton:::.itin_regles(cat[[1]], 5), "not sourced")
+  expect_error(nemeton:::.itin_regles(cat$bfc_sapin_futaie_reguliere, 5), "not sourced")
 })
 
 test_that("the sourced beech uneven-aged entry gives the engine its rules", {
@@ -41,6 +41,32 @@ test_that("the sourced beech uneven-aged entry gives the engine its rules", {
   set.seed(2)
   g1 <- nemeton:::.itin_etat(nemeton:::.itin_couper(coh, r, 1L, 1), 1L, 1)$g
   expect_equal(g1 / nemeton:::.itin_etat(coh, 1L, 1)$g, 0.75, tolerance = 0.05)
+})
+
+test_that("a thinning norm by mean diameter sets the target per plot (D-10)", {
+  norme <- list(dg_cm = list(20, 40), g_m2ha = list(15, 20))
+  r <- nemeton:::.itin_regles(itin_demo(norme_g_selon_dg = norme), 5)
+  expect_equal(r$norme, list(dg = c(20, 40), g = c(15, 20)))
+  expect_error(nemeton:::.itin_regles(itin_demo(norme_g_selon_dg = norme,
+                                                surface_terriere_cible_m2ha = 18), 5), "both")
+  expect_error(nemeton:::.itin_regles(itin_demo(norme_g_selon_dg = list(dg_cm = list(40, 20),
+                                                                          g_m2ha = list(15, 20))), 5),
+               "malformed")
+  # Dg 10 cm : sous la table, pas d'eclaircie ; 30 cm : 17,5 ; 60 cm : 20
+  tiges <- c(1000, 300, 100)
+  dg <- c(10, 30, 60)
+  g <- tiges * pi * (dg / 200)^2
+  expect_equal(nemeton:::.itin_cible_norme(r$norme, g, tiges), c(Inf, 17.5, 20))
+  # coupe : le site a Dg 30 cm et G 30 m2/ha est ramene vers 17,5
+  n30 <- round(30 / (pi * 0.15^2))
+  coh <- data.frame(siteID = 1L, species = 1L, dbh = 30, trees = rep(1, n30))
+  set.seed(3)
+  g1 <- nemeton:::.itin_etat(nemeton:::.itin_couper(coh, r, 1L, 1), 1L, 1)$g
+  expect_equal(g1, 17.5, tolerance = 0.1)
+  # l'entree du chene sessile passe le controle du moteur
+  ch <- nemeton:::.itin_regles(itineraires_catalogue()$bfc_chene_sessile_futaie_reguliere, 5)
+  expect_equal(ch$diametre, 75)
+  expect_equal(range(ch$norme$g), c(14.7, 20.2))
 })
 
 test_that(".itin_couper harvests above the diameter and thins towards the target", {
@@ -85,7 +111,7 @@ test_that("simuler_itineraire and conformer_finn check their inputs", {
   expect_error(conformer_finn(faux, a, e), "used in the calibration")
   expect_error(simuler_itineraire(list(), a, e), "calibrer_finn")
   expect_error(simuler_itineraire(faux, a, e, horizon = 12), "multiple")
-  expect_error(simuler_itineraire(faux, a, e, itineraire = itineraires_catalogue()[[1]]),
+  expect_error(simuler_itineraire(faux, a, e, itineraire = itineraires_catalogue()$bfc_sapin_futaie_reguliere),
                "not sourced")
 })
 

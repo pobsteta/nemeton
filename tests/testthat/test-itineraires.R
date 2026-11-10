@@ -44,8 +44,14 @@ test_that("the shipped catalogue is valid; only its sourced entries can be admit
   expect_gte(length(cat), 10L)
   expect_true(valider_catalogue_itineraires(cat))
   statut <- vapply(cat, `[[`, "", "statut_source")
-  # premiere entree sourcee : futaie irreguliere de hetre (ONF 2013, D-9 a D-11)
-  expect_equal(names(statut)[statut == "source"], "bfc_hetre_futaie_irreguliere")
+  # entrees sourcees : futaie irreguliere de hetre (ONF 2013) et futaie
+  # reguliere de chene sessile (Sardin 2008), D-9 a D-11
+  expect_setequal(names(statut)[statut == "source"],
+                  c("bfc_hetre_futaie_irreguliere", "bfc_chene_sessile_futaie_reguliere"))
+  ch <- cat$bfc_chene_sessile_futaie_reguliere
+  expect_equal(unlist(ch$domaine$essences_objectif), "03")
+  expect_equal(ch$regles$diametre_exploitabilite_cm, 75)
+  expect_length(unlist(ch$regles$norme_g_selon_dg$dg_cm), 12L)
   fi <- cat$bfc_hetre_futaie_irreguliere
   expect_equal(fi$famille_itineraire, "futaie_irreguliere")
   expect_equal(unlist(fi$domaine$essences_objectif), "09")
@@ -58,12 +64,15 @@ test_that("the shipped catalogue is valid; only its sourced entries can be admit
   # une UGF a hetre, pas sur une chenaie, et l'essence manquante le dit
   u <- .unites(3, essence = c("09", "03", NA))
   a <- itineraires_admissibles(u, cat)
-  autres <- a[a$itineraire != "bfc_hetre_futaie_irreguliere", ]
+  autres <- a[!a$itineraire %in% c("bfc_hetre_futaie_irreguliere",
+                                    "bfc_chene_sessile_futaie_reguliere"), ]
   expect_true(all(autres$raison == "source_manquante"))
   expect_true(all(!autres$admissible))
   h <- a[a$itineraire == "bfc_hetre_futaie_irreguliere", ]
   expect_equal(h$admissible, c(TRUE, FALSE, NA))
   expect_equal(h$raison, c(NA, "essence_absente", "donnee_manquante"))
+  c3 <- a[a$itineraire == "bfc_chene_sessile_futaie_reguliere", ]
+  expect_equal(c3$admissible, c(FALSE, TRUE, NA))
 })
 
 test_that("the validator enforces the sourcing rule and the schema", {

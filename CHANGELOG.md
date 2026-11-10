@@ -13,7 +13,8 @@ For a narrative, per-feature description of each release, see
 ## [2026.11.16] - 2026-11-10
 
 ### Added
-- Itinerary catalogue: first sourced entry `bfc_hetre_futaie_irreguliere` (ONF 2013 uneven-aged beech guide, rules adapted to the 5-year FINN step); optional `notes` field (spec 065).
+- Itinerary catalogue: first sourced entries `bfc_hetre_futaie_irreguliere` (ONF 2013 uneven-aged beech guide) and `bfc_chene_sessile_futaie_reguliere` (Sardin 2008, dynamic silviculture, fertility class 2), rules adapted to the 5-year FINN step; optional `notes` field (spec 065).
+- `simuler_itineraire()`: rule `norme_g_selon_dg`, basal area left after thinning as a function of the quadratic mean diameter (spec 065, D-10).
 
 ### Changed
 - Catalogue code `bfc_futaie_irreguliere_pro_silva` renamed `bfc_hetre_futaie_irreguliere`.

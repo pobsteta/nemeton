@@ -1,10 +1,11 @@
 {
   "version": 1,
-  "description": "Catalogue des itinéraires sylvicoles (spec 065). Premier catalogue (D-4) : une entrée « a_sourcer » n'est jamais admissible tant que ses règles, son domaine et ses effets attendus n'ont pas été remplis à partir de guides de sylviculture cités (ONF, DRA/SRA, Pro Silva, SRGS). Entrée sourcée : bfc_hetre_futaie_irreguliere (ONF 2013). Le champ notes, facultatif, dit comment chaque règle a été tirée du guide. Aucune valeur n'est inventée.",
+  "description": "Catalogue des itinéraires sylvicoles (spec 065). Premier catalogue (D-4) : une entrée « a_sourcer » n'est jamais admissible tant que ses règles, son domaine et ses effets attendus n'ont pas été remplis à partir de guides de sylviculture cités (ONF, DRA/SRA, Pro Silva, SRGS). Entrées sourcées : bfc_hetre_futaie_irreguliere (ONF 2013), bfc_chene_sessile_futaie_reguliere (Sardin 2008). Le champ notes, facultatif, dit comment chaque règle a été tirée du guide. Aucune valeur n'est inventée.",
   "schema": {
     "domaine": "essences_objectif (codes de la colonne essence du projet), ser (codes SER), p2_min/p2_max (unités de P2), pente_max_pct, desserte_requise (vrai/faux), desserte_max_m (distance de débardage), protections_exclues (codes de type de B1 : rnn, rb, coeur, apb, natura...)",
     "effets_attendus": "par code de famille (C, B, W, A, F, L, T, R, S, P, E, N) : {sens: + | 0 | - | ?, horizon: court | moyen | long, source: référence}",
     "statut_source": "source | a_sourcer",
+    "regles": "rotation_ans, diametre_exploitabilite_cm, surface_terriere_cible_m2ha, intensite_prelevement_pct ; ou, au lieu de la cible constante, norme_g_selon_dg {dg_cm, g_m2ha} : G après éclaircie selon le diamètre quadratique moyen (D-10)",
     "notes": "facultatif : comment chaque règle a été tirée du guide (pages, conversions, limites)"
   },
   "itineraires": [
@@ -12,11 +13,13 @@
       "code": "bfc_chene_sessile_futaie_reguliere",
       "famille_itineraire": "futaie_reguliere",
       "libelle": {
-        "fr": "Futaie régulière de chêne sessile",
-        "en": "Even-aged sessile oak high forest"
+        "fr": "Futaie régulière de chêne sessile (sylviculture dynamique)",
+        "en": "Even-aged sessile oak high forest (dynamic silviculture)"
       },
       "domaine": {
-        "essences_objectif": [],
+        "essences_objectif": [
+          "03"
+        ],
         "ser": [],
         "p2_min": null,
         "p2_max": null,
@@ -26,14 +29,56 @@
         "protections_exclues": []
       },
       "regles": {
-        "rotation_ans": null,
-        "diametre_exploitabilite_cm": null,
+        "rotation_ans": 10,
+        "diametre_exploitabilite_cm": 75,
         "surface_terriere_cible_m2ha": null,
-        "intensite_prelevement_pct": null
+        "intensite_prelevement_pct": null,
+        "norme_g_selon_dg": {
+          "dg_cm": [
+            13.7,
+            16.8,
+            20.1,
+            24.2,
+            28.4,
+            32.4,
+            37.1,
+            41.6,
+            47.6,
+            53.8,
+            60.1,
+            65.5
+          ],
+          "g_m2ha": [
+            14.7,
+            14.7,
+            14.9,
+            15.0,
+            15.5,
+            16.1,
+            16.9,
+            17.4,
+            18.0,
+            18.9,
+            19.6,
+            20.2
+          ]
+        }
       },
-      "effets_attendus": {},
-      "sources": [],
-      "statut_source": "a_sourcer"
+      "effets_attendus": {
+        "P": {
+          "sens": "+",
+          "horizon": "long",
+          "source": "Sardin 2008, p. 194 et tab. 28 p. 199 : production majoritaire d'arbres à cernes larges, bois d'œuvre au diamètre d'exploitabilité de 75 cm"
+        }
+      },
+      "sources": [
+        {
+          "ref": "Sardin T. (2008). Chênaies continentales. Guide des sylvicultures. Office national des forêts, Paris, 455 p. ISBN 978-2-84207-321-3.",
+          "pages": "p. 73, 122-123, 194, 198-199 (tab. 28)"
+        }
+      ],
+      "statut_source": "source",
+      "notes": "Référentiel de « sylviculture dynamique » du chêne sessile, classe de fertilité 2 (bonne), tab. 28 p. 199 : la sylviculture « qui devrait être la plus largement mise en œuvre dans les chênaies continentales » (p. 194) ; classe 2 = valeur centrale (D-11). norme_g_selon_dg : chaque ligne du tableau (Ho, N, G après éclaircie) convertie en diamètre quadratique moyen Dg = 100·√(4G/πN) (D-10, FINN ne simule pas la hauteur) ; de 13,7 cm (Ho 14,2 m, 1000 tiges, 14,7 m²/ha : première éclaircie, jamais avant Ho 14 m, p. 198) à 65,5 cm (Ho 31,4 m, 60 tiges, 20,2 m²/ha). La dernière ligne du tableau (60 tiges, 25,5 m²/ha, Dg 73,6 cm) est l'état avant coupe d'ensemencement : elle n'est pas une norme d'éclaircie. diametre_exploitabilite_cm : 75 cm (légende du tab. 28 ; A-B 75-80 cm, p. 73). rotation_ans : 10 ans au lieu de +6 à +12 ans (D-9) ; la norme dépend de l'état du peuplement, sans conversion du prélèvement. Limites : le Dg et le G de FINN comptent toutes les tiges inventoriées (sous-étage et essences du mélange compris, jusqu'à 25 % du couvert selon le guide, p. 198), ce qui abaisse le Dg et avance les éclaircies ; l'éclaircie du moteur est proportionnelle dans toutes les grosseurs, pas par le haut au profit des arbres objectif ; la coupe d'ensemencement et la régénération (40-50 % des tiges puis coupe définitive, 4-12 ans, p. 122-123) sont réduites à la récolte des tiges de 75 cm et plus, le recrutement venant de FINN. Les quatre régions naturelles où le guide de la chênaie atlantique s'applique (Nivernais, Sologne bourbonnaise, Bazois, Puisaye) ne sont pas exclues."
     },
     {
       "code": "bfc_hetre_futaie_reguliere",

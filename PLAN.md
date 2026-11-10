@@ -248,8 +248,14 @@ simulée sur FINN réel (torch absent). Les quatre guides BFC manquants
 (*Hêtraies continentales FR*, *Douglasaies françaises*, arc jurassien,
 sapinières du Morvan) n'existent pas en accès libre ; *Chênaies
 continentales* complet est sur le Drive (18 Mo, au-delà du connecteur) :
-Pascal le télécharge en local. Suite : chêne sessile dès le PDF, résineux
-sur SFFC 2012 avec la règle par Dg (D-10, extension du moteur).
+Pascal le dépose découpé en 4 sur le Drive ; parties 2-4 extraites (la 1,
+chap. 1-2, fait planter le connecteur, déjà couverte par le texte tronqué).
+**Deuxième entrée sourcée** (même version) : `bfc_chene_sessile_futaie_reguliere`,
+sylviculture dynamique classe 2 (tab. 28 p. 199), normes N(Ho)/G(Ho)
+converties en Dg ; nouvelle règle moteur `norme_g_selon_dg` (D-10).
+Suite : résineux sur SFFC 2012 (norme par Dg à construire depuis les
+densités finales), conversion du TSF et futaie irrégulière à chêne (parties
+3-4 désormais lisibles), simulation réelle des deux entrées.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,

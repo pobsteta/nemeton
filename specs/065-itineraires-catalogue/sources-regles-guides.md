@@ -103,10 +103,40 @@ Lu jusqu'à la p. 200 ; pages du fichier = folio imprimé + 1.
 | Arbres bio | ≥ 1 arbre creux /ha ; ≥ 1 mort ou sénescent ≥ 35 cm /ha | p. 91-92 |
 | Îlots de sénescence (forêt domaniale) | ~1 % de la surface | p. 92 |
 
-**Manquent (troncature)** : tableaux 28-29 (N, G après éclaircie et
-rotations en fonction de Ho, folios 197-203), conversion du TSF
-(folios 253-263), futaie irrégulière à chêne (folios 265-299), annexe 12
-(référentiels du sessile, folio 406). Rien n'est simulable sans eux.
+**Complété le 2026-11-10** avec le PDF découpé en quatre (parties 2 à 4
+extraites localement ; folios vérifiés page par page) :
+
+| Règle | Valeur | Page |
+|---|---|---|
+| Choix du référentiel | la dynamique « devrait être la plus largement mise en œuvre » ; classique réservée à la classe 2 visant A-B et aux « crus » de cernes fins | p. 194 |
+| Première éclaircie | Ho ≥ 14 m, quel que soit le référentiel | p. 198 |
+| Mélange | jusqu'à 25 % du couvert à tous les stades | p. 198 |
+| Référentiel dynamique, 3 classes de fertilité | rotation, Ho, N, G après éclaircie | tab. 28, p. 199 |
+| Référentiel classique | idem | tab. 29, p. 200 |
+
+Tableau 28, classe 2, converti en diamètre quadratique moyen
+(Dg = 100·√(4G/πN), D-10) :
+
+| Ho (m) | N | G (m²/ha) | Dg (cm) |
+|---|---|---|---|
+| 14,2 | 1 000 | 14,7 | 13,7 |
+| 16,0 | 660 | 14,7 | 16,8 |
+| 17,6 | 470 | 14,9 | 20,1 |
+| 19,4 | 325 | 15,0 | 24,2 |
+| 21,1 | 245 | 15,5 | 28,4 |
+| 22,6 | 195 | 16,1 | 32,4 |
+| 24,0 | 156 | 16,9 | 37,1 |
+| 25,3 | 128 | 17,4 | 41,6 |
+| 27,0 | 101 | 18,0 | 47,6 |
+| 28,5 | 83 | 18,9 | 53,8 |
+| 30,0 | 69 | 19,6 | 60,1 |
+| 31,4 | 60 | 20,2 | 65,5 |
+| 33,2 | 60 | 25,5 | 73,6 (avant ensemencement, pas une norme) |
+
+→ entrée `bfc_chene_sessile_futaie_reguliere` (règle `norme_g_selon_dg`).
+Restent à lire dans les parties 3-4 : référentiel classique (tab. 29),
+conversion du TSF, futaie irrégulière à chêne (tab. 41 et suivants),
+annexes 10-12.
 
 ## 4. Résineux en futaie régulière (SFFC 2012, Franche-Comté)
 

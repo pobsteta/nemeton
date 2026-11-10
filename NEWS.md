@@ -12,15 +12,28 @@
   sous 16,5 m²/ha (14 m²/ha de tiges précomptables plus 2,5 m²/ha non
   précomptables). Effets attendus sourcés : P, B, R en `+`. Admissible sur
   une UGF à hêtre (code essence `09`). Un nouveau champ facultatif `notes`
-  dit d'où vient chaque nombre. Les dix autres entrées restent
-  `a_sourcer`.
+  dit d'où vient chaque nombre.
+- **Deuxième entrée sourcée** : `bfc_chene_sessile_futaie_reguliere`,
+  référentiel de « sylviculture dynamique » du chêne sessile, classe de
+  fertilité 2 (Sardin, *Chênaies continentales*, ONF 2008, tableau 28
+  p. 199). Les normes du guide (N et G après éclaircie selon la hauteur
+  dominante) sont converties en diamètre quadratique moyen (D-10) :
+  12 lignes de 13,7 cm / 14,7 m²/ha à 65,5 cm / 20,2 m²/ha. Récolte à
+  75 cm, un passage tous les 10 ans, effet P `+`. Admissible sur une UGF à
+  chêne sessile (code `03`). Les neuf autres entrées restent `a_sourcer`.
+- **`simuler_itineraire()` : règle `norme_g_selon_dg`** (spec 065, D-10) :
+  une table `dg_cm` → `g_m2ha` donne la surface terrière à laisser après
+  éclaircie selon le diamètre quadratique moyen de la placette (toutes
+  tiges), interpolée ; pas d'éclaircie sous le premier diamètre, dernière
+  valeur au-delà. Exclusive de `surface_terriere_cible_m2ha`.
 
 ## Changements de résultat
 
 - `itineraires_admissibles()` sur le catalogue livré n'est plus
   entièrement `source_manquante` : la futaie irrégulière de hêtre est
   admissible sur une UGF à hêtre, `essence_absente` ailleurs,
-  `donnee_manquante` sans colonne `essence`.
+  `donnee_manquante` sans colonne `essence` ; de même pour le chêne
+  sessile (code `03`).
 - Le code `bfc_futaie_irreguliere_pro_silva` devient
   `bfc_hetre_futaie_irreguliere` : l'entrée porte sur le hêtre et non sur la
   futaie irrégulière en général. Aucun appelant connu (expérimental).
