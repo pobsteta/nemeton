@@ -193,3 +193,25 @@ D-9, D-10 et D-11 sont **retenues telles que proposées** ci-dessous.
    internes ONF : à demander à l'ONF (agence BFC) ou à emprunter
    (bibliothèque AgroParisTech Nancy). En attendant, les futaies
    régulières résineuses s'appuient sur le SFFC 2012 (§ 4).
+
+## 8. Conversion du TSF et futaie irrégulière à chêne (*Chênaies continentales*, 2008)
+
+Ajouté le 2026-11-10, folios vérifiés page par page sur le PDF.
+
+| Règle | Valeur | Page |
+|---|---|---|
+| Conversion (futaie régulière) : pilotage | surface terrière, fourchette selon Ho ; prélèvement 4-5 m²/ha, 7-8 en décapitalisation | p. 255 |
+| Conversion, chêne sessile : fourchette | G après coupe 16,1 (Ho 22,5) → 22,0 (Ho 36) ; G avant coupe 25,3 → 30,4 m²/ha | tab. 44, p. 256 |
+| Conversion : prélèvement par coupe | environ 20 % de G initiale | fig. 30, p. 256 |
+| Conversion : rotation | prélèvement de 85 % de l'accroissement ; classe 2 (0,40-0,45 m²/ha/an) : 3,4-3,8 m²/ha en 10 ans | tab. 46, p. 259 |
+| Conversion : diamètres objectif | « sensiblement réduits » pour les chênes issus de rejets, non chiffrés | p. 254 |
+| Futaie irrégulière : G d'équilibre | 12-15 m²/ha précomptables + 2-3 de taillis + 1-2 de perches (15-20 au total) | p. 272 |
+| Futaie irrégulière : avant / après coupe | 15 + 5 → 12 + 3 m²/ha | résumé, p. 274 |
+| Futaie irrégulière : prélèvement | 15-25 % de G initiale, ≤ 5 m²/ha | p. 273 |
+| Futaie irrégulière : rotation | très bonne 6-9 ans ; bonne 8-12 ; faible 10-15 | tab. 48, p. 274 |
+| Futaie irrégulière : domaine | chênaies acides ou hydromorphes ; plus adapté au sessile qu'au pédonculé | p. 272-273 |
+
+→ entrées `bfc_conversion_tsf_futaie` (cible 19 m²/ha, 20 %, 10 ans,
+65 cm) et `bfc_chene_futaie_irreguliere` (15 m²/ha, 20 %, 10 ans, 65 cm).
+Non encore lus : conversion en futaie irrégulière (chap. V § 2, p. 281 et
+suivantes), référentiel classique (tab. 29), annexes 10-12.

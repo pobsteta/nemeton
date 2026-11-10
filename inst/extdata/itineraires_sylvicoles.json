@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Catalogue des itinéraires sylvicoles (spec 065). Premier catalogue (D-4) : une entrée « a_sourcer » n'est jamais admissible tant que ses règles, son domaine et ses effets attendus n'ont pas été remplis à partir de guides de sylviculture cités (ONF, DRA/SRA, Pro Silva, SRGS). Entrées sourcées : bfc_hetre_futaie_irreguliere (ONF 2013), bfc_chene_sessile_futaie_reguliere (Sardin 2008). Le champ notes, facultatif, dit comment chaque règle a été tirée du guide. Aucune valeur n'est inventée.",
+  "description": "Catalogue des itinéraires sylvicoles (spec 065). Premier catalogue (D-4) : une entrée « a_sourcer » n'est jamais admissible tant que ses règles, son domaine et ses effets attendus n'ont pas été remplis à partir de guides de sylviculture cités (ONF, DRA/SRA, Pro Silva, SRGS). Entrées sourcées : bfc_hetre_futaie_irreguliere (ONF 2013) ; bfc_chene_sessile_futaie_reguliere, bfc_chene_futaie_irreguliere, bfc_conversion_tsf_futaie (Sardin 2008). Le champ notes, facultatif, dit comment chaque règle a été tirée du guide. Aucune valeur n'est inventée.",
   "schema": {
     "domaine": "essences_objectif (codes de la colonne essence du projet), ser (codes SER), p2_min/p2_max (unités de P2), pente_max_pct, desserte_requise (vrai/faux), desserte_max_m (distance de débardage), protections_exclues (codes de type de B1 : rnn, rb, coeur, apb, natura...)",
     "effets_attendus": "par code de famille (C, B, W, A, F, L, T, R, S, P, E, N) : {sens: + | 0 | - | ?, horizon: court | moyen | long, source: référence}",
@@ -240,6 +240,48 @@
       "notes": "Règles du type 2 (parcelle équilibrée PB-BM-GB), fertilité bonne à moyenne, adaptées au pas de 5 ans de FINN (spec 065, décisions D-9 à D-11 du 2026-11-10). rotation_ans : coupe tous les 10 ans au lieu de 7-9 ans (tab. 1, p. 17). intensite_prelevement_pct : 20 % (milieu de 15-25 %, p. 7) × 10 / 8 = 25 %, plafond du guide. diametre_exploitabilite_cm : milieu de 55-65 cm, qualité B/C (p. 8). surface_terriere_cible_m2ha : pas de coupe sous 14 m²/ha de tiges précomptables (p. 17), plus 2,5 m²/ha de non précomptables (2-3, p. 10 et 29), FINN comptant toutes les tiges inventoriées. Le fuseau de la fig. 2 (p. 17) revient à 20-24 % de G par coupe. Limites : le moteur récolte d'abord toutes les tiges ≥ 60 cm puis éclaircit, si bien que le prélèvement total peut dépasser 25 % dans une parcelle riche en arbres mûrs ; le domaine du guide (forêts publiques des DT Alsace, Bourgogne-Champagne-Ardenne, Franche-Comté, Lorraine, p. 3) est administratif et n'est pas traduit en SER."
     },
     {
+      "code": "bfc_chene_futaie_irreguliere",
+      "famille_itineraire": "futaie_irreguliere",
+      "libelle": {
+        "fr": "Futaie irrégulière de chêne (chênaies continentales)",
+        "en": "Uneven-aged oak high forest (continental oak forests)"
+      },
+      "domaine": {
+        "essences_objectif": [
+          "03",
+          "02"
+        ],
+        "ser": [],
+        "p2_min": null,
+        "p2_max": null,
+        "pente_max_pct": null,
+        "desserte_requise": null,
+        "desserte_max_m": null,
+        "protections_exclues": []
+      },
+      "regles": {
+        "rotation_ans": 10,
+        "diametre_exploitabilite_cm": 65,
+        "surface_terriere_cible_m2ha": 15.0,
+        "intensite_prelevement_pct": 20
+      },
+      "effets_attendus": {
+        "P": {
+          "sens": "+",
+          "horizon": "long",
+          "source": "Sardin 2008, p. 269 : récolter en très grande majorité des arbres parvenus à leur diamètre d'exploitabilité ; p. 273 : prélèvement de l'accroissement, 3-5 m²/ha par coupe"
+        }
+      },
+      "sources": [
+        {
+          "ref": "Sardin T. (2008). Chênaies continentales. Guide des sylvicultures. Office national des forêts, Paris, 455 p. ISBN 978-2-84207-321-3.",
+          "pages": "p. 73, 266-274 (tab. 48)"
+        }
+      ],
+      "statut_source": "source",
+      "notes": "Futaie irrégulière des chênaies continentales, chap. V § 1, fertilité bonne. surface_terriere_cible_m2ha : 15 m²/ha après coupe, soit 12 m²/ha de tiges précomptables plus 3 m²/ha de taillis et perches (résumé p. 274 ; tab. 48), FINN comptant toutes les tiges inventoriées ; avant coupe 15 + 5 = 20 m²/ha ; « surface terrière d'équilibre » 15-20 m²/ha (p. 272). intensite_prelevement_pct : 20 %, milieu de 15-25 % de la surface terrière initiale, sans dépasser 5 m²/ha (p. 273, D-11). rotation_ans : 10 ans, milieu de 8-12 ans en fertilité bonne (tab. 48, p. 274) : le pas de 5 ans de FINN n'impose pas de conversion (D-9). diametre_exploitabilite_cm : 65 cm, qualité C (p. 73), valeur médiane des diamètres « variables selon la qualité » (p. 269 ; 55 à 80 cm). Limites : le guide vaut d'abord pour les chênaies acides ou hydromorphes, la régénération s'installant mal en contexte eutrophe (p. 272), et le juge « plus adapté au chêne sessile qu'au chêne pédonculé » (p. 273) sans pouvoir moduler les seuils : les deux essences sont admises ; le plafond de 5 m²/ha par coupe n'est pas appliqué (20 % de 20 m²/ha = 4 m²/ha à l'équilibre) ; la gestion du sous-étage et des arbres d'avenir (50-150 /ha, p. 270) n'est pas représentée."
+    },
+    {
       "code": "bfc_taillis_sous_futaie",
       "famille_itineraire": "taillis_sous_futaie",
       "libelle": {
@@ -270,11 +312,13 @@
       "code": "bfc_conversion_tsf_futaie",
       "famille_itineraire": "conversion",
       "libelle": {
-        "fr": "Conversion du taillis-sous-futaie en futaie",
-        "en": "Conversion of coppice with standards to high forest"
+        "fr": "Conversion du taillis-sous-futaie en futaie régulière de chêne sessile",
+        "en": "Conversion of coppice-with-standards to even-aged sessile oak high forest"
       },
       "domaine": {
-        "essences_objectif": [],
+        "essences_objectif": [
+          "03"
+        ],
         "ser": [],
         "p2_min": null,
         "p2_max": null,
@@ -284,14 +328,31 @@
         "protections_exclues": []
       },
       "regles": {
-        "rotation_ans": null,
-        "diametre_exploitabilite_cm": null,
-        "surface_terriere_cible_m2ha": null,
-        "intensite_prelevement_pct": null
+        "rotation_ans": 10,
+        "diametre_exploitabilite_cm": 65,
+        "surface_terriere_cible_m2ha": 19.0,
+        "intensite_prelevement_pct": 20
       },
-      "effets_attendus": {},
-      "sources": [],
-      "statut_source": "a_sourcer"
+      "effets_attendus": {
+        "P": {
+          "sens": "+",
+          "horizon": "long",
+          "source": "Sardin 2008, tab. 46 p. 259 : prélèvement de 85 % de l'accroissement courant de la futaie à chaque rotation"
+        },
+        "C": {
+          "sens": "+",
+          "horizon": "moyen",
+          "source": "Sardin 2008, p. 259 : légère et progressive capitalisation, + 0,4-0,5 m²/ha de G par mètre de hauteur dominante"
+        }
+      },
+      "sources": [
+        {
+          "ref": "Sardin T. (2008). Chênaies continentales. Guide des sylvicultures. Office national des forêts, Paris, 455 p. ISBN 978-2-84207-321-3.",
+          "pages": "p. 73, 254-256 (tab. 44, fig. 30), 259 (tab. 46)"
+        }
+      ],
+      "statut_source": "source",
+      "notes": "Conversion du taillis-sous-futaie en futaie régulière, chêne sessile, chap. IV § 6. Le guide pilote en surface terrière : fourchette selon la hauteur dominante, de 16,1 (après coupe) - 25,3 (avant coupe) m²/ha à Ho 22,5 m jusqu'à 22,0 - 30,4 m²/ha à Ho 36 m, quelle que soit la fertilité (tab. 44, p. 256). FINN ne simulant pas Ho (D-10) et le guide ne donnant pas de référentiel en diamètre pour ces peuplements hétérogènes, surface_terriere_cible_m2ha = 19,0, borne après coupe au milieu de la gamme (Ho 29 m, D-11). intensite_prelevement_pct : « prélèvements d'environ 20 % de la surface terrière initiale » (légende de la fig. 30, p. 256 ; 4-5 m²/ha, p. 255). rotation_ans : 10 ans, dans le tab. 46 (p. 259) pour la classe 2 (3,4-3,8 m²/ha à 0,40-0,45 m²/ha/an). diametre_exploitabilite_cm : 65 cm (qualité C, p. 73) : le guide dit les diamètres objectif « sensiblement réduits » pour les peuplements issus de taillis-sous-futaie (p. 254) sans les chiffrer ; la qualité C est une hypothèse. Limites : la fourchette du guide monte avec Ho (capitalisation), la cible constante non ; le marquage du taillis (brins à éliminer, p. 259) n'est pas distingué de la futaie, FINN comptant toutes les tiges inventoriées ; le zonage des parquets à régénérer (≥ 50 ares, p. 254) n'est pas représenté. La conversion en futaie irrégulière (chap. V § 2) est une autre voie, non encore sourcée."
     },
     {
       "code": "bfc_libre_evolution",

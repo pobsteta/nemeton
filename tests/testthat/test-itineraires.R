@@ -44,10 +44,15 @@ test_that("the shipped catalogue is valid; only its sourced entries can be admit
   expect_gte(length(cat), 10L)
   expect_true(valider_catalogue_itineraires(cat))
   statut <- vapply(cat, `[[`, "", "statut_source")
-  # entrees sourcees : futaie irreguliere de hetre (ONF 2013) et futaie
-  # reguliere de chene sessile (Sardin 2008), D-9 a D-11
-  expect_setequal(names(statut)[statut == "source"],
-                  c("bfc_hetre_futaie_irreguliere", "bfc_chene_sessile_futaie_reguliere"))
+  # entrees sourcees : futaie irreguliere de hetre (ONF 2013) ; futaie
+  # reguliere et irreguliere de chene, conversion du TSF (Sardin 2008), D-9 a D-11
+  sources <- c("bfc_hetre_futaie_irreguliere", "bfc_chene_sessile_futaie_reguliere",
+               "bfc_chene_futaie_irreguliere", "bfc_conversion_tsf_futaie")
+  expect_setequal(names(statut)[statut == "source"], sources)
+  expect_equal(unlist(cat$bfc_chene_futaie_irreguliere$domaine$essences_objectif), c("03", "02"))
+  expect_equal(cat$bfc_chene_futaie_irreguliere$regles$surface_terriere_cible_m2ha, 15)
+  expect_equal(cat$bfc_conversion_tsf_futaie$famille_itineraire, "conversion")
+  expect_true(all(vapply(cat[sources], function(it) nzchar(it$notes %||% ""), TRUE)))
   ch <- cat$bfc_chene_sessile_futaie_reguliere
   expect_equal(unlist(ch$domaine$essences_objectif), "03")
   expect_equal(ch$regles$diametre_exploitabilite_cm, 75)
@@ -64,15 +69,15 @@ test_that("the shipped catalogue is valid; only its sourced entries can be admit
   # une UGF a hetre, pas sur une chenaie, et l'essence manquante le dit
   u <- .unites(3, essence = c("09", "03", NA))
   a <- itineraires_admissibles(u, cat)
-  autres <- a[!a$itineraire %in% c("bfc_hetre_futaie_irreguliere",
-                                    "bfc_chene_sessile_futaie_reguliere"), ]
+  autres <- a[!a$itineraire %in% sources, ]
   expect_true(all(autres$raison == "source_manquante"))
   expect_true(all(!autres$admissible))
   h <- a[a$itineraire == "bfc_hetre_futaie_irreguliere", ]
   expect_equal(h$admissible, c(TRUE, FALSE, NA))
   expect_equal(h$raison, c(NA, "essence_absente", "donnee_manquante"))
-  c3 <- a[a$itineraire == "bfc_chene_sessile_futaie_reguliere", ]
-  expect_equal(c3$admissible, c(FALSE, TRUE, NA))
+  for (code in setdiff(sources, "bfc_hetre_futaie_irreguliere")) {
+    expect_equal(a$admissible[a$itineraire == code], c(FALSE, TRUE, NA), label = code)
+  }
 })
 
 test_that("the validator enforces the sourcing rule and the schema", {

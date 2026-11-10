@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.17] - 2026-11-10
+
+### Added
+- Itinerary catalogue: sourced entries `bfc_chene_futaie_irreguliere` (new) and `bfc_conversion_tsf_futaie` (Sardin 2008), basal-area driven (spec 065).
+
 ## [2026.11.16] - 2026-11-10
 
 ### Added
