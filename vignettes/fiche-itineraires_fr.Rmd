@@ -48,15 +48,37 @@ cmp[cmp$rang == 1, c("unit_id", "itineraire", "familles_gagnantes", "citations")
 Colonnes lues sur les UGF (modifiables par `colonnes =`) : `P2`, `ser`,
 `essence`, `pente_pct`, `desserte_m` (distance de débardage).
 
-## 2. Le catalogue livré est un squelette
+## 2. Le catalogue livré se remplit guide par guide
 
 `inst/extdata/itineraires_sylvicoles.json` contient les onze premiers
 itinéraires de Bourgogne-Franche-Comté (futaies régulières de chêne sessile,
-hêtre, sapin, épicéa et douglas ; futaie irrégulière Pro Silva ;
+hêtre, sapin, épicéa et douglas ; futaie irrégulière de hêtre ;
 taillis-sous-futaie et sa conversion ; libre évolution ; îlot de sénescence ;
-plantation de diversification). **Tous sont `a_sourcer`** : domaine, règles
-et effets attendus sont vides, et **aucun n'est admissible** tant qu'ils n'ont
-pas été remplis à partir de guides cités (ONF, DRA/SRA, Pro Silva, SRGS).
+plantation de diversification).
+
+**Deux sont sourcés.** `bfc_hetre_futaie_irreguliere` est tiré du référentiel
+ONF de futaie irrégulière des hêtraies continentales (2013). Ses règles sont
+celles d'une parcelle équilibrée de fertilité bonne à moyenne, adaptées au pas
+de 5 ans de FINN : une coupe tous les 10 ans, au plus 25 % de G, récolte des
+tiges de 60 cm et plus, pas d'éclaircie sous 16,5 m²/ha (14 m²/ha de tiges
+précomptables plus l'étage non précomptable). Le champ `notes` de l'entrée
+dit d'où vient chaque nombre. Il n'est admissible que sur une UGF à hêtre
+(code essence `09`).
+
+`bfc_chene_sessile_futaie_reguliere` suit le référentiel de « sylviculture
+dynamique » du chêne sessile en bonne fertilité (*Chênaies continentales*,
+2008, tableau 28). Le guide donne le nombre de tiges et la surface terrière
+après éclaircie selon la hauteur dominante, que FINN ne simule pas : chaque
+ligne est convertie en diamètre moyen, et la règle `norme_g_selon_dg` dit
+quelle surface terrière laisser pour un diamètre moyen donné (de 14,7 m²/ha
+à 14 cm à 20,2 m²/ha à 65 cm). Pas d'éclaircie sous 14 cm, récolte à 75 cm,
+un passage tous les 10 ans. Admissible sur une UGF à chêne sessile (`03`).
+
+**Les neuf autres sont `a_sourcer`** : domaine, règles et effets attendus
+sont vides, et **aucun n'est admissible** tant qu'ils n'ont pas été remplis à
+partir de guides cités (ONF, DRA/SRA, Pro Silva, SRGS). Le relevé des règles
+déjà lues, page par page, est dans
+`specs/065-itineraires-catalogue/sources-regles-guides.md`.
 
 **Règle de sourçage** : un paramètre numérique sans référence n'entre pas
 dans le catalogue ; `valider_catalogue_itineraires()` refuse une entrée

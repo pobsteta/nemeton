@@ -123,6 +123,12 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #'     \item{intensite_prelevement_pct}{maximum share of the stems removed
 #'       by the thinning; alone (no target), the share removed at every
 #'       intervention.}
+#'     \item{norme_g_selon_dg}{a thinning norm by quadratic mean diameter:
+#'       `dg_cm` (increasing) and `g_m2ha`, the basal area left after
+#'       thinning at that mean diameter. The target is interpolated on the
+#'       plot's Dg (all stems); below the first `dg_cm` there is no thinning,
+#'       beyond the last one its value holds. Replaces
+#'       `surface_terriere_cible_m2ha` (not both).}
 #'   }
 #'   Stems removed are drawn (binomial per cohort): rounding would never cut
 #'   a cohort of a single large stem.
@@ -382,9 +388,17 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     rotation_ans = num(r$rotation_ans),
     diametre = num(r$diametre_exploitabilite_cm),
     cible = num(r$surface_terriere_cible_m2ha),
-    intensite = num(r$intensite_prelevement_pct)
+    intensite = num(r$intensite_prelevement_pct),
+    norme = .itin_norme(r$norme_g_selon_dg, itineraire$code)
   )
-  if (is.null(regles$diametre) && is.null(regles$cible) && is.null(regles$intensite)) {
+  if (!is.null(regles$cible) && !is.null(regles$norme)) {
+    cli::cli_abort(c(
+      "Itinerary {.val {itineraire$code}} gives both {.field surface_terriere_cible_m2ha} and {.field norme_g_selon_dg}.",
+      "i" = "Keep one target: a constant basal area or a norm by mean diameter."
+    ))
+  }
+  if (is.null(regles$diametre) && is.null(regles$cible) && is.null(regles$intensite) &&
+      is.null(regles$norme)) {
     cli::cli_abort("Itinerary {.val {itineraire$code}} has no cutting rule to apply.")
   }
   if (is.null(regles$rotation_ans)) {
@@ -395,6 +409,32 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     cli::cli_abort("{.field intensite_prelevement_pct} must be in (0, 100].")
   }
   regles
+}
+
+# Norme d'eclaircie par diametre quadratique moyen (spec 065, D-10) : table
+# Dg (cm) -> G apres eclaircie (m2/ha), tiree des referentiels des guides
+# (N et G apres eclaircie en fonction de Ho, convertis en Dg).
+.itin_norme <- function(n, code) {
+  if (is.null(n)) return(NULL)
+  dg <- suppressWarnings(as.numeric(unlist(n$dg_cm)))
+  g <- suppressWarnings(as.numeric(unlist(n$g_m2ha)))
+  if (length(dg) < 2L || length(dg) != length(g) || anyNA(dg) || anyNA(g) ||
+      any(diff(dg) <= 0) || any(g <= 0)) {
+    cli::cli_abort(c(
+      "Itinerary {.val {code}}: {.field norme_g_selon_dg} is malformed.",
+      "i" = "It needs {.field dg_cm} (at least 2, increasing) and {.field g_m2ha} (positive), of the same length."
+    ))
+  }
+  list(dg = dg, g = g)
+}
+
+# G cible par site selon la norme : pas d'eclaircie sous le premier Dg de la
+# table (le guide n'eclaircit pas avant), derniere valeur au-dela.
+.itin_cible_norme <- function(norme, g, tiges) {
+  dg <- ifelse(tiges > 0, 100 * sqrt(4 * g / (pi * tiges)), NA_real_)
+  cible <- stats::approx(norme$dg, norme$g, xout = dg, rule = 2)$y
+  cible[is.na(dg) | dg < min(norme$dg)] <- Inf
+  cible
 }
 
 # G (m2/ha), tiges/ha et volume (m3/ha, si tarif) par site depuis une table de
@@ -489,9 +529,13 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     coh$trees[coh$dbh >= regles$diametre] <- 0
   }
   p <- NULL
-  g <- .itin_etat(coh, n_sites, sp)$g
-  if (!is.null(regles$cible)) {
-    p <- ifelse(g > regles$cible & g > 0, (g - regles$cible) / g, 0)
+  etat <- .itin_etat(coh, n_sites, sp)
+  g <- etat$g
+  cible <- if (!is.null(regles$norme)) {
+    .itin_cible_norme(regles$norme, g, etat$tiges)
+  } else regles$cible
+  if (!is.null(cible)) {
+    p <- ifelse(g > cible & g > 0, (g - cible) / g, 0)
     if (!is.null(regles$intensite)) p <- pmin(p, regles$intensite / 100)
   } else if (!is.null(regles$intensite)) {
     p <- rep(regles$intensite / 100, n_sites)
