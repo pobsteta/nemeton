@@ -239,6 +239,17 @@ régulières sont indexées sur Ho, absent de FINN. Décisions D-9 (rotation
 contre pas de 5 ans), D-10 (règles par Dg), D-11 (valeur centrale des
 fourchettes) proposées. Attend : captures des figures du référentiel FI,
 PDF complet des chênaies, quatre guides BFC manquants.
+Pascal valide D-9 à D-11 et dépose les captures des p. 17-25 : fuseaux
+G après / G avant des types 2 à 6 numérisés (§ 2.1 du relevé ; 20-24 % de
+G par coupe hors type 3). **Première entrée sourcée** (v2026.11.16) :
+`bfc_hetre_futaie_irreguliere` (ex-`…_pro_silva`), rotation 10 ans, 25 %,
+Dexp 60 cm, cible 16,5 m²/ha, effets P/B/R `+`, champ `notes`. Pas encore
+simulée sur FINN réel (torch absent). Les quatre guides BFC manquants
+(*Hêtraies continentales FR*, *Douglasaies françaises*, arc jurassien,
+sapinières du Morvan) n'existent pas en accès libre ; *Chênaies
+continentales* complet est sur le Drive (18 Mo, au-delà du connecteur) :
+Pascal le télécharge en local. Suite : chêne sessile dès le PDF, résineux
+sur SFFC 2012 avec la règle par Dg (D-10, extension du moteur).
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,

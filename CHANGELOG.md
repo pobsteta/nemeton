@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.16] - 2026-11-10
+
+### Added
+- Itinerary catalogue: first sourced entry `bfc_hetre_futaie_irreguliere` (ONF 2013 uneven-aged beech guide, rules adapted to the 5-year FINN step); optional `notes` field (spec 065).
+
+### Changed
+- Catalogue code `bfc_futaie_irreguliere_pro_silva` renamed `bfc_hetre_futaie_irreguliere`.
+
 ## [2026.11.15] - 2026-11-10
 
 ### Added

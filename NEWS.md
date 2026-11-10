@@ -1,3 +1,30 @@
+# nemeton 2026.11.16 (2026-11-10)
+
+## Nouveautés
+
+- **Première entrée sourcée du catalogue d'itinéraires** (spec 065) :
+  `bfc_hetre_futaie_irreguliere`, futaie irrégulière de hêtre tirée du
+  référentiel ONF *Hêtraies continentales, futaie irrégulière* (2013). Règles
+  d'une parcelle équilibrée de fertilité bonne à moyenne, adaptées au pas de
+  5 ans de FINN (décisions D-9 à D-11 validées par Pascal) : une coupe tous
+  les 10 ans (`rotation_ans`), au plus 25 % de G (20 % du guide × 10 / 8 ans,
+  plafond du guide), récolte des tiges de 60 cm et plus, pas d'éclaircie
+  sous 16,5 m²/ha (14 m²/ha de tiges précomptables plus 2,5 m²/ha non
+  précomptables). Effets attendus sourcés : P, B, R en `+`. Admissible sur
+  une UGF à hêtre (code essence `09`). Un nouveau champ facultatif `notes`
+  dit d'où vient chaque nombre. Les dix autres entrées restent
+  `a_sourcer`.
+
+## Changements de résultat
+
+- `itineraires_admissibles()` sur le catalogue livré n'est plus
+  entièrement `source_manquante` : la futaie irrégulière de hêtre est
+  admissible sur une UGF à hêtre, `essence_absente` ailleurs,
+  `donnee_manquante` sans colonne `essence`.
+- Le code `bfc_futaie_irreguliere_pro_silva` devient
+  `bfc_hetre_futaie_irreguliere` : l'entrée porte sur le hêtre et non sur la
+  futaie irrégulière en général. Aucun appelant connu (expérimental).
+
 # nemeton 2026.11.15 (2026-11-10)
 
 ## Nouveautés

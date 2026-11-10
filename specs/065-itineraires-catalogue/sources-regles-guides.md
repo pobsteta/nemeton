@@ -1,7 +1,7 @@
 # Spec 065 — Règles chiffrées tirées des guides (relevé du 2026-11-10)
 
-> **Statut** : relevé de travail, **aucune entrée du catalogue n'est encore
-> remplie**. Décisions D-9 à D-11 validées le 2026-11-10 (§ 6).
+> **Statut** : relevé de travail. **Première entrée remplie le 2026-11-10** :
+> `bfc_hetre_futaie_irreguliere` (§ 2, ex-`bfc_futaie_irreguliere_pro_silva`). Décisions D-9 à D-11 validées le 2026-11-10 (§ 6).
 > Les guides sont sous droits : textes et PDF restent dans
 > `data-raw/references/itineraires/` (ignoré par git) ; leurs citations
 > complètes sont dans `data-raw/references/README.md`. Ici, seulement les

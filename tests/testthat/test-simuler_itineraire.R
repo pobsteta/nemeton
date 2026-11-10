@@ -31,6 +31,18 @@ test_that("the shipped catalogue, not yet sourced, is refused", {
   expect_error(nemeton:::.itin_regles(cat[[1]], 5), "not sourced")
 })
 
+test_that("the sourced beech uneven-aged entry gives the engine its rules", {
+  r <- nemeton:::.itin_regles(itineraires_catalogue()$bfc_hetre_futaie_irreguliere, 5)
+  expect_equal(r[c("rotation_ans", "diametre", "cible", "intensite")],
+               list(rotation_ans = 10, diametre = 60, cible = 16.5, intensite = 25))
+  # G 25 m2/ha : ramene vers 16,5 mais plafonne a 25 % -> ~18,75 (fig. 2 : 19,8)
+  n <- round(25 / (pi * 0.15^2))  # tiges de 30 cm pour 25 m2/ha
+  coh <- data.frame(siteID = 1L, species = 1L, dbh = 30, trees = rep(1, n))
+  set.seed(2)
+  g1 <- nemeton:::.itin_etat(nemeton:::.itin_couper(coh, r, 1L, 1), 1L, 1)$g
+  expect_equal(g1 / nemeton:::.itin_etat(coh, 1L, 1)$g, 0.75, tolerance = 0.05)
+})
+
 test_that(".itin_couper harvests above the diameter and thins towards the target", {
   coh <- data.frame(siteID = c(1L, 1L, 2L, 2L), species = 1L,
                     dbh = c(30, 70, 30, 30), trees = c(100, 10, 100, 100))

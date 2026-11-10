@@ -9,9 +9,11 @@
 #' **Sourcing rule.** A numeric parameter without a reference does not enter
 #' the catalogue: an entry whose rules are not yet sourced carries
 #' `statut_source = "a_sourcer"` and is never admissible. The shipped
-#' catalogue holds the skeleton of the first itineraries (spec 065, D-4),
-#' all `"a_sourcer"`: their parameters are filled from silvicultural guides
-#' by the forester, not invented.
+#' catalogue holds the first itineraries (spec 065, D-4); their parameters
+#' are filled from silvicultural guides, cited with their pages, not
+#' invented. One is sourced so far: `bfc_hetre_futaie_irreguliere` (ONF
+#' 2013, adapted to the 5-year step of FINN, see its `notes` field); the
+#' others are still `"a_sourcer"`.
 #'
 #' @param chemin Path to a catalogue JSON file. `NULL`: the shipped one.
 #' @return A list of itineraries (each a list: `code`, `famille_itineraire`,

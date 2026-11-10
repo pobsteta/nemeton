@@ -1,10 +1,11 @@
 {
   "version": 1,
-  "description": "Catalogue des itinéraires sylvicoles (spec 065). Squelette du premier catalogue (D-4) : toutes les entrées sont « a_sourcer » et ne sont jamais admissibles tant que leurs règles, leur domaine et leurs effets attendus n'ont pas été remplis à partir de guides de sylviculture cités (ONF, DRA/SRA, Pro Silva, SRGS). Aucune valeur n'est inventée.",
+  "description": "Catalogue des itinéraires sylvicoles (spec 065). Premier catalogue (D-4) : une entrée « a_sourcer » n'est jamais admissible tant que ses règles, son domaine et ses effets attendus n'ont pas été remplis à partir de guides de sylviculture cités (ONF, DRA/SRA, Pro Silva, SRGS). Entrée sourcée : bfc_hetre_futaie_irreguliere (ONF 2013). Le champ notes, facultatif, dit comment chaque règle a été tirée du guide. Aucune valeur n'est inventée.",
   "schema": {
     "domaine": "essences_objectif (codes de la colonne essence du projet), ser (codes SER), p2_min/p2_max (unités de P2), pente_max_pct, desserte_requise (vrai/faux), desserte_max_m (distance de débardage), protections_exclues (codes de type de B1 : rnn, rb, coeur, apb, natura...)",
     "effets_attendus": "par code de famille (C, B, W, A, F, L, T, R, S, P, E, N) : {sens: + | 0 | - | ?, horizon: court | moyen | long, source: référence}",
-    "statut_source": "source | a_sourcer"
+    "statut_source": "source | a_sourcer",
+    "notes": "facultatif : comment chaque règle a été tirée du guide (pages, conversions, limites)"
   },
   "itineraires": [
     {
@@ -143,14 +144,16 @@
       "statut_source": "a_sourcer"
     },
     {
-      "code": "bfc_futaie_irreguliere_pro_silva",
+      "code": "bfc_hetre_futaie_irreguliere",
       "famille_itineraire": "futaie_irreguliere",
       "libelle": {
-        "fr": "Futaie irrégulière (Pro Silva)",
-        "en": "Uneven-aged high forest (Pro Silva)"
+        "fr": "Futaie irrégulière de hêtre (hêtraies continentales)",
+        "en": "Uneven-aged beech high forest (continental beech forests)"
       },
       "domaine": {
-        "essences_objectif": [],
+        "essences_objectif": [
+          "09"
+        ],
         "ser": [],
         "p2_min": null,
         "p2_max": null,
@@ -160,14 +163,36 @@
         "protections_exclues": []
       },
       "regles": {
-        "rotation_ans": null,
-        "diametre_exploitabilite_cm": null,
-        "surface_terriere_cible_m2ha": null,
-        "intensite_prelevement_pct": null
+        "rotation_ans": 10,
+        "diametre_exploitabilite_cm": 60,
+        "surface_terriere_cible_m2ha": 16.5,
+        "intensite_prelevement_pct": 25
       },
-      "effets_attendus": {},
-      "sources": [],
-      "statut_source": "a_sourcer"
+      "effets_attendus": {
+        "P": {
+          "sens": "+",
+          "horizon": "long",
+          "source": "ONF 2013, p. 21 et 23 : récolte proche de l'accroissement courant en G ; avant-propos (p. 3) : production de bois d'œuvre"
+        },
+        "B": {
+          "sens": "+",
+          "horizon": "long",
+          "source": "ONF 2013, avant-propos (p. 3) : maintien voire amélioration du mélange d'essences ; p. 8 : arbres « bio » conservés"
+        },
+        "R": {
+          "sens": "+",
+          "horizon": "long",
+          "source": "ONF 2013, avant-propos (p. 3) : le mélange d'essences objectif associées favorise la résilience en cas de perturbation"
+        }
+      },
+      "sources": [
+        {
+          "ref": "ONF (2013). Hêtraies continentales. Référentiel de sylviculture en futaie irrégulière. Maréchal et al., coord. Sardin. Office national des forêts, 40 p.",
+          "pages": "p. 3, 7-8, 17, 29-31"
+        }
+      ],
+      "statut_source": "source",
+      "notes": "Règles du type 2 (parcelle équilibrée PB-BM-GB), fertilité bonne à moyenne, adaptées au pas de 5 ans de FINN (spec 065, décisions D-9 à D-11 du 2026-11-10). rotation_ans : coupe tous les 10 ans au lieu de 7-9 ans (tab. 1, p. 17). intensite_prelevement_pct : 20 % (milieu de 15-25 %, p. 7) × 10 / 8 = 25 %, plafond du guide. diametre_exploitabilite_cm : milieu de 55-65 cm, qualité B/C (p. 8). surface_terriere_cible_m2ha : pas de coupe sous 14 m²/ha de tiges précomptables (p. 17), plus 2,5 m²/ha de non précomptables (2-3, p. 10 et 29), FINN comptant toutes les tiges inventoriées. Le fuseau de la fig. 2 (p. 17) revient à 20-24 % de G par coupe. Limites : le moteur récolte d'abord toutes les tiges ≥ 60 cm puis éclaircit, si bien que le prélèvement total peut dépasser 25 % dans une parcelle riche en arbres mûrs ; le domaine du guide (forêts publiques des DT Alsace, Bourgogne-Champagne-Ardenne, Franche-Comté, Lorraine, p. 3) est administratif et n'est pas traduit en SER."
     },
     {
       "code": "bfc_taillis_sous_futaie",
