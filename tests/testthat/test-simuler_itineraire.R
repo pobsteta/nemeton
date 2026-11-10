@@ -28,7 +28,7 @@ test_that(".itin_regles accepts no management and checks the itinerary", {
 
 test_that("the shipped catalogue, not yet sourced, is refused", {
   cat <- itineraires_catalogue()
-  expect_error(nemeton:::.itin_regles(cat$bfc_hetre_futaie_reguliere, 5), "not sourced")
+  expect_error(nemeton:::.itin_regles(cat$bfc_taillis_sous_futaie, 5), "not sourced")
 })
 
 test_that("the sourced beech uneven-aged entry gives the engine its rules", {
@@ -82,7 +82,7 @@ test_that("a thinning norm by mean diameter sets the target per plot (D-10)", {
 test_that("every sourced entry of the shipped catalogue is accepted by the engine", {
   cat <- itineraires_catalogue()
   sources <- Filter(function(it) identical(it$statut_source, "source"), cat)
-  expect_gte(length(sources), 7L)
+  expect_gte(length(sources), 8L)
   for (it in sources) {
     r <- nemeton:::.itin_regles(it, 5)
     expect_equal(r$rotation_ans %% 5, 0, label = it$code)
@@ -131,7 +131,7 @@ test_that("simuler_itineraire and conformer_finn check their inputs", {
   expect_error(conformer_finn(faux, a, e), "used in the calibration")
   expect_error(simuler_itineraire(list(), a, e), "calibrer_finn")
   expect_error(simuler_itineraire(faux, a, e, horizon = 12), "multiple")
-  expect_error(simuler_itineraire(faux, a, e, itineraire = itineraires_catalogue()$bfc_hetre_futaie_reguliere),
+  expect_error(simuler_itineraire(faux, a, e, itineraire = itineraires_catalogue()$bfc_taillis_sous_futaie),
                "not sourced")
 })
 

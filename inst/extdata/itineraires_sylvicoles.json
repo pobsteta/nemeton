@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Catalogue des itinéraires sylvicoles (spec 065). Premier catalogue (D-4) : une entrée « a_sourcer » n'est jamais admissible tant que ses règles, son domaine et ses effets attendus n'ont pas été remplis à partir de guides de sylviculture cités (ONF, DRA/SRA, Pro Silva, SRGS). Entrées sourcées : bfc_hetre_futaie_irreguliere (ONF 2013) ; bfc_chene_sessile_futaie_reguliere, bfc_chene_futaie_irreguliere, bfc_conversion_tsf_futaie (Sardin 2008) ; bfc_epicea_futaie_reguliere, bfc_sapin_futaie_reguliere, bfc_douglas_futaie_reguliere (SFFC 2012). Le champ notes, facultatif, dit comment chaque règle a été tirée du guide. Aucune valeur n'est inventée.",
+  "description": "Catalogue des itinéraires sylvicoles (spec 065). Premier catalogue (D-4) : une entrée « a_sourcer » n'est jamais admissible tant que ses règles, son domaine et ses effets attendus n'ont pas été remplis à partir de guides de sylviculture cités (ONF, DRA/SRA, Pro Silva, SRGS). Entrées sourcées : bfc_hetre_futaie_irreguliere (ONF 2013) ; bfc_chene_sessile_futaie_reguliere, bfc_chene_futaie_irreguliere, bfc_conversion_tsf_futaie (Sardin 2008) ; bfc_epicea_futaie_reguliere, bfc_sapin_futaie_reguliere, bfc_douglas_futaie_reguliere (SFFC 2012) ; bfc_hetre_futaie_reguliere (ONF 2018, source de substitution hors BFC). Le champ notes, facultatif, dit comment chaque règle a été tirée du guide. Aucune valeur n'est inventée.",
   "schema": {
     "domaine": "essences_objectif (codes de la colonne essence du projet), ser (codes SER), p2_min/p2_max (unités de P2), pente_max_pct, desserte_requise (vrai/faux), desserte_max_m (distance de débardage), protections_exclues (codes de type de B1 : rnn, rb, coeur, apb, natura...)",
     "effets_attendus": "par code de famille (C, B, W, A, F, L, T, R, S, P, E, N) : {sens: + | 0 | - | ?, horizon: court | moyen | long, source: référence}",
@@ -88,7 +88,9 @@
         "en": "Even-aged beech high forest"
       },
       "domaine": {
-        "essences_objectif": [],
+        "essences_objectif": [
+          "09"
+        ],
         "ser": [],
         "p2_min": null,
         "p2_max": null,
@@ -98,14 +100,46 @@
         "protections_exclues": []
       },
       "regles": {
-        "rotation_ans": null,
-        "diametre_exploitabilite_cm": null,
+        "rotation_ans": 10,
+        "diametre_exploitabilite_cm": 55,
         "surface_terriere_cible_m2ha": null,
-        "intensite_prelevement_pct": null
+        "intensite_prelevement_pct": null,
+        "norme_g_selon_dg": {
+          "dg_cm": [
+            16.4,
+            19.2,
+            22.3,
+            27.7,
+            31.9,
+            37.7,
+            43.8
+          ],
+          "g_m2ha": [
+            17.6,
+            17.3,
+            16.8,
+            17.3,
+            17.5,
+            17.9,
+            18.4
+          ]
+        }
       },
-      "effets_attendus": {},
-      "sources": [],
-      "statut_source": "a_sourcer"
+      "effets_attendus": {
+        "P": {
+          "sens": "+",
+          "horizon": "long",
+          "source": "ONF 2018 (mémento hêtraies du sud Massif central), annexe 4 p. 33 : table de production de la fertilité 2, accroissement moyen 6,4 m³/ha/an jusqu'à la récolte de bois d'œuvre au diamètre de 55 cm"
+        }
+      },
+      "sources": [
+        {
+          "ref": "ONF (2018). Hêtraies du sud Massif central. Mémento : référentiels sylvicoles. Office national des forêts, 36 p.",
+          "pages": "p. 3, 5, 10, 33"
+        }
+      ],
+      "statut_source": "source",
+      "notes": "Source de substitution, hors BFC : le référentiel de la région (ONF, Hêtraies continentales, référentiel sylvicole de futaie régulière, 2011, cité par les règlements types de gestion des DRA Bourgogne et Franche-Comté) n'est pas en accès libre. Mémento ONF des hêtraies du sud Massif central (2018), version synthétique du guide des hêtraies et hêtraies-sapinières des Pyrénées (p. 3). Table de production de la fertilité 2 (« fertilité supérieure », p. 5 ; entrée en sylviculture vers Ho 19-20 m, récolte au diamètre d'exploitabilité optimal de 55 cm), annexe 4 p. 33, simulée par le modèle Fagacées (Capsis) : norme_g_selon_dg = Dg avant éclaircie → G après éclaircie, lus tels quels : 19,2 → 17,3 ; 22,3 → 16,8 ; 27,7 → 17,3 ; 31,9 → 17,5 ; 37,7 → 17,9 ; 43,8 → 18,4 m²/ha. La première ligne (57 ans, Ho 19,9 m) ne donne que l'état après coupe (838 tiges, 17,6 m²/ha) : son Dg après, 100·√(4G/πN) = 16,4 cm, sert de premier point (16,4 → 17,6) ; le Dg avant, plus petit, n'est pas publié, donc la première éclaircie du moteur est un peu tardive. La dernière ligne (129 ans, Dg 50,1 cm) est l'entrée en régénération, pas une norme d'éclaircie. Fertilité 2 sur les quatre classes du mémento : la plus basse des fertilités « supérieures », retenue comme valeur centrale (D-11), avec le même diamètre de récolte que les résineux ; la fertilité 3 récolterait à 50 cm, la 1 à 60 cm. diametre_exploitabilite_cm : 55 cm (p. 33) ; le guide l'entend comme le diamètre moyen des 80 plus grosses tiges par hectare, le moteur récolte chaque tige de 55 cm et plus. rotation_ans : 10 ans au lieu de 7-9 ans (jeunes peuplements) puis 9-10 et 12 ans (p. 10), D-9 ; la norme dépend de l'état du peuplement, sans conversion du prélèvement. Limites : le guide éclaircit par le haut en conservant le sous-étage (p. 5), le moteur éclaircit proportionnellement dans toutes les grosseurs et compte le sous-étage dans le Dg et le G de FINN ; la régénération (coupes d'ensemencement, secondaires et définitive, chapitre 2) est réduite à la récolte des tiges de 55 cm et plus, le recrutement venant de FINN ; le hêtre du sud du Massif central (moyenne montagne) pousse autrement que celui des plateaux de BFC : à remplacer par le référentiel des hêtraies continentales dès qu'il sera disponible."
     },
     {
       "code": "bfc_sapin_futaie_reguliere",

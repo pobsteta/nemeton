@@ -56,7 +56,7 @@ hêtre, sapin, épicéa et douglas ; futaie irrégulière de hêtre ;
 taillis-sous-futaie et sa conversion ; libre évolution ; îlot de sénescence ;
 plantation de diversification).
 
-**Sept sont sourcés.** `bfc_hetre_futaie_irreguliere` est tiré du référentiel
+**Huit sont sourcés.** `bfc_hetre_futaie_irreguliere` est tiré du référentiel
 ONF de futaie irrégulière des hêtraies continentales (2013). Ses règles sont
 celles d'une parcelle équilibrée de fertilité bonne à moyenne, adaptées au pas
 de 5 ans de FINN : une coupe tous les 10 ans, au plus 25 % de G, récolte des
@@ -100,7 +100,14 @@ recommande pour une récolte à 55 cm :
 - `bfc_douglas_futaie_reguliere` (`64`) : la norme de l'épicéa multipliée
   par 205/275, rapport des densités finales des deux groupes d'essences.
 
-**Les cinq autres sont `a_sourcer`** : domaine, règles et effets attendus
+`bfc_hetre_futaie_reguliere` (`09`) vient d'un guide **hors de la région** :
+le référentiel des hêtraies continentales (ONF, 2011), qui fait foi en BFC,
+n'est pas en accès libre. En attendant, l'entrée reprend la table de
+production de la fertilité 2 du mémento ONF des hêtraies du sud Massif
+central (2018) : diamètre moyen avant éclaircie et surface terrière après,
+de 17,6 m²/ha à 16 cm à 18,4 m²/ha à 44 cm, récolte à 55 cm.
+
+**Les quatre autres sont `a_sourcer`** : domaine, règles et effets attendus
 sont vides, et **aucun n'est admissible** tant qu'ils n'ont pas été remplis à
 partir de guides cités (ONF, DRA/SRA, Pro Silva, SRGS). Le relevé des règles
 déjà lues, page par page, est dans

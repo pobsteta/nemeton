@@ -257,3 +257,72 @@ Ajouté le 2026-11-10, folios vérifiés page par page sur le PDF.
 65 cm) et `bfc_chene_futaie_irreguliere` (15 m²/ha, 20 %, 10 ans, 65 cm).
 Non encore lus : conversion en futaie irrégulière (chap. V § 2, p. 281 et
 suivantes), référentiel classique (tab. 29), annexes 10-12.
+
+## 9. Entrées restantes : références trouvées (2026-11-10)
+
+Recherche en ligne et dans le Drive de Pascal. Les documents publics
+trouvés sont rangés dans `data-raw/references/itineraires/` (ignoré par
+git), avec leur texte extrait.
+
+### 9.1 Futaie régulière de hêtre → sourcée en v2026.11.19 (substitution)
+
+- Référentiel de la région : ONF, *Hêtraies continentales – référentiel
+  sylvicole de futaie régulière* (2011), cité par les règlements types de
+  gestion des DRA Bourgogne et Franche-Comté (arrêtés du ministère, 2021 :
+  `rtg_onf_dra_*_2021.pdf`). Pas en accès libre.
+- Substitut retenu : mémento ONF *Hêtraies du sud Massif central* (2018),
+  PDF récupéré du Drive, folio = page PDF − 2. Annexe 4 p. 33, table de
+  production de la fertilité 2 (modèle Fagacées) :
+
+| Âge | Ho | N avant | G avant | Dg avant | N après | G après |
+|---|---|---|---|---|---|---|
+| 57 | 19,9 | – | – | – | 838 | 17,6 |
+| 66 | 22,3 | 838 | 24,2 | 19,2 | 600 | 17,3 |
+| 75 | 24,5 | 600 | 23,4 | 22,3 | 371 | 16,8 |
+| 84 | 26,5 | 371 | 22,4 | 27,7 | 279 | 17,3 |
+| 93 | 28,3 | 279 | 22,4 | 31,9 | 212 | 17,5 |
+| 105 | 30,4 | 212 | 23,7 | 37,7 | 156 | 17,9 |
+| 117 | 32,3 | 156 | 23,5 | 43,8 | 119 | 18,4 |
+| 129 | 34,0 | 119 | 23,5 | 50,1 | entrée en régénération | |
+
+  Rotations (p. 10) : fertilité 2, 7-9 ans jeune, 9-10 puis 12 ans.
+  Récolte à 55 cm = diamètre moyen des 80 plus grosses tiges (p. 33).
+  Éclaircie par le haut, sous-étage conservé (p. 5).
+- Le mémento *Hêtraie nord-atlantique* (ONF 2020) a des tables du même
+  format, mais en climat atlantique : moins proche de la BFC.
+
+### 9.2 Taillis-sous-futaie maintenu → source trouvée, moteur à étendre
+
+- SRGS de Bourgogne (CRPF, 2006), fiche n° 2 et p. 83
+  (`srgs_bourgogne_2006_orientations.pdf`, public) : TSF classique
+  « possible mais non conseillé » ; objectif avant coupe de 60 baliveaux,
+  30 modernes et 15 anciens par ha ; rotation ≤ 30 ans ; en gestion
+  minimum, coupe de la futaie < 50 % du volume. Amélioration des anciens
+  TSF : G objectif 12-15 m²/ha, rotation 7-15 ans.
+- Remplacé par le SRGS Bourgogne-Franche-Comté (arrêté du 14 décembre
+  2023), dont le texte n'a pas été trouvé en ligne : à demander au CNPF BFC.
+- Blocage : il faut une coupe du taillis (petites tiges coupées, réserves
+  gardées par nombre) et FINN ne simule pas les rejets de souche.
+
+### 9.3 Îlot de sénescence et libre évolution → cadre connu, aucune coupe
+
+- ONF, note 09-T-310 (17 décembre 2009) : au moins 1 % d'îlots de
+  sénescence et 2 % d'îlots de vieillissement en forêt domaniale ; îlots de
+  0,5 ha à quelques ha (présentation ONF 2011). Remplacée par l'instruction
+  INS-18-T-97 du 27 décembre 2018 (biodiversité dans la gestion courante) :
+  lien bddr.onf.fr non accessible. Réserves biologiques intégrales :
+  instruction 98-T-37.
+- Les deux itinéraires sont « sans coupe » : `simuler_itineraire()` refuse
+  aujourd'hui une entrée sans règle ; c'est le candidat `sans_gestion` de
+  `comparer_itineraires()`. Pour les effets (B, N `+`, P `-`) : Gosselin &
+  Paillet, *Mieux intégrer la biodiversité dans la gestion forestière*
+  (Quæ 2017, payant ; ancienne édition sur agriculture.gouv.fr).
+
+### 9.4 Plantation de diversification → densités officielles, moteur à étendre
+
+- Annexe technique FEADER 8.6.A, DRAAF BFC 2016
+  (`draaf_bfc_feader_8-6-A_2016.pdf`, public) : densités de plantation par
+  essence (chênes 1 200-3 000 plants/ha, hêtre 800, douglas et mélèzes
+  1 100-1 700, épicéas et sapins 1 000-2 000), au moins deux essences par
+  projet, diversification ≤ 20 % de la surface.
+- Blocage : FINN ne plante pas (recrutement naturel seulement).

@@ -274,6 +274,14 @@ Dexp 55) ; sapin = épicéa ; douglas × 205/275. 7 entrées sourcées sur 12.
 Choix à valider par Pascal : sapin calqué sur l'exemple d'épicéa, facteur
 0,745 du douglas, pas de critère d'altitude (sapin < 400 m déconseillé,
 épicéa hors aire). Version nemetonshiny vérifiée : v2026.10.18.
+Recherche de références pour les 5 entrées restantes (relevé § 9).
+**v2026.11.19** : `bfc_hetre_futaie_reguliere` sourcée sur le mémento ONF
+des hêtraies du sud Massif central (2018), source de substitution hors BFC
+(table de production fertilité 2, Dg avant → G après, Dexp 55). 8 entrées
+sur 12. Restent TSF maintenu, libre évolution, îlot de sénescence,
+plantation : sources trouvées mais extension du moteur nécessaire (coupe du
+taillis, itinéraire sans coupe, plantation). Version nemetonshiny
+vérifiée : v2026.10.18.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
