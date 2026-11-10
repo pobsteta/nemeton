@@ -8,7 +8,7 @@ chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
 > merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.18**
-> (release du 2026-10-19), relevée le 2026-11-09.
+> (release du 2026-10-19), relevée le 2026-11-10.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
@@ -50,7 +50,7 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 21 | B4/L3 en mode embedding : `b4_methode` / `l3_methode`, statut `calculated_embedding` à passer à `normalize_indicator(statut =)` ; l’interdit de l’écart n° 6 ne tombe que pour `embedding` | cœur **2026.11.1** | `nemetonshiny` | **Ouvert avant le code** (2026-11-05), même préavis |
 | 22 | Flag NDP `embedding_ml` dans `detect_ndp()$augmented` | cœur **2026.11.1** | `nemetonshiny` (badge NDP) | **Ouvert avant le code** (2026-11-05), même préavis |
 | 23 | Itinéraires admissibles par UGF et raisons d’exclusion ([`itineraires_admissibles()`](https://pobsteta.github.io/nemeton/reference/itineraires_admissibles.md)) | cœur **2026.11.4** | `nemetonshiny`, `aigora`, `victor` | **Ouvert avant le code** (2026-11-05), préavis app + `specs/065-itineraires-catalogue/brief-aigora.md`, `brief-victor.md` |
-| 24 | Comparaison pondérée ([`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md)) ; poids des profils dans le cœur ([`profils_poids()`](https://pobsteta.github.io/nemeton/reference/profils_poids.md), spec 065 D-1 b) | cœur **2026.11.4** | `nemetonshiny`, `aigora` | **Ouvert avant le code** (2026-11-05) ; question posée à l’app : les poids des 13 profils existent-ils sous forme numérique ? |
+| 24 | Comparaison pondérée ([`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md)) ; poids des profils dans le cœur ([`profils_poids()`](https://pobsteta.github.io/nemeton/reference/profils_poids.md), spec 065 D-1 b) ; mode FINN (`trajectoires =`, `methode = "finn"`, `incertitude` numérique, `attr(, "valeurs")`) | cœur **2026.11.4** / **2026.11.15** | `nemetonshiny`, `aigora` | **Ouvert avant le code** (2026-11-05) ; question posée à l’app : les poids des 13 profils existent-ils sous forme numérique ? |
 | 25 | Table des sondes « Ce que les modèles voient » ([`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md)) | cœur **2026.11.3** | `nemetonshiny` | **Ouvert avant le code** (2026-11-06). Vue triée par R², lecture `voit` / `partiel` / `angle_mort`, marqueur `source_commune` |
 | 26 | B5 stratification verticale : colonnes `B5`, `b5_status` (4 statuts), `b5_s1`…`b5_s5` (profil vertical), `b5_densite` ; couche carte ; badge de dimensionnement drone (`simulate_density_sensitivity()$conclusion`) | cœur **2026.11.5** / **2026.11.6** | `nemetonshiny` | Ouvert le 2026-11-06, préavis `specs/067-forpt-lidar-latent/brief-nemetonshiny.md`. Libellés, sens et `doc_url` viennent de [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md) : rien à forker |
 | 27 | Effets de la gestion ([`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md)) : table par famille (effet moyen, intervalle, statut `calcule` / `recouvrement_insuffisant` / `trop_peu_unites`) dans la synthèse ; à citer comme résultat du projet | cœur **2026.11.8** | `nemetonshiny`, `aigora` | Ouvert le 2026-11-06, préavis `specs/068-trajectoires-finn/brief-nemetonshiny.md` |
@@ -143,7 +143,7 @@ opposer au prochain fork qui se présentera comme un raccourci.
 | 065 | Étape 4 : catalogue d’itinéraires, [`itineraires_admissibles()`](https://pobsteta.github.io/nemeton/reference/itineraires_admissibles.md), [`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md) sans FINN | ✅ spec validée le 2026-11-05 ; moteur → **2026.11.4** ; catalogue (squelette `a_sourcer`) à remplir par Pascal (D-4) |
 | 066 | Chantier B : sondes [`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md) (cœur, AlphaEarth d’abord) et MAESTRO en extracteur d’embeddings (`maestronemeton`) | ✅ spec validée le 2026-11-06 ; sondes → **2026.11.3** ; reste MAESTRO (`maestronemeton`) et la table sur projet réel |
 | 067 | Chantier C : ForPT, LiDAR HD en espace latent 3D — B5, N4, N5 structurel, T1 désaturé, dimensionnement drone (`forptnemeton` + cœur) | ✅ validée le 2026-11-06 (D-1 à D-7 telles que proposées) ; **B5** → **2026.11.5** ; [`simulate_density_sensitivity()`](https://pobsteta.github.io/nemeton/reference/simulate_density_sensitivity.md) → **2026.11.6** ; T1 `age_structurel =` → **2026.11.7** ; D-6 : ForPT code MIT, poids à vérifier ; D-1 révisée et validée : instances par lidR ([`segment_houppiers()`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)) par défaut, SelectAnyTree en option dans `forptnemeton` (non embarqué, CC BY-NC, quand ses poids seront publiés) ; profil B5 par défaut `points` (validé) ; `forptnemeton` 2026.11.2 (`forpt_embed()`, `forpt_age()`, non exécutés sur GPU) ; reste (D-6 licences, D-7 dépôt), N5 structurel, T1 désaturé, N4 (reporté, D-2) |
-| 068 | Chantier D : trajectoires FINN ([`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md), [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)), T4, [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) | ✅ validée le 2026-11-06 (D-1 à D-8 telles que proposées) ; [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) → **2026.11.8** ; prototype FINN ✅ (D-2 tient) ; calibration IFN BFC : FINN ≈ persistance à 5 ans ; reste trajectoires, T4 |
+| 068 | Chantier D : trajectoires FINN ([`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md), [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)), T4, [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) | ✅ validée le 2026-11-06 (D-1 à D-8 telles que proposées) ; [`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md) → **2026.11.8** ; prototype FINN ✅ (D-2 tient) ; calibration → **2026.11.9** (3,36 m²/ha à 5 ans, devant la régression) ; trajectoires, volume, carbone → **2026.11.11** à **2026.11.14** ; `comparer_itineraires(trajectoires =)` → **2026.11.15** ; reste T4 |
 
 **Prochaine étape** : avec de vrais embeddings, validation de N5 sur le
 parcellaire de Dabo et un projet hors France ;
@@ -258,6 +258,23 @@ gestion sur 100 placettes. Le C1 CHM passe de la densité à l’air sec à
 l’infradensité (−15 à −25 %). Suite :
 [`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md)
 et T4 ; BEF / fraction de carbone par essence à sourcer.
+
+### 2026-11-10
+
+Cycle dev `2026.11.14.9000` (pobsteta/nemeton#617, auto-merge).
+**`comparer_itineraires(trajectoires =)`** (v2026.11.15), avant T4 : lit
+la table de
+[`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
+(itinéraires liés par [`rbind()`](https://rdrr.io/r/base/cbind.html)), P
+= volume prélevé cumulé, C = carbone sur pied à l’horizon, chaque
+famille ramenée sur \[-1, 1\] entre candidats ; `methode = "finn"`,
+`incertitude` = demi-largeur conforme de G ; valeurs dans
+`attr(, "valeurs")` ; `"sans_gestion"` candidat de chaque UGF ;
+`tolerance` 5 % sur gagnants / perdants. Choix à valider par Pascal
+(spec 068, note du 2026-11-10). Testé sur trajectoires synthétiques
+seulement (FINN absent de la session, catalogue non sourcé). Écart n° 24
+étendu : l’app et `aigora` devront lire `methode` et
+`attr(, "valeurs")`. Suite : T4.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,

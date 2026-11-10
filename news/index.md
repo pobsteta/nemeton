@@ -1,5 +1,28 @@
 # Changelog
 
+## nemeton 2026.11.15 (2026-11-10)
+
+### Nouveautés
+
+- **`comparer_itineraires(trajectoires =)`** (spec 068, contrat de la
+  spec 065 § 6) : la comparaison des itinéraires lit les trajectoires de
+  [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
+  (un appel par itinéraire, liés par
+  [`rbind()`](https://rdrr.io/r/base/cbind.html)). Deux familles sont
+  lues dans la simulation : **P**, volume prélevé cumulé jusqu’à
+  l’horizon (`volume_preleve`, ou `g_prelevee` sans volume), et **C**,
+  carbone sur pied à l’horizon (`carbone`) ; les autres familles
+  pondérées sont mises de côté et dites dans `familles_evaluees`. Chaque
+  famille est ramenée sur `[-1, 1]` entre les candidats de l’UGF puis
+  pondérée comme les effets qualitatifs : la note reste un ordre. Les
+  colonnes de sortie ne changent pas : `methode = "finn"`, `incertitude`
+  = demi-largeur conforme de G à l’horizon (m²/ha) ; les valeurs
+  simulées sont dans `attr(, "valeurs")`. La trajectoire sans gestion
+  (`"sans_gestion"`) est candidate de chaque UGF. Nouveaux arguments
+  `horizon` (défaut : le plus long horizon commun) et `tolerance` (0,05
+  : un gain ou une perte face à la référence n’est compté qu’au-delà de
+  5 % de sa valeur, convention). L’argument n’est plus refusé.
+
 ## nemeton 2026.11.14 (2026-11-09)
 
 ### Changements de résultat

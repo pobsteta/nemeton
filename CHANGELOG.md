@@ -13,6 +13,18 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.15\] - 2026-11-10
+
+### Added
+
+- `comparer_itineraires(trajectoires =)`: compares itineraries on FINN
+  trajectories from
+  [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
+  (P: harvested volume summed to the horizon; C: standing carbon at the
+  horizon), `methode = "finn"`, numeric `incertitude`, simulated values
+  in `attr(, "valeurs")`; new arguments `horizon` and `tolerance` (spec
+  068).
+
 ## \[2026.11.14\] - 2026-11-09
 
 ### Added

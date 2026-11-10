@@ -13,7 +13,7 @@ front and carries the catalogue's citations (spec 065 § 5)."><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.14.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.15</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -141,7 +141,9 @@ front and carries the catalogue's citations (spec 065 § 5).</p>
 <span>  reference <span class="op">=</span> <span class="st">"statu_quo"</span>,</span>
 <span>  col_actuel <span class="op">=</span> <span class="st">"itineraire_actuel"</span>,</span>
 <span>  protected_areas <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  trajectoires <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  trajectoires <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  horizon <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tolerance <span class="op">=</span> <span class="fl">0.05</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -186,11 +188,27 @@ with the default columns (and <code>protected_areas</code>).</p></dd>
 
 
 <dt id="arg-trajectoires">trajectoires<a class="anchor" aria-label="anchor" href="#arg-trajectoires"></a></dt>
-<dd><p>Reserved for the simulation of chantier D (FINN):
-the output of <code><a href="simuler_itineraire.html">simuler_itineraire()</a></code> (unit x itinerary x horizon x
-indicator, with <code>valeur</code>, <code>bas</code>, <code>haut</code>, <code>methode</code>). Then <code>methode</code>
-becomes <code>"finn"</code> and <code>incertitude</code> numeric; the output columns do not
-change. Not implemented yet: an error if given.</p></dd>
+<dd><p><code>NULL</code> (default): compare on the qualitative effects
+of the catalogue. Or the simulated trajectories of chantier D: the
+output of <code><a href="simuler_itineraire.html">simuler_itineraire()</a></code>, one call per itinerary bound with
+<code><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind()</a></code>, with <code>volume = TRUE</code> and <code>carbone = TRUE</code> for the two
+families it carries (see Details). The rows of <code><a href="simuler_itineraire.html">simuler_itineraire()</a></code>
+without management (<code>itineraire = "sans_gestion"</code>) are a candidate of
+every unit. Then <code>methode</code> becomes <code>"finn"</code> and <code>incertitude</code> numeric;
+the output columns do not change.</p></dd>
+
+
+<dt id="arg-horizon">horizon<a class="anchor" aria-label="anchor" href="#arg-horizon"></a></dt>
+<dd><p>Numeric or <code>NULL</code>. Year of the trajectories read with
+<code>trajectoires</code>. <code>NULL</code>: the longest horizon simulated for every
+itinerary.</p></dd>
+
+
+<dt id="arg-tolerance">tolerance<a class="anchor" aria-label="anchor" href="#arg-tolerance"></a></dt>
+<dd><p>Numeric. With <code>trajectoires</code>, a family is won or lost
+against the reference only when the values differ by more than this
+share of the reference value (FINN trajectories are stochastic means).
+Default 0.05, a convention.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -201,14 +219,37 @@ has an unknown effect <code>?</code> for that itinerary), <code>rang</code> (1 =
 <code>reference</code>, <code>familles_gagnantes</code>, <code>familles_perdantes</code> (against the
 reference, comma-separated codes), <code>familles_evaluees</code> (weighted
 families documented by at least one candidate; the others are set
-aside, since they rank nothing), <code>incertitude</code> (<code>"qualitative"</code>),
-<code>methode</code> (<code>"catalogue_qualitatif"</code>), <code>citations</code>.</p>
+aside, since they rank nothing), <code>incertitude</code> (<code>"qualitative"</code>; with
+<code>trajectoires</code>, the half-width of the conformal interval of the basal
+area at the horizon, m2/ha, <code>NA</code> without conformal residuals),
+<code>methode</code> (<code>"catalogue_qualitatif"</code> or <code>"finn"</code>), <code>citations</code>. With
+<code>trajectoires</code>, <code>attr(, "valeurs")</code> holds the simulated values behind
+the score: <code>unit_id</code>, <code>itineraire</code>, <code>famille</code>, <code>variable</code>, <code>valeur</code>,
+<code>unite_mesure</code>, <code>horizon</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p><code>score_global</code> is an <strong>order</strong>, not a measure: the effects are
 qualitative and sourced, not simulated. Display it as a rank. The
 catalogue is not exhaustive; an itinerary absent from it is not compared.</p>
+<p><strong>With <code>trajectoires</code></strong> (spec 068), two families are read from the
+simulation, the others weighted by the profile are set aside (said in
+<code>familles_evaluees</code>):</p><dl><dt>P</dt>
+<dd><p>volume harvested, summed up to the horizon (<code>volume_preleve</code>,
+m3/ha; <code>g_prelevee</code>, m2/ha, when the volume was not simulated).</p></dd>
+
+<dt>C</dt>
+<dd><p>carbon standing at the horizon (<code>carbone</code>, tC/ha).</p></dd>
+
+
+</dl><p>Within a unit, each family is rescaled to <code>[-1, 1]</code> across the candidates
+(<code>-1</code> the lowest value, <code>1</code> the highest, <code>0</code> for all when they are
+equal), then weighted as the qualitative effects. The score is still an
+order: it depends on the candidates compared, and the rescaling gives the
+same weight to a small and to a large difference. The values are in
+<code>attr(, "valeurs")</code>. The pitfalls of <code><a href="simuler_itineraire.html">simuler_itineraire()</a></code> hold: recent
+climate held constant, response to thinning not learnt, interval widened
+under a hypothesis beyond one step.</p>
     </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>

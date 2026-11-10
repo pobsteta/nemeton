@@ -14,8 +14,18 @@
 
 Le moteur est déterministe : il ne simule rien. L’effet d’un itinéraire
 sur une famille est **qualitatif** (`+`, `0`, `-`, `?`) et sourcé dans
-le catalogue. La simulation (FINN, chantier D) viendra remplir les mêmes
-sorties avec des trajectoires chiffrées, sans en changer la forme.
+le catalogue. Avec `trajectoires =` (sortie de
+[`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md),
+un appel par itinéraire lié par
+[`rbind()`](https://rdrr.io/r/base/cbind.html), spec 068), la
+comparaison lit des trajectoires FINN chiffrées, sans changer la forme
+des sorties : `methode` vaut `"finn"`, `incertitude` devient la
+demi-largeur de l’intervalle conforme de la surface terrière à l’horizon
+(m²/ha), et `attr(, "valeurs")` porte les valeurs simulées. Deux
+familles seulement sont lues : **P**, volume prélevé cumulé jusqu’à
+l’horizon (m³/ha), et **C**, carbone sur pied à l’horizon (tC/ha) ; les
+autres familles pondérées sont mises de côté. La trajectoire sans
+gestion (`"sans_gestion"`) est candidate de chaque UGF.
 
 ``` r
 
@@ -86,6 +96,17 @@ silence**.
 4.  **Poids provisoires.** Les poids des profils sont un point de
     départ, pas un calibrage : à valider ou remplacer par des poids
     donnés par l’utilisateur.
+5.  **Avec FINN, la note reste un ordre.** Chaque famille est ramenée
+    sur `[-1, 1]` entre les candidats de l’UGF : un écart de 1 % et un
+    écart de 50 % pèsent pareil. Lire les valeurs de `attr(, "valeurs")`
+    avant de conclure. Un gain ou une perte face à la référence n’est
+    compté qu’au-delà de 5 % de sa valeur (`tolerance`, convention) :
+    les trajectoires sont des moyennes de tirages.
+6.  **Avec FINN, deux familles sur douze.** P et C seulement : un profil
+    qui pèse surtout B, N ou S n’est presque pas départagé par la
+    simulation. Et les pièges des trajectoires valent (climat récent
+    tenu constant, réponse à l’éclaircie non apprise, intervalle élargi
+    par hypothèse au-delà d’un pas).
 
 ## 6. Références internes
 

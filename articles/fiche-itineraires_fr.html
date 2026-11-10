@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.14.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.15</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -198,9 +198,18 @@ citations</td>
 <p>Le moteur est déterministe : il ne simule rien. L’effet d’un
 itinéraire sur une famille est <strong>qualitatif</strong>
 (<code>+</code>, <code>0</code>, <code>-</code>, <code>?</code>) et
-sourcé dans le catalogue. La simulation (FINN, chantier D) viendra
-remplir les mêmes sorties avec des trajectoires chiffrées, sans en
-changer la forme.</p>
+sourcé dans le catalogue. Avec <code>trajectoires =</code> (sortie de
+<code><a href="../reference/simuler_itineraire.html">simuler_itineraire()</a></code>, un appel par itinéraire lié par
+<code><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind()</a></code>, spec 068), la comparaison lit des trajectoires
+FINN chiffrées, sans changer la forme des sorties : <code>methode</code>
+vaut <code>"finn"</code>, <code>incertitude</code> devient la
+demi-largeur de l’intervalle conforme de la surface terrière à l’horizon
+(m²/ha), et <code>attr(, "valeurs")</code> porte les valeurs simulées.
+Deux familles seulement sont lues : <strong>P</strong>, volume prélevé
+cumulé jusqu’à l’horizon (m³/ha), et <strong>C</strong>, carbone sur
+pied à l’horizon (tC/ha) ; les autres familles pondérées sont mises de
+côté. La trajectoire sans gestion (<code>"sans_gestion"</code>) est
+candidate de chaque UGF.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/itineraires_catalogue.html">itineraires_catalogue</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">adm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/itineraires_admissibles.html">itineraires_admissibles</a></span><span class="op">(</span><span class="va">ugf</span>, <span class="va">cat</span>, protected_areas <span class="op">=</span> <span class="va">aires_protegees</span><span class="op">)</span></span>
@@ -286,6 +295,20 @@ l’exclut.</li>
 <strong>Poids provisoires.</strong> Les poids des profils sont un
 point de départ, pas un calibrage : à valider ou remplacer par des poids
 donnés par l’utilisateur.</li>
+<li>
+<strong>Avec FINN, la note reste un ordre.</strong> Chaque famille
+est ramenée sur <code>[-1, 1]</code> entre les candidats de l’UGF : un
+écart de 1 % et un écart de 50 % pèsent pareil. Lire les valeurs de
+<code>attr(, "valeurs")</code> avant de conclure. Un gain ou une perte
+face à la référence n’est compté qu’au-delà de 5 % de sa valeur
+(<code>tolerance</code>, convention) : les trajectoires sont des
+moyennes de tirages.</li>
+<li>
+<strong>Avec FINN, deux familles sur douze.</strong> P et C
+seulement : un profil qui pèse surtout B, N ou S n’est presque pas
+départagé par la simulation. Et les pièges des trajectoires valent
+(climat récent tenu constant, réponse à l’éclaircie non apprise,
+intervalle élargi par hypothèse au-delà d’un pas).</li>
 </ol>
 </div>
 <div class="section level2">
