@@ -1,5 +1,26 @@
 # Changelog
 
+## nemeton 2026.11.19 (2026-11-10)
+
+### Nouveautés
+
+- **Catalogue d’itinéraires : futaie régulière de hêtre sourcée** (spec
+  065), `bfc_hetre_futaie_reguliere` (`09`). Le référentiel de la région
+  (ONF, *Hêtraies continentales*, futaie régulière, 2011) n’étant pas en
+  accès libre, l’entrée s’appuie sur une **source de substitution hors
+  BFC** : la table de production de la fertilité 2 du mémento ONF
+  *Hêtraies du sud Massif central* (2018, annexe 4 p. 33). Norme
+  `norme_g_selon_dg` lue telle quelle (Dg avant éclaircie → G après : de
+  17,6 m²/ha à 16,4 cm à 18,4 m²/ha à 43,8 cm), récolte à 55 cm, une
+  coupe tous les 10 ans (7-12 ans). Effet P `+`. Le champ `notes` dit
+  d’où vient chaque nombre et pourquoi l’entrée est provisoire.
+
+### Changements de résultat
+
+- [`itineraires_admissibles()`](https://pobsteta.github.io/nemeton/reference/itineraires_admissibles.md)
+  sur le catalogue livré admet deux itinéraires sur une UGF à hêtre
+  (futaie régulière et irrégulière). Quatre entrées restent `a_sourcer`.
+
 ## nemeton 2026.11.18 (2026-11-10)
 
 ### Nouveautés
