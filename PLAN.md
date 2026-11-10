@@ -228,6 +228,17 @@ valider par Pascal (spec 068, note du 2026-11-10). Testé sur trajectoires
 synthétiques seulement (FINN absent de la session, catalogue non sourcé).
 Écart n° 24 étendu : l'app et `aigora` devront lire `methode` et
 `attr(, "valeurs")`. Suite : T4.
+Catalogue d'itinéraires (spec 065 D-4) : 20 guides sylvicoles (ONF, SFFC)
+fournis par Pascal via Google Drive, texte extrait dans
+`data-raw/references/itineraires/` (dossier entier ignoré par git : sous
+droits) ; 9 extraits tronqués par le connecteur (dont *Chênaies
+continentales* à la p. 200). Relevé des règles chiffrées :
+`specs/065-itineraires-catalogue/sources-regles-guides.md`. Seule la futaie
+irrégulière de hêtre (ONF 2013) colle au moteur ; toutes les futaies
+régulières sont indexées sur Ho, absent de FINN. Décisions D-9 (rotation
+contre pas de 5 ans), D-10 (règles par Dg), D-11 (valeur centrale des
+fourchettes) proposées. Attend : captures des figures du référentiel FI,
+PDF complet des chênaies, quatre guides BFC manquants.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,

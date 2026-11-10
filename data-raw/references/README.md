@@ -186,3 +186,71 @@ Decitre / Unithèque / Librairie Gérard, not on HAL.
   [HAL hal-01573238](https://hal.science/hal-01573238) — informs
   the future `chprod`/`climate_context` enhancement of
   `compute_site_index()`.
+
+## Silvicultural itineraries catalogue (spec 065, `inst/extdata/itineraires_sylvicoles.json`)
+
+The guides below are **copyrighted** (ONF / Lavoisier, SFFC): neither
+the PDFs nor their extracted text are committed. They live locally in
+`data-raw/references/itineraires/` (whole folder gitignored). Only their
+citations are versioned here, and the page of every number taken into
+the catalogue goes in the entry's `sources` field.
+
+Official status in Bourgogne: the *règlement type de gestion* of the
+DRA Bourgogne (arrêté, Ministry of Agriculture, 2021) names, per stand
+type, the ONF guide that applies in public forests (§ 3.1-3.13).
+
+### Bourgogne-Franche-Comté (first catalogue, spec 065 D-4)
+
+- **ONF (2013).** *Référentiels sylvicoles — Futaie irrégulière —
+  Hêtraies continentales.* Maréchal M.-C., Edouard F., Boutteaux J.-J.
+  et al., coord. Sardin T. ONF, 40 p., ref. 9200-13-GUI-SAM-019.
+  Public forests of the DT Alsace, Bourgogne-Champagne-Ardenne,
+  Franche-Comté, Lorraine. Named by the RTG Bourgogne (§ 3.3).
+- **Sardin T. (2008).** *Chênaies continentales.* Guide des
+  sylvicultures, ONF / Lavoisier, 455 p., ISBN 978-2-84207-321-3.
+  Named by the RTG Bourgogne (§ 3.1). Local text extract truncated at
+  p. 199.
+- **Jarret P. (2004).** *Chênaie atlantique.* Guide des sylvicultures,
+  ONF / Lavoisier, 335 p., ISBN 2-84207-294-4. RTG Bourgogne § 3.2
+  (plateau Nivernais, Sologne bourbonnaise, Bazois, Puisaye). Local
+  text extract truncated at p. 69.
+- **SFFC, CRPF Franche-Comté (2012).** *Les éclaircies résineuses en
+  Franche-Comté.* Société forestière de Franche-Comté, 32 p.
+
+Named by the RTG Bourgogne but **not yet available locally**:
+*Hêtraies continentales — référentiel sylvicole de futaie régulière*
+(ONF, 2012), *Douglasaies françaises* (Angelier A., 2007, ONF /
+Lavoisier, ISBN 978-2-84207-315-2), the guide for the *arc jurassien
+(sapin et épicéa)*, the *mémento sylvicole des sapinières du Morvan*.
+
+### Other regions (available locally, outside the first catalogue)
+
+- Pilard-Landeau B., Simon E. (2009). *Guide des sylvicultures de la
+  hêtraie nord-atlantique.* ONF, ref. 8500-09-GUI-SAM-002 (truncated).
+- ONF DT Seine-Nord, coord. Duez F. (2020). *Mémento pratique coupes*
+  and *Mémento pratique de travaux sylvicoles et d'utilisation des
+  ITTS — Hêtraie nord-atlantique en futaie régulière.* Ref.
+  9200-20-GUI-SAM-099 and -100.
+- Sardin T., Villiers T. (2018). *Mémento sylvicole — Hêtraies du sud
+  Massif Central.* ONF, ref. 9200-13-GUI-SAM-071.
+- Sardin T. (2013). *Hêtraies et hêtraies sapinières des Pyrénées.*
+  Guide des sylvicultures, ONF / Lavoisier, ISBN 978-2-84207-373-2
+  (truncated); Mirault J., Sardin T., Villiers T. (2013),
+  *Référentiels sylvicoles* (9200-13-GUI-SAM-028b); Sardin T.,
+  Villiers T. (2017), *Mémento ITTS* (9200-17-GUI-SAM-061); coord.
+  Sardin T. (2013), *Travaux sylvicoles et ITTS*
+  (9200-13-GUI-SAM-029).
+- Chabaud L., Nicolas L. (2009). *Pineraies des plaines du Centre et
+  du Nord-Ouest.* Guide des sylvicultures, ONF / Lavoisier, ISBN
+  978-2-84207-330-5 (truncated).
+- ONF DT Sud-Ouest (c. 2012). *ITTS — Les chênes du Sud-Ouest*
+  (truncated); (2003) *Guide de sylviculture du pin maritime de
+  lande*; (2013) *ITTS — Le plateau landais*, ref. 8945-13-GUI-R&D-001.
+- ONF, 5 DT (2004). *Le chêne rouge du domaine atlantique.*
+- Sardin T. (2009). *Forêts littorales atlantiques dunaires.* Guide
+  des sylvicultures, ONF / Lavoisier, ISBN 978-2-84207-337-4
+  (truncated).
+- Dauphin T., Gentils M. et al. (2015). *Mémento sylvicole —
+  Châtaigneraie en futaie irrégulière.* ONF, ref. 9200-15-GUI-SAM-054.
+- ONF DT Île-de-France – Nord-Ouest (2004). *Guide de sylviculture du
+  châtaignier dans le Nord-Ouest* (truncated).

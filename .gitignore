@@ -50,6 +50,9 @@ Rplots.pdf
 # (large PDFs; download links listed in data-raw/references/README.md)
 data-raw/references/*.pdf
 data-raw/references/**/*.pdf
+# Guides sylvicoles sous droits (ONF/Lavoisier, SFFC...) : jamais versionnes,
+# ni les PDF ni leur texte extrait (spec 065). Citations dans README.md.
+data-raw/references/itineraires/
 .positai
 
 # RAG knowledge corpus (spec 009.1 D3): downloaded PDFs + local corpus DB
