@@ -48,7 +48,7 @@ sessile, hêtre, sapin, épicéa et douglas ; futaie irrégulière de hêtre ;
 taillis-sous-futaie et sa conversion ; libre évolution ; îlot de
 sénescence ; plantation de diversification).
 
-**Deux sont sourcés.** `bfc_hetre_futaie_irreguliere` est tiré du
+**Quatre sont sourcés.** `bfc_hetre_futaie_irreguliere` est tiré du
 référentiel ONF de futaie irrégulière des hêtraies continentales (2013).
 Ses règles sont celles d’une parcelle équilibrée de fertilité bonne à
 moyenne, adaptées au pas de 5 ans de FINN : une coupe tous les 10 ans,
@@ -67,7 +67,19 @@ diamètre moyen donné (de 14,7 m²/ha à 14 cm à 20,2 m²/ha à 65 cm). Pas
 d’éclaircie sous 14 cm, récolte à 75 cm, un passage tous les 10 ans.
 Admissible sur une UGF à chêne sessile (`03`).
 
-**Les neuf autres sont `a_sourcer`** : domaine, règles et effets
+Le même guide donne deux autres entrées, pilotées en surface terrière :
+
+- `bfc_chene_futaie_irreguliere` : 15 m²/ha après coupe (12 de tiges
+  précomptables plus 3 de taillis et perches), 20 % prélevés tous les 10
+  ans, récolte à 65 cm ; chêne sessile ou pédonculé (`03`, `02`), le
+  guide le jugeant plus adapté au sessile.
+- `bfc_conversion_tsf_futaie` : conversion du taillis-sous-futaie en
+  futaie régulière de chêne sessile, 19 m²/ha après coupe (milieu de la
+  fourchette du guide, qui monte avec la hauteur dominante), 20 % tous
+  les 10 ans, récolte à 65 cm (hypothèse : le guide dit seulement les
+  diamètres « sensiblement réduits » pour les chênes issus de rejets).
+
+**Les sept autres sont `a_sourcer`** : domaine, règles et effets
 attendus sont vides, et **aucun n’est admissible** tant qu’ils n’ont pas
 été remplis à partir de guides cités (ONF, DRA/SRA, Pro Silva, SRGS). Le
 relevé des règles déjà lues, page par page, est dans

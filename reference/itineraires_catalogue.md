@@ -32,10 +32,11 @@ enter the catalogue: an entry whose rules are not yet sourced carries
 `statut_source = "a_sourcer"` and is never admissible. The shipped
 catalogue holds the first itineraries (spec 065, D-4); their parameters
 are filled from silvicultural guides, cited with their pages, not
-invented. Two are sourced so far, adapted to the 5-year step of FINN
-(see their `notes` field): `bfc_hetre_futaie_irreguliere` (ONF 2013) and
-`bfc_chene_sessile_futaie_reguliere` (Sardin 2008, thinning norm by mean
-diameter); the others are still `"a_sourcer"`.
+invented. Four are sourced so far, adapted to the 5-year step of FINN
+(see their `notes` field): `bfc_hetre_futaie_irreguliere` (ONF 2013),
+`bfc_chene_sessile_futaie_reguliere` (thinning norm by mean diameter),
+`bfc_chene_futaie_irreguliere` and `bfc_conversion_tsf_futaie` (Sardin
+2008); the others are still `"a_sourcer"`.
 
 ## Lifecycle
 

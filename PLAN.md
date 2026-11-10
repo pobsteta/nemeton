@@ -302,7 +302,16 @@ par le texte tronqué). **Deuxième entrée sourcée** (même version) :
 moteur `norme_g_selon_dg` (D-10). Suite : résineux sur SFFC 2012 (norme
 par Dg à construire depuis les densités finales), conversion du TSF et
 futaie irrégulière à chêne (parties 3-4 désormais lisibles), simulation
-réelle des deux entrées.
+réelle des deux entrées. Release v2026.11.16 publiée ; cycle dev
+2026.11.16.9000 (#621). **v2026.11.17** : `bfc_chene_futaie_irreguliere`
+(nouvelle ; 15 m²/ha après coupe, 20 %, 10 ans, 65 cm, chap. V § 1) et
+`bfc_conversion_tsf_futaie` (conversion en futaie régulière de chêne
+sessile, chap. IV § 6 ; cible 19 m²/ha au milieu d’une fourchette
+indexée sur Ho, Dexp 65 cm en hypothèse). 4 entrées sourcées sur 12.
+Restent : résineux (SFFC 2012), hêtre en futaie régulière (guide
+absent), TSF maintenu, libre évolution, îlot de sénescence, plantation
+(règles non simulables ou guides manquants), conversion en futaie
+irrégulière (chap. V § 2). Version nemetonshiny vérifiée : v2026.10.18.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,

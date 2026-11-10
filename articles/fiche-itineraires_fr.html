@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.16.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.17</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -230,7 +230,7 @@ onze premiers itinéraires de Bourgogne-Franche-Comté (futaies régulières
 de chêne sessile, hêtre, sapin, épicéa et douglas ; futaie irrégulière
 de hêtre ; taillis-sous-futaie et sa conversion ; libre évolution ; îlot
 de sénescence ; plantation de diversification).</p>
-<p><strong>Deux sont sourcés.</strong>
+<p><strong>Quatre sont sourcés.</strong>
 <code>bfc_hetre_futaie_irreguliere</code> est tiré du référentiel ONF de
 futaie irrégulière des hêtraies continentales (2013). Ses règles sont
 celles d’une parcelle équilibrée de fertilité bonne à moyenne, adaptées
@@ -249,7 +249,24 @@ surface terrière laisser pour un diamètre moyen donné (de 14,7 m²/ha à
 14 cm à 20,2 m²/ha à 65 cm). Pas d’éclaircie sous 14 cm, récolte à 75
 cm, un passage tous les 10 ans. Admissible sur une UGF à chêne sessile
 (<code>03</code>).</p>
-<p><strong>Les neuf autres sont <code>a_sourcer</code></strong> :
+<p>Le même guide donne deux autres entrées, pilotées en surface terrière
+:</p>
+<ul>
+<li>
+<code>bfc_chene_futaie_irreguliere</code> : 15 m²/ha après coupe (12
+de tiges précomptables plus 3 de taillis et perches), 20 % prélevés tous
+les 10 ans, récolte à 65 cm ; chêne sessile ou pédonculé
+(<code>03</code>, <code>02</code>), le guide le jugeant plus adapté au
+sessile.</li>
+<li>
+<code>bfc_conversion_tsf_futaie</code> : conversion du
+taillis-sous-futaie en futaie régulière de chêne sessile, 19 m²/ha après
+coupe (milieu de la fourchette du guide, qui monte avec la hauteur
+dominante), 20 % tous les 10 ans, récolte à 65 cm (hypothèse : le guide
+dit seulement les diamètres « sensiblement réduits » pour les chênes
+issus de rejets).</li>
+</ul>
+<p><strong>Les sept autres sont <code>a_sourcer</code></strong> :
 domaine, règles et effets attendus sont vides, et <strong>aucun n’est
 admissible</strong> tant qu’ils n’ont pas été remplis à partir de guides
 cités (ONF, DRA/SRA, Pro Silva, SRGS). Le relevé des règles déjà lues,
