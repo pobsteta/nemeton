@@ -13,6 +13,15 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.18\] - 2026-11-10
+
+### Added
+
+- Itinerary catalogue: sourced even-aged conifer entries
+  `bfc_epicea_futaie_reguliere`, `bfc_sapin_futaie_reguliere` and
+  `bfc_douglas_futaie_reguliere` (SFFC 2012), thinning norms by
+  quadratic mean diameter (spec 065).
+
 ## \[2026.11.17\] - 2026-11-10
 
 ### Added

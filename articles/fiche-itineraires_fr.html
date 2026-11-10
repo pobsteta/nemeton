@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.17.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.18</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -230,7 +230,7 @@ onze premiers itinéraires de Bourgogne-Franche-Comté (futaies régulières
 de chêne sessile, hêtre, sapin, épicéa et douglas ; futaie irrégulière
 de hêtre ; taillis-sous-futaie et sa conversion ; libre évolution ; îlot
 de sénescence ; plantation de diversification).</p>
-<p><strong>Quatre sont sourcés.</strong>
+<p><strong>Sept sont sourcés.</strong>
 <code>bfc_hetre_futaie_irreguliere</code> est tiré du référentiel ONF de
 futaie irrégulière des hêtraies continentales (2013). Ses règles sont
 celles d’une parcelle équilibrée de fertilité bonne à moyenne, adaptées
@@ -266,7 +266,28 @@ dominante), 20 % tous les 10 ans, récolte à 65 cm (hypothèse : le guide
 dit seulement les diamètres « sensiblement réduits » pour les chênes
 issus de rejets).</li>
 </ul>
-<p><strong>Les sept autres sont <code>a_sourcer</code></strong> :
+<p>Les futaies régulières de résineux viennent du guide <em>Les
+éclaircies résineuses en Franche-Comté</em> (SFFC, 2012), qui indexe ses
+critères sur la hauteur dominante. Leur norme
+<code>norme_g_selon_dg</code> est tirée de l’exemple chiffré d’une
+plantation d’épicéa jurassienne (cinq éclaircies de 19 à 42 ans), puis
+prolongée à la densité du peuplement final que le guide recommande pour
+une récolte à 55 cm :</p>
+<ul>
+<li>
+<code>bfc_epicea_futaie_reguliere</code> (<code>62</code>) : de 23
+m²/ha après éclaircie à 14 cm à 31 m²/ha à 38 cm, puis 275 tiges/ha
+jusqu’à la récolte à 55 cm ;</li>
+<li>
+<code>bfc_sapin_futaie_reguliere</code> (<code>61</code>) : la même
+norme, le guide donnant les mêmes densités pour le sapin et l’épicéa
+;</li>
+<li>
+<code>bfc_douglas_futaie_reguliere</code> (<code>64</code>) : la
+norme de l’épicéa multipliée par 205/275, rapport des densités finales
+des deux groupes d’essences.</li>
+</ul>
+<p><strong>Les cinq autres sont <code>a_sourcer</code></strong> :
 domaine, règles et effets attendus sont vides, et <strong>aucun n’est
 admissible</strong> tant qu’ils n’ont pas été remplis à partir de guides
 cités (ONF, DRA/SRA, Pro Silva, SRGS). Le relevé des règles déjà lues,

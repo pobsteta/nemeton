@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.17.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.18</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +116,27 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.18" id="nemeton-20261118-2026-11-10">nemeton 2026.11.18 (2026-11-10)<a class="anchor" aria-label="anchor" href="#nemeton-20261118-2026-11-10"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-18">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-18"></a></h3>
+<ul><li>
+<strong>Catalogue d’itinéraires : les trois futaies régulières résineuses sont sourcées</strong> (spec 065), tirées des <em>Éclaircies résineuses en Franche-Comté</em> (SFFC, 2012). Le guide indexe ses critères sur la hauteur dominante, absente de FINN : chaque entrée porte une norme <code>norme_g_selon_dg</code> (surface terrière à laisser selon le diamètre moyen), construite à partir de l’exemple chiffré d’une plantation d’épicéa (p. 22), des parts de G enlevées (p. 16 et 21) et des densités du peuplement final (p. 18). Récolte à 55 cm (45-65 cm), une coupe tous les 10 ans. Le champ <code>notes</code> dit d’où vient chaque nombre.
+<ul><li>
+<code>bfc_epicea_futaie_reguliere</code> (<code>62</code>) : de 23,1 m²/ha à Dg 14 cm à 31,3 m²/ha à 38 cm, puis 275 tiges/ha tenues jusqu’à 55 cm.</li>
+<li>
+<code>bfc_sapin_futaie_reguliere</code> (<code>61</code>) : même norme (une seule ligne de densités pour le sapin et l’épicéa dans le guide).</li>
+<li>
+<code>bfc_douglas_futaie_reguliere</code> (<code>64</code>) : norme de l’épicéa × 205/275, rapport des densités finales douglas et épicéa.</li>
+<li>Effets P, R et B <code>+</code>.</li>
+</ul></li>
+</ul></div>
+<div class="section level3">
+<h3 id="changements-de-résultat-2026-11-18">Changements de résultat<a class="anchor" aria-label="anchor" href="#changements-de-r%C3%A9sultat-2026-11-18"></a></h3>
+<ul><li>
+<code><a href="../reference/itineraires_admissibles.html">itineraires_admissibles()</a></code> sur le catalogue livré admet ces entrées sur une UGF à sapin, épicéa ou douglas. Cinq entrées restent <code>a_sourcer</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.17" id="nemeton-20261117-2026-11-10">nemeton 2026.11.17 (2026-11-10)<a class="anchor" aria-label="anchor" href="#nemeton-20261117-2026-11-10"></a></h2>
 <div class="section level3">

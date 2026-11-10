@@ -1,5 +1,32 @@
 # Changelog
 
+## nemeton 2026.11.18 (2026-11-10)
+
+### Nouveautés
+
+- **Catalogue d’itinéraires : les trois futaies régulières résineuses
+  sont sourcées** (spec 065), tirées des *Éclaircies résineuses en
+  Franche-Comté* (SFFC, 2012). Le guide indexe ses critères sur la
+  hauteur dominante, absente de FINN : chaque entrée porte une norme
+  `norme_g_selon_dg` (surface terrière à laisser selon le diamètre
+  moyen), construite à partir de l’exemple chiffré d’une plantation
+  d’épicéa (p. 22), des parts de G enlevées (p. 16 et 21) et des
+  densités du peuplement final (p. 18). Récolte à 55 cm (45-65 cm), une
+  coupe tous les 10 ans. Le champ `notes` dit d’où vient chaque nombre.
+  - `bfc_epicea_futaie_reguliere` (`62`) : de 23,1 m²/ha à Dg 14 cm à
+    31,3 m²/ha à 38 cm, puis 275 tiges/ha tenues jusqu’à 55 cm.
+  - `bfc_sapin_futaie_reguliere` (`61`) : même norme (une seule ligne de
+    densités pour le sapin et l’épicéa dans le guide).
+  - `bfc_douglas_futaie_reguliere` (`64`) : norme de l’épicéa × 205/275,
+    rapport des densités finales douglas et épicéa.
+  - Effets P, R et B `+`.
+
+### Changements de résultat
+
+- [`itineraires_admissibles()`](https://pobsteta.github.io/nemeton/reference/itineraires_admissibles.md)
+  sur le catalogue livré admet ces entrées sur une UGF à sapin, épicéa
+  ou douglas. Cinq entrées restent `a_sourcer`.
+
 ## nemeton 2026.11.17 (2026-11-10)
 
 ### Nouveautés

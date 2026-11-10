@@ -312,6 +312,15 @@ Restent : résineux (SFFC 2012), hêtre en futaie régulière (guide
 absent), TSF maintenu, libre évolution, îlot de sénescence, plantation
 (règles non simulables ou guides manquants), conversion en futaie
 irrégulière (chap. V § 2). Version nemetonshiny vérifiée : v2026.10.18.
+**v2026.11.18** : futaies régulières de sapin, épicéa et douglas
+sourcées sur le SFFC 2012 (PDF récupéré du Drive, folios vérifiés).
+Norme G selon Dg tirée de l’exemple d’épicéa p. 22 (Dg avant, G après
+par le rapport G/tiges des p. 16 et 21), prolongée à 275 tiges/ha
+(densité finale p. 18, Dexp 55) ; sapin = épicéa ; douglas × 205/275. 7
+entrées sourcées sur 12. Choix à valider par Pascal : sapin calqué sur
+l’exemple d’épicéa, facteur 0,745 du douglas, pas de critère d’altitude
+(sapin \< 400 m déconseillé, épicéa hors aire). Version nemetonshiny
+vérifiée : v2026.10.18.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
