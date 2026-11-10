@@ -161,7 +161,7 @@ dans la synthèse ; T4 (couche, statut).
 | 1. `effet_gestion()` | ✅ **2026.11.8** — fiche, écart n° 27 |
 | 2. Prototype FINN (`data-raw/prototype_finn.R`) | ✅ 2026-11-07 — **D-2 tient** (voir ci-dessous) ; temps CPU très en dessous du critère 3 |
 | 3. `calibrer_finn()`, `simuler_itineraire()` | prototype de calibration ✅ 2026-11-08 ; **`calibrer_finn()` + `predire_finn()` ✅ 2026-11-09 (v2026.11.9)** : 3,36 m²/ha hors calibration (voir ci-dessous) ; **`simuler_itineraire()` + `conformer_finn()` ✅ 2026-11-09 (v2026.11.11)** |
-| 4. T4, `comparer_itineraires(trajectoires =)` | après 3 |
+| 4. T4, `comparer_itineraires(trajectoires =)` | **`comparer_itineraires(trajectoires =)` ✅ 2026-11-10 (v2026.11.15)**, avant T4 (voir ci-dessous) ; T4 à faire |
 
 **Écart au § 3.1 lors du codage.** L'effet moyen n'est pas la moyenne des
 effets individuels du méta-apprenant : sur données simulées (150 UGF, effet
@@ -571,3 +571,35 @@ compare au C1. `"other"` : infradensité de l'essence du tarif.
 - **Reste** : BEF et fraction de carbone sont des constantes du C1 (BEF
   IPCC générique, fraction non sourcée) ; les rendre par essence est un
   chantier distinct.
+
+### `comparer_itineraires(trajectoires =)` (2026-11-10, v2026.11.15)
+
+Fait avant T4 (inversion de l'ordre du § 5, à la demande de Pascal : la
+comparaison ne dépend que de la table de `simuler_itineraire()`). Choix
+faits au codage, à valider :
+
+- **Familles lues** : P = volume prélevé **cumulé** jusqu'à l'horizon
+  (`volume_preleve`, repli `g_prelevee`) ; C = carbone **sur pied** à
+  l'horizon. E (carbone prélevé, substitution) n'est pas lu : le lien
+  prélèvement → évitement n'est pas établi dans le cœur. B2 et R2 ne sont
+  pas lus (pas de hauteurs dans FINN, D-5). Les autres familles pondérées
+  sont mises de côté, comme une famille non documentée du catalogue.
+- **Note** : chaque famille ramenée sur `[-1, 1]` (min-max) entre les
+  candidats de l'UGF, puis pondérée ; la note reste un ordre (le § 3.2
+  annonçait « une note » : elle n'en est pas une, un écart de 1 % pèse
+  comme un écart de 50 %). Valeurs dans `attr(, "valeurs")`.
+- **Gagnants / perdants** : écart à la référence au-delà de `tolerance`
+  (5 % de la valeur de référence, convention) : les trajectoires sont des
+  moyennes de tirages.
+- **`incertitude`** : demi-largeur conforme de G à l'horizon (m²/ha), seule
+  variable qui porte un intervalle.
+- **`"sans_gestion"`** (sortie de `simuler_itineraire(itineraire = NULL)`) :
+  candidat de chaque UGF, sans citation.
+- **Écart au contrat de la spec 065 § 6** : la table d'entrée est celle que
+  `simuler_itineraire()` rend réellement (`unite`/`placette`, `annee`,
+  `variable`, `moyenne`, `bas`, `haut`), pas la forme prévue (`horizon`,
+  `indicateur`, `valeur`, `methode`) ; les colonnes de sortie, elles, ne
+  changent pas.
+- **Non exercé sur un vrai run** : FINN et torch absents de la session ; testé
+  sur des trajectoires synthétiques. Aucun itinéraire du catalogue n'est
+  sourcé : un vrai run demande un catalogue fourni par le forestier.

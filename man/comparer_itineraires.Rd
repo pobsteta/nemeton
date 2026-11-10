@@ -13,7 +13,9 @@ comparer_itineraires(
   reference = "statu_quo",
   col_actuel = "itineraire_actuel",
   protected_areas = NULL,
-  trajectoires = NULL
+  trajectoires = NULL,
+  horizon = NULL,
+  tolerance = 0.05
 )
 }
 \arguments{
@@ -37,11 +39,23 @@ with the default columns (and \code{protected_areas}).}
 
 \item{protected_areas}{Passed to \code{\link[=itineraires_admissibles]{itineraires_admissibles()}}.}
 
-\item{trajectoires}{Reserved for the simulation of chantier D (FINN):
-the output of \code{simuler_itineraire()} (unit x itinerary x horizon x
-indicator, with \code{valeur}, \code{bas}, \code{haut}, \code{methode}). Then \code{methode}
-becomes \code{"finn"} and \code{incertitude} numeric; the output columns do not
-change. Not implemented yet: an error if given.}
+\item{trajectoires}{\code{NULL} (default): compare on the qualitative effects
+of the catalogue. Or the simulated trajectories of chantier D: the
+output of \code{\link[=simuler_itineraire]{simuler_itineraire()}}, one call per itinerary bound with
+\code{rbind()}, with \code{volume = TRUE} and \code{carbone = TRUE} for the two
+families it carries (see Details). The rows of \code{simuler_itineraire()}
+without management (\code{itineraire = "sans_gestion"}) are a candidate of
+every unit. Then \code{methode} becomes \code{"finn"} and \code{incertitude} numeric;
+the output columns do not change.}
+
+\item{horizon}{Numeric or \code{NULL}. Year of the trajectories read with
+\code{trajectoires}. \code{NULL}: the longest horizon simulated for every
+itinerary.}
+
+\item{tolerance}{Numeric. With \code{trajectoires}, a family is won or lost
+against the reference only when the values differ by more than this
+share of the reference value (FINN trajectories are stochastic means).
+Default 0.05, a convention.}
 }
 \value{
 A data frame, one row per unit x candidate itinerary: \code{unit_id},
@@ -50,8 +64,13 @@ has an unknown effect \verb{?} for that itinerary), \code{rang} (1 = best within
 \code{reference}, \code{familles_gagnantes}, \code{familles_perdantes} (against the
 reference, comma-separated codes), \code{familles_evaluees} (weighted
 families documented by at least one candidate; the others are set
-aside, since they rank nothing), \code{incertitude} (\code{"qualitative"}),
-\code{methode} (\code{"catalogue_qualitatif"}), \code{citations}.
+aside, since they rank nothing), \code{incertitude} (\code{"qualitative"}; with
+\code{trajectoires}, the half-width of the conformal interval of the basal
+area at the horizon, m2/ha, \code{NA} without conformal residuals),
+\code{methode} (\code{"catalogue_qualitatif"} or \code{"finn"}), \code{citations}. With
+\code{trajectoires}, \code{attr(, "valeurs")} holds the simulated values behind
+the score: \code{unit_id}, \code{itineraire}, \code{famille}, \code{variable}, \code{valeur},
+\code{unite_mesure}, \code{horizon}.
 }
 \description{
 Ranks the itineraries of each unit by the weighted sum of their expected
@@ -63,6 +82,23 @@ front and carries the catalogue's citations (spec 065 § 5).
 \code{score_global} is an \strong{order}, not a measure: the effects are
 qualitative and sourced, not simulated. Display it as a rank. The
 catalogue is not exhaustive; an itinerary absent from it is not compared.
+
+\strong{With \code{trajectoires}} (spec 068), two families are read from the
+simulation, the others weighted by the profile are set aside (said in
+\code{familles_evaluees}):
+\describe{
+\item{P}{volume harvested, summed up to the horizon (\code{volume_preleve},
+m3/ha; \code{g_prelevee}, m2/ha, when the volume was not simulated).}
+\item{C}{carbon standing at the horizon (\code{carbone}, tC/ha).}
+}
+Within a unit, each family is rescaled to \verb{[-1, 1]} across the candidates
+(\code{-1} the lowest value, \code{1} the highest, \code{0} for all when they are
+equal), then weighted as the qualitative effects. The score is still an
+order: it depends on the candidates compared, and the rescaling gives the
+same weight to a small and to a large difference. The values are in
+\code{attr(, "valeurs")}. The pitfalls of \code{\link[=simuler_itineraire]{simuler_itineraire()}} hold: recent
+climate held constant, response to thinning not learnt, interval widened
+under a hypothesis beyond one step.
 }
 \section{Lifecycle}{
 
