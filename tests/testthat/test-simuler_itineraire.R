@@ -82,11 +82,19 @@ test_that("a thinning norm by mean diameter sets the target per plot (D-10)", {
 test_that("every sourced entry of the shipped catalogue is accepted by the engine", {
   cat <- itineraires_catalogue()
   sources <- Filter(function(it) identical(it$statut_source, "source"), cat)
-  expect_gte(length(sources), 8L)
+  expect_gte(length(sources), 10L)
   for (it in sources) {
     r <- nemeton:::.itin_regles(it, 5)
-    expect_equal(r$rotation_ans %% 5, 0, label = it$code)
+    if (isTRUE(it$regles$aucune_coupe)) {
+      expect_null(r, label = it$code)
+    } else {
+      expect_equal(r$rotation_ans %% 5, 0, label = it$code)
+    }
   }
+  # aucune_coupe exclut toute autre regle
+  lib <- itineraires_catalogue()$bfc_libre_evolution
+  lib$regles$rotation_ans <- 10
+  expect_error(nemeton:::.itin_regles(lib, 5), "aucune_coupe")
 })
 
 test_that(".itin_couper harvests above the diameter and thins towards the target", {

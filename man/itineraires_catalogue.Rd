@@ -27,7 +27,7 @@ the catalogue: an entry whose rules are not yet sourced carries
 \code{statut_source = "a_sourcer"} and is never admissible. The shipped
 catalogue holds the first itineraries (spec 065, D-4); their parameters
 are filled from silvicultural guides, cited with their pages, not
-invented. Eight are sourced so far, adapted to the 5-year step of FINN
+invented. Ten are sourced so far, adapted to the 5-year step of FINN
 (see their \code{notes} field): \code{bfc_hetre_futaie_irreguliere} (ONF 2013),
 \code{bfc_chene_sessile_futaie_reguliere} (thinning norm by mean diameter),
 \code{bfc_chene_futaie_irreguliere} and \code{bfc_conversion_tsf_futaie}
@@ -35,7 +35,9 @@ invented. Eight are sourced so far, adapted to the 5-year step of FINN
 \code{bfc_sapin_futaie_reguliere} and \code{bfc_douglas_futaie_reguliere}
 (SFFC 2012, thinning norms by mean diameter) and
 \code{bfc_hetre_futaie_reguliere} (ONF 2018, a substitute source from outside
-the region); the others are still \code{"a_sourcer"}.
+the region), and the two itineraries without cuts
+\code{bfc_libre_evolution} and \code{bfc_ilot_senescence} (rule \code{aucune_coupe});
+the others are still \code{"a_sourcer"}.
 }
 \section{Lifecycle}{
 

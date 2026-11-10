@@ -1,3 +1,26 @@
+# nemeton 2026.11.20 (2026-11-10)
+
+## Nouveautés
+
+- **`simuler_itineraire()` : règle `aucune_coupe`** (spec 065). Un
+  itinéraire sans coupe suit la dynamique de FINN seule, sous son propre
+  code ; la règle exclut toute autre règle, rotation comprise.
+- **Catalogue d'itinéraires : libre évolution et îlot de sénescence
+  sourcés**, admissibles sur toute UGF.
+  - `bfc_libre_evolution` : zones « exemptes de toute intervention sur le
+    long terme » (règlements types de gestion des DRA Bourgogne et
+    Franche-Comté, 2021, § 3.13). Effets B, N `+`, P `-`.
+  - `bfc_ilot_senescence` : peuplement conservé jusqu'à son effondrement,
+    sans coupe ni travaux, de 0,5 ha à quelques hectares, au moins 1 % de
+    la forêt domaniale (instruction biodiversité et note 09-T-310 de
+    l'ONF, présentées en 2011). Effets B `+`, P `-`.
+
+## Changements de résultat
+
+- `itineraires_admissibles()` sur le catalogue livré admet ces deux
+  entrées sur toute UGF. Deux entrées restent `a_sourcer` (taillis-sous-futaie,
+  plantation de diversification).
+
 # nemeton 2026.11.19 (2026-11-10)
 
 ## Nouveautés

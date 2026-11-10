@@ -304,7 +304,7 @@ git), avec leur texte extrait.
 - Blocage : il faut une coupe du taillis (petites tiges coupées, réserves
   gardées par nombre) et FINN ne simule pas les rejets de souche.
 
-### 9.3 Îlot de sénescence et libre évolution → cadre connu, aucune coupe
+### 9.3 Îlot de sénescence et libre évolution → sourcés en v2026.11.20 (règle `aucune_coupe`)
 
 - ONF, note 09-T-310 (17 décembre 2009) : au moins 1 % d'îlots de
   sénescence et 2 % d'îlots de vieillissement en forêt domaniale ; îlots de
@@ -313,8 +313,11 @@ git), avec leur texte extrait.
   lien bddr.onf.fr non accessible. Réserves biologiques intégrales :
   instruction 98-T-37.
 - Les deux itinéraires sont « sans coupe » : `simuler_itineraire()` refuse
-  aujourd'hui une entrée sans règle ; c'est le candidat `sans_gestion` de
-  `comparer_itineraires()`. Pour les effets (B, N `+`, P `-`) : Gosselin &
+  désormais la règle `aucune_coupe` (v2026.11.20), même trajectoire que le
+  candidat `sans_gestion` de `comparer_itineraires()`. Sources des règles et
+  des effets : présentation ONF du 23 septembre 2011
+  (`onf_presentation_instruction_biodiversite_2011.pdf`, diapositives 6, 8,
+  9, 11), RTG § 3.13, fiche DREAL PACA 2018. Pour les effets (B, N `+`, P `-`) : Gosselin &
   Paillet, *Mieux intégrer la biodiversité dans la gestion forestière*
   (Quæ 2017, payant ; ancienne édition sur agriculture.gouv.fr).
 
