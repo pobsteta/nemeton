@@ -56,7 +56,7 @@ hêtre, sapin, épicéa et douglas ; futaie irrégulière de hêtre ;
 taillis-sous-futaie et sa conversion ; libre évolution ; îlot de sénescence ;
 plantation de diversification).
 
-**Quatre sont sourcés.** `bfc_hetre_futaie_irreguliere` est tiré du référentiel
+**Sept sont sourcés.** `bfc_hetre_futaie_irreguliere` est tiré du référentiel
 ONF de futaie irrégulière des hêtraies continentales (2013). Ses règles sont
 celles d'une parcelle équilibrée de fertilité bonne à moyenne, adaptées au pas
 de 5 ans de FINN : une coupe tous les 10 ans, au plus 25 % de G, récolte des
@@ -86,7 +86,21 @@ Le même guide donne deux autres entrées, pilotées en surface terrière :
   10 ans, récolte à 65 cm (hypothèse : le guide dit seulement les
   diamètres « sensiblement réduits » pour les chênes issus de rejets).
 
-**Les sept autres sont `a_sourcer`** : domaine, règles et effets attendus
+Les futaies régulières de résineux viennent du guide *Les éclaircies
+résineuses en Franche-Comté* (SFFC, 2012), qui indexe ses critères sur la
+hauteur dominante. Leur norme `norme_g_selon_dg` est tirée de l'exemple
+chiffré d'une plantation d'épicéa jurassienne (cinq éclaircies de 19 à
+42 ans), puis prolongée à la densité du peuplement final que le guide
+recommande pour une récolte à 55 cm :
+
+- `bfc_epicea_futaie_reguliere` (`62`) : de 23 m²/ha après éclaircie à
+  14 cm à 31 m²/ha à 38 cm, puis 275 tiges/ha jusqu'à la récolte à 55 cm ;
+- `bfc_sapin_futaie_reguliere` (`61`) : la même norme, le guide donnant
+  les mêmes densités pour le sapin et l'épicéa ;
+- `bfc_douglas_futaie_reguliere` (`64`) : la norme de l'épicéa multipliée
+  par 205/275, rapport des densités finales des deux groupes d'essences.
+
+**Les cinq autres sont `a_sourcer`** : domaine, règles et effets attendus
 sont vides, et **aucun n'est admissible** tant qu'ils n'ont pas été remplis à
 partir de guides cités (ONF, DRA/SRA, Pro Silva, SRGS). Le relevé des règles
 déjà lues, page par page, est dans

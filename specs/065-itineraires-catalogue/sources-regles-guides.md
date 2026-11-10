@@ -154,9 +154,51 @@ Sapin, épicéa, mélèze d'Europe, douglas ; futaie régulière seulement (p. 2
 | Stabilité | Ho/Dg < 80 ; > 100 : toute intervention très risquée | p. 10-11 |
 | Rattrapage (Ho/Dg 80-100) | ≤ 25 % des tiges tous les 3-4 ans | p. 23 |
 
-Lecture brouillée à vérifier sur le PDF : la formule du facteur
-d'espacement (p. 10), l'attribution des lignes de la table p. 16, l'exemple
-d'épicéa p. 22.
+### 4.1 Lectures vérifiées sur le PDF (2026-11-10)
+
+PDF de 36 pages récupéré du Drive (folio = page PDF − 2), lu avec
+`pdftotext -layout` :
+
+- facteur d'espacement (p. 10) : S = 10 746 / (Ho · √N), en % (espacement
+  en triangle rapporté à Ho) ; ≥ 25 % après éclaircie pour l'épicéa et le
+  sapin, 30 % pour le douglas et le mélèze (p. 11) ;
+- première éclaircie (p. 16) : départ > 1 000 tiges/ha → 40-60 % des
+  tiges, 30-45 % de G ou du volume ; < 1 000 → 25-40 % des tiges, 20-35 %
+  de G ;
+- après dépressage (p. 13) : 700 tiges/ha au plus pour le douglas et le
+  mélèze, 1 000 (ou 1 500 au-delà de 2 500 tiges au départ) pour le sapin et
+  l'épicéa ;
+- exemple d'épicéa (p. 22), plantation de 1959 à 2 500 plants/ha :
+
+| Année | Âge | Dg avant (cm) | Ho (m) | N avant | V (m³) | Tiges enlevées | N après |
+|---|---|---|---|---|---|---|---|
+| 1978 | 19 | 14 | 14 | 2 400 | 204 | 1 180 (50 %) | 1 220 |
+| 1983 | 24 | 19 | 17,75 | 1 220 | 280 | 385 (32 %) | 835 |
+| 1987 | 28 | 23,6 | 20 | 835 | 352 | 285 (34 %) | 550 |
+| 1992 | 33 | 29,4 | 23 | 550 | 415 | 165 (30 %) | 385 |
+| 2001 | 42 | 38,2 | 28,75 | 385 | 501 | 135 (35 %) | 250 |
+| 2011 | 52 | 48 | 33,5 | 233 | 557 | coupe finale potentielle | |
+
+  Attribution des colonnes Dg et Ho vérifiée par le volume moyen
+  (557 / 233 = 2,39 m³, valeur du tableau) et par G (233 tiges à 48 cm :
+  42 m²/ha, compatible avec 557 m³).
+
+### 4.2 Normes G selon Dg construites (v2026.11.18)
+
+- G avant = N · π · Dg² / 40 000 ; G après = G avant × (1 − part de G
+  enlevée), la part de G valant la part des tiges × 0,75 en première
+  éclaircie (37,5/50, p. 16) et × 0,83 ensuite (25/30, p. 21).
+- Épicéa : Dg 14 ; 19 ; 23,6 ; 29,4 ; 38,2 → G 23,1 ; 25,4 ; 26,2 ;
+  28,0 ; 31,3 m²/ha. Au-delà, 275 tiges/ha (densité finale centrale pour
+  Dexp 55, p. 18) : 43,7 à 45 cm, 54,0 à 50 cm, 65,3 à 55 cm. À 38,2 cm
+  cette densité donne 31,5 m²/ha, à 0,2 près du point de l'exemple.
+- Sapin : même norme (même ligne de densités finales, p. 18).
+- Douglas : × 205/275 = 0,745 (densités finales centrales à Dexp 55) ;
+  recoupé par 700/1 000 = 0,70 (p. 13) et (25/30)² = 0,69 (p. 11).
+- Choix à valider : sapin calqué sur l'exemple d'épicéa ; facteur
+  du douglas ; pas de filtre d'altitude ni de station (sapin déconseillé
+  sous 400 m, p. 3 ; épicéa de plaine exposé aux scolytes, p. 4 ; douglas
+  exclu des sols calcaires ou hydromorphes, p. 6).
 
 ## 5. Modèle de forme : hêtraie nord-atlantique, futaie régulière (ONF 2020)
 

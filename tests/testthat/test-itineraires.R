@@ -45,9 +45,12 @@ test_that("the shipped catalogue is valid; only its sourced entries can be admit
   expect_true(valider_catalogue_itineraires(cat))
   statut <- vapply(cat, `[[`, "", "statut_source")
   # entrees sourcees : futaie irreguliere de hetre (ONF 2013) ; futaie
-  # reguliere et irreguliere de chene, conversion du TSF (Sardin 2008), D-9 a D-11
+  # reguliere et irreguliere de chene, conversion du TSF (Sardin 2008) ;
+  # futaies regulieres resineuses (SFFC 2012), D-9 a D-11
+  resineux <- c("bfc_epicea_futaie_reguliere", "bfc_sapin_futaie_reguliere",
+                "bfc_douglas_futaie_reguliere")
   sources <- c("bfc_hetre_futaie_irreguliere", "bfc_chene_sessile_futaie_reguliere",
-               "bfc_chene_futaie_irreguliere", "bfc_conversion_tsf_futaie")
+               "bfc_chene_futaie_irreguliere", "bfc_conversion_tsf_futaie", resineux)
   expect_setequal(names(statut)[statut == "source"], sources)
   expect_equal(unlist(cat$bfc_chene_futaie_irreguliere$domaine$essences_objectif), c("03", "02"))
   expect_equal(cat$bfc_chene_futaie_irreguliere$regles$surface_terriere_cible_m2ha, 15)
@@ -57,6 +60,15 @@ test_that("the shipped catalogue is valid; only its sourced entries can be admit
   expect_equal(unlist(ch$domaine$essences_objectif), "03")
   expect_equal(ch$regles$diametre_exploitabilite_cm, 75)
   expect_length(unlist(ch$regles$norme_g_selon_dg$dg_cm), 12L)
+  # resineux : une essence chacun, Dexp 55 cm, norme du douglas a 205/275 de
+  # celle de l'epicea, que le sapin reprend telle quelle
+  expect_equal(unname(vapply(cat[resineux], function(it) unlist(it$domaine$essences_objectif), "")),
+               c("62", "61", "64"))
+  expect_true(all(vapply(cat[resineux], function(it) it$regles$diametre_exploitabilite_cm, 1) == 55))
+  g_ep <- unlist(cat$bfc_epicea_futaie_reguliere$regles$norme_g_selon_dg$g_m2ha)
+  expect_equal(unlist(cat$bfc_sapin_futaie_reguliere$regles$norme_g_selon_dg$g_m2ha), g_ep)
+  expect_equal(unlist(cat$bfc_douglas_futaie_reguliere$regles$norme_g_selon_dg$g_m2ha),
+               g_ep * 205 / 275, tolerance = 0.01)
   fi <- cat$bfc_hetre_futaie_irreguliere
   expect_equal(fi$famille_itineraire, "futaie_irreguliere")
   expect_equal(unlist(fi$domaine$essences_objectif), "09")
@@ -75,9 +87,14 @@ test_that("the shipped catalogue is valid; only its sourced entries can be admit
   h <- a[a$itineraire == "bfc_hetre_futaie_irreguliere", ]
   expect_equal(h$admissible, c(TRUE, FALSE, NA))
   expect_equal(h$raison, c(NA, "essence_absente", "donnee_manquante"))
-  for (code in setdiff(sources, "bfc_hetre_futaie_irreguliere")) {
+  for (code in setdiff(sources, c("bfc_hetre_futaie_irreguliere", resineux))) {
     expect_equal(a$admissible[a$itineraire == code], c(FALSE, TRUE, NA), label = code)
   }
+  for (code in resineux) {
+    expect_equal(a$admissible[a$itineraire == code], c(FALSE, FALSE, NA), label = code)
+  }
+  ep <- itineraires_admissibles(.unites(1, essence = "62"), cat)
+  expect_equal(ep$itineraire[ep$admissible %in% TRUE], "bfc_epicea_futaie_reguliere")
 })
 
 test_that("the validator enforces the sourcing rule and the schema", {

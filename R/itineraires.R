@@ -11,11 +11,14 @@
 #' `statut_source = "a_sourcer"` and is never admissible. The shipped
 #' catalogue holds the first itineraries (spec 065, D-4); their parameters
 #' are filled from silvicultural guides, cited with their pages, not
-#' invented. Four are sourced so far, adapted to the 5-year step of FINN
+#' invented. Seven are sourced so far, adapted to the 5-year step of FINN
 #' (see their `notes` field): `bfc_hetre_futaie_irreguliere` (ONF 2013),
 #' `bfc_chene_sessile_futaie_reguliere` (thinning norm by mean diameter),
 #' `bfc_chene_futaie_irreguliere` and `bfc_conversion_tsf_futaie`
-#' (Sardin 2008); the others are still `"a_sourcer"`.
+#' (Sardin 2008), `bfc_epicea_futaie_reguliere`,
+#' `bfc_sapin_futaie_reguliere` and `bfc_douglas_futaie_reguliere`
+#' (SFFC 2012, thinning norms by mean diameter); the others are still
+#' `"a_sourcer"`.
 #'
 #' @param chemin Path to a catalogue JSON file. `NULL`: the shipped one.
 #' @return A list of itineraries (each a list: `code`, `famille_itineraire`,
