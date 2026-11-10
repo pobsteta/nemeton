@@ -47,12 +47,14 @@ test_that("the shipped catalogue is valid; only its sourced entries can be admit
   # entrees sourcees : futaie irreguliere de hetre (ONF 2013) ; futaie
   # reguliere et irreguliere de chene, conversion du TSF (Sardin 2008) ;
   # futaies regulieres resineuses (SFFC 2012) ; futaie reguliere de hetre
-  # (ONF 2018, hors BFC), D-9 a D-11
+  # (ONF 2018, hors BFC) ; libre evolution et ilot de senescence, sans
+  # coupe (ONF 2011, RTG 2021), D-9 a D-11
+  sans_coupe <- c("bfc_libre_evolution", "bfc_ilot_senescence")
   resineux <- c("bfc_epicea_futaie_reguliere", "bfc_sapin_futaie_reguliere",
                 "bfc_douglas_futaie_reguliere")
   sources <- c("bfc_hetre_futaie_irreguliere", "bfc_chene_sessile_futaie_reguliere",
                "bfc_chene_futaie_irreguliere", "bfc_conversion_tsf_futaie", resineux,
-               "bfc_hetre_futaie_reguliere")
+               "bfc_hetre_futaie_reguliere", sans_coupe)
   expect_setequal(names(statut)[statut == "source"], sources)
   expect_equal(unlist(cat$bfc_chene_futaie_irreguliere$domaine$essences_objectif), c("03", "02"))
   expect_equal(cat$bfc_chene_futaie_irreguliere$regles$surface_terriere_cible_m2ha, 15)
@@ -96,14 +98,19 @@ test_that("the shipped catalogue is valid; only its sourced entries can be admit
     expect_equal(h$admissible, c(TRUE, FALSE, NA), label = code)
     expect_equal(h$raison, c(NA, "essence_absente", "donnee_manquante"), label = code)
   }
-  for (code in setdiff(sources, c(hetres, resineux))) {
+  for (code in sans_coupe) {
+    expect_true(isTRUE(cat[[code]]$regles$aucune_coupe), label = code)
+    expect_equal(a$admissible[a$itineraire == code], c(TRUE, TRUE, TRUE), label = code)
+  }
+  for (code in setdiff(sources, c(hetres, resineux, sans_coupe))) {
     expect_equal(a$admissible[a$itineraire == code], c(FALSE, TRUE, NA), label = code)
   }
   for (code in resineux) {
     expect_equal(a$admissible[a$itineraire == code], c(FALSE, FALSE, NA), label = code)
   }
   ep <- itineraires_admissibles(.unites(1, essence = "62"), cat)
-  expect_equal(ep$itineraire[ep$admissible %in% TRUE], "bfc_epicea_futaie_reguliere")
+  expect_setequal(ep$itineraire[ep$admissible %in% TRUE],
+                  c("bfc_epicea_futaie_reguliere", sans_coupe))
 })
 
 test_that("the validator enforces the sourcing rule and the schema", {

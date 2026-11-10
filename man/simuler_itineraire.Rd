@@ -34,6 +34,10 @@ variables of the calibration. Held constant over the horizon.}
 \code{\link[=itineraires_catalogue]{itineraires_catalogue()}} with \code{statut_source = "source"}. Rules used
 (\code{regles}), all optional except the rotation:
 \describe{
+\item{aucune_coupe}{\code{TRUE}: no cut at all (free development,
+senescence island); FINN's dynamics alone, reported under the
+itinerary's code. Excludes every other rule, the rotation
+included.}
 \item{rotation_ans}{years between two interventions; a multiple of
 \code{calibration$pas_annees}.}
 \item{diametre_exploitabilite_cm}{every stem at or above this

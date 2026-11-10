@@ -1,11 +1,11 @@
 {
   "version": 1,
-  "description": "Catalogue des itinéraires sylvicoles (spec 065). Premier catalogue (D-4) : une entrée « a_sourcer » n'est jamais admissible tant que ses règles, son domaine et ses effets attendus n'ont pas été remplis à partir de guides de sylviculture cités (ONF, DRA/SRA, Pro Silva, SRGS). Entrées sourcées : bfc_hetre_futaie_irreguliere (ONF 2013) ; bfc_chene_sessile_futaie_reguliere, bfc_chene_futaie_irreguliere, bfc_conversion_tsf_futaie (Sardin 2008) ; bfc_epicea_futaie_reguliere, bfc_sapin_futaie_reguliere, bfc_douglas_futaie_reguliere (SFFC 2012) ; bfc_hetre_futaie_reguliere (ONF 2018, source de substitution hors BFC). Le champ notes, facultatif, dit comment chaque règle a été tirée du guide. Aucune valeur n'est inventée.",
+  "description": "Catalogue des itinéraires sylvicoles (spec 065). Premier catalogue (D-4) : une entrée « a_sourcer » n'est jamais admissible tant que ses règles, son domaine et ses effets attendus n'ont pas été remplis à partir de guides de sylviculture cités (ONF, DRA/SRA, Pro Silva, SRGS). Entrées sourcées : bfc_hetre_futaie_irreguliere (ONF 2013) ; bfc_chene_sessile_futaie_reguliere, bfc_chene_futaie_irreguliere, bfc_conversion_tsf_futaie (Sardin 2008) ; bfc_epicea_futaie_reguliere, bfc_sapin_futaie_reguliere, bfc_douglas_futaie_reguliere (SFFC 2012) ; bfc_hetre_futaie_reguliere (ONF 2018, source de substitution hors BFC) ; bfc_libre_evolution, bfc_ilot_senescence (ONF 2011, RTG 2021 : aucune coupe). Le champ notes, facultatif, dit comment chaque règle a été tirée du guide. Aucune valeur n'est inventée.",
   "schema": {
     "domaine": "essences_objectif (codes de la colonne essence du projet), ser (codes SER), p2_min/p2_max (unités de P2), pente_max_pct, desserte_requise (vrai/faux), desserte_max_m (distance de débardage), protections_exclues (codes de type de B1 : rnn, rb, coeur, apb, natura...)",
     "effets_attendus": "par code de famille (C, B, W, A, F, L, T, R, S, P, E, N) : {sens: + | 0 | - | ?, horizon: court | moyen | long, source: référence}",
     "statut_source": "source | a_sourcer",
-    "regles": "rotation_ans, diametre_exploitabilite_cm, surface_terriere_cible_m2ha, intensite_prelevement_pct ; ou, au lieu de la cible constante, norme_g_selon_dg {dg_cm, g_m2ha} : G après éclaircie selon le diamètre quadratique moyen (D-10)",
+    "regles": "aucune_coupe (vrai : aucune intervention, libre évolution ou îlot de sénescence ; exclut toute autre règle) ; sinon rotation_ans, diametre_exploitabilite_cm, surface_terriere_cible_m2ha, intensite_prelevement_pct ; ou, au lieu de la cible constante, norme_g_selon_dg {dg_cm, g_m2ha} : G après éclaircie selon le diamètre quadratique moyen (D-10)",
     "notes": "facultatif : comment chaque règle a été tirée du guide (pages, conversions, limites)"
   },
   "itineraires": [
@@ -544,14 +544,45 @@
         "protections_exclues": []
       },
       "regles": {
+        "aucune_coupe": true,
         "rotation_ans": null,
         "diametre_exploitabilite_cm": null,
         "surface_terriere_cible_m2ha": null,
         "intensite_prelevement_pct": null
       },
-      "effets_attendus": {},
-      "sources": [],
-      "statut_source": "a_sourcer"
+      "effets_attendus": {
+        "B": {
+          "sens": "+",
+          "horizon": "long",
+          "source": "DREAL PACA 2018, p. 1 : la non-gestion permet une maturation naturelle des bois ; laisser vieillir la forêt soutient les espèces et habitats liés au bois mort et aux arbres sénescents"
+        },
+        "N": {
+          "sens": "+",
+          "horizon": "long",
+          "source": "ONF 2011, diapositive 9 : les réserves biologiques intégrales portent le cycle sylvigénétique complet et les forêts subnaturelles"
+        },
+        "P": {
+          "sens": "-",
+          "horizon": "court",
+          "source": "RTG DRA Bourgogne et Franche-Comté 2021, § 3.13 : zones laissées en l'état ou gérées dans un but autre que la production forestière, exemptes de toute intervention sur le long terme"
+        }
+      },
+      "sources": [
+        {
+          "ref": "Ministère de l'agriculture (2021). Arrêté portant approbation du règlement type de gestion applicable sur le territoire de la directive régionale d'aménagement de la région Bourgogne (ONF). Idem pour la Franche-Comté.",
+          "pages": "§ 3.13 « Zones hors sylviculture de production »"
+        },
+        {
+          "ref": "ONF (2011). Prise en compte de la biodiversité dans la gestion courante des forêts publiques : liens avec la TVB. Présentation au séminaire Trame verte et bleue – Fédération des PNR, 23 septembre 2011 (instruction biodiversité et note de service 09-T-310 sur les îlots de vieux bois).",
+          "pages": "diapositives 6, 8, 9, 11"
+        },
+        {
+          "ref": "DREAL PACA, Cerema (2018). Les îlots de vieux bois en forêts publiques. Indicateur de suivi du SRCE PACA, fiche SRCE2014_PAS19.",
+          "pages": "p. 1"
+        }
+      ],
+      "statut_source": "source",
+      "notes": "Libre évolution : parties boisées laissées en évolution naturelle, exemptes de toute intervention sur le long terme (règlements types de gestion des DRA Bourgogne et Franche-Comté, 2021, § 3.13), comme les réserves biologiques intégrales (instruction ONF 98-T-37, non lue) qui portent le cycle sylvigénétique complet (ONF 2011, diapositive 9). aucune_coupe : aucune intervention sur tout l'horizon. Domaine non restreint : le guide ne pose pas de condition de station ; les exceptions usuelles des plans de gestion (sécurisation, régulation des ongulés) ne touchent pas les arbres simulés. Limites : FINN simule la croissance, la mortalité et le recrutement calés sur des placettes IFN gérées ; la phase de sénescence et d'écroulement (cycle biologique de 500-700 ans contre 150-200 ans pour le cycle sylvicole, ONF 2011, diapositive 5) et le bois mort ne sont pas représentés au-delà de la mortalité apprise. Sur l'horizon simulé, la trajectoire est celle du candidat sans_gestion de comparer_itineraires() ; seuls le code et les effets attendus diffèrent."
     },
     {
       "code": "bfc_ilot_senescence",
@@ -571,14 +602,36 @@
         "protections_exclues": []
       },
       "regles": {
+        "aucune_coupe": true,
         "rotation_ans": null,
         "diametre_exploitabilite_cm": null,
         "surface_terriere_cible_m2ha": null,
         "intensite_prelevement_pct": null
       },
-      "effets_attendus": {},
-      "sources": [],
-      "statut_source": "a_sourcer"
+      "effets_attendus": {
+        "B": {
+          "sens": "+",
+          "horizon": "long",
+          "source": "ONF 2011, diapositive 9 : les îlots de sénescence servent de relais pour la conservation des espèces des milieux forestiers fermés de fin de cycle ; DREAL PACA 2018, p. 1 : laisser vieillir la forêt soutient les espèces et habitats liés au bois mort et aux arbres sénescents"
+        },
+        "P": {
+          "sens": "-",
+          "horizon": "court",
+          "source": "ONF 2011, diapositive 8 : les tiges de l'essence objectif ne seront jamais récoltées ; diapositive 11 : coût estimé de 8 000 à 15 000 €/ha (ONF), jusqu'à 138 000 €/ha selon l'essence et la fertilité"
+        }
+      },
+      "sources": [
+        {
+          "ref": "ONF (2011). Prise en compte de la biodiversité dans la gestion courante des forêts publiques : liens avec la TVB. Présentation au séminaire Trame verte et bleue – Fédération des PNR, 23 septembre 2011 (instruction biodiversité et note de service 09-T-310 sur les îlots de vieux bois).",
+          "pages": "diapositives 6, 8, 9, 11"
+        },
+        {
+          "ref": "DREAL PACA, Cerema (2018). Les îlots de vieux bois en forêts publiques. Indicateur de suivi du SRCE PACA, fiche SRCE2014_PAS19.",
+          "pages": "p. 1"
+        }
+      ],
+      "statut_source": "source",
+      "notes": "Îlot de sénescence au sens de l'instruction biodiversité de l'ONF et de la note de service 09-T-310 (décembre 2009), présentées par l'ONF en 2011 : peuplement conservé jusqu'à son effondrement complet, sans coupe ni travaux sylvicoles, de 0,5 ha à quelques hectares, déjà composé de vieux arbres (diapositive 8) ; au moins 1 % de la forêt domaniale (diapositive 6 ; aussi Sardin 2008, p. 92). La note et l'instruction de 2018 qui l'a remplacée (INS-18-T-97) ne sont pas en accès libre : les règles sont tirées de leur présentation par l'ONF. aucune_coupe : aucune intervention sur tout l'horizon. Domaine non restreint : la surface de l'îlot (0,5 ha à quelques ha) et la préférence pour des peuplements déjà vieux ne sont pas des critères du catalogue ; l'îlot s'applique à une partie d'une UGF, que le moteur simule entière. Limites : FINN simule la croissance, la mortalité et le recrutement calés sur des placettes IFN gérées ; la phase de sénescence et d'écroulement (cycle biologique de 500-700 ans contre 150-200 ans pour le cycle sylvicole, ONF 2011, diapositive 5) et le bois mort ne sont pas représentés au-delà de la mortalité apprise. Sur l'horizon simulé, la trajectoire est celle du candidat sans_gestion de comparer_itineraires() ; seuls le code et les effets attendus diffèrent."
     },
     {
       "code": "bfc_plantation_diversification",

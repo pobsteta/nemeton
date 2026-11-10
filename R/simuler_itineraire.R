@@ -113,6 +113,10 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #'   [itineraires_catalogue()] with `statut_source = "source"`. Rules used
 #'   (`regles`), all optional except the rotation:
 #'   \describe{
+#'     \item{aucune_coupe}{`TRUE`: no cut at all (free development,
+#'       senescence island); FINN's dynamics alone, reported under the
+#'       itinerary's code. Excludes every other rule, the rotation
+#'       included.}
 #'     \item{rotation_ans}{years between two interventions; a multiple of
 #'       `calibration$pas_annees`.}
 #'     \item{diametre_exploitabilite_cm}{every stem at or above this
@@ -384,6 +388,20 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   }
   r <- itineraire$regles
   num <- function(x) if (is.null(x)) NULL else as.numeric(x)
+  # libre evolution, ilot de senescence : aucune coupe, la dynamique de FINN
+  # seule, sous le code de l'itineraire
+  if (isTRUE(r$aucune_coupe)) {
+    autres <- c("rotation_ans", "diametre_exploitabilite_cm", "surface_terriere_cible_m2ha",
+                "intensite_prelevement_pct", "norme_g_selon_dg")
+    donnees <- autres[!vapply(r[autres], is.null, TRUE)]
+    if (length(donnees)) {
+      cli::cli_abort(c(
+        "Itinerary {.val {itineraire$code}} sets {.field aucune_coupe} and cutting rules: {.field {donnees}}.",
+        "i" = "An itinerary without cuts carries no other rule."
+      ))
+    }
+    return(NULL)
+  }
   regles <- list(
     rotation_ans = num(r$rotation_ans),
     diametre = num(r$diametre_exploitabilite_cm),
