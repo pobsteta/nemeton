@@ -20,8 +20,10 @@
 # pied, defauts internes invisibles.
 #
 # Variable : FINN_VOL_IFN (dossier de l'export : ARBRE.csv, PLACETTE.csv ;
-# ifn_charger() les telecharge). Sortie imprimee et ecrite dans
-# FINN_VOL_IFN/taux_bo_bfc.csv.
+# ifn_charger() les telecharge). Sortie imprimee, ecrite dans
+# FINN_VOL_IFN/taux_bo_bfc.csv et, pour simuler_itineraire(produits = TRUE),
+# dans inst/extdata/taux_bois_oeuvre_ifn.csv (groupe, d_min en cm, taux_bo,
+# n arbres).
 
 suppressMessages(library(data.table))
 ifn <- Sys.getenv("FINN_VOL_IFN")
@@ -55,3 +57,7 @@ print(dcast(x, groupe ~ classe, value.var = "n"))
 print(ar[is.finite(Q1), .(taux_bo = round(sum(W * V * (Q1 + Q2)) / sum(W * V), 2), n = .N),
          by = groupe][order(groupe)])
 fwrite(x, file.path(ifn, "taux_bo_bfc.csv"))
+bornes <- c("10-20" = 7.5, "25-30" = 22.5, "35-40" = 32.5, "45-50" = 42.5, "55-60" = 52.5,
+            "65+" = 62.5)
+ext <- x[, .(groupe, d_min = unname(bornes[as.character(classe)]), taux_bo, n)]
+fwrite(ext, "inst/extdata/taux_bois_oeuvre_ifn.csv")

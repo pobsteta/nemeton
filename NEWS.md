@@ -1,3 +1,36 @@
+# nemeton 2026.11.23 (2026-11-11)
+
+## Nouveautés
+
+- **`simuler_itineraire(produits = TRUE)`** (spec 068) suit le bois récolté
+  hors forêt. Chaque tige coupée est ventilée en bois d'œuvre, bois
+  d'industrie et bois énergie ; les produits entrent dans deux pools à
+  décroissance du premier ordre ; les émissions évitées par substitution
+  (matériau et énergie) sont comptées. Nouvelles variables :
+  `carbone_produits`, `carbone_total` (sur pied + produits, tC/ha),
+  `substitution` (tCO₂/ha) et `volume_preleve_bo` (m³/ha). Demande
+  `carbone = TRUE`.
+- **`parametres_filiere_bois()`** : paramètres sourcés, à modifier pour
+  tester une autre hypothèse.
+  - Taux de bois d'œuvre potentiel par groupe d'essences et classe de
+    diamètre, mesuré sur l'IFN de BFC (qualités 1 et 2, 2005-2013,
+    `inst/extdata/taux_bois_oeuvre_ifn.csv`, `data-raw/taux_bois_oeuvre_ifn.R`).
+  - Rendements, demi-vies (20 et 5 ans) et coefficients de substitution
+    (1,6 tCO₂/m³ de produit, 0,916 tCO₂/t sèche brûlée) de l'étude INRA-IGN
+    2017.
+  - Part du bois d'industrie hors bois d'œuvre : une hypothèse (0,25
+    feuillus, 0,60 résineux).
+
+## Changements de résultat
+
+- **`comparer_itineraires(trajectoires =)`** lit la famille E (substitution
+  cumulée), et C sur `carbone_total` quand les trajectoires le portent. Sans
+  `produits = TRUE`, rien ne change. Sur 9 UGF de BFC, la gestion passe en
+  tête sous les profils gestionnaire ONF, naturaliste et propriétaire privé.
+  Elle gagne désormais P et E et ne perd que C ; le carbone des produits
+  (8 à 27 tC/ha à 50 ans) ne comble pas l'écart de stock sur pied (spec 068,
+  note du 2026-11-11).
+
 # nemeton 2026.11.22 (2026-11-11)
 
 ## Changements de résultat

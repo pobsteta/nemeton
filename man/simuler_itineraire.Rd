@@ -17,7 +17,9 @@ simuler_itineraire(
   carbone = FALSE,
   bef = 1.3,
   fraction_carbone = 0.5,
-  densite_max = NULL
+  densite_max = NULL,
+  produits = FALSE,
+  filiere = parametres_filiere_bois()
 )
 }
 \arguments{
@@ -119,6 +121,19 @@ species, a plot loses its smallest stems until it is back under both
 (natural mortality, not counted as harvest). Default \code{NULL}: FINN's
 mortality alone, which does not stop the basal area (spec 068, section
 on the density ceiling).}
+
+\item{produits}{Logical. Also follow the harvested wood outside the
+forest (needs \code{carbone = TRUE}): every stem cut is split into sawlog,
+industry and energy wood with \code{filiere}, the products feed two pools
+with first-order decay, and the emissions avoided by material and
+energy substitution are counted. Adds \code{"carbone_produits"} (stock,
+tC/ha), \code{"carbone_total"} (\code{"carbone"} + \code{"carbone_produits"}, tC/ha),
+\code{"substitution"} (tCO2/ha avoided at that date) and
+\code{"volume_preleve_bo"} (sawlog volume removed, m3/ha). The products of
+cuts made before year 0 are not counted. Default \code{FALSE}.}
+
+\item{filiere}{List of the wood-chain parameters, as
+\code{\link[=parametres_filiere_bois]{parametres_filiere_bois()}} (the default) returns them.}
 }
 \value{
 data.frame in long format, one row per plot, year and variable:
@@ -127,7 +142,8 @@ state), \code{variable} (\code{"g"}: basal area before the cut, m2/ha;
 \code{"tiges"}: stems/ha before the cut; \code{"g_prelevee"}: basal area
 removed at that date, m2/ha; with \code{volume = TRUE}, \code{"volume"} and
 \code{"volume_preleve"}, m3/ha; with \code{carbone = TRUE}, \code{"carbone"} and
-\code{"carbone_preleve"}, tC/ha), \code{moyenne} (mean of the trajectories),
+\code{"carbone_preleve"}, tC/ha; with \code{produits = TRUE}, see that
+argument), \code{moyenne} (mean of the trajectories),
 \code{bas}, \code{haut} (interval, for \code{"g"} only) and \code{intervalle}
 (\code{"conforme"} at one step, \code{"conforme_racine"} or
 \code{"conforme_lineaire"} beyond, \code{"aucun"} without conformal residuals or
@@ -156,7 +172,15 @@ give 1.8 \% more than the IFN volumes in total, 9.6 \% less between 7.5 and
 The carbon inherits this volume (stems below 7.5 cm carry none) and holds
 the same \code{bef} and \code{fraction_carbone} as C1, so that year 0 compares with
 C1.
+
+With \code{produits = TRUE}, the carbon of the products is that of the stem
+only (volume x basic density x \code{fraction_carbone}, no \code{bef}): branches,
+small wood and logging losses leave the account at the cut. The sawlog
+share is an upper bound (quality presumed on the standing tree) and the
+substitution factors a mean of the literature (see
+\code{\link[=parametres_filiere_bois]{parametres_filiere_bois()}}).
 }
 \seealso{
-\code{\link[=calibrer_finn]{calibrer_finn()}}, \code{\link[=conformer_finn]{conformer_finn()}}, \code{\link[=itineraires_catalogue]{itineraires_catalogue()}}
+\code{\link[=calibrer_finn]{calibrer_finn()}}, \code{\link[=conformer_finn]{conformer_finn()}}, \code{\link[=itineraires_catalogue]{itineraires_catalogue()}},
+\code{\link[=parametres_filiere_bois]{parametres_filiere_bois()}}
 }

@@ -20,8 +20,11 @@
 # d'une essence n'est pas une vraie UGF (pas de contiguite) ; les groupes
 # conformes sont alors tires au hasard (`groupes_conformes`). Plafond de
 # densite actif (densite_max_ifn() sur toutes les placettes). 50 ans,
-# 10 tirages. Sorties dans FINN_SIM_DOSSIER : trajectoires_ugf.rds,
-# comparaison_ugf.csv.
+# 10 tirages. FINN_CMP_PRODUITS (defaut « oui ») : simuler_itineraire(produits
+# = TRUE), C = foret + produits et E = substitution ; « non » reproduit le run
+# du 2026-11-11 (P et C sur pied). Sorties dans FINN_SIM_DOSSIER :
+# trajectoires_ugf<suffixe>.rds, comparaison_ugf<suffixe>.csv
+# (FINN_CMP_SUFFIXE).
 
 suppressMessages({
   library(data.table)
@@ -30,6 +33,9 @@ suppressMessages({
 d <- readRDS(Sys.getenv("FINN_INC_DONNEES"))
 dossier <- Sys.getenv("FINN_SIM_DOSSIER")
 n_ugf <- as.integer(Sys.getenv("FINN_CMP_N", "20"))
+# carbone des produits et substitution (famille E), parametres_filiere_bois()
+produits <- Sys.getenv("FINN_CMP_PRODUITS", "oui") == "oui"
+suffixe <- Sys.getenv("FINN_CMP_SUFFIXE", "")
 stopifnot(nzchar(dossier))
 cal <- readRDS(file.path(dossier, "calibration.rds"))
 cal$modele <- torch::torch_load(file.path(dossier, "calibration.pt"))
@@ -67,13 +73,14 @@ for (e in unique(units$essence)) {
     it <- if (code == "sans_gestion") NULL else cat_it[[code]]
     res[[paste(e, code)]] <- simuler_itineraire(
       cal, a, env, itineraire = it, horizon = 50, n_tirages = 10L, volume = TRUE,
-      carbone = TRUE, unites = as.data.frame(u[, .(placette, unite)]), densite_max = dm
+      carbone = TRUE, unites = as.data.frame(u[, .(placette, unite)]), densite_max = dm,
+      produits = produits
     )
     cat(sprintf("%s %s : %s\n", e, code, format(round(Sys.time() - t0, 1))))
   }
 }
 traj <- do.call(rbind, res)
-saveRDS(traj, file.path(dossier, "trajectoires_ugf.rds"))
+saveRDS(traj, file.path(dossier, paste0("trajectoires_ugf", suffixe, ".rds")))
 
 # --- comparaison sous quatre profils -------------------------------------------
 profils <- c("profil_proprietaire_prive", "profil_gestionnaire_onf",
@@ -89,8 +96,9 @@ cmp <- rbindlist(lapply(profils, function(pr) {
 }))
 cmp <- cmp[, .(profil, unit_id, itineraire, rang, score = round(score_global, 2), pareto,
                P_vol_preleve = round(P), C_carbone = round(C, 1),
+               E_substitution = if ("E" %in% names(cmp)) round(E, 1) else NA_real_,
                incertitude_g = round(incertitude, 1), gagnantes = familles_gagnantes,
                perdantes = familles_perdantes)]
 setorder(cmp, profil, unit_id, rang)
 print(cmp, nrows = 500)
-fwrite(cmp, file.path(dossier, "comparaison_ugf.csv"))
+fwrite(cmp, file.path(dossier, paste0("comparaison_ugf", suffixe, ".csv")))

@@ -474,3 +474,84 @@ test_that("simuler_itineraire adds carbon and harvested carbon (FINN mocked)", {
   r <- c0[v0 > 0] / v0[v0 > 0] / (1.30 * 0.50)
   expect_true(all(r > 0.3 & r < 0.8))
 })
+
+test_that("parametres_filiere_bois gives the sourced wood-chain parameters", {
+  p <- parametres_filiere_bois()
+  expect_setequal(names(p), c("taux_bo", "part_bi", "rendement", "demi_vie",
+                              "substitution_materiau", "substitution_energie"))
+  expect_setequal(unique(p$taux_bo$groupe), c("chenes", "hetre", "sapin", "epicea", "douglas",
+                                              "autres_resineux", "autres_feuillus"))
+  # petits bois : aucune part de bois d'oeuvre (qualite 3 par convention IFN)
+  expect_true(all(p$taux_bo$taux_bo[p$taux_bo$d_min == 7.5] == 0))
+  expect_true(all(p$taux_bo$taux_bo >= 0 & p$taux_bo$taux_bo <= 1))
+  expect_equal(p$demi_vie[["bo"]], 20)
+  expect_equal(p$substitution_materiau, 1.6)
+  expect_equal(p$substitution_energie, 0.916)
+  expect_identical(.filiere_verifier(p)$part_bi, p$part_bi)
+  p$part_bi <- c(feuillus = 2, resineux = 0.5)
+  expect_error(.filiere_verifier(p), "part_bi")
+  p <- parametres_filiere_bois(); p$demi_vie[["bi"]] <- 0
+  expect_error(.filiere_verifier(p), "demi_vie")
+  p <- parametres_filiere_bois(); p$taux_bo <- NULL
+  expect_error(.filiere_verifier(p), "taux_bo")
+})
+
+test_that(".filiere_taux reads the sawlog share by group and diameter", {
+  t <- .filiere_verifier(parametres_filiere_bois())$taux_bo
+  g <- .filiere_groupe(c("03", "02", "09", "61", "62", "64", "52", "17C"))
+  expect_equal(g, c("chenes", "chenes", "hetre", "sapin", "epicea", "douglas",
+                    "autres_resineux", "autres_feuillus"))
+  ch <- t[t$groupe == "chenes", ]
+  x <- .filiere_taux(t, rep("chenes", 4), c(5, 15, 25, 100), rep(FALSE, 4))
+  expect_equal(x, c(0, 0, ch$taux_bo[ch$d_min == 22.5], ch$taux_bo[ch$d_min == 62.5]))
+  # groupe absent de la table : repli feuillus / resineux
+  x2 <- .filiere_taux(t, c("inconnu", "inconnu"), c(40, 40), c(TRUE, FALSE))
+  ar <- t[t$groupe == "autres_resineux" & t$d_min == 32.5, "taux_bo"]
+  af <- t[t$groupe == "autres_feuillus" & t$d_min == 32.5, "taux_bo"]
+  expect_equal(x2, c(ar, af))
+})
+
+test_that("simuler_itineraire follows the harvested carbon and the substitution (FINN mocked)", {
+  local_mocked_bindings(
+    .finn_verifier_installation = function() invisible(TRUE),
+    .itin_un_pas = function(m, coh, env1, sp, n_sp) transform(coh, dbh = dbh + 1)
+  )
+  a <- arbres_finn_demo(); e <- env_finn_demo(); e$ser <- "C20"
+  it <- itin_demo(diametre_exploitabilite_cm = 0)
+  expect_error(simuler_itineraire(calibration_factice(), a, e, itineraire = it, horizon = 20,
+                                  n_tirages = 1L, produits = TRUE), "carbone = TRUE")
+  sim <- function(...) simuler_itineraire(calibration_factice(), a, e, horizon = 20,
+                                          n_tirages = 1L, volume = TRUE, carbone = TRUE,
+                                          produits = TRUE, ...)
+  val <- function(s, v, an) s$moyenne[s$variable == v & s$annee == an]
+  # sans gestion : rien hors foret, carbone_total = carbone
+  s0 <- sim()
+  expect_true(all(s0$moyenne[s0$variable %in% c("carbone_produits", "substitution",
+                                                "volume_preleve_bo")] == 0))
+  expect_equal(s0$moyenne[s0$variable == "carbone_total"], s0$moyenne[s0$variable == "carbone"])
+  # coupe rase a 10 ans : stock de produits, puis decroissance entre les deux
+  # demi-vies (5 et 20 ans) ; borne : 85 % de la tige au plus
+  s <- sim(itineraire = it)
+  cp10 <- val(s, "carbone_produits", 10)
+  expect_true(all(cp10 > 0))
+  expect_true(all(val(s, "carbone_produits", 5) == 0))
+  expect_true(all(cp10 <= 0.85 * val(s, "carbone_preleve", 10) / 1.30 + 1e-9))
+  r <- val(s, "carbone_produits", 15) / cp10
+  expect_true(all(r > 0.5 - 1e-9 & r < 2^(-5 / 20) + 1e-9))
+  expect_true(all(val(s, "substitution", 10) > 0))
+  expect_true(all(val(s, "substitution", c(5, 15, 20)) == 0))
+  expect_equal(val(s, "carbone_total", 15), val(s, "carbone", 15) + val(s, "carbone_produits", 15))
+  # tout en bois d'oeuvre, rendement 1, sans decroissance : la tige entiere
+  # entre en produits, la substitution est 1,6 x volume preleve
+  f <- parametres_filiere_bois()
+  f$taux_bo$taux_bo <- 1; f$rendement[["bo"]] <- 1; f$demi_vie[] <- 1e9
+  s1 <- sim(itineraire = it, filiere = f)
+  expect_equal(val(s1, "carbone_produits", 10), val(s1, "carbone_preleve", 10) / 1.30)
+  expect_equal(val(s1, "substitution", 10), 1.6 * val(s1, "volume_preleve", 10))
+  expect_equal(val(s1, "volume_preleve_bo", 10), val(s1, "volume_preleve", 10))
+  # tout en energie : pas de produits, substitution = 0,916 x masse seche
+  f$taux_bo$taux_bo <- 0; f$part_bi[] <- 0
+  s2 <- sim(itineraire = it, filiere = f)
+  expect_true(all(val(s2, "carbone_produits", 10) == 0))
+  expect_equal(val(s2, "substitution", 10), 0.916 * val(s2, "carbone_preleve", 10) / (1.30 * 0.5))
+})

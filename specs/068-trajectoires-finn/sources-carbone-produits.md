@@ -1,8 +1,9 @@
 # Spec 068 — Sources du carbone des produits bois et de la substitution
 
 *Relevé du 2026-11-11, pour lire la famille E (et le carbone hors forêt)
-depuis `simuler_itineraire()` dans `comparer_itineraires()`. Rien n'est codé :
-méthode proposée et décisions à prendre par Pascal en § 6.*
+depuis `simuler_itineraire()` dans `comparer_itineraires()`. Méthode et
+décisions en § 6. Pascal : « prends ce qu'il y a de mieux » ; décisions
+D-E1 à D-E5 prises sur les propositions (§ 6.1) et codées en v2026.11.23.*
 
 ## 1. Pourquoi
 
@@ -194,6 +195,24 @@ Proposition : telle quelle, avec un argument `taux_bo` pour la remplacer.
 
 **D-E5, bois mort et gros bois pour B** (§ 5) : à faire dans la même
 version, ou après ?
+
+### 6.1 Décisions prises (2026-11-11)
+
+- **D-E1** : part du BIBE allant à l'industrie paramétrable
+  (`parametres_filiere_bois()$part_bi`), défaut 0,25 pour les feuillus et 0,60
+  pour les résineux, dite hypothèse dans la doc.
+- **D-E2** : demi-vies INRA-IGN (BO 20 ans, BI 5 ans), même source que la
+  substitution ; celles du GIEC sont citées dans la doc pour qui veut les
+  substituer.
+- **D-E3** : `carbone_total` = carbone sur pied + carbone des produits, lu
+  en C par `comparer_itineraires()` ; E = `substitution` cumulée.
+- **D-E4** : table IFN telle quelle (`parametres_filiere_bois()$taux_bo`,
+  remplaçable), borne haute dite.
+- **D-E5** : le bois mort et les gros bois de B dans une version suivante.
+
+L'énergie est comptée par tonne sèche (0,916 tCO₂/t, mix 80/20 de
+l'étude), et non par m³ de feuillu : le même coefficient vaut ainsi pour
+les résineux brûlés, plus légers.
 
 Limites à dire dans la sortie :
 
