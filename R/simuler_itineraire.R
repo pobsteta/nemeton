@@ -133,6 +133,16 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #'       plot's Dg (all stems); below the first `dg_cm` there is no thinning,
 #'       beyond the last one its value holds. Replaces
 #'       `surface_terriere_cible_m2ha` (not both).}
+#'     \item{rapport_g_tiges}{nature of the thinning: share of the basal
+#'       area removed divided by share of the stems removed, i.e. the mean
+#'       basal area of a removed stem over that of the stand before the cut
+#'       (the Ve/V of the guides, on basal area). `1` (the default when
+#'       absent) removes the same share of every cohort; below 1 the
+#'       thinning takes smaller stems (from below), above 1 larger ones.
+#'       Each cohort is removed with probability `min(1, c (g / gmean)^b)`,
+#'       `c` and `b` solved per plot so that the basal area removed is the
+#'       one of the target and the ratio the one given (as close as the
+#'       sizes present allow). Needs a thinning rule.}
 #'   }
 #'   Stems removed are drawn (binomial per cohort): rounding would never cut
 #'   a cohort of a single large stem.
@@ -168,6 +178,16 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #' @param fraction_carbone Numeric. Carbon fraction of the dry biomass.
 #'   Default 0.50, the value of `inst/extdata/wood_density.csv` used by
 #'   [indicateur_c1_biomasse()].
+#' @param densite_max data.frame or `NULL`. Self-thinning ceiling applied
+#'   after every FINN step: `essence` and `rdi_max`, the maximum stand
+#'   density index of plots dominated (basal area) by that species, and
+#'   optionally `g_max`, their maximum basal area (m2/ha), with a row
+#'   `essence = "toutes"` used for the other species and for the `"other"`
+#'   group; usually [densite_max_ifn()]. Above a ceiling of its dominant
+#'   species, a plot loses its smallest stems until it is back under both
+#'   (natural mortality, not counted as harvest). Default `NULL`: FINN's
+#'   mortality alone, which does not stop the basal area (spec 068, section
+#'   on the density ceiling).
 #'
 #' @return data.frame in long format, one row per plot, year and variable:
 #'   `placette`, `itineraire`, `annee` (years from the start, 0 = initial
@@ -205,7 +225,7 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
                                horizon = 50, n_tirages = 20L,
                                elargissement = c("racine", "lineaire"), volume = FALSE,
                                unites = NULL, carbone = FALSE, bef = 1.30,
-                               fraction_carbone = 0.50) {
+                               fraction_carbone = 0.50, densite_max = NULL) {
   if (!inherits(calibration, "finn_calibration")) {
     cli::cli_abort("{.arg calibration} must come from {.fn calibrer_finn}.")
   }
@@ -220,6 +240,7 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     if (length(manq)) cli::cli_abort("{.arg unites} lacks {.field {manq}}.")
     if (anyDuplicated(unites$placette)) cli::cli_abort("A plot belongs to one unit only in {.arg unites}.")
   }
+  rdi_max <- .itin_rdi_max(densite_max, calibration$essences)
   .finn_verifier_installation()
 
   if (!"statut" %in% names(arbres)) arbres$statut <- "vivant"
@@ -246,6 +267,7 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     g[, 1] <- etat$g; tiges[, 1] <- etat$tiges; vol[, 1] <- etat$v; carb[, 1] <- etat$c
     for (k in seq_len(n_pas)) {
       coh <- .itin_un_pas(m, coh, env1, sp, length(calibration$essences))
+      if (!is.null(rdi_max)) coh <- .itin_auto_eclaircie(coh, rdi_max, n_sites, sp)
       etat <- .itin_etat(coh, n_sites, sp, tarif)
       g[, k + 1L] <- etat$g; tiges[, k + 1L] <- etat$tiges; vol[, k + 1L] <- etat$v
       carb[, k + 1L] <- etat$c
@@ -392,7 +414,7 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   # seule, sous le code de l'itineraire
   if (isTRUE(r$aucune_coupe)) {
     autres <- c("rotation_ans", "diametre_exploitabilite_cm", "surface_terriere_cible_m2ha",
-                "intensite_prelevement_pct", "norme_g_selon_dg")
+                "intensite_prelevement_pct", "norme_g_selon_dg", "rapport_g_tiges")
     donnees <- autres[!vapply(r[autres], is.null, TRUE)]
     if (length(donnees)) {
       cli::cli_abort(c(
@@ -407,7 +429,8 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     diametre = num(r$diametre_exploitabilite_cm),
     cible = num(r$surface_terriere_cible_m2ha),
     intensite = num(r$intensite_prelevement_pct),
-    norme = .itin_norme(r$norme_g_selon_dg, itineraire$code)
+    norme = .itin_norme(r$norme_g_selon_dg, itineraire$code),
+    rapport = num(r$rapport_g_tiges)
   )
   if (!is.null(regles$cible) && !is.null(regles$norme)) {
     cli::cli_abort(c(
@@ -423,6 +446,15 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     cli::cli_abort("Itinerary {.val {itineraire$code}} has no {.field rotation_ans}.")
   }
   .itin_nombre_pas(regles$rotation_ans, pas_a, "rotation_ans")
+  if (!is.null(regles$rapport)) {
+    if (length(regles$rapport) != 1L || !is.finite(regles$rapport) || regles$rapport <= 0 ||
+        regles$rapport > 3) {
+      cli::cli_abort("Itinerary {.val {itineraire$code}}: {.field rapport_g_tiges} must be one number in (0, 3].")
+    }
+    if (is.null(regles$cible) && is.null(regles$intensite) && is.null(regles$norme)) {
+      cli::cli_abort("Itinerary {.val {itineraire$code}} sets {.field rapport_g_tiges} without a thinning rule.")
+    }
+  }
   if (!is.null(regles$intensite) && (regles$intensite <= 0 || regles$intensite > 100)) {
     cli::cli_abort("{.field intensite_prelevement_pct} must be in (0, 100].")
   }
@@ -559,8 +591,92 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     p <- rep(regles$intensite / 100, n_sites)
   }
   if (!is.null(p)) {
-    ps <- p[coh$siteID]
+    if (is.null(regles$rapport) || regles$rapport == 1) {
+      ps <- p[coh$siteID]
+    } else {
+      ps <- numeric(nrow(coh))
+      g_i <- .g_arbre(coh$dbh)
+      for (s in which(p > 0)) {
+        i <- which(coh$siteID == s)
+        if (length(i)) ps[i] <- .itin_probas_rapport(coh$trees[i], g_i[i], p[s], regles$rapport)
+      }
+    }
     coh$trees <- stats::rbinom(nrow(coh), size = as.integer(coh$trees), prob = 1 - ps)
+  }
+  coh[coh$trees > 0, , drop = FALSE]
+}
+
+# Probabilites de coupe par cohorte d'un site pour une eclaircie qui enleve
+# la part `p` de G avec le rapport `r` (part de G / part des tiges) :
+# q = min(1, c (g / g moyen)^b), c pour la part de G, b pour le rapport. Si
+# les grosseurs presentes ne permettent pas d'atteindre r, b reste a la borne.
+.itin_probas_rapport <- function(n, g, p, r) {
+  if (p >= 1) return(rep(1, length(n)))
+  tot_g <- sum(n * g); tot_n <- sum(n)
+  if (tot_g <= 0 || tot_n <= 0) return(rep(0, length(n)))
+  x <- g / (tot_g / tot_n)
+  q_de <- function(b) {
+    xb <- x^b
+    f <- function(lc) sum(n * g * pmin(1, exp(lc) * xb)) / tot_g - p
+    lc <- stats::uniroot(f, c(-200, 200), tol = 1e-10)$root
+    pmin(1, exp(lc) * xb)
+  }
+  cible_n <- min(1, p / r)
+  h <- function(b) sum(n * q_de(b)) / tot_n - cible_n
+  if (h(-8) <= 0) return(q_de(-8))
+  if (h(8) >= 0) return(q_de(8))
+  q_de(stats::uniroot(h, c(-8, 8), tol = 1e-6)$root)
+}
+
+# Plafonds par groupe FINN (indice dans calibration$essences) depuis la table
+# de densite_max : rdi (obligatoire) et g (colonne g_max, facultative) ;
+# "other" et les essences absentes prennent la ligne "toutes".
+.itin_rdi_max <- function(densite_max, essences) {
+  if (is.null(densite_max)) return(NULL)
+  densite_max <- as.data.frame(densite_max)
+  manq <- setdiff(c("essence", "rdi_max"), names(densite_max))
+  if (length(manq)) cli::cli_abort("{.arg densite_max} lacks {.field {manq}}.")
+  e <- as.character(densite_max$essence)
+  if (!"toutes" %in% e) {
+    cli::cli_abort("{.arg densite_max} needs a row {.code essence = \"toutes\"} for the other species.")
+  }
+  par_groupe <- function(v) {
+    if (anyNA(v) || any(v <= 0)) cli::cli_abort("The ceilings of {.arg densite_max} must be positive.")
+    out <- v[match(essences, e)]
+    out[is.na(out) | essences == "other"] <- v[e == "toutes"][1]
+    out
+  }
+  list(rdi = par_groupe(as.numeric(densite_max$rdi_max)),
+       g = if ("g_max" %in% names(densite_max)) par_groupe(as.numeric(densite_max$g_max)) else NULL)
+}
+
+# Auto-eclaircie : un site au-dessus d'un plafond de son essence dominante (G)
+# perd ses plus petites tiges jusqu'a revenir sous les plafonds. RDI additif
+# (Reineke 1933, forme sommee) : somme des tiges/ha x (d / 25)^1,605 ; G en
+# m2/ha, plafond facultatif qui tient lieu de la courbure de la limite chez
+# les gros bois (Charru et al. 2012).
+.itin_auto_eclaircie <- function(coh, plafonds, n_sites, sp) {
+  if (!nrow(coh)) return(coh)
+  r_i <- (coh$dbh / 25)^1.605 / sp
+  gt_i <- .g_arbre(coh$dbh) / sp
+  for (s in unique(coh$siteID)) {
+    i <- which(coh$siteID == s)
+    gs <- tapply(coh$trees[i] * gt_i[i], coh$species[i], sum)
+    k <- as.integer(names(gs)[which.max(gs)])
+    # chaque plafond : contribution par tige, plafond ; tolerance flottante
+    crit <- list(list(u = r_i, max = plafonds$rdi[k]))
+    if (!is.null(plafonds$g)) crit[[2]] <- list(u = gt_i, max = plafonds$g[k])
+    for (cr in crit) {
+      tol <- 1e-9 * cr$max
+      exces <- sum(coh$trees[i] * cr$u[i]) - cr$max
+      if (exces <= tol) next
+      for (j in i[order(coh$dbh[i])]) {
+        if (exces <= tol) break
+        n_ote <- min(coh$trees[j], ceiling(exces / cr$u[j] - 1e-9))
+        coh$trees[j] <- coh$trees[j] - n_ote
+        exces <- exces - n_ote * cr$u[j]
+      }
+    }
   }
   coh[coh$trees > 0, , drop = FALSE]
 }

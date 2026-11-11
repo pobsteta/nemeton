@@ -121,6 +121,48 @@ test_that(".itin_couper harvests above the diameter and thins towards the target
   expect_true(nrow(c4) > 50 && nrow(c4) < 150)
 })
 
+test_that("rapport_g_tiges sets the nature of the thinning (from below / above)", {
+  norme <- list(dg_cm = list(10, 60), g_m2ha = list(20, 20))
+  r <- nemeton:::.itin_regles(itin_demo(norme_g_selon_dg = norme, rapport_g_tiges = 0.8), 5)
+  expect_equal(r$rapport, 0.8)
+  expect_error(nemeton:::.itin_regles(itin_demo(norme_g_selon_dg = norme, rapport_g_tiges = 0), 5),
+               "rapport_g_tiges")
+  expect_error(nemeton:::.itin_regles(itin_demo(diametre_exploitabilite_cm = 60,
+                                                rapport_g_tiges = 0.8), 5),
+               "without a thinning rule")
+  # solveur : part de G exacte, rapport atteint dans les deux sens
+  set.seed(1)
+  n <- rpois(30, 20) + 1
+  g <- pi * (runif(30, 8, 60) / 200)^2
+  for (rap in c(0.7, 0.92, 1.2)) {
+    q <- nemeton:::.itin_probas_rapport(n, g, 0.25, rap)
+    pg <- sum(n * g * q) / sum(n * g)
+    expect_equal(pg, 0.25, tolerance = 1e-6)
+    expect_equal(pg / (sum(n * q) / sum(n)), rap, tolerance = 1e-4)
+  }
+  # une seule grosseur : le rapport ne peut que valoir 1, la part de G tient
+  q <- nemeton:::.itin_probas_rapport(c(5, 5), c(0.1, 0.1), 0.3, 0.8)
+  expect_equal(q, c(0.3, 0.3), tolerance = 1e-6)
+  # coupe : a part de G egale, le rapport 0,6 enleve plus de tiges que 1
+  coh <- data.frame(siteID = 1L, species = 1L, dbh = rep(c(15, 30, 45), each = 200),
+                    trees = 1)
+  g0 <- nemeton:::.itin_etat(coh, 1L, 1)
+  set.seed(5)
+  bas <- nemeton:::.itin_couper(coh, list(cible = 0.7 * g0$g, rapport = 0.6), 1L, 1)
+  set.seed(5)
+  prop <- nemeton:::.itin_couper(coh, list(cible = 0.7 * g0$g), 1L, 1)
+  expect_equal(nemeton:::.itin_etat(bas, 1L, 1)$g, 0.7 * g0$g, tolerance = 0.06)
+  expect_lt(nrow(bas), nrow(prop))
+  # les entrees du hetre regulier et des resineux portent leur rapport
+  cat <- itineraires_catalogue()
+  expect_equal(nemeton:::.itin_regles(cat$bfc_hetre_futaie_reguliere, 5)$rapport, 0.92)
+  for (code in c("bfc_epicea_futaie_reguliere", "bfc_sapin_futaie_reguliere",
+                 "bfc_douglas_futaie_reguliere")) {
+    expect_equal(nemeton:::.itin_regles(cat[[code]], 5)$rapport, 0.83, label = code)
+  }
+  expect_null(nemeton:::.itin_regles(cat$bfc_chene_sessile_futaie_reguliere, 5)$rapport)
+})
+
 test_that(".finn_g_observee sums living and recruited trees at the second visit", {
   a <- data.frame(placette = c("A", "A", "A", "B"), poids = 10, d2 = c(20, NA, 10, 30),
                   statut = c("vivant", "mort", "recrute", "coupe"))
@@ -220,6 +262,30 @@ test_that("simuler_itineraire loops over steps and applies the cuts (FINN mocked
   g4 <- s4[s4$variable == "g" & s4$annee > 0, ]
   expect_equal(g4$haut - g4$moyenne, 2 * g4$annee / 5)
   expect_equal(unique(g4$intervalle[g4$annee == 15]), "conforme_lineaire")
+})
+
+test_that("simuler_itineraire holds the stands under the density ceiling (FINN mocked)", {
+  local_mocked_bindings(
+    .finn_verifier_installation = function() invisible(TRUE),
+    .itin_un_pas = function(m, coh, env1, sp, n_sp) transform(coh, dbh = dbh + 3)
+  )
+  a <- arbres_finn_demo(); e <- env_finn_demo()
+  cal <- calibration_factice()
+  libre <- simuler_itineraire(cal, a, e, horizon = 30, n_tirages = 1L)
+  # plafond bas pour toutes les essences : G plafonne, sans prelevement compte
+  dm <- data.frame(essence = "toutes", rdi_max = 100)
+  plaf <- simuler_itineraire(cal, a, e, horizon = 30, n_tirages = 1L, densite_max = dm)
+  gl <- libre$moyenne[libre$variable == "g" & libre$annee == 30]
+  gp <- plaf$moyenne[plaf$variable == "g" & plaf$annee == 30]
+  expect_true(all(gp < gl))
+  expect_true(all(plaf$moyenne[plaf$variable == "g_prelevee"] == 0))
+  # plafond hors d'atteinte : trajectoire inchangee
+  haut <- simuler_itineraire(cal, a, e, horizon = 30, n_tirages = 1L,
+                             densite_max = data.frame(essence = "toutes", rdi_max = 1e9))
+  expect_equal(haut$moyenne, libre$moyenne)
+  expect_error(simuler_itineraire(cal, a, e, horizon = 30, n_tirages = 1L,
+                                  densite_max = data.frame(essence = "03", rdi_max = 100)),
+               "toutes")
 })
 
 test_that("conformer_finn takes the residual quantile (predire_finn mocked)", {

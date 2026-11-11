@@ -603,3 +603,93 @@ faits au codage, à valider :
 - **Non exercé sur un vrai run** : FINN et torch absents de la session ; testé
   sur des trajectoires synthétiques. Aucun itinéraire du catalogue n'est
   sourcé : un vrai run demande un catalogue fourni par le forestier.
+
+### Premier run réel du catalogue BFC et plafond de densité (2026-11-11, v2026.11.21)
+
+**Run.** `data-raw/simulation_catalogue_bfc.R` : FINN calibré par
+`calibrer_finn()` sur 1 000 placettes IFN de BFC (1,2 h ; essences 03, 11,
+02, 09, 61, 62, 17C, 64, 21C, 14 et `other`), `conformer_finn()` sur
+1 000 autres (demi-largeur 4,58 m²/ha à 5 ans). Chacun des 10 itinéraires
+sourcés et `sans_gestion` tournent sur les mêmes placettes de test
+(60 au plus par itinéraire, choisies sur l'essence dominante en G ; 45 pour
+le douglas, 49 pour l'épicéa) : 50 ans, 10 tirages, volume et carbone.
+Les échantillons sont tirés avant toute simulation : FINN consomme le
+générateur aléatoire, et un tirage fait entre deux itinéraires changeait les
+placettes de 7 groupes sur 10. Les modèles et les sorties restent hors du
+dépôt.
+
+**Défaut constaté.** Sans gestion, G croît presque en ligne droite sur
+50 ans (douglas 81 m²/ha, 1 118 m³/ha). Diagnostic
+(`data-raw/diagnostic_plafond_finn.R`, placettes hors calibration non
+coupées entre les visites) : sur un pas de 5 ans, FINN surestime
+l'accroissement net de G de 10 à 50 m²/ha (+0,7 à +0,9 m²/ha par pas) et le
+sous-estime au-delà de 50 m²/ha (0,9 contre 1,6). Sa mortalité augmente donc
+bien avec la densité, mais trop tard. Sur 150 ans sans gestion, G atteint
+81-89 m²/ha pour les chênes, 88 pour le hêtre, 90 pour le sapin, 96 pour
+l'épicéa et 238 pour le douglas (RDI 2 758). Les quantiles 99 % observés en
+BFC sont de 49-50 m²/ha pour les chênes, 58 pour le hêtre, 62 pour le
+douglas, 68 pour le sapin et 75 pour l'épicéa. Calibré sur des pas de
+5 ans, FINN n'a jamais vu de peuplement au plafond assez longtemps pour
+l'apprendre.
+
+**Correctif : plafond d'auto-éclaircie hors de FINN** (même logique que
+D-2 : ce que FINN n'apprend pas est imposé entre les pas).
+`densite_max_ifn()` calcule, par essence dominante (100 placettes au
+moins), le quantile 99 % de la forme additive du RDI de Reineke
+(`Σ poids (d/25)^1,605`) et de G sur la première visite de toutes les
+placettes BFC (7 632), avec une ligne `"toutes"`. En BFC, le RDI va de 955
+(02) à 1 254 (62) et G de 49 à 75 m²/ha. `simuler_itineraire(densite_max =)`
+retire, après chaque pas, les plus petites tiges d'une placette qui dépasse
+l'un des deux plafonds de son essence dominante. C'est une mortalité
+naturelle, qui ne compte pas dans `g_prelevee`. Le plafond de RDI seul ne
+suffisait pas : sur 150 ans, les chênes atteignaient 65-68 m²/ha et le
+douglas 106. La droite de Reineke laisse G croître comme `Dg^0,395`, alors
+que la limite observée s'infléchit chez les gros bois (Charru et al.
+2012). D'où le second plafond, sur G. Avec les deux, les courbes se
+stabilisent sur 150 ans : chênes 50, hêtre 55, sapin 62, épicéa 68,
+douglas 61 m²/ha.
+
+Limites : le plafond est une borne (quantile 99 %) et non une trajectoire ;
+FINN reste en avance de 0,7 m²/ha par pas entre 10 et 50 m²/ha, ce qui
+fait arriver le plafond trop tôt ; le plafond est calculé sur toutes les
+placettes, celles de test comprises (leur état initial seulement). Option
+par défaut `densite_max = NULL` : le comportement des versions précédentes
+est conservé.
+
+**Nature de l'éclaircie (`rapport_g_tiges`).** Le moteur retirait la même
+part de chaque cohorte : un rapport G prélevée / tiges prélevées de 1, ce
+que les guides appellent déjà une éclaircie « par le haut » (glossaire SFFC
+p. 9 : Ve/V > 0,9). La règle `rapport_g_tiges` impose un autre rapport :
+probabilité `min(1, c (g/ḡ)^b)` par cohorte, `c` et `b` résolus par
+placette. Le hêtre en futaie régulière reçoit 0,92 (médiane de la table du
+mémento) ; l'épicéa, le sapin et le douglas 0,83 (SFFC p. 21). Les chênes
+n'en ont pas, faute de chiffre dans la table 28. Spec 065, relevé § 4.3.
+
+**Résultats à 50 ans** (moyenne des placettes, m²/ha ; volume en m³/ha ;
+plafond actif, mêmes placettes pour l'itinéraire et `sans_gestion`) :
+
+| Itinéraire | n | G géré | G sans gestion | G prélevée cumulée | Vol. géré | Vol. sans gestion | Vol. prélevé |
+|---|---|---|---|---|---|---|---|
+| chêne sessile, futaie régulière | 60 | 18,4 | 40,1 | 22,2 | 162 | 395 | 204 |
+| chêne, futaie irrégulière | 60 | 21,8 | 38,6 | 20,0 | 186 | 360 | 181 |
+| conversion du TSF en futaie | 60 | 23,7 | 39,0 | 18,0 | 213 | 380 | 170 |
+| hêtre, futaie régulière | 60 | 20,7 | 42,1 | 25,8 | 190 | 430 | 245 |
+| hêtre, futaie irrégulière | 60 | 23,3 | 42,8 | 25,6 | 218 | 435 | 249 |
+| sapin, futaie régulière | 60 | 31,0 | 57,0 | 36,6 | 332 | 687 | 429 |
+| épicéa, futaie régulière | 49 | 31,8 | 58,6 | 32,7 | 333 | 667 | 357 |
+| douglas, futaie régulière | 45 | 20,1 | 60,6 | 44,9 | 213 | 883 | 566 |
+| libre évolution | 60 | 43,2 | 43,0 | 0 | 425 | 423 | 0 |
+| îlot de sénescence | 60 | 43,7 | 43,9 | 0 | 420 | 422 | 0 |
+
+À 50 ans, le plafond ne touche presque pas les itinéraires gérés (écart
+< 0,6 m²/ha avec la même simulation sans plafond). Il abaisse surtout
+`sans_gestion` : douglas 80,7 → 60,6 m²/ha (1 118 → 883 m³/ha), épicéa
+61,2 → 58,6, sapin 60,5 → 57,0, chênes et hêtre de 1,5 à 2,7 m²/ha. Libre
+évolution et îlot de sénescence se confondent avec `sans_gestion` : c'est
+attendu, ce sont les mêmes trajectoires sous un autre code. L'intervalle
+conforme à 50 ans reste large (± 14,5 m²/ha par placette, élargissement
+`racine`) : les écarts entre itinéraires d'une même essence sont dans le
+bruit à l'échelle d'une placette, pas ceux entre gestion et sans gestion.
+L'effet propre de `rapport_g_tiges` n'est pas isolé : le premier run
+(rapport 1) portait sur d'autres placettes ; écart observé inférieur à
+1 m²/ha sur les quatre entrées concernées.

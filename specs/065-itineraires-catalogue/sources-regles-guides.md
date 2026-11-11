@@ -200,6 +200,19 @@ PDF de 36 pages récupéré du Drive (folio = page PDF − 2), lu avec
   sous 400 m, p. 3 ; épicéa de plaine exposé aux scolytes, p. 4 ; douglas
   exclu des sols calcaires ou hydromorphes, p. 6).
 
+### 4.3 Nature de l'éclaircie (v2026.11.21)
+
+- Le guide caractérise l'éclaircie par **Ve/V**, volume moyen des tiges
+  enlevées / volume moyen avant éclaircie (glossaire, p. 9) : « par le
+  haut » au-delà de 0,9, « par le bas » sous 0,7, « mixte » entre les deux.
+  Une éclaircie proportionnelle dans toutes les grosseurs vaut 1, donc
+  « par le haut » au sens du guide.
+- Règle `rapport_g_tiges` (moteur, même rapport sur la surface terrière) :
+  **0,83** pour l'épicéa, le sapin et le douglas, part de G / part des
+  tiges des éclaircies après la première (20-30 % de G pour 25-35 % des
+  tiges, p. 21 ; 25/30) ; la première éclaircie (0,75, p. 16) n'est pas
+  distinguée. Éclaircie « mixte ».
+
 ## 5. Modèle de forme : hêtraie nord-atlantique, futaie régulière (ONF 2020)
 
 Hors BFC, mais seul guide disponible avec des **tables complètes âge × Ho
@@ -288,6 +301,11 @@ git), avec leur texte extrait.
   Rotations (p. 10) : fertilité 2, 7-9 ans jeune, 9-10 puis 12 ans.
   Récolte à 55 cm = diamètre moyen des 80 plus grosses tiges (p. 33).
   Éclaircie par le haut, sous-étage conservé (p. 5).
+  Rapport part de G / part des tiges enlevées, par éclaircie de la table :
+  0,99 ; 0,73 ; 0,92 ; 0,89 ; 0,93 ; 0,92, médiane **0,92** (règle
+  `rapport_g_tiges`, v2026.11.21), « par le haut » au sens Ve/V > 0,9 du
+  SFFC 2012 (p. 9). La table ne compte que l'étage principal ; le moteur
+  applique le rapport à toutes les tiges de FINN.
 - Le mémento *Hêtraie nord-atlantique* (ONF 2020) a des tables du même
   format, mais en climat atlantique : moins proche de la BFC.
 

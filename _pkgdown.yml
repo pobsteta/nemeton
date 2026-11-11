@@ -635,6 +635,7 @@ reference:
     - predire_finn
     - conformer_finn
     - simuler_itineraire
+    - densite_max_ifn
 
   - subtitle: "Corpus de connaissances et RAG"
     contents:
