@@ -322,6 +322,15 @@ départagés par le bruit des tirages). Proposition non codée : dominance à
 sort dans deux UGF (gain de P < 5 %, perte de C > 5 %). Le rang ignore
 toujours `tolerance`. Reste le point 1 : lire E et B depuis la simulation.
 Version nemetonshiny vérifiée : v2026.10.18.
+Cycle dev 2026.11.22.9000 (#634). Sources du carbone des produits et de la
+substitution relevées (`specs/068-trajectoires-finn/sources-carbone-produits.md`) :
+taux de bois d'œuvre potentiel par essence × diamètre mesuré sur l'IFN BFC
+(Q1 + Q2, 2005-2013, `data-raw/taux_bois_oeuvre_ifn.R`) ; demi-vies GIEC
+2019 (35/25/2 ans) et INRA-IGN 2017 (BO 20, BI 5) ; substitution INRA-IGN
+1,6 tCO₂/m³ de produit et 0,50 tCO₂/m³ de bois énergie ; décomposition du
+bois mort (30/10 ans). Facteurs ADEME de `indicateur_e2_evitement()` non
+retrouvés en source primaire. Décisions D-E1 à D-E5 à prendre par Pascal
+avant de coder.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
