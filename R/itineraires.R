@@ -206,8 +206,10 @@ itineraires_admissibles <- function(units, catalogue = itineraires_catalogue(),
 #'   itinerary.
 #' @param tolerance Numeric. With `trajectoires`, a family is won or lost
 #'   against the reference only when the values differ by more than this
-#'   share of the reference value (FINN trajectories are stochastic means).
-#'   Default 0.05, a convention.
+#'   share of the reference value (FINN trajectories are stochastic means),
+#'   and an itinerary leaves the Pareto front only when another one beats it
+#'   by more than this share on a family without losing more than this
+#'   share on any. Default 0.05, a convention.
 #'
 #' @return A data frame, one row per unit x candidate itinerary: `unit_id`,
 #'   `itineraire`, `score_global` (in `[-1, 1]`, `NA` if an evaluated family
@@ -332,8 +334,14 @@ comparer_itineraires <- function(units, poids, catalogue = itineraires_catalogue
     complet <- stats::complete.cases(brut)
     pareto <- rep(NA, length(cand))
     if (any(complet)) {
-      df <- as.data.frame(brut[complet, , drop = FALSE])
-      pareto[complet] <- identify_pareto_optimal(df, objectives = doc)$is_optimal
+      if (simule) {
+        # dominance a `tolerance` pres : un ecart de tirage ne sort pas un
+        # candidat du front (libre evolution contre sans gestion)
+        pareto[complet] <- .itin_pareto_tolerance(brut[complet, , drop = FALSE], tolerance)
+      } else {
+        df <- as.data.frame(brut[complet, , drop = FALSE])
+        pareto[complet] <- identify_pareto_optimal(df, objectives = doc)$is_optimal
+      }
     }
     ref <- if (identical(reference, "statu_quo")) {
       sq <- if (!is.null(actuel)) actuel[[as.character(uid)]] else NA
@@ -506,6 +514,21 @@ profils_poids <- function(profil = NULL) {
 # Valeurs par UGF x itineraire x famille a l'horizon, depuis la table longue
 # de simuler_itineraire() (plusieurs itineraires lies par rbind). L'attribut
 # « incertitude » porte la demi-largeur conforme de G a l'horizon.
+# Front de Pareto a `tol` pres (toutes les familles a maximiser) : a domine b
+# s'il ne perd sur aucune famille plus que tol * |b| et gagne sur au moins une
+# plus que tol * |b|. tol = 0 : la dominance de Pareto usuelle.
+.itin_pareto_tolerance <- function(m, tol) {
+  n <- nrow(m)
+  domine <- function(a, b) {
+    t <- tol * pmax(abs(b), .Machine$double.eps)
+    if (tol == 0) t <- 0
+    all(a >= b - t) && any(a > b + t)
+  }
+  vapply(seq_len(n), function(j) {
+    !any(vapply(setdiff(seq_len(n), j), function(i) domine(m[i, ], m[j, ]), TRUE))
+  }, TRUE)
+}
+
 .itin_valeurs_trajectoires <- function(trajectoires, horizon) {
   t <- as.data.frame(trajectoires)
   id <- if ("unite" %in% names(t)) "unite" else "placette"

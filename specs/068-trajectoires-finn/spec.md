@@ -753,7 +753,15 @@ Pour le hêtre, la futaie régulière prélève plus que l'irrégulière (de 3 �
    une dominance à `tolerance` près (A ne domine B que s'il le dépasse de
    plus de `tolerance` sur au moins une famille sans perdre plus de
    `tolerance` sur aucune), la règle qui vaut déjà pour les familles
-   gagnantes et perdantes. Non codé.
+   gagnantes et perdantes. **Codé en v2026.11.22**, à valider par Pascal
+   comme le reste de la note. Recalculé sur les mêmes trajectoires : libre
+   évolution et `sans_gestion` sont toutes deux sur le front dans les
+   9 UGF. Contrepartie : la futaie régulière sort du front dans deux UGF
+   (chêne n° 3 : 193 m³/ha contre 185 pour l'irrégulière, soit moins de
+   5 % de plus, mais 63 tC/ha contre 73 ; hêtre n° 1 : 252 contre 243 et
+   68 contre 77). Un candidat qui ne gagne qu'à moins de `tolerance` sur
+   une famille et perd au-delà sur une autre est dominé. Avec
+   `tolerance = 0`, c'est la dominance de Pareto usuelle.
 3. Les écarts de rang entre libre évolution et `sans_gestion` (de 1 à 5
    selon les UGF) sont du bruit de tirage : le rang ne tient pas compte de
    `tolerance` non plus.
