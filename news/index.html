@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.21.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.22</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +116,14 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.22" id="nemeton-20261122-2026-11-11">nemeton 2026.11.22 (2026-11-11)<a class="anchor" aria-label="anchor" href="#nemeton-20261122-2026-11-11"></a></h2>
+<div class="section level3">
+<h3 id="changements-de-résultat-2026-11-22">Changements de résultat<a class="anchor" aria-label="anchor" href="#changements-de-r%C3%A9sultat-2026-11-22"></a></h3>
+<ul><li>
+<strong><code>comparer_itineraires(trajectoires =)</code> : front de Pareto à <code>tolerance</code> près</strong> (spec 068). Un itinéraire ne sort du front que si un autre le bat de plus de <code>tolerance</code> (5 % par défaut) sur une famille, sans perdre plus de <code>tolerance</code> sur aucune. C’est la règle des familles gagnantes et perdantes. Sur un vrai run FINN (9 UGF de BFC), libre évolution et <code>sans_gestion</code>, de même dynamique, ne sont plus départagées par le bruit des tirages. La futaie régulière sort du front dans deux UGF : elle y prélève moins de 5 % de plus que l’irrégulière mais garde plus de 5 % de carbone en moins. <code>tolerance = 0</code> rend le front usuel ; le front des effets qualitatifs ne change pas.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.21" id="nemeton-20261121-2026-11-11">nemeton 2026.11.21 (2026-11-11)<a class="anchor" aria-label="anchor" href="#nemeton-20261121-2026-11-11"></a></h2>
 <div class="section level3">

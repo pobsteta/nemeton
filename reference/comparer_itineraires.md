@@ -88,8 +88,10 @@ comparer_itineraires(
 
   Numeric. With `trajectoires`, a family is won or lost against the
   reference only when the values differ by more than this share of the
-  reference value (FINN trajectories are stochastic means). Default
-  0.05, a convention.
+  reference value (FINN trajectories are stochastic means), and an
+  itinerary leaves the Pareto front only when another one beats it by
+  more than this share on a family without losing more than this share
+  on any. Default 0.05, a convention.
 
 ## Value
 

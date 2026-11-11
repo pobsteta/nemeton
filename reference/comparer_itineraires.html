@@ -13,7 +13,7 @@ front and carries the catalogue's citations (spec 065 § 5)."><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.21.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.22</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -207,8 +207,10 @@ itinerary.</p></dd>
 <dt id="arg-tolerance">tolerance<a class="anchor" aria-label="anchor" href="#arg-tolerance"></a></dt>
 <dd><p>Numeric. With <code>trajectoires</code>, a family is won or lost
 against the reference only when the values differ by more than this
-share of the reference value (FINN trajectories are stochastic means).
-Default 0.05, a convention.</p></dd>
+share of the reference value (FINN trajectories are stochastic means),
+and an itinerary leaves the Pareto front only when another one beats it
+by more than this share on a family without losing more than this
+share on any. Default 0.05, a convention.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -1,5 +1,21 @@
 # Changelog
 
+## nemeton 2026.11.22 (2026-11-11)
+
+### Changements de résultat
+
+- **`comparer_itineraires(trajectoires =)` : front de Pareto à
+  `tolerance` près** (spec 068). Un itinéraire ne sort du front que si
+  un autre le bat de plus de `tolerance` (5 % par défaut) sur une
+  famille, sans perdre plus de `tolerance` sur aucune. C’est la règle
+  des familles gagnantes et perdantes. Sur un vrai run FINN (9 UGF de
+  BFC), libre évolution et `sans_gestion`, de même dynamique, ne sont
+  plus départagées par le bruit des tirages. La futaie régulière sort du
+  front dans deux UGF : elle y prélève moins de 5 % de plus que
+  l’irrégulière mais garde plus de 5 % de carbone en moins.
+  `tolerance = 0` rend le front usuel ; le front des effets qualitatifs
+  ne change pas.
+
 ## nemeton 2026.11.21 (2026-11-11)
 
 ### Nouveautés
