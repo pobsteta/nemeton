@@ -352,7 +352,18 @@ renseignée pour le hêtre régulier (0,92) et les trois résineux (0,83).
 Résultats à 50 ans et limites : spec 068 § 9 (note du 2026-11-11). Reste
 : biais de croissance de FINN entre 10 et 50 m²/ha (+0,7 m²/ha par pas),
 intervalle à 50 ans de ± 14,5 m²/ha par placette, TSF maintenu et
-plantation. Version nemetonshiny vérifiée : v2026.10.18.
+plantation. Version nemetonshiny vérifiée : v2026.10.18. Release
+v2026.11.21 publiée, cycle dev 2026.11.21.9000 (#631).
+`comparer_itineraires(trajectoires =)` exercé pour la première fois sur
+un vrai run (`data-raw/comparaison_catalogue_bfc.R`, 9 UGF fictives de
+20 placettes) : demi-largeur de G à 50 ans de 4,3 m²/ha par UGF ;
+l’ordre des itinéraires gérés d’une même essence se répète d’une UGF à
+l’autre. Deux points de méthode à trancher par Pascal (spec 068, note du
+2026-11-11) : avec P et C seules, le rang ne fait qu’exprimer le rapport
+des poids, faute de lire E et B ; le front de Pareto et le rang ignorent
+`tolerance` (libre évolution et `sans_gestion`, de même dynamique, sont
+départagés par le bruit des tirages). Proposition non codée : dominance
+à `tolerance` près.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
