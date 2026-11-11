@@ -636,6 +636,7 @@ reference:
     - conformer_finn
     - simuler_itineraire
     - densite_max_ifn
+    - parametres_filiere_bois
 
   - subtitle: "Corpus de connaissances et RAG"
     contents:

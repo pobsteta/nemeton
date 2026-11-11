@@ -356,3 +356,32 @@ test_that("profils_poids gives 12 family weights per profile", {
   expect_equal(attr(p, "meta")$statut, "provisoire")
   expect_error(profils_poids("profil_inconnu"), "Unknown profile")
 })
+
+test_that("trajectoires: E reads the substitution, C the carbon of forest and products", {
+  u <- .unites(1)
+  ajoute <- function(tr, itin, subst, cprod) {
+    x <- tr[tr$itineraire == itin & tr$variable == "carbone", ]
+    tot <- x; tot$variable <- "carbone_total"; tot$moyenne <- x$moyenne + cprod
+    s <- x; s$variable <- "substitution"; s$moyenne <- c(0, subst, 0)
+    rbind(tr, tot, s)
+  }
+  tr <- .traj_test(); tr <- tr[tr$unite == "1", ]
+  tr <- ajoute(tr, "production", 30, 70)
+  tr <- ajoute(tr, "conservation", 0, 0)
+  tr <- ajoute(tr, "sans_gestion", 0, 0)
+  r <- comparer_itineraires(u, c(P = 1, C = 1, E = 1), .catalogue_test(), trajectoires = tr)
+  expect_true(all(r$familles_evaluees == "C, E, P"))
+  v <- attr(r, "valeurs")
+  vc <- v[v$famille == "C" & v$itineraire == "production", ]
+  expect_equal(vc$variable, "carbone_total")
+  expect_equal(vc$valeur, 60 + 70)
+  ve <- v[v$famille == "E" & v$itineraire == "production", ]
+  expect_equal(c(ve$valeur, ve$unite_mesure), c("30", "tCO2/ha"))
+  # avec le carbone des produits, la production ne perd plus en C
+  prod <- r[r$itineraire == "production", ]
+  expect_equal(r$itineraire[r$rang == 1], "production")
+  rs <- comparer_itineraires(u, c(P = 1, C = 1, E = 1), .catalogue_test(), trajectoires = tr,
+                             reference = "sans_gestion")
+  expect_setequal(strsplit(rs$familles_gagnantes[rs$itineraire == "production"], ", ")[[1]],
+                  c("C", "E", "P"))
+})

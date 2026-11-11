@@ -765,3 +765,50 @@ Pour le hêtre, la futaie régulière prélève plus que l'irrégulière (de 3 �
 3. Les écarts de rang entre libre évolution et `sans_gestion` (de 1 à 5
    selon les UGF) sont du bruit de tirage : le rang ne tient pas compte de
    `tolerance` non plus.
+
+### Carbone des produits et substitution (2026-11-11, v2026.11.23)
+
+`simuler_itineraire(produits = TRUE)` et `parametres_filiere_bois()`. Les
+sources et les décisions D-E1 à D-E5 sont dans `sources-carbone-produits.md`
+(§ 6.1). À chaque coupe, chaque cohorte coupée est ventilée : bois d'œuvre
+selon le taux IFN de BFC (essence, diamètre), puis bois d'industrie et bois
+énergie (part paramétrable). 50 % du bois d'œuvre et 85 % du bois
+d'industrie entrent en produits, dans deux pools de demi-vie 20 et 5 ans.
+La substitution vaut 1,6 tCO₂ par m³ de produit et 0,916 tCO₂ par tonne
+sèche brûlée. Seule la tige est suivie. `comparer_itineraires()` lit
+`carbone_total` (forêt + produits) en C et la `substitution` cumulée en E.
+
+**Même run des 9 UGF** (mêmes placettes, `FINN_CMP_PRODUITS=oui`), à 50 ans :
+
+| Itinéraires | Gain de C par les produits (tC/ha) | E cumulée (tCO₂/ha) |
+|---|---|---|
+| chênes (3 itinéraires × 3 UGF) | 8-10 | 132-169 |
+| hêtre (2 × 3) | 10-13 | 192-224 |
+| sapin / épicéa / douglas | 13 / 12 / 27 | 335 / 295 / 482 |
+
+La substitution vaut environ 0,8 tCO₂ par m³ récolté, pour toutes les
+essences. Le stock de produits ne comble pas l'écart de C avec
+`sans_gestion` : 70-99 tC/ha pour les itinéraires gérés contre 146-250
+sans gestion, à 50 ans.
+
+**Classement.** Le premier rang va à un itinéraire géré dans les 9 UGF
+pour le gestionnaire ONF, le naturaliste et le propriétaire privé. Il va à
+la libre évolution ou à `sans_gestion` pour le technicien (C 3, P 1, E 1).
+Avant, les profils à poids égaux départageaient par le bruit. Chez les
+chênes, l'ONF et le naturaliste mettent maintenant en tête la futaie
+irrégulière, puis la conversion du TSF ; la futaie régulière sort du front
+dans les 3 UGF : elle ne prélève et n'évite qu'à moins de 5 % de plus que
+l'irrégulière, et garde plus de 5 % de C en moins.
+
+**Ce que ce classement doit dire à côté du rang :**
+
+- **E pèse comme une famille entière**, donc la gestion gagne sur deux
+  familles (P, E) contre une (C). Le résultat dépend des poids des
+  profils.
+- **Le stock sur pied et la substitution n'ont pas la même durée.**
+  À 50 ans, le stock sans gestion croît encore. Il plafonne avec le
+  plafond de densité, et il est exposé aux perturbations (non simulées).
+  La substitution, elle, est acquise.
+- **Les coefficients de substitution varient d'un facteur 6** (0,59 à
+  3,47 tCO₂/m³ pour le matériau) et le bois d'œuvre potentiel est une
+  borne haute.

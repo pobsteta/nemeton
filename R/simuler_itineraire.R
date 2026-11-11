@@ -188,6 +188,17 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #'   (natural mortality, not counted as harvest). Default `NULL`: FINN's
 #'   mortality alone, which does not stop the basal area (spec 068, section
 #'   on the density ceiling).
+#' @param produits Logical. Also follow the harvested wood outside the
+#'   forest (needs `carbone = TRUE`): every stem cut is split into sawlog,
+#'   industry and energy wood with `filiere`, the products feed two pools
+#'   with first-order decay, and the emissions avoided by material and
+#'   energy substitution are counted. Adds `"carbone_produits"` (stock,
+#'   tC/ha), `"carbone_total"` (`"carbone"` + `"carbone_produits"`, tC/ha),
+#'   `"substitution"` (tCO2/ha avoided at that date) and
+#'   `"volume_preleve_bo"` (sawlog volume removed, m3/ha). The products of
+#'   cuts made before year 0 are not counted. Default `FALSE`.
+#' @param filiere List of the wood-chain parameters, as
+#'   [parametres_filiere_bois()] (the default) returns them.
 #'
 #' @return data.frame in long format, one row per plot, year and variable:
 #'   `placette`, `itineraire`, `annee` (years from the start, 0 = initial
@@ -195,7 +206,8 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #'   `"tiges"`: stems/ha before the cut; `"g_prelevee"`: basal area
 #'   removed at that date, m2/ha; with `volume = TRUE`, `"volume"` and
 #'   `"volume_preleve"`, m3/ha; with `carbone = TRUE`, `"carbone"` and
-#'   `"carbone_preleve"`, tC/ha), `moyenne` (mean of the trajectories),
+#'   `"carbone_preleve"`, tC/ha; with `produits = TRUE`, see that
+#'   argument), `moyenne` (mean of the trajectories),
 #'   `bas`, `haut` (interval, for `"g"` only) and `intervalle`
 #'   (`"conforme"` at one step, `"conforme_racine"` or
 #'   `"conforme_lineaire"` beyond, `"aucun"` without conformal residuals or
@@ -219,13 +231,22 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #' the same `bef` and `fraction_carbone` as C1, so that year 0 compares with
 #' C1.
 #'
-#' @seealso [calibrer_finn()], [conformer_finn()], [itineraires_catalogue()]
+#' With `produits = TRUE`, the carbon of the products is that of the stem
+#' only (volume x basic density x `fraction_carbone`, no `bef`): branches,
+#' small wood and logging losses leave the account at the cut. The sawlog
+#' share is an upper bound (quality presumed on the standing tree) and the
+#' substitution factors a mean of the literature (see
+#' [parametres_filiere_bois()]).
+#'
+#' @seealso [calibrer_finn()], [conformer_finn()], [itineraires_catalogue()],
+#'   [parametres_filiere_bois()]
 #' @export
 simuler_itineraire <- function(calibration, arbres, environnement, itineraire = NULL,
                                horizon = 50, n_tirages = 20L,
                                elargissement = c("racine", "lineaire"), volume = FALSE,
                                unites = NULL, carbone = FALSE, bef = 1.30,
-                               fraction_carbone = 0.50, densite_max = NULL) {
+                               fraction_carbone = 0.50, densite_max = NULL,
+                               produits = FALSE, filiere = parametres_filiere_bois()) {
   if (!inherits(calibration, "finn_calibration")) {
     cli::cli_abort("{.arg calibration} must come from {.fn calibrer_finn}.")
   }
@@ -241,6 +262,12 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     if (anyDuplicated(unites$placette)) cli::cli_abort("A plot belongs to one unit only in {.arg unites}.")
   }
   rdi_max <- .itin_rdi_max(densite_max, calibration$essences)
+  if (isTRUE(produits)) {
+    if (!isTRUE(carbone)) {
+      cli::cli_abort("{.code produits = TRUE} needs {.code carbone = TRUE}: the stock is read with the standing carbon.")
+    }
+    filiere <- .filiere_verifier(filiere)
+  }
   .finn_verifier_installation()
 
   if (!"statut" %in% names(arbres)) arbres$statut <- "vivant"
@@ -257,10 +284,20 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   } else NULL
   m <- calibration$modele
   m$eval()
+  if (isTRUE(produits)) {
+    # par site x essence FINN : taux de bois d'oeuvre (groupe), part du BIBE
+    # allant a l'industrie (feuillus / resineux)
+    res_mat <- matrix(is_conifer(as.vector(tarif$espar)), nrow(tarif$espar))
+    grp_mat <- matrix(.filiere_groupe(as.vector(tarif$espar)), nrow(tarif$espar))
+    bi_mat <- ifelse(res_mat, filiere$part_bi[["resineux"]], filiere$part_bi[["feuillus"]])
+    decroit <- exp(-log(2) / filiere$demi_vie[c("bo", "bi")] * pas_a)
+  }
 
   # une trajectoire : matrices site x pas (g, tiges, g prelevee, volumes)
   une_trajectoire <- function() {
     g <- tiges <- prel <- vol <- vprel <- carb <- cprel <- matrix(0, n_sites, n_pas + 1L)
+    cprod <- subst <- vbo <- matrix(0, n_sites, n_pas + 1L)
+    pool_bo <- pool_bi <- numeric(n_sites)
     coh <- prep$init[, c("siteID", "species", "dbh", "trees")]
     coh$trees <- round(coh$trees)
     etat <- .itin_etat(coh, n_sites, sp, tarif)
@@ -271,16 +308,37 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
       etat <- .itin_etat(coh, n_sites, sp, tarif)
       g[, k + 1L] <- etat$g; tiges[, k + 1L] <- etat$tiges; vol[, k + 1L] <- etat$v
       carb[, k + 1L] <- etat$c
+      if (isTRUE(produits)) {
+        pool_bo <- pool_bo * decroit[[1]]
+        pool_bi <- pool_bi * decroit[[2]]
+      }
       if (!is.null(regles) && (k * pas_a) %% regles$rotation_ans == 0 && k < n_pas) {
+        coh$.id <- seq_len(nrow(coh))
         coupe <- .itin_couper(coh, regles, n_sites, sp)
         apres <- .itin_etat(coupe, n_sites, sp, tarif)
         prel[, k + 1L] <- etat$g - apres$g
         vprel[, k + 1L] <- etat$v - apres$v
         cprel[, k + 1L] <- etat$c - apres$c
+        if (isTRUE(produits)) {
+          reste <- numeric(nrow(coh)); reste[coupe$.id] <- coupe$trees
+          fl <- .itin_flux_produits(coh, coh$trees - reste, tarif, filiere, grp_mat, res_mat,
+                                    bi_mat, n_sites, sp)
+          # carbone des produits (tC/ha) : masse anhydre x fraction de carbone,
+          # tige seule (pas de BEF : FINN ne porte pas le houppier)
+          pool_bo <- pool_bo + filiere$rendement[["bo"]] * fl$m_bo * fraction_carbone
+          pool_bi <- pool_bi + filiere$rendement[["bi"]] * fl$m_bi * fraction_carbone
+          subst[, k + 1L] <- filiere$substitution_materiau *
+            (filiere$rendement[["bo"]] * fl$v_bo + filiere$rendement[["bi"]] * fl$v_bi) +
+            filiere$substitution_energie * fl$m_be
+          vbo[, k + 1L] <- fl$v_bo
+        }
+        coupe$.id <- NULL
         coh <- coupe
       }
+      if (isTRUE(produits)) cprod[, k + 1L] <- pool_bo + pool_bi
     }
-    list(g = g, tiges = tiges, prel = prel, vol = vol, vprel = vprel, carb = carb, cprel = cprel)
+    list(g = g, tiges = tiges, prel = prel, vol = vol, vprel = vprel, carb = carb, cprel = cprel,
+         cprod = cprod, subst = subst, vbo = vbo)
   }
   traj <- lapply(seq_len(n_tirages), function(i) une_trajectoire())
   moy <- function(v) Reduce(`+`, lapply(traj, `[[`, v)) / n_tirages
@@ -301,6 +359,11 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     k_c <- bef * fraction_carbone
     out <- rbind(out, long(moy("carb") * k_c, "carbone"), long(moy("cprel") * k_c, "carbone_preleve"))
   }
+  if (isTRUE(produits)) {
+    out <- rbind(out, long(moy("cprod"), "carbone_produits"),
+                 long(moy("carb") * k_c + moy("cprod"), "carbone_total"),
+                 long(moy("subst"), "substitution"), long(moy("vbo"), "volume_preleve_bo"))
+  }
   conf <- calibration$conforme
   if (is.null(unites)) {
     k_unite <- rep(1L, nrow(out))
@@ -315,7 +378,9 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     n_pla <- table(unites$unite[unites$placette %in% prep$sites$placette])
     out$n_placettes <- as.integer(n_pla[out$unite])
     out <- out[order(match(out$variable, c("g", "tiges", "g_prelevee", "volume", "volume_preleve",
-                                            "carbone", "carbone_preleve")),
+                                            "carbone", "carbone_preleve", "carbone_produits",
+                                            "carbone_total", "substitution",
+                                            "volume_preleve_bo")),
                       out$annee, out$unite), ]
     out <- out[, c("unite", "n_placettes", "itineraire", "annee", "variable", "moyenne")]
     k_unite <- out$n_placettes
@@ -569,7 +634,33 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   # infradensite de l'essence (celle du tarif pour "other"), repli
   # feuillus / resineux dans infradensite_espar()
   rho <- matrix(infradensite_espar(as.vector(espar))$infradensite_g_cm3, n_s, n_sp)
-  list(numero = numero, type = type, rho = rho)
+  list(numero = numero, type = type, rho = rho, espar = espar)
+}
+
+# Flux d'une coupe vers la filiere, par site : volumes (m3/ha) et masses
+# anhydres (t/ha) de bois d'oeuvre, d'industrie et d'energie, depuis les
+# tiges coupees `n_coupe` de chaque cohorte (volume bois fort tige du tarif).
+.itin_flux_produits <- function(coh, n_coupe, tarif, filiere, grp_mat, res_mat, bi_mat,
+                                n_sites, sp) {
+  zero <- numeric(n_sites)
+  out <- list(v_bo = zero, v_bi = zero, v_be = zero, m_bo = zero, m_bi = zero, m_be = zero)
+  i <- which(n_coupe > 0)
+  if (!length(i)) return(out)
+  ij <- cbind(coh$siteID[i], coh$species[i])
+  vu <- volume_tarif_schaeffer(tarif$numero[ij], coh$dbh[i], tarif$type[ij])
+  vu[coh$dbh[i] < 7.5 | !is.finite(vu)] <- 0
+  v <- n_coupe[i] * vu / sp
+  tau <- .filiere_taux(filiere$taux_bo, grp_mat[ij], coh$dbh[i], res_mat[ij])
+  rho <- tarif$rho[ij]; rho[!is.finite(rho)] <- 0
+  bi <- bi_mat[ij]
+  f <- factor(coh$siteID[i], levels = seq_len(n_sites))
+  som <- function(x) { r <- as.numeric(tapply(x, f, sum)); r[is.na(r)] <- 0; r }
+  parts <- list(bo = tau, bi = (1 - tau) * bi, be = (1 - tau) * (1 - bi))
+  for (u in names(parts)) {
+    out[[paste0("v_", u)]] <- som(v * parts[[u]])
+    out[[paste0("m_", u)]] <- som(v * parts[[u]] * rho)
+  }
+  out
 }
 
 # Coupe entre deux pas : exploitabilite puis eclaircie, tiges tirees.
