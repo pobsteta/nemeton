@@ -290,6 +290,37 @@ test_that("trajectoires: the tolerance keeps stochastic noise out of wins and lo
                                     tolerance = -1), "tolerance")
 })
 
+test_that("trajectoires: the Pareto front ignores differences within the tolerance", {
+  u <- .unites(1)
+  tr <- .traj_test()
+  tr <- tr[tr$unite == "1", ]
+  # conservation 110 tC/ha, sans gestion 109 : meme dynamique a 1 % pres
+  r <- comparer_itineraires(u, c(P = 1, C = 1), .catalogue_test(), trajectoires = tr)
+  expect_true(all(r$pareto))
+  r0 <- comparer_itineraires(u, c(P = 1, C = 1), .catalogue_test(), trajectoires = tr,
+                             tolerance = 0)
+  expect_false(r0$pareto[r0$itineraire == "sans_gestion"])
+  expect_true(all(r0$pareto[r0$itineraire != "sans_gestion"]))
+  # au-dela de la tolerance, le candidat domine sort du front
+  tr2 <- rbind(.traj("production", prel = 40, carb = 10, unites = "1"),
+               .traj("conservation", prel = 0, carb = 60, unites = "1"),
+               .traj("sans_gestion", prel = 0, carb = 40, unites = "1"))
+  r2 <- comparer_itineraires(u, c(P = 1, C = 1), .catalogue_test(), trajectoires = tr2)
+  expect_false(r2$pareto[r2$itineraire == "sans_gestion"])
+})
+
+test_that(".itin_pareto_tolerance reduces to the usual Pareto front at 0", {
+  m <- rbind(a = c(1, 5), b = c(2, 4), c = c(1, 4), d = c(3, 1))
+  expect_equal(.itin_pareto_tolerance(m, 0), c(TRUE, TRUE, FALSE, TRUE))
+  expect_equal(.itin_pareto_tolerance(m, 0),
+               identify_pareto_optimal(as.data.frame(m), c("V1", "V2"))$is_optimal)
+  # a 30 % : b double la 1re famille de a et ne perd que 20 % sur la 2e, il
+  # le domine ; b domine c ; d (3 contre 2) reste
+  expect_equal(.itin_pareto_tolerance(m, 0.3), c(FALSE, TRUE, FALSE, TRUE))
+  # deux candidats a 3 % l'un de l'autre restent tous deux a 5 %
+  expect_equal(.itin_pareto_tolerance(rbind(c(0, 100), c(0, 97)), 0.05), c(TRUE, TRUE))
+})
+
 test_that("trajectoires: horizon, missing variables and unknown units are refused", {
   u <- .unites(2)
   tr <- .traj_test()

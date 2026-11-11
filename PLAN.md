@@ -316,6 +316,12 @@ des poids, faute de lire E et B ; le front de Pareto et le rang ignorent
 `tolerance` (libre évolution et `sans_gestion`, de même dynamique, sont
 départagés par le bruit des tirages). Proposition non codée : dominance à
 `tolerance` près.
+**v2026.11.22** : front de Pareto de `comparer_itineraires(trajectoires =)`
+à `tolerance` près ; sur le run des 9 UGF, libre évolution et
+`sans_gestion` restent toutes deux sur le front, la futaie régulière en
+sort dans deux UGF (gain de P < 5 %, perte de C > 5 %). Le rang ignore
+toujours `tolerance`. Reste le point 1 : lire E et B depuis la simulation.
+Version nemetonshiny vérifiée : v2026.10.18.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
