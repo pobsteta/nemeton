@@ -693,3 +693,67 @@ bruit à l'échelle d'une placette, pas ceux entre gestion et sans gestion.
 L'effet propre de `rapport_g_tiges` n'est pas isolé : le premier run
 (rapport 1) portait sur d'autres placettes ; écart observé inférieur à
 1 m²/ha sur les quatre entrées concernées.
+
+### `comparer_itineraires(trajectoires =)` sur un vrai run (2026-11-11)
+
+Premier exercice réel de la comparaison du 2026-11-10
+(`data-raw/comparaison_catalogue_bfc.R`). Calibration, plafond de densité et
+horizon (50 ans, 10 tirages) sont ceux de la note précédente. 9 UGF fictives
+de 20 placettes de test de même essence dominante : chêne sessile × 3,
+hêtre × 3, sapin, épicéa, douglas. Leurs placettes sont tirées au hasard
+dans l'essence, sans contiguïté : ce ne sont pas de vraies UGF. Tous les
+candidats admissibles et `sans_gestion` sont simulés sur les mêmes
+placettes avec `unites =`. L'îlot de sénescence est écarté : il a la même
+dynamique que la libre évolution. Classement sous quatre profils,
+`reference = "sans_gestion"`.
+
+**Valeurs** (moyenne de l'UGF à 50 ans ; P = volume prélevé cumulé en
+m³/ha, C = carbone sur pied en tC/ha ; fourchette sur les UGF d'une même
+essence) :
+
+| UGF | Itinéraire | P | C |
+|---|---|---|---|
+| chêne sessile × 3 | futaie régulière | 193-218 | 60-63 |
+| | futaie irrégulière | 185-207 | 73 |
+| | conversion du TSF | 168-196 | 79-82 |
+| | libre évolution / sans gestion | 0 | 146-148 |
+| hêtre × 3 | futaie régulière | 252-282 | 64-68 |
+| | futaie irrégulière | 243-266 | 69-77 |
+| | libre évolution / sans gestion | 0 | 146-161 |
+| sapin | futaie régulière | 414 | 85 |
+| épicéa | futaie régulière | 361 | 87 |
+| douglas | futaie régulière | 595 | 68 |
+| résineux | libre évolution / sans gestion | 0 | 162-250 |
+
+**Demi-largeur à l'échelle de l'UGF** : 4,3 m²/ha de G à 50 ans pour
+20 placettes (groupes conformes tirés au hasard), contre ± 14,5 m²/ha par
+placette. À cette échelle, l'ordre des itinéraires gérés d'une même essence
+se répète sur les trois UGF. Pour les chênes, la futaie régulière prélève le
+plus et garde le moins de carbone sur pied ; la conversion du TSF prélève le
+moins et en garde le plus ; la futaie irrégulière se place entre les deux.
+Pour le hêtre, la futaie régulière prélève plus que l'irrégulière (de 3 à
+6 %) et garde moins de carbone (de 7 à 13 %).
+
+**Ce que le run apprend sur la méthode** (à trancher par Pascal) :
+
+1. **Avec deux familles, le classement ne fait qu'exprimer le rapport des
+   poids P:C.** Toute gestion gagne en P et perd en C contre `sans_gestion`.
+   Le propriétaire privé (P 3, C 1) met en tête l'itinéraire qui prélève le
+   plus, le technicien (C 3, P 1) la libre évolution. Les profils à poids
+   égaux (gestionnaire ONF 3/3, naturaliste 1/1) mettent en tête
+   l'itinéraire dont la perte relative de C est la plus faible (conversion
+   du TSF chez les chênes), puisque chaque famille est ramenée sur
+   [-1, 1]. Le carbone prélevé (produits, substitution, famille E) n'est
+   pas lu : la gestion est pénalisée en C sans contrepartie. Avant de
+   montrer ce classement à un acteur, il faut lire au moins E et B depuis
+   la simulation, sinon le dire à côté du rang.
+2. **Le front de Pareto ignore `tolerance`.** Libre évolution et
+   `sans_gestion` ont la même dynamique (P = 0, C à 2 % près). Dans chacune
+   des 9 UGF, l'une des deux sort du front, selon le tirage. Proposition :
+   une dominance à `tolerance` près (A ne domine B que s'il le dépasse de
+   plus de `tolerance` sur au moins une famille sans perdre plus de
+   `tolerance` sur aucune), la règle qui vaut déjà pour les familles
+   gagnantes et perdantes. Non codé.
+3. Les écarts de rang entre libre évolution et `sans_gestion` (de 1 à 5
+   selon les UGF) sont du bruit de tirage : le rang ne tient pas compte de
+   `tolerance` non plus.
