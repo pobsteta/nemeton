@@ -16,7 +16,8 @@ simuler_itineraire(
   unites = NULL,
   carbone = FALSE,
   bef = 1.3,
-  fraction_carbone = 0.5
+  fraction_carbone = 0.5,
+  densite_max = NULL
 )
 }
 \arguments{
@@ -54,6 +55,16 @@ thinning at that mean diameter. The target is interpolated on the
 plot's Dg (all stems); below the first \code{dg_cm} there is no thinning,
 beyond the last one its value holds. Replaces
 \code{surface_terriere_cible_m2ha} (not both).}
+\item{rapport_g_tiges}{nature of the thinning: share of the basal
+area removed divided by share of the stems removed, i.e. the mean
+basal area of a removed stem over that of the stand before the cut
+(the Ve/V of the guides, on basal area). \code{1} (the default when
+absent) removes the same share of every cohort; below 1 the
+thinning takes smaller stems (from below), above 1 larger ones.
+Each cohort is removed with probability \code{min(1, c (g / gmean)^b)},
+\code{c} and \code{b} solved per plot so that the basal area removed is the
+one of the target and the ratio the one given (as close as the
+sizes present allow). Needs a thinning rule.}
 }
 Stems removed are drawn (binomial per cohort): rounding would never cut
 a cohort of a single large stem.}
@@ -97,6 +108,17 @@ aboveground biomass. Default 1.30, as \code{\link[=indicateur_c1_biomasse]{indic
 \item{fraction_carbone}{Numeric. Carbon fraction of the dry biomass.
 Default 0.50, the value of \code{inst/extdata/wood_density.csv} used by
 \code{\link[=indicateur_c1_biomasse]{indicateur_c1_biomasse()}}.}
+
+\item{densite_max}{data.frame or \code{NULL}. Self-thinning ceiling applied
+after every FINN step: \code{essence} and \code{rdi_max}, the maximum stand
+density index of plots dominated (basal area) by that species, and
+optionally \code{g_max}, their maximum basal area (m2/ha), with a row
+\code{essence = "toutes"} used for the other species and for the \code{"other"}
+group; usually \code{\link[=densite_max_ifn]{densite_max_ifn()}}. Above a ceiling of its dominant
+species, a plot loses its smallest stems until it is back under both
+(natural mortality, not counted as harvest). Default \code{NULL}: FINN's
+mortality alone, which does not stop the basal area (spec 068, section
+on the density ceiling).}
 }
 \value{
 data.frame in long format, one row per plot, year and variable:

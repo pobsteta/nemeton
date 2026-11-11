@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.18** (release du 2026-10-19), relevée le 2026-11-10.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.18** (release du 2026-10-19), relevée le 2026-11-11.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -288,6 +288,23 @@ sourcées, admissibles partout, effets B/N `+` et P `-`. 10 entrées sur 12.
 Restent TSF maintenu (coupe du taillis, rejets absents de FINN) et
 plantation (FINN ne plante pas). Version nemetonshiny vérifiée :
 v2026.10.18.
+
+### 2026-11-11
+
+Premier run réel du catalogue sur FINN (torch installé) : calibration BFC
+1 000 placettes, conformes 1 000, 10 itinéraires sourcés contre
+`sans_gestion` sur les mêmes placettes de test, 50 ans
+(`data-raw/simulation_catalogue_bfc.R`, sorties hors dépôt). Défaut trouvé :
+sans gestion, G ne plafonne pas (douglas 81 m²/ha à 50 ans, 238 à 150 ans) ;
+diagnostic dans `data-raw/diagnostic_plafond_finn.R`. **v2026.11.21** :
+`densite_max_ifn()` (q99 du RDI additif et de G par essence dominante, IFN)
+et `simuler_itineraire(densite_max =)` (auto-éclaircie des petites tiges
+entre les pas) ; règle `rapport_g_tiges` (nature de l'éclaircie) renseignée
+pour le hêtre régulier (0,92) et les trois résineux (0,83). Résultats à
+50 ans et limites : spec 068 § 9 (note du 2026-11-11). Reste : biais de
+croissance de FINN entre 10 et 50 m²/ha (+0,7 m²/ha par pas), intervalle à
+50 ans de ± 14,5 m²/ha par placette, TSF maintenu et plantation. Version
+nemetonshiny vérifiée : v2026.10.18.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
