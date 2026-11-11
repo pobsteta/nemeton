@@ -20,7 +20,8 @@ simuler_itineraire(
   unites = NULL,
   carbone = FALSE,
   bef = 1.3,
-  fraction_carbone = 0.5
+  fraction_carbone = 0.5,
+  densite_max = NULL
 )
 ```
 
@@ -88,6 +89,19 @@ simuler_itineraire(
       its value holds. Replaces `surface_terriere_cible_m2ha` (not
       both).
 
+  rapport_g_tiges
+
+  :   nature of the thinning: share of the basal area removed divided by
+      share of the stems removed, i.e. the mean basal area of a removed
+      stem over that of the stand before the cut (the Ve/V of the
+      guides, on basal area). `1` (the default when absent) removes the
+      same share of every cohort; below 1 the thinning takes smaller
+      stems (from below), above 1 larger ones. Each cohort is removed
+      with probability `min(1, c (g / gmean)^b)`, `c` and `b` solved per
+      plot so that the basal area removed is the one of the target and
+      the ratio the one given (as close as the sizes present allow).
+      Needs a thinning rule.
+
   Stems removed are drawn (binomial per cohort): rounding would never
   cut a cohort of a single large stem.
 
@@ -151,6 +165,19 @@ simuler_itineraire(
   Numeric. Carbon fraction of the dry biomass. Default 0.50, the value
   of `inst/extdata/wood_density.csv` used by
   [`indicateur_c1_biomasse()`](https://pobsteta.github.io/nemeton/reference/indicateur_c1_biomasse.md).
+
+- densite_max:
+
+  data.frame or `NULL`. Self-thinning ceiling applied after every FINN
+  step: `essence` and `rdi_max`, the maximum stand density index of
+  plots dominated (basal area) by that species, and optionally `g_max`,
+  their maximum basal area (m2/ha), with a row `essence = "toutes"` used
+  for the other species and for the `"other"` group; usually
+  [`densite_max_ifn()`](https://pobsteta.github.io/nemeton/reference/densite_max_ifn.md).
+  Above a ceiling of its dominant species, a plot loses its smallest
+  stems until it is back under both (natural mortality, not counted as
+  harvest). Default `NULL`: FINN's mortality alone, which does not stop
+  the basal area (spec 068, section on the density ceiling).
 
 ## Value
 

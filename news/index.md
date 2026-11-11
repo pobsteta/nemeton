@@ -1,5 +1,39 @@
 # Changelog
 
+## nemeton 2026.11.21 (2026-11-11)
+
+### Nouveautés
+
+- **[`densite_max_ifn()`](https://pobsteta.github.io/nemeton/reference/densite_max_ifn.md)**
+  (spec 068) : plafond d’auto-éclaircie par essence dominante, tiré de
+  placettes d’inventaire : quantile 99 % (par défaut) de la forme
+  additive du RDI de Reineke (`rdi_max`) et de la surface terrière
+  (`g_max`), ligne `"toutes"` pour les autres essences. En BFC (7 632
+  placettes IFN), RDI de 955 à 1 254, G de 49 à 75 m²/ha.
+- **`simuler_itineraire(densite_max =)`** : après chaque pas de FINN,
+  une placette au-dessus de l’un des plafonds de son essence dominante
+  perd ses plus petites tiges. Ces pertes sont de la mortalité
+  naturelle, non comptée dans `g_prelevee`. FINN seul ne stabilise pas G
+  sans gestion (douglas à 238 m²/ha après 150 ans) ; avec le plafond,
+  les courbes se stabilisent entre 50 (chênes) et 68 m²/ha (épicéa). Par
+  défaut `NULL` : comportement inchangé.
+- **Règle d’itinéraire `rapport_g_tiges`** : nature de l’éclaircie, soit
+  la part de G prélevée divisée par la part des tiges prélevées (le Ve/V
+  des guides, en surface terrière). En dessous de 1, l’éclaircie prend
+  les petites tiges (par le bas). Au-dessus, elle prend les grosses. 1
+  retire la même part de chaque cohorte, comme avant.
+
+### Changements de résultat
+
+- Catalogue d’itinéraires : `rapport_g_tiges` vaut 0,92 pour
+  `bfc_hetre_futaie_reguliere` (mémento ONF 2018, p. 33) et 0,83 pour
+  les futaies régulières d’épicéa, de sapin et de douglas (SFFC 2012,
+  p. 21). Leurs simulations prélèvent désormais des tiges plus petites
+  que la moyenne (écart inférieur à 1 m²/ha de G à 50 ans sur un run
+  BFC). Les notes de ces entrées corrigent une affirmation antérieure :
+  retirer la même part de chaque cohorte revient déjà à une éclaircie «
+  par le haut » au sens des guides.
+
 ## nemeton 2026.11.20 (2026-11-10)
 
 ### Nouveautés

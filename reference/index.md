@@ -781,6 +781,8 @@ chaque exclusion, comparaison qualitative ponderee par profil
   : Conformal residuals of a FINN calibration
 - [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
   : Simulate stand trajectories under a silvicultural itinerary
+- [`densite_max_ifn()`](https://pobsteta.github.io/nemeton/reference/densite_max_ifn.md)
+  : Maximum stand density by dominant species from inventory plots
 
 ### Corpus de connaissances et RAG
 

@@ -13,7 +13,7 @@ dynamics only, the cuts are imposed from outside."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.20.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.21</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -144,7 +144,8 @@ dynamics only, the cuts are imposed from outside.</p>
 <span>  unites <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  carbone <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  bef <span class="op">=</span> <span class="fl">1.3</span>,</span>
-<span>  fraction_carbone <span class="op">=</span> <span class="fl">0.5</span></span>
+<span>  fraction_carbone <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  densite_max <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -202,6 +203,18 @@ thinning at that mean diameter. The target is interpolated on the
 plot's Dg (all stems); below the first <code>dg_cm</code> there is no thinning,
 beyond the last one its value holds. Replaces
 <code>surface_terriere_cible_m2ha</code> (not both).</p></dd>
+
+<dt>rapport_g_tiges</dt>
+<dd><p>nature of the thinning: share of the basal
+area removed divided by share of the stems removed, i.e. the mean
+basal area of a removed stem over that of the stand before the cut
+(the Ve/V of the guides, on basal area). <code>1</code> (the default when
+absent) removes the same share of every cohort; below 1 the
+thinning takes smaller stems (from below), above 1 larger ones.
+Each cohort is removed with probability <code>min(1, c (g / gmean)^b)</code>,
+<code>c</code> and <code>b</code> solved per plot so that the basal area removed is the
+one of the target and the ratio the one given (as close as the
+sizes present allow). Needs a thinning rule.</p></dd>
 
 
 </dl><p>Stems removed are drawn (binomial per cohort): rounding would never cut
@@ -262,6 +275,19 @@ aboveground biomass. Default 1.30, as <code><a href="indicateur_c1_biomasse.html
 <dd><p>Numeric. Carbon fraction of the dry biomass.
 Default 0.50, the value of <code>inst/extdata/wood_density.csv</code> used by
 <code><a href="indicateur_c1_biomasse.html">indicateur_c1_biomasse()</a></code>.</p></dd>
+
+
+<dt id="arg-densite-max">densite_max<a class="anchor" aria-label="anchor" href="#arg-densite-max"></a></dt>
+<dd><p>data.frame or <code>NULL</code>. Self-thinning ceiling applied
+after every FINN step: <code>essence</code> and <code>rdi_max</code>, the maximum stand
+density index of plots dominated (basal area) by that species, and
+optionally <code>g_max</code>, their maximum basal area (m2/ha), with a row
+<code>essence = "toutes"</code> used for the other species and for the <code>"other"</code>
+group; usually <code><a href="densite_max_ifn.html">densite_max_ifn()</a></code>. Above a ceiling of its dominant
+species, a plot loses its smallest stems until it is back under both
+(natural mortality, not counted as harvest). Default <code>NULL</code>: FINN's
+mortality alone, which does not stop the basal area (spec 068, section
+on the density ceiling).</p></dd>
 
 </dl></div>
     <div class="section level2">
