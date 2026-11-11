@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.22.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.23</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +116,27 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.23" id="nemeton-20261123-2026-11-11">nemeton 2026.11.23 (2026-11-11)<a class="anchor" aria-label="anchor" href="#nemeton-20261123-2026-11-11"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-23">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-23"></a></h3>
+<ul><li>
+<strong><code>simuler_itineraire(produits = TRUE)</code></strong> (spec 068) suit le bois récolté hors forêt. Chaque tige coupée est ventilée en bois d’œuvre, bois d’industrie et bois énergie ; les produits entrent dans deux pools à décroissance du premier ordre ; les émissions évitées par substitution (matériau et énergie) sont comptées. Nouvelles variables : <code>carbone_produits</code>, <code>carbone_total</code> (sur pied + produits, tC/ha), <code>substitution</code> (tCO₂/ha) et <code>volume_preleve_bo</code> (m³/ha). Demande <code>carbone = TRUE</code>.</li>
+<li>
+<strong><code><a href="../reference/parametres_filiere_bois.html">parametres_filiere_bois()</a></code></strong> : paramètres sourcés, à modifier pour tester une autre hypothèse.
+<ul><li>Taux de bois d’œuvre potentiel par groupe d’essences et classe de diamètre, mesuré sur l’IFN de BFC (qualités 1 et 2, 2005-2013, <code>inst/extdata/taux_bois_oeuvre_ifn.csv</code>, <code>data-raw/taux_bois_oeuvre_ifn.R</code>).</li>
+<li>Rendements, demi-vies (20 et 5 ans) et coefficients de substitution (1,6 tCO₂/m³ de produit, 0,916 tCO₂/t sèche brûlée) de l’étude INRA-IGN
+<ol start="2017" style="list-style-type: decimal"><li>
+</li></ol></li>
+<li>Part du bois d’industrie hors bois d’œuvre : une hypothèse (0,25 feuillus, 0,60 résineux).</li>
+</ul></li>
+</ul></div>
+<div class="section level3">
+<h3 id="changements-de-résultat-2026-11-23">Changements de résultat<a class="anchor" aria-label="anchor" href="#changements-de-r%C3%A9sultat-2026-11-23"></a></h3>
+<ul><li>
+<strong><code>comparer_itineraires(trajectoires =)</code></strong> lit la famille E (substitution cumulée), et C sur <code>carbone_total</code> quand les trajectoires le portent. Sans <code>produits = TRUE</code>, rien ne change. Sur 9 UGF de BFC, la gestion passe en tête sous les profils gestionnaire ONF, naturaliste et propriétaire privé. Elle gagne désormais P et E et ne perd que C ; le carbone des produits (8 à 27 tC/ha à 50 ans) ne comble pas l’écart de stock sur pied (spec 068, note du 2026-11-11).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.22" id="nemeton-20261122-2026-11-11">nemeton 2026.11.22 (2026-11-11)<a class="anchor" aria-label="anchor" href="#nemeton-20261122-2026-11-11"></a></h2>
 <div class="section level3">

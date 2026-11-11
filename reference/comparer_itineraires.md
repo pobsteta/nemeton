@@ -71,9 +71,10 @@ comparer_itineraires(
   Or the simulated trajectories of chantier D: the output of
   [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md),
   one call per itinerary bound with
-  [`rbind()`](https://rdrr.io/r/base/cbind.html), with `volume = TRUE`
-  and `carbone = TRUE` for the two families it carries (see Details).
-  The rows of
+  [`rbind()`](https://rdrr.io/r/base/cbind.html), with `volume = TRUE`,
+  `carbone = TRUE` and, for E and the carbon of the products,
+  `produits = TRUE` (see Details). Simulate every itinerary with the
+  same options. The rows of
   [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
   without management (`itineraire = "sans_gestion"`) are a candidate of
   every unit. Then `methode` becomes `"finn"` and `incertitude` numeric;
@@ -116,9 +117,9 @@ qualitative and sourced, not simulated. Display it as a rank. The
 catalogue is not exhaustive; an itinerary absent from it is not
 compared.
 
-**With `trajectoires`** (spec 068), two families are read from the
-simulation, the others weighted by the profile are set aside (said in
-`familles_evaluees`):
+**With `trajectoires`** (spec 068), up to three families are read from
+the simulation, the others weighted by the profile are set aside (said
+in `familles_evaluees`):
 
 - P:
 
@@ -127,7 +128,14 @@ simulation, the others weighted by the profile are set aside (said in
 
 - C:
 
-  carbon standing at the horizon (`carbone`, tC/ha).
+  carbon at the horizon: standing plus in the products (`carbone_total`,
+  tC/ha) when simulated with `produits = TRUE`, else standing only
+  (`carbone`).
+
+- E:
+
+  emissions avoided by material and energy substitution, summed up to
+  the horizon (`substitution`, tCO2/ha; `produits = TRUE`).
 
 Within a unit, each family is rescaled to `[-1, 1]` across the
 candidates (`-1` the lowest value, `1` the highest, `0` for all when

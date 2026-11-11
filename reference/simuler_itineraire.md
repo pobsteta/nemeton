@@ -21,7 +21,9 @@ simuler_itineraire(
   carbone = FALSE,
   bef = 1.3,
   fraction_carbone = 0.5,
-  densite_max = NULL
+  densite_max = NULL,
+  produits = FALSE,
+  filiere = parametres_filiere_bois()
 )
 ```
 
@@ -179,6 +181,24 @@ simuler_itineraire(
   harvest). Default `NULL`: FINN's mortality alone, which does not stop
   the basal area (spec 068, section on the density ceiling).
 
+- produits:
+
+  Logical. Also follow the harvested wood outside the forest (needs
+  `carbone = TRUE`): every stem cut is split into sawlog, industry and
+  energy wood with `filiere`, the products feed two pools with
+  first-order decay, and the emissions avoided by material and energy
+  substitution are counted. Adds `"carbone_produits"` (stock, tC/ha),
+  `"carbone_total"` (`"carbone"` + `"carbone_produits"`, tC/ha),
+  `"substitution"` (tCO2/ha avoided at that date) and
+  `"volume_preleve_bo"` (sawlog volume removed, m3/ha). The products of
+  cuts made before year 0 are not counted. Default `FALSE`.
+
+- filiere:
+
+  List of the wood-chain parameters, as
+  [`parametres_filiere_bois()`](https://pobsteta.github.io/nemeton/reference/parametres_filiere_bois.md)
+  (the default) returns them.
+
 ## Value
 
 data.frame in long format, one row per plot, year and variable:
@@ -187,12 +207,13 @@ state), `variable` (`"g"`: basal area before the cut, m2/ha; `"tiges"`:
 stems/ha before the cut; `"g_prelevee"`: basal area removed at that
 date, m2/ha; with `volume = TRUE`, `"volume"` and `"volume_preleve"`,
 m3/ha; with `carbone = TRUE`, `"carbone"` and `"carbone_preleve"`,
-tC/ha), `moyenne` (mean of the trajectories), `bas`, `haut` (interval,
-for `"g"` only) and `intervalle` (`"conforme"` at one step,
-`"conforme_racine"` or `"conforme_lineaire"` beyond, `"aucun"` without
-conformal residuals or at year 0). With `unites`: `unite` instead of
-`placette`, plus `n_placettes` and `groupes_conformes` (`"voisins"`,
-`"hasard"` or `"placette"` for a unit of one plot).
+tC/ha; with `produits = TRUE`, see that argument), `moyenne` (mean of
+the trajectories), `bas`, `haut` (interval, for `"g"` only) and
+`intervalle` (`"conforme"` at one step, `"conforme_racine"` or
+`"conforme_lineaire"` beyond, `"aucun"` without conformal residuals or
+at year 0). With `unites`: `unite` instead of `placette`, plus
+`n_placettes` and `groupes_conformes` (`"voisins"`, `"hasard"` or
+`"placette"` for a unit of one plot).
 
 ## Details
 
@@ -211,8 +232,16 @@ and 20 cm and 18.6 % more above 70 cm
 (stems below 7.5 cm carry none) and holds the same `bef` and
 `fraction_carbone` as C1, so that year 0 compares with C1.
 
+With `produits = TRUE`, the carbon of the products is that of the stem
+only (volume x basic density x `fraction_carbone`, no `bef`): branches,
+small wood and logging losses leave the account at the cut. The sawlog
+share is an upper bound (quality presumed on the standing tree) and the
+substitution factors a mean of the literature (see
+[`parametres_filiere_bois()`](https://pobsteta.github.io/nemeton/reference/parametres_filiere_bois.md)).
+
 ## See also
 
 [`calibrer_finn()`](https://pobsteta.github.io/nemeton/reference/calibrer_finn.md),
 [`conformer_finn()`](https://pobsteta.github.io/nemeton/reference/conformer_finn.md),
-[`itineraires_catalogue()`](https://pobsteta.github.io/nemeton/reference/itineraires_catalogue.md)
+[`itineraires_catalogue()`](https://pobsteta.github.io/nemeton/reference/itineraires_catalogue.md),
+[`parametres_filiere_bois()`](https://pobsteta.github.io/nemeton/reference/parametres_filiere_bois.md)

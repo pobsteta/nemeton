@@ -13,7 +13,7 @@ dynamics only, the cuts are imposed from outside."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.22.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.23</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -145,7 +145,9 @@ dynamics only, the cuts are imposed from outside.</p>
 <span>  carbone <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  bef <span class="op">=</span> <span class="fl">1.3</span>,</span>
 <span>  fraction_carbone <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>  densite_max <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  densite_max <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  produits <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  filiere <span class="op">=</span> <span class="fu"><a href="parametres_filiere_bois.html">parametres_filiere_bois</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -289,6 +291,23 @@ species, a plot loses its smallest stems until it is back under both
 mortality alone, which does not stop the basal area (spec 068, section
 on the density ceiling).</p></dd>
 
+
+<dt id="arg-produits">produits<a class="anchor" aria-label="anchor" href="#arg-produits"></a></dt>
+<dd><p>Logical. Also follow the harvested wood outside the
+forest (needs <code>carbone = TRUE</code>): every stem cut is split into sawlog,
+industry and energy wood with <code>filiere</code>, the products feed two pools
+with first-order decay, and the emissions avoided by material and
+energy substitution are counted. Adds <code>"carbone_produits"</code> (stock,
+tC/ha), <code>"carbone_total"</code> (<code>"carbone"</code> + <code>"carbone_produits"</code>, tC/ha),
+<code>"substitution"</code> (tCO2/ha avoided at that date) and
+<code>"volume_preleve_bo"</code> (sawlog volume removed, m3/ha). The products of
+cuts made before year 0 are not counted. Default <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-filiere">filiere<a class="anchor" aria-label="anchor" href="#arg-filiere"></a></dt>
+<dd><p>List of the wood-chain parameters, as
+<code><a href="parametres_filiere_bois.html">parametres_filiere_bois()</a></code> (the default) returns them.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -298,7 +317,8 @@ state), <code>variable</code> (<code>"g"</code>: basal area before the cut, m2/h
 <code>"tiges"</code>: stems/ha before the cut; <code>"g_prelevee"</code>: basal area
 removed at that date, m2/ha; with <code>volume = TRUE</code>, <code>"volume"</code> and
 <code>"volume_preleve"</code>, m3/ha; with <code>carbone = TRUE</code>, <code>"carbone"</code> and
-<code>"carbone_preleve"</code>, tC/ha), <code>moyenne</code> (mean of the trajectories),
+<code>"carbone_preleve"</code>, tC/ha; with <code>produits = TRUE</code>, see that
+argument), <code>moyenne</code> (mean of the trajectories),
 <code>bas</code>, <code>haut</code> (interval, for <code>"g"</code> only) and <code>intervalle</code>
 (<code>"conforme"</code> at one step, <code>"conforme_racine"</code> or
 <code>"conforme_lineaire"</code> beyond, <code>"aucun"</code> without conformal residuals or
@@ -321,10 +341,17 @@ give 1.8 % more than the IFN volumes in total, 9.6 % less between 7.5 and
 The carbon inherits this volume (stems below 7.5 cm carry none) and holds
 the same <code>bef</code> and <code>fraction_carbone</code> as C1, so that year 0 compares with
 C1.</p>
+<p>With <code>produits = TRUE</code>, the carbon of the products is that of the stem
+only (volume x basic density x <code>fraction_carbone</code>, no <code>bef</code>): branches,
+small wood and logging losses leave the account at the cut. The sawlog
+share is an upper bound (quality presumed on the standing tree) and the
+substitution factors a mean of the literature (see
+<code><a href="parametres_filiere_bois.html">parametres_filiere_bois()</a></code>).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="calibrer_finn.html">calibrer_finn()</a></code>, <code><a href="conformer_finn.html">conformer_finn()</a></code>, <code><a href="itineraires_catalogue.html">itineraires_catalogue()</a></code></p></div>
+    <div class="dont-index"><p><code><a href="calibrer_finn.html">calibrer_finn()</a></code>, <code><a href="conformer_finn.html">conformer_finn()</a></code>, <code><a href="itineraires_catalogue.html">itineraires_catalogue()</a></code>,
+<code><a href="parametres_filiere_bois.html">parametres_filiere_bois()</a></code></p></div>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

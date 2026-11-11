@@ -1032,6 +1032,8 @@ chaque exclusion, comparaison qualitative ponderee par profil
   : Simulate stand trajectories under a silvicultural itinerary
 - [`densite_max_ifn()`](https://pobsteta.github.io/nemeton/reference/densite_max_ifn.md)
   : Maximum stand density by dominant species from inventory plots
+- [`parametres_filiere_bois()`](https://pobsteta.github.io/nemeton/reference/parametres_filiere_bois.md)
+  : Parameters of the wood chain for harvested carbon and substitution
 
 ### Corpus de connaissances et RAG
 

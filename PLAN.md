@@ -379,7 +379,17 @@ tCO₂/m³ de produit et 0,50 tCO₂/m³ de bois énergie ; décomposition du
 bois mort (30/10 ans). Facteurs ADEME de
 [`indicateur_e2_evitement()`](https://pobsteta.github.io/nemeton/reference/indicateur_e2_evitement.md)
 non retrouvés en source primaire. Décisions D-E1 à D-E5 à prendre par
-Pascal avant de coder.
+Pascal avant de coder. **v2026.11.23** : Pascal, « prends ce qu’il y a
+de mieux » : D-E1 à D-E5 prises sur les propositions.
+`simuler_itineraire(produits = TRUE)` et
+[`parametres_filiere_bois()`](https://pobsteta.github.io/nemeton/reference/parametres_filiere_bois.md)
+;
+[`comparer_itineraires()`](https://pobsteta.github.io/nemeton/reference/comparer_itineraires.md)
+lit C = forêt + produits et E = substitution. Run des 9 UGF : produits +
+8 à 27 tC/ha, substitution d’environ 0,8 tCO₂/m³ récolté ; la gestion
+passe en tête sous ONF, naturaliste et propriétaire privé ; le
+technicien garde la libre évolution. Suite : B (bois mort, gros bois)
+depuis la simulation. Version nemetonshiny vérifiée : v2026.10.18.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
