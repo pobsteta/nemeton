@@ -254,3 +254,13 @@ Lavoisier, ISBN 978-2-84207-315-2), the guide for the *arc jurassien
   Châtaigneraie en futaie irrégulière.* ONF, ref. 9200-15-GUI-SAM-054.
 - ONF DT Île-de-France – Nord-Ouest (2004). *Guide de sylviculture du
   châtaignier dans le Nord-Ouest* (truncated).
+
+## Carbone des produits bois et substitution (spec 068)
+
+Relevé : `specs/068-trajectoires-finn/sources-carbone-produits.md`. PDF dans
+`carbone_produits/` (ignorés), liens dans le § 7 du relevé : GIEC 2019 vol. 4
+chap. 12 ; étude INRA-IGN 2017 (annexes) ; ADEME-IGN-FCBA 2016 (tomes 1 et
+2) ; Agreste DRAAF BFC n° 80, 91, 104 et DRAAF Grand Est 2022 ; mémento IGN
+2024 ; annexes des projections IGN-FCBA 2024. La table des taux de bois
+d'œuvre est recalculée par `data-raw/taux_bois_oeuvre_ifn.R` depuis l'export
+DataIFN.
