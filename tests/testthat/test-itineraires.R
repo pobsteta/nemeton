@@ -385,3 +385,27 @@ test_that("trajectoires: E reads the substitution, C the carbon of forest and pr
   expect_setequal(strsplit(rs$familles_gagnantes[rs$itineraire == "production"], ", ")[[1]],
                   c("C", "E", "P"))
 })
+
+test_that("trajectoires: B reads the deadwood stock at the horizon", {
+  u <- .unites(1)
+  tr <- .traj_test(); tr <- tr[tr$unite == "1", ]
+  ajoute <- function(tr, itin, bm) {
+    x <- tr[tr$itineraire == itin & tr$variable == "carbone", ]
+    x$variable <- "bois_mort"; x$moyenne <- bm
+    rbind(tr, x)
+  }
+  # stock (pas un cumul) : seule la valeur a l'horizon compte
+  tr <- ajoute(tr, "production", c(0, 50, 4))
+  tr <- ajoute(tr, "conservation", c(0, 2, 30))
+  tr <- ajoute(tr, "sans_gestion", c(0, 2, 28))
+  r <- comparer_itineraires(u, c(P = 1, C = 1, B = 1), .catalogue_test(), trajectoires = tr,
+                            reference = "sans_gestion")
+  expect_true(all(r$familles_evaluees == "B, C, P"))
+  v <- attr(r, "valeurs")
+  vb <- v[v$famille == "B", ]
+  expect_equal(vb$valeur[vb$itineraire == "production"], 4)
+  expect_equal(unique(vb$unite_mesure), "m3/ha")
+  expect_match(r$familles_perdantes[r$itineraire == "production"], "B")
+  # conservation : 30 contre 28, au-dela de 5 % : B gagnee
+  expect_match(r$familles_gagnantes[r$itineraire == "conservation"], "B")
+})

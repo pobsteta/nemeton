@@ -812,3 +812,73 @@ l'irrégulière, et garde plus de 5 % de C en moins.
 - **Les coefficients de substitution varient d'un facteur 6** (0,59 à
   3,47 tCO₂/m³ pour le matériau) et le bois d'œuvre potentiel est une
   borne haute.
+
+### Bois mort et très gros bois : la famille B (2026-11-13, v2026.11.24)
+
+`simuler_itineraire(biodiversite = TRUE)` suit deux variables de B que FINN
+peut porter sans hauteur (sources-carbone-produits.md, § 5) :
+
+- **`volume_mort`** : volume bois fort tige (mêmes tarifs que `volume`) des
+  tiges mortes pendant le pas. Il en vient de deux sources : la mortalité de
+  FINN, lue cohorte par cohorte (FINN 0.1.0 garde l'identité des cohortes :
+  la cohorte de rang k du site s ressort avec `cohortID = (k − 1) S + s`,
+  vérifié sur un mini-modèle), au diamètre d'entrée ; et l'auto-éclaircie
+  du plafond de densité, au diamètre de fin de pas. Les coupes n'en
+  produisent pas.
+- **`bois_mort`** : stock de ce bois mort, en décroissance du premier ordre :
+  2,3 %/an pour les feuillus et 6,9 %/an pour les résineux (demi-vies de 30
+  et 10 ans ; étude INRA-IGN 2017, tableau 13.1, d'après Zell et al. 2009,
+  référence non vérifiée). Le paramètre est `decomposition`.
+- **`tiges_tgb`** : tiges vivantes/ha d'au moins `seuil_tgb` cm (67,5 par
+  défaut, borne de la classe TGB de l'IFN et du facteur E de l'IBP).
+
+`comparer_itineraires()` lit B sur `bois_mort` à l'horizon. `tiges_tgb` est
+simulé mais pas lu, puisque la comparaison lit une variable par famille.
+
+Choix faits au codage, à valider :
+
+1. **Seul le bois mort produit depuis l'année 0 est compté**, pas le stock
+   initial, qui n'est pas dans les données IFN de la simulation. C'est un
+   écart entre itinéraires, pas un stock absolu.
+2. **Les rémanents d'exploitation (houppier) ne sont pas comptés** : FINN ne
+   porte que la tige. La gestion est donc un peu sous-estimée en B.
+3. **B lit le bois mort plutôt que les très gros bois**, parce qu'il est
+   alimenté par la mortalité, que la simulation mesure directement, et que
+   les très gros bois dépendent de la croissance des gros diamètres, que les
+   tarifs surestiment déjà (au-delà de 70 cm, § volume).
+
+**Correctif en passant.** Une placette vidée par une coupe (diamètre
+d'exploitabilité atteint par toutes les tiges) faisait échouer FINN, qui
+renumérote les sites et ne retrouve plus l'environnement. La placette est
+désormais gardée dans la grille par une cohorte vide, et peut recevoir des
+recrues.
+
+**Même run des 9 UGF** (`FINN_CMP_SUFFIXE=_biodiv`, mêmes placettes, 50 ans,
+plafond actif, produits), à 50 ans :
+
+| UGF | Itinéraires gérés : bois mort (m³/ha) | Sans gestion / libre évolution | TGB/ha géré | TGB/ha sans gestion |
+|---|---|---|---|---|
+| chêne sessile × 3 | 12-20 | 32-39 | 0,2-4,4 | 11-16 |
+| hêtre × 3 | 12-18 | 36-48 | 0 | 5-15 |
+| sapin | 25 | 76-78 | 0 | 32 |
+| épicéa | 37 | 93-95 | 0 | 12 |
+| douglas | 11 | 221-224 | 0 | 80 |
+
+Le bois mort sans gestion vient surtout du plafond de densité chez les
+résineux : le douglas, que FINN fait trop croître, est ramené au plafond pas
+après pas, et chaque retour au plafond fait du bois mort. Ses 224 m³/ha
+sont un artefact de ce couple biais de croissance / plafond, pas une
+prévision.
+
+**Classement** (poids P/C/E/B : propriétaire privé 3/1/3/1, gestionnaire
+ONF 3/3/1/3, technicien 1/3/1/3, naturaliste 1/1/1/3). Avec B, l'ONF et le
+naturaliste mettent en tête la libre évolution ou `sans_gestion` dans les
+9 UGF (une gestion avant). Le technicien ne change pas. Le propriétaire
+privé passe, pour les chênes, de la futaie régulière à la futaie
+irrégulière. Les itinéraires gérés perdent tous B contre `sans_gestion`.
+
+**Ce que ce classement doit dire à côté du rang** (en plus de la note
+précédente) : B ne lit que le bois mort produit depuis l'année 0 et sans
+rémanents ; sans gestion, il dépend du plafond de densité, donc du biais de
+croissance de FINN ; le rang dépend des poids des profils, qui sont
+provisoires (`profils_poids()`).

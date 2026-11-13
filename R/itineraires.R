@@ -197,7 +197,8 @@ itineraires_admissibles <- function(units, catalogue = itineraires_catalogue(),
 #'   of the catalogue. Or the simulated trajectories of chantier D: the
 #'   output of [simuler_itineraire()], one call per itinerary bound with
 #'   `rbind()`, with `volume = TRUE`, `carbone = TRUE` and, for E and the
-#'   carbon of the products, `produits = TRUE` (see Details). Simulate
+#'   carbon of the products, `produits = TRUE`, for B, `biodiversite =
+#'   TRUE` (see Details). Simulate
 #'   every itinerary with the same options. The rows of `simuler_itineraire()`
 #'   without management (`itineraire = "sans_gestion"`) are a candidate of
 #'   every unit. Then `methode` becomes `"finn"` and `incertitude` numeric;
@@ -230,7 +231,7 @@ itineraires_admissibles <- function(units, catalogue = itineraires_catalogue(),
 #' qualitative and sourced, not simulated. Display it as a rank. The
 #' catalogue is not exhaustive; an itinerary absent from it is not compared.
 #'
-#' **With `trajectoires`** (spec 068), up to three families are read from the
+#' **With `trajectoires`** (spec 068), up to four families are read from the
 #' simulation, the others weighted by the profile are set aside (said in
 #' `familles_evaluees`):
 #' \describe{
@@ -242,6 +243,10 @@ itineraires_admissibles <- function(units, catalogue = itineraires_catalogue(),
 #'   \item{E}{emissions avoided by material and energy substitution,
 #'     summed up to the horizon (`substitution`, tCO2/ha; `produits =
 #'     TRUE`).}
+#'   \item{B}{deadwood at the horizon (`bois_mort`, m3/ha;
+#'     `biodiversite = TRUE`): the stock produced by the natural mortality
+#'     simulated since year 0, after decay. The very large living trees
+#'     (`tiges_tgb`) are simulated but not read: one variable per family.}
 #' }
 #' Within a unit, each family is rescaled to `[-1, 1]` across the candidates
 #' (`-1` the lowest value, `1` the highest, `0` for all when they are
@@ -517,7 +522,10 @@ profils_poids <- function(profil = NULL) {
   # carbone_total (forêt + produits, simuler_itineraire(produits = TRUE))
   # avant le carbone sur pied seul
   C = list(variables = c(carbone_total = "tC/ha", carbone = "tC/ha"), cumul = FALSE),
-  E = list(variables = c(substitution = "tCO2/ha"), cumul = TRUE)
+  E = list(variables = c(substitution = "tCO2/ha"), cumul = TRUE),
+  # bois mort produit par la mortalite naturelle depuis l'annee 0
+  # (simuler_itineraire(biodiversite = TRUE)), stock a l'horizon
+  B = list(variables = c(bois_mort = "m3/ha"), cumul = FALSE)
 )
 
 # Valeurs par UGF x itineraire x famille a l'horizon, depuis la table longue
@@ -577,7 +585,7 @@ profils_poids <- function(profil = NULL) {
   if (!length(lignes)) {
     cli::cli_abort(c(
       "{.arg trajectoires} carries no variable read by the comparison.",
-      "i" = "Simulate with {.code volume = TRUE, carbone = TRUE, produits = TRUE} (P: {.field volume_preleve}, C: {.field carbone_total} or {.field carbone}, E: {.field substitution})."
+      "i" = "Simulate with {.code volume = TRUE, carbone = TRUE, produits = TRUE, biodiversite = TRUE} (P: {.field volume_preleve}, C: {.field carbone_total} or {.field carbone}, E: {.field substitution}; {.code biodiversite = TRUE} for B: {.field bois_mort})."
     ))
   }
   v <- do.call(rbind, lignes)

@@ -199,6 +199,20 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #'   cuts made before year 0 are not counted. Default `FALSE`.
 #' @param filiere List of the wood-chain parameters, as
 #'   [parametres_filiere_bois()] (the default) returns them.
+#' @param biodiversite Logical. Also follow two biodiversity variables that
+#'   FINN can carry without heights (spec 068, family B): the deadwood
+#'   produced by natural mortality (FINN and the density ceiling) and the
+#'   very large living trees. Adds `"volume_mort"` (stem volume of the
+#'   trees dead during the step, m3/ha, same tariffs as `volume`),
+#'   `"bois_mort"` (stock of that deadwood, m3/ha, first-order decay with
+#'   `decomposition`) and `"tiges_tgb"` (living stems/ha with a diameter of
+#'   at least `seuil_tgb`). The deadwood present at year 0 and the felling
+#'   residues are not counted. Default `FALSE`.
+#' @param seuil_tgb Numeric. Diameter (cm) of a very large tree. Default
+#'   67.5, the lower bound of the IFN "TGB" class and of the IBP factor E.
+#' @param decomposition Named numeric, `feuillus` and `resineux`: annual
+#'   decay rate of the deadwood. Default 0.023 and 0.069 (half-lives of 30
+#'   and 10 years; INRA-IGN 2017, table 13.1, after Zell et al. 2009).
 #'
 #' @return data.frame in long format, one row per plot, year and variable:
 #'   `placette`, `itineraire`, `annee` (years from the start, 0 = initial
@@ -206,8 +220,8 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #'   `"tiges"`: stems/ha before the cut; `"g_prelevee"`: basal area
 #'   removed at that date, m2/ha; with `volume = TRUE`, `"volume"` and
 #'   `"volume_preleve"`, m3/ha; with `carbone = TRUE`, `"carbone"` and
-#'   `"carbone_preleve"`, tC/ha; with `produits = TRUE`, see that
-#'   argument), `moyenne` (mean of the trajectories),
+#'   `"carbone_preleve"`, tC/ha; with `produits = TRUE` and
+#'   `biodiversite = TRUE`, see those arguments), `moyenne` (mean of the trajectories),
 #'   `bas`, `haut` (interval, for `"g"` only) and `intervalle`
 #'   (`"conforme"` at one step, `"conforme_racine"` or
 #'   `"conforme_lineaire"` beyond, `"aucun"` without conformal residuals or
@@ -246,7 +260,9 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
                                elargissement = c("racine", "lineaire"), volume = FALSE,
                                unites = NULL, carbone = FALSE, bef = 1.30,
                                fraction_carbone = 0.50, densite_max = NULL,
-                               produits = FALSE, filiere = parametres_filiere_bois()) {
+                               produits = FALSE, filiere = parametres_filiere_bois(),
+                               biodiversite = FALSE, seuil_tgb = 67.5,
+                               decomposition = c(feuillus = 0.023, resineux = 0.069)) {
   if (!inherits(calibration, "finn_calibration")) {
     cli::cli_abort("{.arg calibration} must come from {.fn calibrer_finn}.")
   }
@@ -268,6 +284,17 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     }
     filiere <- .filiere_verifier(filiere)
   }
+  if (isTRUE(biodiversite)) {
+    if (!is.numeric(seuil_tgb) || length(seuil_tgb) != 1L || !is.finite(seuil_tgb) ||
+        seuil_tgb <= 0) {
+      cli::cli_abort("{.arg seuil_tgb} must be a single positive diameter (cm).")
+    }
+    if (!is.numeric(decomposition) || !all(c("feuillus", "resineux") %in% names(decomposition)) ||
+        any(!is.finite(decomposition[c("feuillus", "resineux")])) ||
+        any(decomposition[c("feuillus", "resineux")] < 0)) {
+      cli::cli_abort("{.arg decomposition} must give non-negative rates {.field feuillus} and {.field resineux}.")
+    }
+  }
   .finn_verifier_installation()
 
   if (!"statut" %in% names(arbres)) arbres$statut <- "vivant"
@@ -279,7 +306,7 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   sp <- calibration$surface_placette
   n_sites <- nrow(prep$sites)
   env1 <- prep$env[prep$env$year == 0L, , drop = FALSE]
-  tarif <- if (isTRUE(volume) || isTRUE(carbone)) {
+  tarif <- if (isTRUE(volume) || isTRUE(carbone) || isTRUE(biodiversite)) {
     .itin_tarifs(arbres, environnement, prep, calibration$essences)
   } else NULL
   m <- calibration$modele
@@ -292,22 +319,40 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     bi_mat <- ifelse(res_mat, filiere$part_bi[["resineux"]], filiere$part_bi[["feuillus"]])
     decroit <- exp(-log(2) / filiere$demi_vie[c("bo", "bi")] * pas_a)
   }
+  if (isTRUE(biodiversite)) {
+    # bois mort : un pool feuillus, un pool resineux (site x essence FINN)
+    res_bm <- matrix(is_conifer(as.vector(tarif$espar)), nrow(tarif$espar))
+    garde_bm <- exp(-decomposition[c("feuillus", "resineux")] * pas_a)
+  }
 
   # une trajectoire : matrices site x pas (g, tiges, g prelevee, volumes)
   une_trajectoire <- function() {
     g <- tiges <- prel <- vol <- vprel <- carb <- cprel <- matrix(0, n_sites, n_pas + 1L)
-    cprod <- subst <- vbo <- matrix(0, n_sites, n_pas + 1L)
-    pool_bo <- pool_bi <- numeric(n_sites)
+    cprod <- subst <- vbo <- vmort <- bmort <- tgb <- matrix(0, n_sites, n_pas + 1L)
+    pool_bo <- pool_bi <- bm_f <- bm_r <- numeric(n_sites)
     coh <- prep$init[, c("siteID", "species", "dbh", "trees")]
     coh$trees <- round(coh$trees)
     etat <- .itin_etat(coh, n_sites, sp, tarif)
     g[, 1] <- etat$g; tiges[, 1] <- etat$tiges; vol[, 1] <- etat$v; carb[, 1] <- etat$c
+    if (isTRUE(biodiversite)) tgb[, 1] <- .itin_tiges_tgb(coh, n_sites, sp, seuil_tgb)
     for (k in seq_len(n_pas)) {
       coh <- .itin_un_pas(m, coh, env1, sp, length(calibration$essences))
-      if (!is.null(rdi_max)) coh <- .itin_auto_eclaircie(coh, rdi_max, n_sites, sp)
+      morts <- list(attr(coh, "morts"))
+      if (!is.null(rdi_max)) {
+        coh <- .itin_auto_eclaircie(coh, rdi_max, n_sites, sp)
+        morts[[2]] <- attr(coh, "morts")
+      }
       etat <- .itin_etat(coh, n_sites, sp, tarif)
       g[, k + 1L] <- etat$g; tiges[, k + 1L] <- etat$tiges; vol[, k + 1L] <- etat$v
       carb[, k + 1L] <- etat$c
+      if (isTRUE(biodiversite)) {
+        vm <- .itin_volume_morts(morts, tarif, res_bm, n_sites, sp)
+        bm_f <- bm_f * garde_bm[[1]] + vm$feuillus
+        bm_r <- bm_r * garde_bm[[2]] + vm$resineux
+        vmort[, k + 1L] <- vm$feuillus + vm$resineux
+        bmort[, k + 1L] <- bm_f + bm_r
+        tgb[, k + 1L] <- .itin_tiges_tgb(coh, n_sites, sp, seuil_tgb)
+      }
       if (isTRUE(produits)) {
         pool_bo <- pool_bo * decroit[[1]]
         pool_bi <- pool_bi * decroit[[2]]
@@ -338,7 +383,7 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
       if (isTRUE(produits)) cprod[, k + 1L] <- pool_bo + pool_bi
     }
     list(g = g, tiges = tiges, prel = prel, vol = vol, vprel = vprel, carb = carb, cprel = cprel,
-         cprod = cprod, subst = subst, vbo = vbo)
+         cprod = cprod, subst = subst, vbo = vbo, vmort = vmort, bmort = bmort, tgb = tgb)
   }
   traj <- lapply(seq_len(n_tirages), function(i) une_trajectoire())
   moy <- function(v) Reduce(`+`, lapply(traj, `[[`, v)) / n_tirages
@@ -364,6 +409,10 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
                  long(moy("carb") * k_c + moy("cprod"), "carbone_total"),
                  long(moy("subst"), "substitution"), long(moy("vbo"), "volume_preleve_bo"))
   }
+  if (isTRUE(biodiversite)) {
+    out <- rbind(out, long(moy("vmort"), "volume_mort"), long(moy("bmort"), "bois_mort"),
+                 long(moy("tgb"), "tiges_tgb"))
+  }
   conf <- calibration$conforme
   if (is.null(unites)) {
     k_unite <- rep(1L, nrow(out))
@@ -380,7 +429,8 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     out <- out[order(match(out$variable, c("g", "tiges", "g_prelevee", "volume", "volume_preleve",
                                             "carbone", "carbone_preleve", "carbone_produits",
                                             "carbone_total", "substitution",
-                                            "volume_preleve_bo")),
+                                            "volume_preleve_bo", "volume_mort", "bois_mort",
+                                            "tiges_tgb")),
                       out$annee, out$unite), ]
     out <- out[, c("unite", "n_placettes", "itineraire", "annee", "variable", "moyenne")]
     k_unite <- out$n_placettes
@@ -663,6 +713,37 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   out
 }
 
+# Tiges vivantes/ha d'au moins `seuil` cm par site.
+.itin_tiges_tgb <- function(coh, n_sites, sp, seuil) {
+  out <- numeric(n_sites)
+  i <- which(coh$dbh >= seuil & coh$trees > 0)
+  if (length(i)) {
+    s <- tapply(coh$trees[i], factor(coh$siteID[i], levels = seq_len(n_sites)), sum)
+    s[is.na(s)] <- 0
+    out <- as.numeric(s) / sp
+  }
+  out
+}
+
+# Volume bois fort tige (m3/ha) des tiges mortes pendant un pas, par site,
+# separe feuillus / resineux ; `morts` : liste de tables de cohortes (FINN,
+# auto-eclaircie). Tiges < 7,5 cm sans volume, comme `volume`.
+.itin_volume_morts <- function(morts, tarif, res_mat, n_sites, sp) {
+  out <- list(feuillus = numeric(n_sites), resineux = numeric(n_sites))
+  morts <- do.call(rbind, Filter(function(x) !is.null(x) && nrow(x), morts))
+  if (is.null(morts) || !nrow(morts)) return(out)
+  ij <- cbind(morts$siteID, morts$species)
+  vu <- volume_tarif_schaeffer(tarif$numero[ij], morts$dbh, tarif$type[ij])
+  vu[morts$dbh < 7.5 | !is.finite(vu)] <- 0
+  v <- morts$trees * vu / sp
+  res <- res_mat[ij]; res[is.na(res)] <- FALSE
+  f <- factor(morts$siteID, levels = seq_len(n_sites))
+  som <- function(x) { r <- as.numeric(tapply(x, f, sum)); r[is.na(r)] <- 0; r }
+  out$feuillus <- som(v * !res)
+  out$resineux <- som(v * res)
+  out
+}
+
 # Coupe entre deux pas : exploitabilite puis eclaircie, tiges tirees.
 .itin_couper <- function(coh, regles, n_sites, sp) {
   if (!nrow(coh)) return(coh)
@@ -748,6 +829,7 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
 # les gros bois (Charru et al. 2012).
 .itin_auto_eclaircie <- function(coh, plafonds, n_sites, sp) {
   if (!nrow(coh)) return(coh)
+  avant <- coh$trees
   r_i <- (coh$dbh / 25)^1.605 / sp
   gt_i <- .g_arbre(coh$dbh) / sp
   for (s in unique(coh$siteID)) {
@@ -769,29 +851,54 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
       }
     }
   }
-  coh[coh$trees > 0, , drop = FALSE]
+  # tiges retirees (mortalite naturelle, au diametre de fin de pas)
+  morts <- coh
+  morts$trees <- avant - coh$trees
+  out <- coh[coh$trees > 0, , drop = FALSE]
+  attr(out, "morts") <- morts[morts$trees > 0, , drop = FALSE]
+  out
 }
 
 # Un pas FINN depuis une table de cohortes (siteID, species, dbh, trees).
+# Attribut "morts" : tiges mortes pendant le pas par cohorte d'entree (siteID,
+# species, dbh d'entree, trees). FINN 0.1.0 garde l'identite des cohortes : la
+# cohorte de rang k d'un site s (S sites) ressort avec cohortID = (k - 1) S + s,
+# les recrues au-dela (data-raw/diagnostic_finn_processus.R) ; une cohorte
+# absente de la sortie est morte.
 .itin_un_pas <- function(m, coh, env1, sp, n_sp) {
   dt <- data.table::as.data.table
+  vide_df <- data.frame(siteID = integer(), species = integer(), dbh = numeric(),
+                        trees = numeric())
   coh <- coh[coh$trees > 0, , drop = FALSE]
-  init <- if (nrow(coh)) {
-    FINN::makeInitCohorts(dt(data.frame(siteID = coh$siteID, patchID = 1L,
-                                        species = coh$species, dbh = coh$dbh,
-                                        trees = coh$trees)), Nspecies = n_sp)
-  } else NULL
+  n_sites <- nrow(env1)
+  # un site sans tige (coupe rase) : FINN renumerote les sites et echoue ; une
+  # cohorte vide le garde dans la grille (il peut recevoir des recrues)
+  vides <- setdiff(seq_len(n_sites), coh$siteID)
+  entree <- rbind(coh, data.frame(siteID = vides, species = rep(1L, length(vides)),
+                                  dbh = rep(1, length(vides)), trees = rep(0, length(vides))))
+  entree <- entree[order(entree$siteID), , drop = FALSE]
+  init <- FINN::makeInitCohorts(dt(data.frame(siteID = entree$siteID, patchID = 1L,
+                                              species = entree$species, dbh = entree$dbh,
+                                              trees = entree$trees)), Nspecies = n_sp)
   sim <- stats::predict(m, env = dt(env1), init_cohort = init, patches = 1L,
                         patch_size = sp, device = "cpu", return_cohorts = "last")
   l <- as.data.frame(sim$long$cohort)
   l <- l[l$variable %in% c("trees", "dbh"), , drop = FALSE]
-  if (!nrow(l)) return(data.frame(siteID = integer(), species = integer(),
-                                  dbh = numeric(), trees = numeric()))
   cle <- paste(l$siteID, l$patchID, l$cohortID)
   n <- l[l$variable == "trees", , drop = FALSE]
   d <- l[l$variable == "dbh", , drop = FALSE]
   out <- data.frame(siteID = n$siteID, species = n$species,
                     dbh = d$value[match(cle[l$variable == "trees"], cle[l$variable == "dbh"])],
                     trees = n$value)
-  out[is.finite(out$trees) & out$trees > 0, , drop = FALSE]
+  # mortalite par cohorte d'entree
+  rang <- stats::ave(seq_len(nrow(entree)), entree$siteID, FUN = seq_along)
+  id_entree <- (rang - 1L) * n_sites + entree$siteID
+  t1 <- n$value[match(paste(entree$siteID, id_entree), paste(n$siteID, n$cohortID))]
+  t1[!is.finite(t1)] <- 0
+  morts <- entree
+  morts$trees <- pmax(0, entree$trees - t1)
+  morts <- morts[morts$trees > 0, , drop = FALSE]
+  out <- if (nrow(out)) out[is.finite(out$trees) & out$trees > 0, , drop = FALSE] else vide_df
+  attr(out, "morts") <- morts
+  out
 }

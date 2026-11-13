@@ -212,6 +212,38 @@ test_that("simuler_itineraire runs end to end with FINN", {
   expect_equal(unique(g$intervalle[g$annee == 15]), "conforme_racine")
   expect_true(all(g$bas <= g$moyenne & g$moyenne <= g$haut))
   expect_true(any(s2$moyenne[s2$variable == "g_prelevee"] > 0))
+  # bois mort depuis la mortalite FINN, et coupe rase (placettes videes :
+  # FINN renumerotait les sites et echouait)
+  e$ser <- "C20"
+  rase <- itin_demo(rotation_ans = 5, diametre_exploitabilite_cm = 0)
+  s3 <- simuler_itineraire(cal, a, e, itineraire = rase, horizon = 15, n_tirages = 2L,
+                           biodiversite = TRUE)
+  expect_true(all(c("volume_mort", "bois_mort", "tiges_tgb") %in% s3$variable))
+  expect_true(all(s3$moyenne[s3$variable %in% c("volume_mort", "bois_mort")] >= 0))
+  expect_true(all(s3$moyenne[s3$variable == "g" & s3$annee == 10] >= 0))
+})
+
+test_that(".itin_un_pas counts the trees dead in the step per cohort (FINN)", {
+  skip_on_cran()
+  skip_if_not_installed("FINN")
+  skip_if_not_installed("data.table")
+  skip_if_not(torch::torch_is_installed(), "libtorch not installed")
+  a <- arbres_finn_demo(); e <- env_finn_demo()
+  cal <- calibrer_finn(a, e, epoques = 2L, min_arbres_essence = 1L)
+  prep <- .finn_preparer(transform(a, d2 = NA_real_), e, cal$surface_placette,
+                         essences = cal$essences, variables_env = cal$variables_env,
+                         observations = FALSE)
+  env1 <- prep$env[prep$env$year == 0L, , drop = FALSE]
+  coh <- prep$init[, c("siteID", "species", "dbh", "trees")]
+  coh$trees <- round(coh$trees)
+  cal$modele$eval()
+  apres <- .itin_un_pas(cal$modele, coh, env1, cal$surface_placette, length(cal$essences))
+  morts <- attr(apres, "morts")
+  expect_true(all(morts$trees > 0))
+  # les morts viennent des cohortes d'entree, au diametre d'entree
+  expect_true(all(paste(morts$siteID, morts$species, morts$dbh) %in%
+                    paste(coh$siteID, coh$species, coh$dbh)))
+  expect_true(sum(morts$trees) <= sum(coh$trees))
 })
 
 # Sans FINN : le pas FINN est remplace par une croissance fixe (+1 cm), pour
@@ -554,4 +586,67 @@ test_that("simuler_itineraire follows the harvested carbon and the substitution 
   s2 <- sim(itineraire = it, filiere = f)
   expect_true(all(val(s2, "carbone_produits", 10) == 0))
   expect_equal(val(s2, "substitution", 10), 0.916 * val(s2, "carbone_preleve", 10) / (1.30 * 0.5))
+})
+
+test_that("simuler_itineraire follows the deadwood and the very large trees (FINN mocked)", {
+  # un pas factice : +1 cm, et un quart des tiges de chaque cohorte meurt
+  pas <- function(m, coh, env1, sp, n_sp) {
+    morts <- transform(coh, trees = floor(trees / 4))
+    out <- transform(coh, dbh = dbh + 1, trees = trees - floor(trees / 4))
+    out <- out[out$trees > 0, , drop = FALSE]
+    attr(out, "morts") <- morts[morts$trees > 0, , drop = FALSE]
+    out
+  }
+  local_mocked_bindings(.finn_verifier_installation = function() invisible(TRUE),
+                        .itin_un_pas = pas)
+  a <- arbres_finn_demo(); e <- env_finn_demo(); e$ser <- "C20"
+  cal <- calibration_factice()
+  s <- simuler_itineraire(cal, a, e, horizon = 20, n_tirages = 1L, biodiversite = TRUE,
+                          decomposition = c(feuillus = 0.1, resineux = 0.1))
+  expect_false("volume" %in% s$variable)
+  vm <- s[s$variable == "volume_mort", ]; bm <- s[s$variable == "bois_mort", ]
+  expect_true(all(vm$moyenne[vm$annee == 0] == 0))
+  expect_true(all(vm$moyenne[vm$annee == 5] > 0))
+  # stock : decroissance du premier ordre puis entrees du pas
+  for (t in c(10, 15, 20)) {
+    expect_equal(bm$moyenne[bm$annee == t],
+                 bm$moyenne[bm$annee == t - 5] * exp(-0.1 * 5) + vm$moyenne[vm$annee == t])
+  }
+  # sans decomposition, le stock est le cumul des entrees
+  s0 <- simuler_itineraire(cal, a, e, horizon = 20, n_tirages = 1L, biodiversite = TRUE,
+                           decomposition = c(feuillus = 0, resineux = 0))
+  v0 <- s0[s0$variable == "volume_mort", ]; b0 <- s0[s0$variable == "bois_mort", ]
+  expect_equal(b0$moyenne[b0$annee == 20],
+               as.numeric(tapply(v0$moyenne, v0$placette, sum)[b0$placette[b0$annee == 20]]))
+  # tres gros bois : les tiges a partir du seuil
+  st <- simuler_itineraire(cal, a, e, horizon = 5, n_tirages = 1L, biodiversite = TRUE,
+                           seuil_tgb = 1)
+  expect_equal(st$moyenne[st$variable == "tiges_tgb"], st$moyenne[st$variable == "tiges"])
+  sh <- simuler_itineraire(cal, a, e, horizon = 5, n_tirages = 1L, biodiversite = TRUE,
+                           seuil_tgb = 500)
+  expect_true(all(sh$moyenne[sh$variable == "tiges_tgb"] == 0))
+  expect_error(simuler_itineraire(cal, a, e, biodiversite = TRUE, seuil_tgb = -1), "seuil_tgb")
+  expect_error(simuler_itineraire(cal, a, e, biodiversite = TRUE,
+                                  decomposition = c(feuillus = 0.1)), "decomposition")
+})
+
+test_that("simuler_itineraire counts the self-thinning as deadwood, not the cuts (FINN mocked)", {
+  local_mocked_bindings(
+    .finn_verifier_installation = function() invisible(TRUE),
+    .itin_un_pas = function(m, coh, env1, sp, n_sp) transform(coh, dbh = dbh + 3)
+  )
+  a <- arbres_finn_demo(); e <- env_finn_demo(); e$ser <- "C20"
+  cal <- calibration_factice()
+  # croissance seule, sans mortalite : pas de bois mort
+  libre <- simuler_itineraire(cal, a, e, horizon = 20, n_tirages = 1L, biodiversite = TRUE)
+  expect_true(all(libre$moyenne[libre$variable %in% c("volume_mort", "bois_mort")] == 0))
+  # une coupe rase n'est pas du bois mort
+  rase <- simuler_itineraire(cal, a, e, itineraire = itin_demo(diametre_exploitabilite_cm = 0),
+                             horizon = 20, n_tirages = 1L, biodiversite = TRUE)
+  expect_true(all(rase$moyenne[rase$variable == "bois_mort"] == 0))
+  # l'auto-eclaircie sous plafond l'est
+  plaf <- simuler_itineraire(cal, a, e, horizon = 20, n_tirages = 1L, biodiversite = TRUE,
+                             densite_max = data.frame(essence = "toutes", rdi_max = 100))
+  expect_true(any(plaf$moyenne[plaf$variable == "volume_mort"] > 0))
+  expect_true(any(plaf$moyenne[plaf$variable == "bois_mort"] > 0))
 })

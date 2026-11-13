@@ -19,7 +19,10 @@ simuler_itineraire(
   fraction_carbone = 0.5,
   densite_max = NULL,
   produits = FALSE,
-  filiere = parametres_filiere_bois()
+  filiere = parametres_filiere_bois(),
+  biodiversite = FALSE,
+  seuil_tgb = 67.5,
+  decomposition = c(feuillus = 0.023, resineux = 0.069)
 )
 }
 \arguments{
@@ -134,6 +137,23 @@ cuts made before year 0 are not counted. Default \code{FALSE}.}
 
 \item{filiere}{List of the wood-chain parameters, as
 \code{\link[=parametres_filiere_bois]{parametres_filiere_bois()}} (the default) returns them.}
+
+\item{biodiversite}{Logical. Also follow two biodiversity variables that
+FINN can carry without heights (spec 068, family B): the deadwood
+produced by natural mortality (FINN and the density ceiling) and the
+very large living trees. Adds \code{"volume_mort"} (stem volume of the
+trees dead during the step, m3/ha, same tariffs as \code{volume}),
+\code{"bois_mort"} (stock of that deadwood, m3/ha, first-order decay with
+\code{decomposition}) and \code{"tiges_tgb"} (living stems/ha with a diameter of
+at least \code{seuil_tgb}). The deadwood present at year 0 and the felling
+residues are not counted. Default \code{FALSE}.}
+
+\item{seuil_tgb}{Numeric. Diameter (cm) of a very large tree. Default
+67.5, the lower bound of the IFN "TGB" class and of the IBP factor E.}
+
+\item{decomposition}{Named numeric, \code{feuillus} and \code{resineux}: annual
+decay rate of the deadwood. Default 0.023 and 0.069 (half-lives of 30
+and 10 years; INRA-IGN 2017, table 13.1, after Zell et al. 2009).}
 }
 \value{
 data.frame in long format, one row per plot, year and variable:
@@ -142,8 +162,8 @@ state), \code{variable} (\code{"g"}: basal area before the cut, m2/ha;
 \code{"tiges"}: stems/ha before the cut; \code{"g_prelevee"}: basal area
 removed at that date, m2/ha; with \code{volume = TRUE}, \code{"volume"} and
 \code{"volume_preleve"}, m3/ha; with \code{carbone = TRUE}, \code{"carbone"} and
-\code{"carbone_preleve"}, tC/ha; with \code{produits = TRUE}, see that
-argument), \code{moyenne} (mean of the trajectories),
+\code{"carbone_preleve"}, tC/ha; with \code{produits = TRUE} and
+\code{biodiversite = TRUE}, see those arguments), \code{moyenne} (mean of the trajectories),
 \code{bas}, \code{haut} (interval, for \code{"g"} only) and \code{intervalle}
 (\code{"conforme"} at one step, \code{"conforme_racine"} or
 \code{"conforme_lineaire"} beyond, \code{"aucun"} without conformal residuals or
