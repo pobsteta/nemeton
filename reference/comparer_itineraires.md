@@ -73,8 +73,8 @@ comparer_itineraires(
   one call per itinerary bound with
   [`rbind()`](https://rdrr.io/r/base/cbind.html), with `volume = TRUE`,
   `carbone = TRUE` and, for E and the carbon of the products,
-  `produits = TRUE` (see Details). Simulate every itinerary with the
-  same options. The rows of
+  `produits = TRUE`, for B, `biodiversite = TRUE` (see Details).
+  Simulate every itinerary with the same options. The rows of
   [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
   without management (`itineraire = "sans_gestion"`) are a candidate of
   every unit. Then `methode` becomes `"finn"` and `incertitude` numeric;
@@ -117,7 +117,7 @@ qualitative and sourced, not simulated. Display it as a rank. The
 catalogue is not exhaustive; an itinerary absent from it is not
 compared.
 
-**With `trajectoires`** (spec 068), up to three families are read from
+**With `trajectoires`** (spec 068), up to four families are read from
 the simulation, the others weighted by the profile are set aside (said
 in `familles_evaluees`):
 
@@ -136,6 +136,13 @@ in `familles_evaluees`):
 
   emissions avoided by material and energy substitution, summed up to
   the horizon (`substitution`, tCO2/ha; `produits = TRUE`).
+
+- B:
+
+  deadwood at the horizon (`bois_mort`, m3/ha; `biodiversite = TRUE`):
+  the stock produced by the natural mortality simulated since year 0,
+  after decay. The very large living trees (`tiges_tgb`) are simulated
+  but not read: one variable per family.
 
 Within a unit, each family is rescaled to `[-1, 1]` across the
 candidates (`-1` the lowest value, `1` the highest, `0` for all when

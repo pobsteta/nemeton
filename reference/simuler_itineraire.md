@@ -23,7 +23,10 @@ simuler_itineraire(
   fraction_carbone = 0.5,
   densite_max = NULL,
   produits = FALSE,
-  filiere = parametres_filiere_bois()
+  filiere = parametres_filiere_bois(),
+  biodiversite = FALSE,
+  seuil_tgb = 67.5,
+  decomposition = c(feuillus = 0.023, resineux = 0.069)
 )
 ```
 
@@ -199,6 +202,29 @@ simuler_itineraire(
   [`parametres_filiere_bois()`](https://pobsteta.github.io/nemeton/reference/parametres_filiere_bois.md)
   (the default) returns them.
 
+- biodiversite:
+
+  Logical. Also follow two biodiversity variables that FINN can carry
+  without heights (spec 068, family B): the deadwood produced by natural
+  mortality (FINN and the density ceiling) and the very large living
+  trees. Adds `"volume_mort"` (stem volume of the trees dead during the
+  step, m3/ha, same tariffs as `volume`), `"bois_mort"` (stock of that
+  deadwood, m3/ha, first-order decay with `decomposition`) and
+  `"tiges_tgb"` (living stems/ha with a diameter of at least
+  `seuil_tgb`). The deadwood present at year 0 and the felling residues
+  are not counted. Default `FALSE`.
+
+- seuil_tgb:
+
+  Numeric. Diameter (cm) of a very large tree. Default 67.5, the lower
+  bound of the IFN "TGB" class and of the IBP factor E.
+
+- decomposition:
+
+  Named numeric, `feuillus` and `resineux`: annual decay rate of the
+  deadwood. Default 0.023 and 0.069 (half-lives of 30 and 10 years;
+  INRA-IGN 2017, table 13.1, after Zell et al. 2009).
+
 ## Value
 
 data.frame in long format, one row per plot, year and variable:
@@ -207,13 +233,13 @@ state), `variable` (`"g"`: basal area before the cut, m2/ha; `"tiges"`:
 stems/ha before the cut; `"g_prelevee"`: basal area removed at that
 date, m2/ha; with `volume = TRUE`, `"volume"` and `"volume_preleve"`,
 m3/ha; with `carbone = TRUE`, `"carbone"` and `"carbone_preleve"`,
-tC/ha; with `produits = TRUE`, see that argument), `moyenne` (mean of
-the trajectories), `bas`, `haut` (interval, for `"g"` only) and
-`intervalle` (`"conforme"` at one step, `"conforme_racine"` or
-`"conforme_lineaire"` beyond, `"aucun"` without conformal residuals or
-at year 0). With `unites`: `unite` instead of `placette`, plus
-`n_placettes` and `groupes_conformes` (`"voisins"`, `"hasard"` or
-`"placette"` for a unit of one plot).
+tC/ha; with `produits = TRUE` and `biodiversite = TRUE`, see those
+arguments), `moyenne` (mean of the trajectories), `bas`, `haut`
+(interval, for `"g"` only) and `intervalle` (`"conforme"` at one step,
+`"conforme_racine"` or `"conforme_lineaire"` beyond, `"aucun"` without
+conformal residuals or at year 0). With `unites`: `unite` instead of
+`placette`, plus `n_placettes` and `groupes_conformes` (`"voisins"`,
+`"hasard"` or `"placette"` for a unit of one plot).
 
 ## Details
 

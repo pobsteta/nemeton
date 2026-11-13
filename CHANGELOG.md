@@ -13,6 +13,24 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.24\] - 2026-11-13
+
+### Added
+
+- `simuler_itineraire(biodiversite = TRUE)`: variables `volume_mort`,
+  `bois_mort` (first-order decay, `decomposition`) and `tiges_tgb`
+  (`seuil_tgb`), spec 068.
+
+### Changed
+
+- `comparer_itineraires(trajectoires =)` reads family B from `bois_mort`
+  at the horizon.
+
+### Fixed
+
+- [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md):
+  a plot emptied by a cut no longer makes FINN fail (sites renumbered).
+
 ## \[2026.11.20\] - 2026-11-10
 
 ### Added

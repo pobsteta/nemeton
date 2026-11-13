@@ -13,7 +13,7 @@ dynamics only, the cuts are imposed from outside."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.23.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.24</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -147,7 +147,10 @@ dynamics only, the cuts are imposed from outside.</p>
 <span>  fraction_carbone <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  densite_max <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  produits <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  filiere <span class="op">=</span> <span class="fu"><a href="parametres_filiere_bois.html">parametres_filiere_bois</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  filiere <span class="op">=</span> <span class="fu"><a href="parametres_filiere_bois.html">parametres_filiere_bois</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  biodiversite <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  seuil_tgb <span class="op">=</span> <span class="fl">67.5</span>,</span>
+<span>  decomposition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>feuillus <span class="op">=</span> <span class="fl">0.023</span>, resineux <span class="op">=</span> <span class="fl">0.069</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -308,6 +311,29 @@ cuts made before year 0 are not counted. Default <code>FALSE</code>.</p></dd>
 <dd><p>List of the wood-chain parameters, as
 <code><a href="parametres_filiere_bois.html">parametres_filiere_bois()</a></code> (the default) returns them.</p></dd>
 
+
+<dt id="arg-biodiversite">biodiversite<a class="anchor" aria-label="anchor" href="#arg-biodiversite"></a></dt>
+<dd><p>Logical. Also follow two biodiversity variables that
+FINN can carry without heights (spec 068, family B): the deadwood
+produced by natural mortality (FINN and the density ceiling) and the
+very large living trees. Adds <code>"volume_mort"</code> (stem volume of the
+trees dead during the step, m3/ha, same tariffs as <code>volume</code>),
+<code>"bois_mort"</code> (stock of that deadwood, m3/ha, first-order decay with
+<code>decomposition</code>) and <code>"tiges_tgb"</code> (living stems/ha with a diameter of
+at least <code>seuil_tgb</code>). The deadwood present at year 0 and the felling
+residues are not counted. Default <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-seuil-tgb">seuil_tgb<a class="anchor" aria-label="anchor" href="#arg-seuil-tgb"></a></dt>
+<dd><p>Numeric. Diameter (cm) of a very large tree. Default
+67.5, the lower bound of the IFN "TGB" class and of the IBP factor E.</p></dd>
+
+
+<dt id="arg-decomposition">decomposition<a class="anchor" aria-label="anchor" href="#arg-decomposition"></a></dt>
+<dd><p>Named numeric, <code>feuillus</code> and <code>resineux</code>: annual
+decay rate of the deadwood. Default 0.023 and 0.069 (half-lives of 30
+and 10 years; INRA-IGN 2017, table 13.1, after Zell et al. 2009).</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -317,8 +343,8 @@ state), <code>variable</code> (<code>"g"</code>: basal area before the cut, m2/h
 <code>"tiges"</code>: stems/ha before the cut; <code>"g_prelevee"</code>: basal area
 removed at that date, m2/ha; with <code>volume = TRUE</code>, <code>"volume"</code> and
 <code>"volume_preleve"</code>, m3/ha; with <code>carbone = TRUE</code>, <code>"carbone"</code> and
-<code>"carbone_preleve"</code>, tC/ha; with <code>produits = TRUE</code>, see that
-argument), <code>moyenne</code> (mean of the trajectories),
+<code>"carbone_preleve"</code>, tC/ha; with <code>produits = TRUE</code> and
+<code>biodiversite = TRUE</code>, see those arguments), <code>moyenne</code> (mean of the trajectories),
 <code>bas</code>, <code>haut</code> (interval, for <code>"g"</code> only) and <code>intervalle</code>
 (<code>"conforme"</code> at one step, <code>"conforme_racine"</code> or
 <code>"conforme_lineaire"</code> beyond, <code>"aucun"</code> without conformal residuals or

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.23.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.24</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +116,32 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.24" id="nemeton-20261124-2026-11-13">nemeton 2026.11.24 (2026-11-13)<a class="anchor" aria-label="anchor" href="#nemeton-20261124-2026-11-13"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-24">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-24"></a></h3>
+<ul><li>
+<strong><code>simuler_itineraire(biodiversite = TRUE)</code></strong> (spec 068) suit la famille B le long des trajectoires. Nouvelles variables :
+<ul><li>
+<code>volume_mort</code> : volume des tiges mortes pendant le pas (mortalité de FINN lue cohorte par cohorte, et auto-éclaircie du plafond de densité), en m³/ha ;</li>
+<li>
+<code>bois_mort</code> : stock de ce bois mort, en décroissance du premier ordre (2,3 %/an pour les feuillus, 6,9 %/an pour les résineux ; étude INRA-IGN 2017), réglable par <code>decomposition</code> ;</li>
+<li>
+<code>tiges_tgb</code> : très gros bois vivants par hectare, au-delà de <code>seuil_tgb</code> (67,5 cm par défaut).</li>
+</ul>
+Le bois mort présent à l’année 0 et les rémanents ne sont pas comptés.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changements-de-résultat-2026-11-24">Changements de résultat<a class="anchor" aria-label="anchor" href="#changements-de-r%C3%A9sultat-2026-11-24"></a></h3>
+<ul><li>
+<strong><code>comparer_itineraires(trajectoires =)</code></strong> lit la famille B sur <code>bois_mort</code> à l’horizon. Sans <code>biodiversite = TRUE</code>, rien ne change. Sur les 9 UGF de BFC, les profils gestionnaire ONF et naturaliste mettent désormais en tête la libre évolution ou l’absence de gestion. Chez les chênes, le propriétaire privé passe de la futaie régulière à la futaie irrégulière.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="corrections-2026-11-24">Corrections<a class="anchor" aria-label="anchor" href="#corrections-2026-11-24"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/simuler_itineraire.html">simuler_itineraire()</a></code></strong> : une placette vidée par une coupe ne fait plus échouer FINN. FINN renumérotait alors les sites et ne trouvait plus l’environnement ; la placette est maintenant gardée dans la grille et peut recevoir des recrues.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.23" id="nemeton-20261123-2026-11-11">nemeton 2026.11.23 (2026-11-11)<a class="anchor" aria-label="anchor" href="#nemeton-20261123-2026-11-11"></a></h2>
 <div class="section level3">

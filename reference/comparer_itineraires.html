@@ -13,7 +13,7 @@ front and carries the catalogue's citations (spec 065 § 5)."><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.23.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.24</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -192,7 +192,7 @@ with the default columns (and <code>protected_areas</code>).</p></dd>
 of the catalogue. Or the simulated trajectories of chantier D: the
 output of <code><a href="simuler_itineraire.html">simuler_itineraire()</a></code>, one call per itinerary bound with
 <code><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind()</a></code>, with <code>volume = TRUE</code>, <code>carbone = TRUE</code> and, for E and the
-carbon of the products, <code>produits = TRUE</code> (see Details). Simulate
+carbon of the products, <code>produits = TRUE</code>, for B, <code>biodiversite = TRUE</code> (see Details). Simulate
 every itinerary with the same options. The rows of <code><a href="simuler_itineraire.html">simuler_itineraire()</a></code>
 without management (<code>itineraire = "sans_gestion"</code>) are a candidate of
 every unit. Then <code>methode</code> becomes <code>"finn"</code> and <code>incertitude</code> numeric;
@@ -235,7 +235,7 @@ the score: <code>unit_id</code>, <code>itineraire</code>, <code>famille</code>, 
     <p><code>score_global</code> is an <strong>order</strong>, not a measure: the effects are
 qualitative and sourced, not simulated. Display it as a rank. The
 catalogue is not exhaustive; an itinerary absent from it is not compared.</p>
-<p><strong>With <code>trajectoires</code></strong> (spec 068), up to three families are read from the
+<p><strong>With <code>trajectoires</code></strong> (spec 068), up to four families are read from the
 simulation, the others weighted by the profile are set aside (said in
 <code>familles_evaluees</code>):</p><dl><dt>P</dt>
 <dd><p>volume harvested, summed up to the horizon (<code>volume_preleve</code>,
@@ -249,6 +249,12 @@ else standing only (<code>carbone</code>).</p></dd>
 <dt>E</dt>
 <dd><p>emissions avoided by material and energy substitution,
 summed up to the horizon (<code>substitution</code>, tCO2/ha; <code>produits = TRUE</code>).</p></dd>
+
+<dt>B</dt>
+<dd><p>deadwood at the horizon (<code>bois_mort</code>, m3/ha;
+<code>biodiversite = TRUE</code>): the stock produced by the natural mortality
+simulated since year 0, after decay. The very large living trees
+(<code>tiges_tgb</code>) are simulated but not read: one variable per family.</p></dd>
 
 
 </dl><p>Within a unit, each family is rescaled to <code>[-1, 1]</code> across the candidates
