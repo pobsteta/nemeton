@@ -208,7 +208,8 @@ version, ou après ?
   en C par `comparer_itineraires()` ; E = `substitution` cumulée.
 - **D-E4** : table IFN telle quelle (`parametres_filiere_bois()$taux_bo`,
   remplaçable), borne haute dite.
-- **D-E5** : le bois mort et les gros bois de B dans une version suivante.
+- **D-E5** : le bois mort et les gros bois de B dans une version suivante
+  (livrés en v2026.11.24, spec 068, note du 2026-11-13).
 
 L'énergie est comptée par tonne sèche (0,916 tCO₂/t, mix 80/20 de
 l'étude), et non par m³ de feuillu : le même coefficient vaut ainsi pour

@@ -1,3 +1,35 @@
+# nemeton 2026.11.24 (2026-11-13)
+
+## Nouveautés
+
+- **`simuler_itineraire(biodiversite = TRUE)`** (spec 068) suit la famille B
+  le long des trajectoires. Nouvelles variables :
+  - `volume_mort` : volume des tiges mortes pendant le pas (mortalité de
+    FINN lue cohorte par cohorte, et auto-éclaircie du plafond de densité),
+    en m³/ha ;
+  - `bois_mort` : stock de ce bois mort, en décroissance du premier ordre
+    (2,3 %/an pour les feuillus, 6,9 %/an pour les résineux ; étude
+    INRA-IGN 2017), réglable par `decomposition` ;
+  - `tiges_tgb` : très gros bois vivants par hectare, au-delà de `seuil_tgb`
+    (67,5 cm par défaut).
+
+  Le bois mort présent à l'année 0 et les rémanents ne sont pas comptés.
+
+## Changements de résultat
+
+- **`comparer_itineraires(trajectoires =)`** lit la famille B sur `bois_mort`
+  à l'horizon. Sans `biodiversite = TRUE`, rien ne change. Sur les 9 UGF de
+  BFC, les profils gestionnaire ONF et naturaliste mettent désormais en tête
+  la libre évolution ou l'absence de gestion. Chez les chênes, le
+  propriétaire privé passe de la futaie régulière à la futaie irrégulière.
+
+## Corrections
+
+- **`simuler_itineraire()`** : une placette vidée par une coupe ne fait plus
+  échouer FINN. FINN renumérotait alors les sites et ne trouvait plus
+  l'environnement ; la placette est maintenant gardée dans la grille et peut
+  recevoir des recrues.
+
 # nemeton 2026.11.23 (2026-11-11)
 
 ## Nouveautés

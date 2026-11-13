@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.18** (release du 2026-10-19), relevée le 2026-11-11.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.18** (release du 2026-10-19), relevée le 2026-11-13.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -41,7 +41,7 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 21 | B4/L3 en mode embedding : `b4_methode` / `l3_methode`, statut `calculated_embedding` à passer à `normalize_indicator(statut =)` ; l'interdit de l'écart n° 6 ne tombe que pour `embedding` | cœur **2026.11.1** | `nemetonshiny` | **Ouvert avant le code** (2026-11-05), même préavis |
 | 22 | Flag NDP `embedding_ml` dans `detect_ndp()$augmented` | cœur **2026.11.1** | `nemetonshiny` (badge NDP) | **Ouvert avant le code** (2026-11-05), même préavis |
 | 23 | Itinéraires admissibles par UGF et raisons d'exclusion (`itineraires_admissibles()`) | cœur **2026.11.4** | `nemetonshiny`, `aigora`, `victor` | **Ouvert avant le code** (2026-11-05), préavis app + `specs/065-itineraires-catalogue/brief-aigora.md`, `brief-victor.md` |
-| 24 | Comparaison pondérée (`comparer_itineraires()`) ; poids des profils dans le cœur (`profils_poids()`, spec 065 D-1 b) ; mode FINN (`trajectoires =`, `methode = "finn"`, `incertitude` numérique, `attr(, "valeurs")`) | cœur **2026.11.4** / **2026.11.15** | `nemetonshiny`, `aigora` | **Ouvert avant le code** (2026-11-05) ; question posée à l'app : les poids des 13 profils existent-ils sous forme numérique ? |
+| 24 | Comparaison pondérée (`comparer_itineraires()`) ; poids des profils dans le cœur (`profils_poids()`, spec 065 D-1 b) ; mode FINN (`trajectoires =`, `methode = "finn"`, `incertitude` numérique, `attr(, "valeurs")`, familles P/C/E/B lues depuis la simulation) | cœur **2026.11.4** / **2026.11.15** / **2026.11.24** | `nemetonshiny`, `aigora` | **Ouvert avant le code** (2026-11-05) ; question posée à l'app : les poids des 13 profils existent-ils sous forme numérique ? |
 | 25 | Table des sondes « Ce que les modèles voient » (`probe_indicator()`) | cœur **2026.11.3** | `nemetonshiny` | **Ouvert avant le code** (2026-11-06). Vue triée par R², lecture `voit` / `partiel` / `angle_mort`, marqueur `source_commune` |
 | 26 | B5 stratification verticale : colonnes `B5`, `b5_status` (4 statuts), `b5_s1`…`b5_s5` (profil vertical), `b5_densite` ; couche carte ; badge de dimensionnement drone (`simulate_density_sensitivity()$conclusion`) | cœur **2026.11.5** / **2026.11.6** | `nemetonshiny` | Ouvert le 2026-11-06, préavis `specs/067-forpt-lidar-latent/brief-nemetonshiny.md`. Libellés, sens et `doc_url` viennent de `indicator_labels()` : rien à forker |
 | 27 | Effets de la gestion (`effet_gestion()`) : table par famille (effet moyen, intervalle, statut `calcule` / `recouvrement_insuffisant` / `trop_peu_unites`) dans la synthèse ; à citer comme résultat du projet | cœur **2026.11.8** | `nemetonshiny`, `aigora` | Ouvert le 2026-11-06, préavis `specs/068-trajectoires-finn/brief-nemetonshiny.md` |
@@ -339,6 +339,24 @@ substitution d'environ 0,8 tCO₂/m³ récolté ; la gestion passe en tête sous
 ONF, naturaliste et propriétaire privé ; le technicien garde la libre
 évolution. Suite : B (bois mort, gros bois) depuis la simulation. Version
 nemetonshiny vérifiée : v2026.10.18.
+
+### 2026-11-13
+
+**v2026.11.24** : famille B depuis la simulation.
+`simuler_itineraire(biodiversite = TRUE)` rend `volume_mort` (mortalité FINN
+lue cohorte par cohorte + auto-éclaircie du plafond), `bois_mort` (stock,
+décroissance INRA-IGN 2,3 / 6,9 %/an) et `tiges_tgb` (≥ 67,5 cm) ;
+`comparer_itineraires()` lit B sur `bois_mort` à l'horizon. Correctif : une
+placette vidée par une coupe faisait échouer FINN (sites renumérotés). Run
+des 9 UGF : bois mort à 50 ans de 11 à 37 m³/ha sous gestion contre 32 à
+224 sans gestion (douglas : artefact biais de croissance × plafond).
+L'ONF et le naturaliste passent à la libre évolution ou à `sans_gestion`
+dans les 9 UGF ; le propriétaire privé passe à la futaie irrégulière chez
+les chênes. Trois choix à valider par Pascal (spec 068, note du
+2026-11-13) : bois mort compté depuis l'année 0 seulement, rémanents non
+comptés, B lu sur le bois mort plutôt que sur les TGB. Suite : biais de
+croissance de FINN entre 10 et 50 m²/ha, ou T4. Version nemetonshiny
+vérifiée : v2026.10.18.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,

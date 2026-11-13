@@ -24,7 +24,10 @@
 # = TRUE), C = foret + produits et E = substitution ; « non » reproduit le run
 # du 2026-11-11 (P et C sur pied). Sorties dans FINN_SIM_DOSSIER :
 # trajectoires_ugf<suffixe>.rds, comparaison_ugf<suffixe>.csv
-# (FINN_CMP_SUFFIXE).
+# (FINN_CMP_SUFFIXE). FINN_CMP_BIODIV (defaut « oui ») :
+# simuler_itineraire(biodiversite = TRUE), B = bois mort produit par la
+# mortalite naturelle depuis l'annee 0 (stock a 50 ans) ; tres gros bois
+# vivants (tiges_tgb) resumes a part.
 
 suppressMessages({
   library(data.table)
@@ -36,6 +39,8 @@ n_ugf <- as.integer(Sys.getenv("FINN_CMP_N", "20"))
 # carbone des produits et substitution (famille E), parametres_filiere_bois()
 produits <- Sys.getenv("FINN_CMP_PRODUITS", "oui") == "oui"
 suffixe <- Sys.getenv("FINN_CMP_SUFFIXE", "")
+# bois mort et tres gros bois (famille B)
+biodiv <- Sys.getenv("FINN_CMP_BIODIV", "oui") == "oui"
 stopifnot(nzchar(dossier))
 cal <- readRDS(file.path(dossier, "calibration.rds"))
 cal$modele <- torch::torch_load(file.path(dossier, "calibration.pt"))
@@ -74,7 +79,7 @@ for (e in unique(units$essence)) {
     res[[paste(e, code)]] <- simuler_itineraire(
       cal, a, env, itineraire = it, horizon = 50, n_tirages = 10L, volume = TRUE,
       carbone = TRUE, unites = as.data.frame(u[, .(placette, unite)]), densite_max = dm,
-      produits = produits
+      produits = produits, biodiversite = biodiv
     )
     cat(sprintf("%s %s : %s\n", e, code, format(round(Sys.time() - t0, 1))))
   }
@@ -97,8 +102,24 @@ cmp <- rbindlist(lapply(profils, function(pr) {
 cmp <- cmp[, .(profil, unit_id, itineraire, rang, score = round(score_global, 2), pareto,
                P_vol_preleve = round(P), C_carbone = round(C, 1),
                E_substitution = if ("E" %in% names(cmp)) round(E, 1) else NA_real_,
+               B_bois_mort = if ("B" %in% names(cmp)) round(B, 1) else NA_real_,
                incertitude_g = round(incertitude, 1), gagnantes = familles_gagnantes,
                perdantes = familles_perdantes)]
 setorder(cmp, profil, unit_id, rang)
 print(cmp, nrows = 500)
 fwrite(cmp, file.path(dossier, paste0("comparaison_ugf", suffixe, ".csv")))
+
+# --- famille B a 50 ans : bois mort, mortalite, tres gros bois -----------------
+if (biodiv) {
+  tb <- as.data.table(traj)[annee == 50 & variable %in% c("bois_mort", "tiges_tgb", "g")]
+  tb <- dcast(tb, unite + itineraire ~ variable, value.var = "moyenne")
+  vm <- as.data.table(traj)[variable == "volume_mort", .(volume_mort_cumule = sum(moyenne)),
+                            by = .(unite, itineraire)]
+  tb <- merge(tb, vm, by = c("unite", "itineraire"))
+  tb <- tb[, .(unite, itineraire, g = round(g, 1), bois_mort = round(bois_mort, 1),
+               volume_mort_cumule = round(volume_mort_cumule, 1),
+               tiges_tgb = round(tiges_tgb, 1))]
+  setorder(tb, unite, itineraire)
+  print(tb, nrows = 200)
+  fwrite(tb, file.path(dossier, paste0("biodiversite_ugf", suffixe, ".csv")))
+}

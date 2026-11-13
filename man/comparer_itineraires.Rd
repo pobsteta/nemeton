@@ -43,7 +43,7 @@ with the default columns (and \code{protected_areas}).}
 of the catalogue. Or the simulated trajectories of chantier D: the
 output of \code{\link[=simuler_itineraire]{simuler_itineraire()}}, one call per itinerary bound with
 \code{rbind()}, with \code{volume = TRUE}, \code{carbone = TRUE} and, for E and the
-carbon of the products, \code{produits = TRUE} (see Details). Simulate
+carbon of the products, \code{produits = TRUE}, for B, \code{biodiversite = TRUE} (see Details). Simulate
 every itinerary with the same options. The rows of \code{simuler_itineraire()}
 without management (\code{itineraire = "sans_gestion"}) are a candidate of
 every unit. Then \code{methode} becomes \code{"finn"} and \code{incertitude} numeric;
@@ -86,7 +86,7 @@ front and carries the catalogue's citations (spec 065 § 5).
 qualitative and sourced, not simulated. Display it as a rank. The
 catalogue is not exhaustive; an itinerary absent from it is not compared.
 
-\strong{With \code{trajectoires}} (spec 068), up to three families are read from the
+\strong{With \code{trajectoires}} (spec 068), up to four families are read from the
 simulation, the others weighted by the profile are set aside (said in
 \code{familles_evaluees}):
 \describe{
@@ -97,6 +97,10 @@ m3/ha; \code{g_prelevee}, m2/ha, when the volume was not simulated).}
 else standing only (\code{carbone}).}
 \item{E}{emissions avoided by material and energy substitution,
 summed up to the horizon (\code{substitution}, tCO2/ha; \code{produits = TRUE}).}
+\item{B}{deadwood at the horizon (\code{bois_mort}, m3/ha;
+\code{biodiversite = TRUE}): the stock produced by the natural mortality
+simulated since year 0, after decay. The very large living trees
+(\code{tiges_tgb}) are simulated but not read: one variable per family.}
 }
 Within a unit, each family is rescaled to \verb{[-1, 1]} across the candidates
 (\code{-1} the lowest value, \code{1} the highest, \code{0} for all when they are

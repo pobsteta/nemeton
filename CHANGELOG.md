@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.24] - 2026-11-13
+
+### Added
+- `simuler_itineraire(biodiversite = TRUE)`: variables `volume_mort`, `bois_mort` (first-order decay, `decomposition`) and `tiges_tgb` (`seuil_tgb`), spec 068.
+
+### Changed
+- `comparer_itineraires(trajectoires =)` reads family B from `bois_mort` at the horizon.
+
+### Fixed
+- `simuler_itineraire()`: a plot emptied by a cut no longer makes FINN fail (sites renumbered).
+
 ## [2026.11.20] - 2026-11-10
 
 ### Added
