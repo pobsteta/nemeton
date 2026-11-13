@@ -282,6 +282,7 @@ sur 12. Restent TSF maintenu, libre évolution, îlot de sénescence,
 plantation : sources trouvées mais extension du moteur nécessaire (coupe du
 taillis, itinéraire sans coupe, plantation). Version nemetonshiny
 vérifiée : v2026.10.18.
+Release v2026.11.24 publiée (#638), cycle dev 2026.11.24.9000.
 **v2026.11.20** : règle moteur `aucune_coupe` ; `bfc_libre_evolution` (RTG
 2021 § 3.13) et `bfc_ilot_senescence` (instruction ONF, présentation 2011)
 sourcées, admissibles partout, effets B/N `+` et P `-`. 10 entrées sur 12.
@@ -357,6 +358,7 @@ les chênes. Trois choix à valider par Pascal (spec 068, note du
 comptés, B lu sur le bois mort plutôt que sur les TGB. Suite : biais de
 croissance de FINN entre 10 et 50 m²/ha, ou T4. Version nemetonshiny
 vérifiée : v2026.10.18.
+Release v2026.11.24 publiée (#638), cycle dev 2026.11.24.9000.
 
 **Journal** — *2026-11-06* : dépôt `forptnemeton` créé par Pascal ;
 `forpt_embed()` (pobsteta/forptnemeton#1) et `forpt_age()` (#2) livrés,
