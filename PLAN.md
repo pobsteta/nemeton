@@ -282,7 +282,6 @@ sur 12. Restent TSF maintenu, libre évolution, îlot de sénescence,
 plantation : sources trouvées mais extension du moteur nécessaire (coupe du
 taillis, itinéraire sans coupe, plantation). Version nemetonshiny
 vérifiée : v2026.10.18.
-Release v2026.11.24 publiée (#638), cycle dev 2026.11.24.9000.
 **v2026.11.20** : règle moteur `aucune_coupe` ; `bfc_libre_evolution` (RTG
 2021 § 3.13) et `bfc_ilot_senescence` (instruction ONF, présentation 2011)
 sourcées, admissibles partout, effets B/N `+` et P `-`. 10 entrées sur 12.
