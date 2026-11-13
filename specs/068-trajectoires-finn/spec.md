@@ -882,3 +882,75 @@ précédente) : B ne lit que le bois mort produit depuis l'année 0 et sans
 rémanents ; sans gestion, il dépend du plafond de densité, donc du biais de
 croissance de FINN ; le rang dépend des poids des profils, qui sont
 provisoires (`profils_poids()`).
+
+### D'où vient le biais de croissance de FINN (2026-11-13, diagnostic)
+
+`data-raw/diagnostic_biais_croissance.R` : un pas FINN (3 tirages) sur
+2 479 placettes de BFC hors calibration et hors conforme, non coupées
+entre les visites (500 au plus par classe de G initiale). L'écart est
+décomposé avec la mortalité par cohorte que `.itin_un_pas()` rend depuis
+la v2026.11.24 : mortalité = G initiale des tiges mortes ; croissance +
+recrutement (« cr ») = G1 − G0 + mortalité. Mêmes parts côté IFN.
+m²/ha en 5 ans :
+
+| G initiale | n | net obs. | net FINN | cr obs. | cr FINN | cr FINN / obs. | mort. obs. | mort. FINN |
+|---|---|---|---|---|---|---|---|---|
+| 0-10 | 500 | 2,47 | 1,59 | 2,72 | 1,84 | 0,68 | 0,25 | 0,25 |
+| 10-20 | 500 | 2,17 | 2,61 | 2,77 | 3,24 | 1,17 | 0,60 | 0,63 |
+| 20-30 | 500 | 1,93 | 2,70 | 2,92 | 3,63 | 1,24 | 0,98 | 0,93 |
+| 30-40 | 500 | 1,77 | 2,87 | 3,55 | 4,32 | 1,22 | 1,79 | 1,45 |
+| 40-50 | 325 | 1,65 | 2,10 | 4,06 | 4,31 | 1,06 | 2,42 | 2,21 |
+| ≥ 50 | 154 | 1,59 | 0,63 | 5,17 | 4,41 | 0,85 | 3,57 | 3,79 |
+
+**Le biais vient de la croissance (et du recrutement), pas de la
+mortalité.** La mortalité simulée suit l'observée à 0,35 m²/ha près dans
+toutes les classes (un peu basse de 30 à 50 m²/ha, un peu haute au-delà
+chez les feuillus). La croissance observée par hectare augmente avec la
+densité (2,7 → 5,2 m²/ha en 5 ans) ; celle de FINN est plus plate (1,8 →
+4,4). FINN sous-estime donc la croissance des peuplements clairs (− 32 %),
+la surestime de 10 à 40 m²/ha (+ 17 à + 24 %) et la sous-estime au-delà de
+50 (− 15 %). C'est la même relation trop plate chez les feuillus et les
+résineux (résineux clairs : 2,25 contre 4,21).
+
+**Le cas du douglas n'est pas un biais d'un pas.** Sur un pas, FINN
+sous-estime même la croissance nette du douglas (4,85 contre 5,40 m²/ha ;
+84 placettes). Ses 238 m²/ha à 150 ans viennent de l'extrapolation : les
+peuplements de douglas de BFC sont jeunes, presque sans mortalité observée
+(0,76 m²/ha en 5 ans), et FINN n'a jamais vu de douglas dense mourir. Le
+plafond de densité (v2026.11.21) traite ce cas ; une correction de
+croissance ne le ferait pas.
+
+Par essence dominante (n ≥ 50), le rapport cr FINN / obs. va de 0,92
+(épicéa de Sitka, 14) à 1,19 (hêtre, 09) et 1,18 (épicéa, 62) ; par
+essence × classe (n ≥ 30), de 0,67 à 1,45, avec le même profil
+(sous-estimé sous 10 m²/ha, surestimé de 10 à 40).
+
+**Temps de calcul.** Un pas de 2 479 placettes en un seul appel prend
+15 min (environ 0,4 s par placette), contre moins d'une seconde pour un
+pas de 20 placettes : le coût n'est pas linéaire. Un diagnostic plus large
+doit découper les placettes en paquets.
+
+**Correctifs possibles** (décision D-G, à prendre par Pascal) :
+
+1. **Correction de l'accroissement hors de FINN**, comme le plafond de
+   densité : après chaque pas, multiplier l'accroissement en diamètre des
+   survivants par un facteur par classe de G et groupe (feuillus,
+   résineux), mesuré sur les placettes du jeu conforme (pas sur le test),
+   et le publier avec la calibration. Simple et lisible. Limites : la
+   correction s'applique à chaque pas et se compose sur 10 pas ; elle
+   corrige une moyenne, pas la relation densité-croissance elle-même ; il
+   faut séparer la croissance du recrutement côté FINN (les recrues sont
+   les cohortes de rang supérieur au nombre de cohortes d'entrée, lisible
+   comme la mortalité).
+2. **Recalibrer FINN** : plus de placettes (les 5 632 hors conforme au lieu
+   de 1 000) et un poids plus fort sur la surface terrière dans la perte.
+   Corrige la cause si elle vient du manque de données ; plusieurs heures
+   de calcul ; aucune garantie, puisque les réglages de l'ajustement
+   n'avaient pas fait disparaître le biais (note du 2026-11-08).
+3. **Ne rien corriger et le dire** : intervalle conforme à la mesure de
+   l'erreur d'un pas ; biais de + 0,5 à + 1 m²/ha par pas dans les classes
+   moyennes, écrit dans la fiche et à côté du rang.
+
+Proposition : **2 d'abord** (un seul run, la cause plutôt que le symptôme),
+mesuré avec ce même diagnostic ; **1 si le biais tient** après
+recalibration.
