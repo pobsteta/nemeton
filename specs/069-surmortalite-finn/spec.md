@@ -157,7 +157,7 @@ projet, avec la même logique d'échelle que l'intervalle conforme d'UGF
 2. ~~Prototype régional (§ 4.1)~~ avec la référence d'avant-crise (fait le
    2026-11-14, § 9) : critère tenu.
 3. ~~Décisions S-1 à S-4 par Pascal~~ (prises le 2026-11-14, § 7).
-4. `surmortalite_finn()`, tests, release.
+4. ~~`surmortalite_finn()`, tests, release~~ (v2026.11.27, § 10).
 
 ## 9. Prototype régional : résultats (2026-11-14)
 
@@ -224,4 +224,25 @@ Lecture :
 
 Suite : `surmortalite_finn()` (§ 4.2) et le résidu de mortalité dans
 `conformer_finn()` (§ 4.3).
+
+## 10. `surmortalite_finn()` (v2026.11.27)
+
+`surmortalite_finn(calibration, arbres, environnement, unites = NULL,
+niveau = 0.95, n_tirages = 20L, correction = TRUE)` : par placette (avec
+avertissement, S-2) ou par unité (moyenne des placettes), `g_initiale`,
+`mort_observee`, `mort_attendue`, `surmortalite`, `surmortalite_pct`,
+`seuil`, `anormale`. Placettes coupées écartées ; placettes de la
+calibration signalées. `conformer_finn(mortalite = TRUE)` garde les
+résidus de mortalité de ses placettes (NA pour les coupées) ; le seuil
+d'une unité de `k` placettes vient de groupes de `k` placettes tenues à
+l'écart (voisines si les coordonnées sont données), comme l'intervalle de
+G ; il vaut NA quand on ne peut pas former 30 groupes.
+
+Contrôle sur données réelles (référence 2015-2017, 5 tirages,
+`conformer_finn()` sur les 241 placettes conformes d'avant-crise) : seuil
+par placette 2,50 m²/ha (prototype 2,45) ; placettes test d'avant-crise
+au-dessus : 4,3 % ; revisites 2018 à 2025 : 5,9, 6,7, 8,8, 14,6, 13,2,
+19,3, 18,9, 16,2 % ; excès moyen identique au prototype à 0,02 m²/ha
+près. Seuil d'une unité de 4 placettes (groupes au hasard, sans
+coordonnées) : 1,60 m²/ha.
 

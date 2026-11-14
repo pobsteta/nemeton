@@ -22,11 +22,17 @@
 #'   **neighbouring** plots. Without coordinates the groups are random, which
 #'   ignores the spatial correlation of the errors and gives a narrower
 #'   interval.
+#' @param mortalite Logical. Also measure the residuals of mortality
+#'   (observed minus expected basal area of the dead trees, one FINN step)
+#'   for the threshold of [surmortalite_finn()]. Default `TRUE`; plots cut
+#'   between the visits get `NA`.
 #'
 #' @return The calibration, with an element `conforme`: a list with
 #'   `niveau`, `demi_largeur` (m2/ha, for one step and one plot),
 #'   `n_placettes`, `pas_annees`, and the signed residuals `residus` (with
-#'   `x`, `y` when `coordonnees` is given) for the units.
+#'   `x`, `y` when `coordonnees` is given) for the units; with
+#'   `mortalite = TRUE`, `mortalite`: a list with the mortality residuals
+#'   `residus` (same plots, same order) and `n_placettes`.
 #'
 #' @details
 #' Stops if some plots were used in the calibration (their residuals are
@@ -55,7 +61,7 @@
 #' @seealso [calibrer_finn()], [simuler_itineraire()]
 #' @export
 conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
-                           n_tirages = 10L, coordonnees = NULL) {
+                           n_tirages = 10L, coordonnees = NULL, mortalite = TRUE) {
   if (!inherits(calibration, "finn_calibration")) {
     cli::cli_abort("{.arg calibration} must come from {.fn calibrer_finn}.")
   }
@@ -90,6 +96,19 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
       cli::cli_abort("{.arg coordonnees} must give finite {.field x}, {.field y} for every plot.")
     }
     conf$x <- coordonnees$x[k]; conf$y <- coordonnees$y[k]
+  }
+  if (isTRUE(mortalite)) {
+    # residus de mortalite (observe - attendu) des memes placettes, pour le
+    # seuil de surmortalite_finn() ; NA pour les placettes coupees
+    coupees <- unique(as.character(arbres$placette[arbres$statut %in% "coupe"]))
+    a_m <- arbres[!as.character(arbres$placette) %in% coupees, , drop = FALSE]
+    rm <- rep(NA_real_, length(pla))
+    if (nrow(a_m)) {
+      mo <- .finn_mortalite(calibration, a_m, environnement, n_tirages)
+      k <- match(pla, mo$placette)
+      rm <- mo$mort_observee[k] - mo$mort_attendue[k]
+    }
+    conf$mortalite <- list(residus = rm, n_placettes = sum(is.finite(rm)))
   }
   calibration$conforme <- conf
   calibration
@@ -478,25 +497,35 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
       "i" = "{length(r)} were used: {n_g} group{?s} of {k}, 30 needed."
     ))
   }
-  g <- integer(length(r))
-  if (!is.null(conf$x)) {
-    reste <- order(conf$x, conf$y)
+  gr <- .finn_groupes(length(r), k, conf$x, conf$y)
+  g <- gr$g
+  m <- tapply(r[g > 0], g[g > 0], mean)
+  q <- stats::quantile(abs(m), min(1, conf$niveau * (1 + 1 / n_g)), names = FALSE)
+  list(q = q, groupes = gr$groupes)
+}
+
+# Groupes disjoints de k placettes parmi n (numero de groupe, 0 = hors
+# groupe) : voisines si x, y sont donnes (glouton, depuis l'ouest), au hasard
+# sinon (graine k, RNG global intact).
+.finn_groupes <- function(n, k, x = NULL, y = NULL) {
+  n_g <- n %/% k
+  g <- integer(n)
+  if (!is.null(x)) {
+    reste <- order(x, y)
     for (id in seq_len(n_g)) {
       i <- reste[1L]
-      d2 <- (conf$x[reste] - conf$x[i])^2 + (conf$y[reste] - conf$y[i])^2
+      d2 <- (x[reste] - x[i])^2 + (y[reste] - y[i])^2
       j <- reste[order(d2)[seq_len(k)]]
       g[j] <- id
       reste <- setdiff(reste, j)
     }
     groupes <- "voisins"
   } else {
-    o <- withr::with_seed(k, sample.int(length(r)))
+    o <- withr::with_seed(k, sample.int(n))
     g[o[seq_len(n_g * k)]] <- rep(seq_len(n_g), each = k)
     groupes <- "hasard"
   }
-  m <- tapply(r[g > 0], g[g > 0], mean)
-  q <- stats::quantile(abs(m), min(1, conf$niveau * (1 + 1 / n_g)), names = FALSE)
-  list(q = q, groupes = groupes)
+  list(g = g, groupes = groupes)
 }
 
 # G observee a la seconde visite (vivants + recrutes), m2/ha, par placette.
