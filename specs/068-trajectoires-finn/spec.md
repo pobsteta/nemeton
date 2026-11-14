@@ -1030,6 +1030,7 @@ Après chaque pas FINN, et avant le plafond de densité :
 Limites à écrire dans la fiche : la correction se compose sur 10 pas ;
 elle corrige une moyenne par case, pas la relation elle-même ; le
 recrutement reste celui de FINN. Changement de résultat pour toutes les
-trajectoires (section « Changements de résultat » de NEWS). À valider par
-Pascal : la correction est-elle appliquée par défaut quand la calibration
-la porte ?
+trajectoires (section « Changements de résultat » de NEWS). Décidé par
+Pascal le 2026-11-14 : **appliquée par défaut** quand la
+calibration la porte (`simuler_itineraire(correction = FALSE)` pour
+l'écarter).
