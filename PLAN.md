@@ -403,7 +403,8 @@ calibration) ; sur le test, croissance FINN / observée dans l’intervalle
 bootstrap de 1 pour toutes les classes, biais + 0,31 → + 0,16 m²/ha.
 Spec 069 (surmortalité, idée de Pascal) ouverte, S-1 à S-4 décidées ;
 référence d’avant-crise (revisites 2015-2017) en calibration. Version
-nemetonshiny vérifiée : v2026.10.18.
+nemetonshiny vérifiée : v2026.10.18. Release v2026.11.26 publiée (PR
+\#643, tag CI), cycle dev 2026.11.26.9000.
 
 ### 2026-11-14
 
