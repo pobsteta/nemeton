@@ -360,6 +360,12 @@ prototype `surmortalite_ifn_bfc.R` (4 598 placettes) : référence tenue avant
 conforme unilatéral 95 %) et `conformer_finn(mortalite = TRUE)` ; contrôle
 réel : seuil 2,50 m²/ha, 4,3 % des placettes test d'avant-crise au-dessus,
 19 % en 2023.
+Release v2026.11.27 publiée (PR #646, tag CI), cycle dev 2026.11.27.9000.
+9 UGF à 50 ans relancées avec le modèle B corrigé (spec 068, note du
+2026-11-14) : trajectoires stables, demi-largeur 4,3 → 3,4 m²/ha, P − 7 à
+− 27 %, bois mort du douglas sans gestion 224 → 125 m³/ha ; un seul
+classement change vraiment (hêtre, propriétaire privé). Version
+nemetonshiny vérifiée : v2026.10.18.
 
 ### 2026-11-14
 

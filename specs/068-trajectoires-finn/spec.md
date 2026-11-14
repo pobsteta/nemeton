@@ -1138,3 +1138,27 @@ portée de la correction (spec 069). Au-delà de 40 m²/ha la correction
 pousse un peu (1,09 à 1,13), dans l'intervalle. Le facteur de recrutement
 des résineux clairs (4,00 à G = 0, butée) reste à surveiller sur les
 trajectoires longues.
+
+### Les 9 UGF à 50 ans avec le modèle corrigé (2026-11-14)
+
+`data-raw/comparaison_catalogue_bfc.R` relancé tel quel (mêmes UGF, même
+graine, plafond de densité, produits et bois mort), avec le modèle B et sa
+correction (`recal_b_corr`) au lieu de la calibration d'origine
+(1 000 placettes, sans correction). Les deux changements sont confondus.
+
+- **G à 50 ans** : sous gestion, moins de 2 m²/ha d'écart. Libre
+  évolution : chêne 41 → 38, hêtre 40-45 → 38-45, épicéa 59 → 52,
+  sapin 56 → 56, douglas 61 → 60 m²/ha (tenu par le plafond). Le facteur
+  de recrutement des résineux à 4,00 ne fait pas dériver les trajectoires.
+- **Demi-largeur conforme de G par UGF à 50 ans** : 4,3 → 3,4 m²/ha.
+- **P (volume prélevé)** − 7 à − 27 % (épicéa 361 → 263, douglas
+  594 → 498 m³/ha) ; **C** 0 à − 13 % ; **B** (bois mort) en hausse pour
+  les feuillus en libre évolution (hêtre UGF 1 : 48 → 72 m³/ha) et divisé
+  par deux pour le douglas sans gestion (224 → 125) : l'artefact
+  « biais de croissance × plafond » du 2026-11-13 se réduit.
+- **Classements** : 18 gagnants sur 36 (profil × UGF) changent, dont 17
+  échanges libre évolution ↔ `sans_gestion` (même dynamique, départagées
+  par le bruit des tirages : le rang ignore toujours `tolerance`). Seul
+  changement réel : propriétaire privé, hêtre UGF 1, la futaie irrégulière
+  passe devant la régulière (0,52 contre 0,50), la régulière n'étant plus
+  sur le front.
