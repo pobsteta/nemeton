@@ -213,6 +213,9 @@ conformer_finn <- function(calibration, arbres, environnement, niveau = 0.9,
 #' @param decomposition Named numeric, `feuillus` and `resineux`: annual
 #'   decay rate of the deadwood. Default 0.023 and 0.069 (half-lives of 30
 #'   and 10 years; INRA-IGN 2017, table 13.1, after Zell et al. 2009).
+#' @param correction Logical. Apply the growth correction of
+#'   [corriger_finn()] after every FINN step when the calibration carries
+#'   one. Default `TRUE`.
 #'
 #' @return data.frame in long format, one row per plot, year and variable:
 #'   `placette`, `itineraire`, `annee` (years from the start, 0 = initial
@@ -262,7 +265,8 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
                                fraction_carbone = 0.50, densite_max = NULL,
                                produits = FALSE, filiere = parametres_filiere_bois(),
                                biodiversite = FALSE, seuil_tgb = 67.5,
-                               decomposition = c(feuillus = 0.023, resineux = 0.069)) {
+                               decomposition = c(feuillus = 0.023, resineux = 0.069),
+                               correction = TRUE) {
   if (!inherits(calibration, "finn_calibration")) {
     cli::cli_abort("{.arg calibration} must come from {.fn calibrer_finn}.")
   }
@@ -311,6 +315,7 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   } else NULL
   m <- calibration$modele
   m$eval()
+  corr <- if (isTRUE(correction)) calibration$correction else NULL
   if (isTRUE(produits)) {
     # par site x essence FINN : taux de bois d'oeuvre (groupe), part du BIBE
     # allant a l'industrie (feuillus / resineux)
@@ -336,7 +341,7 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     g[, 1] <- etat$g; tiges[, 1] <- etat$tiges; vol[, 1] <- etat$v; carb[, 1] <- etat$c
     if (isTRUE(biodiversite)) tgb[, 1] <- .itin_tiges_tgb(coh, n_sites, sp, seuil_tgb)
     for (k in seq_len(n_pas)) {
-      coh <- .itin_un_pas(m, coh, env1, sp, length(calibration$essences))
+      coh <- .itin_pas_corrige(m, coh, env1, sp, length(calibration$essences), corr)
       morts <- list(attr(coh, "morts"))
       if (!is.null(rdi_max)) {
         coh <- .itin_auto_eclaircie(coh, rdi_max, n_sites, sp)
@@ -881,12 +886,15 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
     ci$siteID <- ci$siteID - (d - 1L)
     r <- .itin_un_pas_bloc(m, ci, e, sp, n_sp)
     mo <- attr(r, "morts")
+    d0 <- attr(r, "dbh_entree")
     r$siteID <- r$siteID + (d - 1L)
     mo$siteID <- mo$siteID + (d - 1L)
-    list(out = r, morts = mo)
+    list(out = r, morts = mo, dbh0 = d0)
   })
   out <- do.call(rbind, lapply(res, `[[`, "out"))
   attr(out, "morts") <- do.call(rbind, lapply(res, `[[`, "morts"))
+  d0 <- lapply(res, `[[`, "dbh0")
+  if (!any(vapply(d0, is.null, logical(1)))) attr(out, "dbh_entree") <- unlist(d0)
   rownames(out) <- NULL
   out
 }
@@ -924,7 +932,42 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
   morts <- entree
   morts$trees <- pmax(0, entree$trees - t1)
   morts <- morts[morts$trees > 0, , drop = FALSE]
-  out <- if (nrow(out)) out[is.finite(out$trees) & out$trees > 0, , drop = FALSE] else vide_df
+  # diametre d'entree des survivants (NA : recrue), pour la correction
+  k <- match(paste(n$siteID, n$cohortID), paste(entree$siteID, id_entree))
+  dbh0 <- entree$dbh[k]
+  if (nrow(out)) {
+    garde <- is.finite(out$trees) & out$trees > 0
+    out <- out[garde, , drop = FALSE]
+    dbh0 <- dbh0[garde]
+  } else {
+    out <- vide_df
+    dbh0 <- numeric()
+  }
   attr(out, "morts") <- morts
+  attr(out, "dbh_entree") <- dbh0
+  out
+}
+
+# Un pas FINN puis, si `correction` (corriger_finn()) n'est pas NULL, la
+# correction de l'accroissement en diametre des survivants : dbh0 + f x
+# (dbh1 - dbh0), f par classe de G du site au debut du pas x groupe
+# (feuillus, resineux) de l'essence. Les recrues ne sont pas corrigees.
+.itin_pas_corrige <- function(m, coh, env1, sp, n_sp, correction = NULL) {
+  if (is.null(correction)) return(.itin_un_pas(m, coh, env1, sp, n_sp))
+  g0 <- .itin_etat(coh[coh$trees > 0, , drop = FALSE], nrow(env1), sp)$g
+  out <- .itin_un_pas(m, coh, env1, sp, n_sp)
+  .itin_corriger(out, g0, correction)
+}
+
+.itin_corriger <- function(out, g0, correction) {
+  dbh0 <- attr(out, "dbh_entree")
+  if (is.null(dbh0) || !nrow(out)) return(out)
+  i <- which(is.finite(dbh0))
+  if (!length(i)) return(out)
+  cl <- findInterval(g0[out$siteID[i]], correction$bornes, rightmost.closed = TRUE)
+  cl <- pmin(pmax(cl, 1L), nrow(correction$facteurs))
+  grp <- 1L + as.integer(correction$resineux[out$species[i]])
+  f <- correction$facteurs[cbind(cl, grp)]
+  out$dbh[i] <- pmax(dbh0[i], dbh0[i] + f * (out$dbh[i] - dbh0[i]))
   out
 }

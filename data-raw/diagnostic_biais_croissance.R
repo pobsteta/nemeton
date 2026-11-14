@@ -20,7 +20,9 @@
 # placettes hors calibration et hors conforme ; « test » : le jeu de test
 # seul, tenu a l'ecart de toutes les calibrations, pour comparer deux
 # modeles), FINN_DIAG_PAQUET (placettes par appel FINN, defaut 250 : le cout
-# d'un appel croit plus vite que le nombre de placettes). Sortie :
+# d'un appel croit plus vite que le nombre de placettes). La correction de
+# croissance de la calibration (corriger_finn()) est appliquee si elle est
+# presente. Sortie :
 # FINN_SIM_DOSSIER/biais_croissance<FINN_DIAG_SUFFIXE>.rds.
 
 suppressMessages({
@@ -74,7 +76,7 @@ un_paquet <- function(pl) {
   n_s <- nrow(prep$sites)
   e0 <- .itin_etat(coh0, n_s, sp)
   rbindlist(lapply(seq_len(n_tir), function(i) {
-    coh <- .itin_un_pas(m, coh0, env1, sp, length(cal$essences))
+    coh <- .itin_pas_corrige(m, coh0, env1, sp, length(cal$essences), cal$correction)
     mo <- attr(coh, "morts")
     g_mort <- numeric(n_s)
     if (nrow(mo)) {
@@ -82,7 +84,16 @@ un_paquet <- function(pl) {
       g_mort <- as.numeric(ifelse(is.na(s), 0, s)) / sp
     }
     e1 <- .itin_etat(coh, n_s, sp)
-    data.table(placette = prep$sites$placette, g0_sim = e0$g, g1_sim = e1$g, mort_sim = g_mort)
+    # survivants (diametre d'entree connu) / recrues
+    d0 <- attr(coh, "dbh_entree")
+    sv <- is.finite(d0)
+    par_site <- function(x, i) {
+      v <- tapply(x[i], factor(coh$siteID[i], levels = seq_len(n_s)), sum)
+      as.numeric(ifelse(is.na(v), 0, v)) / sp
+    }
+    data.table(placette = prep$sites$placette, g0_sim = e0$g, g1_sim = e1$g, mort_sim = g_mort,
+               surv_sim = par_site(coh$trees * (ga(coh$dbh) - ga(d0)), sv),
+               recr_sim = par_site(coh$trees * ga(coh$dbh), !sv))
   }))
 }
 t0 <- Sys.time()
@@ -105,6 +116,10 @@ resume <- function(x) x[, .(n = .N, g0 = round(mean(g0), 1),
                             mort_obs = round(mean(mortalite), 2), mort_sim = round(mean(mort_sim), 2))]
 cat("\n1. Par classe de G initiale (m2/ha en 5 ans ; cr = croissance + recrutement)\n")
 print(cmp[, resume(.SD), keyby = classe])
+cat("\n1b. Survivants et recrues (m2/ha en 5 ans)\n")
+print(cmp[, .(n = .N, surv_obs = round(mean(croissance), 2), surv_sim = round(mean(surv_sim), 2),
+              recr_obs = round(mean(recrutement), 2), recr_sim = round(mean(recr_sim), 2)),
+          keyby = classe])
 cat("\n2. Par essence dominante (n >= 50)\n")
 print(cmp[, resume(.SD), by = dom][n >= 50][order(-n)])
 cat("\n3. Feuillus / resineux x classe de G\n")

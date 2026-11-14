@@ -22,7 +22,8 @@ simuler_itineraire(
   filiere = parametres_filiere_bois(),
   biodiversite = FALSE,
   seuil_tgb = 67.5,
-  decomposition = c(feuillus = 0.023, resineux = 0.069)
+  decomposition = c(feuillus = 0.023, resineux = 0.069),
+  correction = TRUE
 )
 }
 \arguments{
@@ -154,6 +155,10 @@ residues are not counted. Default \code{FALSE}.}
 \item{decomposition}{Named numeric, \code{feuillus} and \code{resineux}: annual
 decay rate of the deadwood. Default 0.023 and 0.069 (half-lives of 30
 and 10 years; INRA-IGN 2017, table 13.1, after Zell et al. 2009).}
+
+\item{correction}{Logical. Apply the growth correction of
+\code{\link[=corriger_finn]{corriger_finn()}} after every FINN step when the calibration carries
+one. Default \code{TRUE}.}
 }
 \value{
 data.frame in long format, one row per plot, year and variable:

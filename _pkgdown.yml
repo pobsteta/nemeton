@@ -634,6 +634,7 @@ reference:
     - calibrer_finn
     - predire_finn
     - conformer_finn
+    - corriger_finn
     - simuler_itineraire
     - densite_max_ifn
     - parametres_filiere_bois

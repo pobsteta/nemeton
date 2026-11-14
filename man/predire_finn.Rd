@@ -4,7 +4,14 @@
 \alias{predire_finn}
 \title{Predict basal area with a calibrated FINN model}
 \usage{
-predire_finn(calibration, arbres, environnement, n_tirages = 10L, pas = 1L)
+predire_finn(
+  calibration,
+  arbres,
+  environnement,
+  n_tirages = 10L,
+  pas = 1L,
+  correction = TRUE
+)
 }
 \arguments{
 \item{calibration}{A \code{"finn_calibration"} object from \code{\link[=calibrer_finn]{calibrer_finn()}}.}
@@ -21,6 +28,9 @@ variables of the calibration.}
 
 \item{pas}{Integer. Number of FINN steps (each of
 \code{calibration$pas_annees} years). Default 1.}
+
+\item{correction}{Logical. Apply the growth correction of
+\code{\link[=corriger_finn]{corriger_finn()}} when the calibration carries one. Default \code{TRUE}.}
 }
 \value{
 data.frame, one row per plot: \code{placette}, \code{g_initiale},

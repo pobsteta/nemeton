@@ -162,6 +162,8 @@ calibrer_finn <- function(arbres, environnement, processus = "mecaniste",
 #' @param n_tirages Integer. Number of draws averaged. Default 10.
 #' @param pas Integer. Number of FINN steps (each of
 #'   `calibration$pas_annees` years). Default 1.
+#' @param correction Logical. Apply the growth correction of
+#'   [corriger_finn()] when the calibration carries one. Default `TRUE`.
 #'
 #' @return data.frame, one row per plot: `placette`, `g_initiale`,
 #'   `g_predite` (mean of the draws), `g_q05`, `g_q95` (5 and 95 % quantiles
@@ -171,7 +173,8 @@ calibrer_finn <- function(arbres, environnement, processus = "mecaniste",
 #'   values).
 #' @seealso [calibrer_finn()]
 #' @export
-predire_finn <- function(calibration, arbres, environnement, n_tirages = 10L, pas = 1L) {
+predire_finn <- function(calibration, arbres, environnement, n_tirages = 10L, pas = 1L,
+                         correction = TRUE) {
   if (!inherits(calibration, "finn_calibration")) {
     cli::cli_abort("{.arg calibration} must come from {.fn calibrer_finn}.")
   }
@@ -192,7 +195,9 @@ predire_finn <- function(calibration, arbres, environnement, n_tirages = 10L, pa
   m <- calibration$modele
   m$eval()
   sp <- calibration$surface_placette
-  tirages <- vapply(seq_len(n_tirages), function(i) {
+  corr <- if (isTRUE(correction)) calibration$correction else NULL
+  n_s <- nrow(prep$sites)
+  un_tirage <- if (is.null(corr)) function() {
     sim <- stats::predict(m, env = dt(env), init_cohort = init, patches = 1L,
                          patch_size = sp, device = "cpu")
     s <- as.data.frame(sim$long$site)
@@ -201,7 +206,17 @@ predire_finn <- function(calibration, arbres, environnement, n_tirages = 10L, pa
     out <- numeric(nrow(prep$sites))
     out[as.integer(names(g))] <- g
     out
-  }, numeric(nrow(prep$sites)))
+  } else function() {
+    # pas a pas par cohortes, pour corriger l'accroissement des survivants
+    env1 <- prep$env[prep$env$year == 0L, , drop = FALSE]
+    coh <- prep$init[, c("siteID", "species", "dbh", "trees")]
+    coh$trees <- round(coh$trees)
+    for (k in seq_len(pas)) {
+      coh <- .itin_pas_corrige(m, coh, env1, sp, length(prep$essences), corr)
+    }
+    .itin_etat(coh, n_s, sp)$g
+  }
+  tirages <- vapply(seq_len(n_tirages), function(i) un_tirage(), numeric(n_s))
   tirages <- matrix(tirages, nrow = nrow(prep$sites))
   data.frame(
     placette = prep$sites$placette,

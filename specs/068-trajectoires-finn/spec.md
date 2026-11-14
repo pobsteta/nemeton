@@ -1034,3 +1034,53 @@ trajectoires (section « Changements de résultat » de NEWS). Décidé par
 Pascal le 2026-11-14 : **appliquée par défaut** quand la
 calibration la porte (`simuler_itineraire(correction = FALSE)` pour
 l'écarter).
+
+### Correction de l'accroissement : premier essai (2026-11-14)
+
+`corriger_finn()` (option 1 ci-dessus) ajustée sur le jeu conforme
+(`data-raw/correction_finn_bfc.R`, 3,9 min, deux itérations) puis mesurée
+sur le test. Facteurs sur l'accroissement en diamètre des survivants :
+
+| G initiale | feuillus | résineux |
+|---|---|---|
+| 0-10 | 1,104 | 1,075 * |
+| 10-20 | 0,996 | 1,013 |
+| 20-30 | 0,898 | 1,023 |
+| 30-40 | 0,953 | 1,004 |
+| 40-50 | 1,140 | 1,075 * |
+| ≥ 50 | 0,987 * | 1,075 * |
+
+\* moins de 30 placettes : facteur du groupe.
+
+Sur les 780 placettes de test, le diagnostic sépare désormais la croissance
+des survivants et le recrutement (m²/ha en 5 ans) :
+
+| G initiale | surv. obs. | B | B corrigé | recr. obs. | recr. FINN |
+|---|---|---|---|---|---|
+| 0-10 | 1,97 | 1,70 | 1,89 | 0,94 | 0,65 |
+| 10-20 | 2,39 | 2,57 | 2,57 | 0,35 | 0,47 |
+| 20-30 | 2,88 | 3,26 | 3,00 | 0,18 | 0,30 |
+| 30-40 | 3,51 | 3,61 | 3,51 | 0,15 | 0,22 |
+| 40-50 | 3,58 | 3,53 | 3,95 | 0,02 | 0,14 |
+| ≥ 50 | 4,79 | 3,94 | 4,11 | 0,11 | 0,08 |
+
+RMSE de G 3,41 → 3,39, biais + 0,30 → + 0,26 : **les critères ne sont pas
+tenus** (10-20 : 1,08 ; 40-50 : 1,10 ; hêtre + 21 %). Deux causes :
+
+1. **Le jeu conforme est trop petit pour 12 facteurs.** Sur les placettes
+   conformes, la croissance des survivants de 10-20 m²/ha était juste
+   (rapport 1,00) ; sur le test elle est 8 % trop forte. Avec 50 à 250
+   placettes par case, l'écart entre deux échantillons est de l'ordre de
+   ce qu'on veut corriger.
+2. **Le recrutement compte.** FINN recrute 0,07 à 0,12 m²/ha de trop en
+   5 ans de 10 à 50 m²/ha, et pas assez sous 10 ; la correction ne touche
+   pas les recrues.
+
+**Le biais est le même sur les placettes de calibration de B.** Même
+diagnostic sur 2 479 placettes hors conforme, en grande majorité dans la
+calibration de B (500 au plus par classe) : survivants FINN / obs. 0,86,
+1,08, 1,15, 1,04, 0,92, 0,76 (test : 0,86, 1,08, 1,13, 1,03, 0,99, 0,82) ;
+recrutement FINN / obs. 0,74, 1,62, 1,88, 2,00, 1,44, 1,25. Le hêtre y est
+à + 6 % seulement (+ 24 % sur les 81 placettes de test : bruit). FINN ne
+« connaît » donc pas mieux ses placettes de calibration : on peut y
+mesurer les facteurs, sur 5 632 placettes au lieu de 1 000.
