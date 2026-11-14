@@ -15,7 +15,8 @@ calibrer_finn(
   min_arbres_essence = 300L,
   pas_annees = 5,
   graine = 42L,
-  dossier = NULL
+  dossier = NULL,
+  poids_perte = "auto"
 )
 }
 \arguments{
@@ -75,6 +76,11 @@ for the simulations. Default 5.}
 
 \item{dossier}{Character or \code{NULL}. Folder where FINN writes checkpoints
 every 100 epochs. Default \code{NULL} (none).}
+
+\item{poids_perte}{\code{"auto"} (default) or a numeric vector of six weights
+named \code{dbh}, \code{ba}, \code{trees}, \code{growth}, \code{mortality}, \code{regeneration}, the
+weights of the loss terms passed to FINN. \code{"auto"} lets FINN scale each
+term by its intercept-only baseline (it prints the values).}
 }
 \value{
 A list of class \code{"finn_calibration"}: \code{modele} (the fitted FINN

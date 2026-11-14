@@ -71,6 +71,14 @@ test_that("calibrer_finn refuses neural processes and predire_finn a foreign obj
   expect_error(predire_finn(list(), arbres_finn_demo(), env_finn_demo()), "calibrer_finn")
 })
 
+test_that("calibrer_finn checks the loss weights before calling FINN", {
+  a <- arbres_finn_demo(); e <- env_finn_demo()
+  expect_error(calibrer_finn(a, e, poids_perte = c(ba = 3)), "six non-negative")
+  w <- c(dbh = 1, ba = 3, trees = 1, growth = 1, mortality = 1, regeneration = -1)
+  expect_error(calibrer_finn(a, e, poids_perte = w), "six non-negative")
+  expect_error(calibrer_finn(a, e, poids_perte = "manuel"), "six non-negative")
+})
+
 test_that("calibrer_finn and predire_finn run end to end with FINN", {
   skip_on_cran()
   skip_if_not_installed("FINN")
@@ -85,4 +93,8 @@ test_that("calibrer_finn and predire_finn run end to end with FINN", {
   expect_equal(nrow(p), 6)
   expect_true(all(is.finite(p$g_predite)))
   expect_true(all(p$g_q05 <= p$g_q95))
+  # poids de perte explicites, dans n'importe quel ordre
+  w <- c(ba = 3, dbh = 0.01, trees = 0.06, growth = 1000, mortality = 2, regeneration = 0.3)
+  cal2 <- calibrer_finn(a, e, epoques = 2L, poids_perte = w)
+  expect_s3_class(cal2, "finn_calibration")
 })
