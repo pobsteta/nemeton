@@ -52,6 +52,10 @@
 #' @param graine Integer. Random seed (R and torch). Default 42.
 #' @param dossier Character or `NULL`. Folder where FINN writes checkpoints
 #'   every 100 epochs. Default `NULL` (none).
+#' @param poids_perte `"auto"` (default) or a numeric vector of six weights
+#'   named `dbh`, `ba`, `trees`, `growth`, `mortality`, `regeneration`, the
+#'   weights of the loss terms passed to FINN. `"auto"` lets FINN scale each
+#'   term by its intercept-only baseline (it prints the values).
 #'
 #' @return A list of class `"finn_calibration"`: `modele` (the fitted FINN
 #'   model, a torch object: save it with `torch::torch_save()`, not
@@ -79,8 +83,20 @@ calibrer_finn <- function(arbres, environnement, processus = "mecaniste",
                           surface_placette = 0.7, epoques = 600L,
                           taux_apprentissage = 0.003, part_essences = 0.9,
                           min_arbres_essence = 300L,
-                          pas_annees = 5, graine = 42L, dossier = NULL) {
+                          pas_annees = 5, graine = 42L, dossier = NULL,
+                          poids_perte = "auto") {
   processus <- match.arg(processus, c("mecaniste", "neuronal"))
+  termes <- c("dbh", "ba", "trees", "growth", "mortality", "regeneration")
+  if (!identical(poids_perte, "auto")) {
+    if (!is.numeric(poids_perte) || !setequal(names(poids_perte), termes) ||
+        length(poids_perte) != 6L || any(!is.finite(poids_perte)) || any(poids_perte < 0)) {
+      cli::cli_abort(c(
+        "{.arg poids_perte} must be {.val auto} or six non-negative weights.",
+        "i" = "Names: {.val {termes}}."
+      ))
+    }
+    poids_perte <- poids_perte[termes]
+  }
   if (processus == "neuronal") {
     cli::cli_abort(c(
       "Neural processes are not available yet.",
@@ -118,7 +134,7 @@ calibrer_finn <- function(arbres, environnement, processus = "mecaniste",
     # FINN jette le dernier lot incomplet : jamais plus grand que les placettes
     batchsize = min(50L, nrow(prep$sites)),
     patches = 1L, patch_size = surface_placette, lr = taux_apprentissage,
-    plot_progress = FALSE, folder = dossier,
+    weights = poids_perte, plot_progress = FALSE, folder = dossier,
     checkpoints = min(100L, max(as.integer(epoques), 1L))
   )
   structure(list(
@@ -146,6 +162,8 @@ calibrer_finn <- function(arbres, environnement, processus = "mecaniste",
 #' @param n_tirages Integer. Number of draws averaged. Default 10.
 #' @param pas Integer. Number of FINN steps (each of
 #'   `calibration$pas_annees` years). Default 1.
+#' @param correction Logical. Apply the growth correction of
+#'   [corriger_finn()] when the calibration carries one. Default `TRUE`.
 #'
 #' @return data.frame, one row per plot: `placette`, `g_initiale`,
 #'   `g_predite` (mean of the draws), `g_q05`, `g_q95` (5 and 95 % quantiles
@@ -155,7 +173,8 @@ calibrer_finn <- function(arbres, environnement, processus = "mecaniste",
 #'   values).
 #' @seealso [calibrer_finn()]
 #' @export
-predire_finn <- function(calibration, arbres, environnement, n_tirages = 10L, pas = 1L) {
+predire_finn <- function(calibration, arbres, environnement, n_tirages = 10L, pas = 1L,
+                         correction = TRUE) {
   if (!inherits(calibration, "finn_calibration")) {
     cli::cli_abort("{.arg calibration} must come from {.fn calibrer_finn}.")
   }
@@ -176,7 +195,9 @@ predire_finn <- function(calibration, arbres, environnement, n_tirages = 10L, pa
   m <- calibration$modele
   m$eval()
   sp <- calibration$surface_placette
-  tirages <- vapply(seq_len(n_tirages), function(i) {
+  corr <- if (isTRUE(correction)) calibration$correction else NULL
+  n_s <- nrow(prep$sites)
+  un_tirage <- if (is.null(corr)) function() {
     sim <- stats::predict(m, env = dt(env), init_cohort = init, patches = 1L,
                          patch_size = sp, device = "cpu")
     s <- as.data.frame(sim$long$site)
@@ -185,7 +206,17 @@ predire_finn <- function(calibration, arbres, environnement, n_tirages = 10L, pa
     out <- numeric(nrow(prep$sites))
     out[as.integer(names(g))] <- g
     out
-  }, numeric(nrow(prep$sites)))
+  } else function() {
+    # pas a pas par cohortes, pour corriger l'accroissement des survivants
+    env1 <- prep$env[prep$env$year == 0L, , drop = FALSE]
+    coh <- prep$init[, c("siteID", "species", "dbh", "trees")]
+    coh$trees <- round(coh$trees)
+    for (k in seq_len(pas)) {
+      coh <- .itin_pas_corrige(m, coh, env1, sp, length(prep$essences), corr)
+    }
+    .itin_etat(coh, n_s, sp)$g
+  }
+  tirages <- vapply(seq_len(n_tirages), function(i) un_tirage(), numeric(n_s))
   tirages <- matrix(tirages, nrow = nrow(prep$sites))
   data.frame(
     placette = prep$sites$placette,
