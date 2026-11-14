@@ -402,7 +402,8 @@ FINN en cours (branche `feat/recalibration-finn`, décision D-G) : le
 modèle A (5 632 placettes, poids auto) ne corrige pas la surestimation
 de 10 à 40 m²/ha (+11 à +23 % sur le test) ; le modèle B (poids de la
 surface terrière × 3) est en fin de calibration. Version nemetonshiny
-vérifiée : v2026.10.18.
+vérifiée : v2026.10.18. Release v2026.11.25 publiée (#641), cycle dev
+2026.11.25.9000.
 
 ### 2026-11-13
 
