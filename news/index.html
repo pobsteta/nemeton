@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.26.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.27</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +116,16 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.27" id="nemeton-20261127-2026-11-14">nemeton 2026.11.27 (2026-11-14)<a class="anchor" aria-label="anchor" href="#nemeton-20261127-2026-11-14"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-27">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-27"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/surmortalite_finn.html">surmortalite_finn()</a></code></strong> (spec 069) : mortalité observée entre deux inventaires moins mortalité attendue par FINN depuis l’état du premier, par placette ou par unité (<code>unites =</code>). La surmortalité est jugée contre un seuil conforme unilatéral (95 % par défaut) ; pour une unité de <code>k</code> placettes, le seuil vient de groupes de <code>k</code> placettes tenues à l’écart, comme l’intervalle de <code><a href="../reference/simuler_itineraire.html">simuler_itineraire()</a></code>. Par placette, la fonction avertit que le chiffre est bruité. Calibré sur les revisites IFN de BFC de 2015-2017, avant les crises, FINN laisse 3,7 à 6,6 % des placettes test de ces années au-dessus du seuil ; en 2021-2025, la mortalité de l’épicéa est 4,9 fois l’attendue, celle du frêne 3,0, celle du hêtre 1,06.</li>
+<li>
+<strong><code>conformer_finn(mortalite = TRUE)</code></strong> mesure aussi les résidus de mortalité de ses placettes, pour ce seuil. Les calibrations conformées avant cette version n’en ont pas : <code><a href="../reference/surmortalite_finn.html">surmortalite_finn()</a></code> rend alors un seuil <code>NA</code> et invite à relancer <code><a href="../reference/conformer_finn.html">conformer_finn()</a></code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.26" id="nemeton-20261126-2026-11-14">nemeton 2026.11.26 (2026-11-14)<a class="anchor" aria-label="anchor" href="#nemeton-20261126-2026-11-14"></a></h2>
 <div class="section level3">

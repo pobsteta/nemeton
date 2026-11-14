@@ -408,7 +408,13 @@ nemetonshiny vérifiée : v2026.10.18. Release v2026.11.26 publiée (PR
 d’avant-crise calibrée (1 724 placettes, 6,1 h) ; prototype
 `surmortalite_ifn_bfc.R` (4 598 placettes) : référence tenue avant 2018
 (4-7 % au-dessus du seuil à 95 %), excès épicéa ×4,9 et frêne ×3,0 en
-2021-25, hêtre à 1. Critère tenu ; suite `surmortalite_finn()`.
+2021-25, hêtre à 1. Critère tenu ; suite
+[`surmortalite_finn()`](https://pobsteta.github.io/nemeton/reference/surmortalite_finn.md).
+**v2026.11.27** :
+[`surmortalite_finn()`](https://pobsteta.github.io/nemeton/reference/surmortalite_finn.md)
+(par placette ou unité, seuil conforme unilatéral 95 %) et
+`conformer_finn(mortalite = TRUE)` ; contrôle réel : seuil 2,50 m²/ha,
+4,3 % des placettes test d’avant-crise au-dessus, 19 % en 2023.
 
 ### 2026-11-14
 

@@ -13,6 +13,17 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.27\] - 2026-11-14
+
+### Added
+
+- [`surmortalite_finn()`](https://pobsteta.github.io/nemeton/reference/surmortalite_finn.md):
+  excess mortality (observed minus FINN-expected basal area of dead
+  trees) per plot or unit, with a one-sided conformal threshold (spec
+  069).
+- `conformer_finn(mortalite = TRUE)`: also keeps the mortality residuals
+  of its plots for that threshold.
+
 ## \[2026.11.26\] - 2026-11-14
 
 ### Added

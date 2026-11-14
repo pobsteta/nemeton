@@ -19,7 +19,7 @@ least niveau on average."><meta property="og:image" content="https://pobsteta.gi
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.26.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.27</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -147,7 +147,8 @@ least <code>niveau</code> on average.</p>
 <span>  <span class="va">environnement</span>,</span>
 <span>  niveau <span class="op">=</span> <span class="fl">0.9</span>,</span>
 <span>  n_tirages <span class="op">=</span> <span class="fl">10L</span>,</span>
-<span>  coordonnees <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  coordonnees <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  mortalite <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -186,13 +187,22 @@ projected CRS (metres), for the interval of units of several plots in
 ignores the spatial correlation of the errors and gives a narrower
 interval.</p></dd>
 
+
+<dt id="arg-mortalite">mortalite<a class="anchor" aria-label="anchor" href="#arg-mortalite"></a></dt>
+<dd><p>Logical. Also measure the residuals of mortality
+(observed minus expected basal area of the dead trees, one FINN step)
+for the threshold of <code><a href="surmortalite_finn.html">surmortalite_finn()</a></code>. Default <code>TRUE</code>; plots cut
+between the visits get <code>NA</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The calibration, with an element <code>conforme</code>: a list with
 <code>niveau</code>, <code>demi_largeur</code> (m2/ha, for one step and one plot),
 <code>n_placettes</code>, <code>pas_annees</code>, and the signed residuals <code>residus</code> (with
-<code>x</code>, <code>y</code> when <code>coordonnees</code> is given) for the units.</p>
+<code>x</code>, <code>y</code> when <code>coordonnees</code> is given) for the units; with
+<code>mortalite = TRUE</code>, <code>mortalite</code>: a list with the mortality residuals
+<code>residus</code> (same plots, same order) and <code>n_placettes</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

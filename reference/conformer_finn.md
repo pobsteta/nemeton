@@ -18,7 +18,8 @@ conformer_finn(
   environnement,
   niveau = 0.9,
   n_tirages = 10L,
-  coordonnees = NULL
+  coordonnees = NULL,
+  mortalite = TRUE
 )
 ```
 
@@ -58,12 +59,22 @@ conformer_finn(
   Without coordinates the groups are random, which ignores the spatial
   correlation of the errors and gives a narrower interval.
 
+- mortalite:
+
+  Logical. Also measure the residuals of mortality (observed minus
+  expected basal area of the dead trees, one FINN step) for the
+  threshold of
+  [`surmortalite_finn()`](https://pobsteta.github.io/nemeton/reference/surmortalite_finn.md).
+  Default `TRUE`; plots cut between the visits get `NA`.
+
 ## Value
 
 The calibration, with an element `conforme`: a list with `niveau`,
 `demi_largeur` (m2/ha, for one step and one plot), `n_placettes`,
 `pas_annees`, and the signed residuals `residus` (with `x`, `y` when
-`coordonnees` is given) for the units.
+`coordonnees` is given) for the units; with `mortalite = TRUE`,
+`mortalite`: a list with the mortality residuals `residus` (same plots,
+same order) and `n_placettes`.
 
 ## Details
 

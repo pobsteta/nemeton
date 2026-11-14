@@ -1030,6 +1030,8 @@ chaque exclusion, comparaison qualitative ponderee par profil
   : Conformal residuals of a FINN calibration
 - [`corriger_finn()`](https://pobsteta.github.io/nemeton/reference/corriger_finn.md)
   : Growth and recruitment correction of a FINN calibration
+- [`surmortalite_finn()`](https://pobsteta.github.io/nemeton/reference/surmortalite_finn.md)
+  : Excess mortality against a FINN baseline
 - [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
   : Simulate stand trajectories under a silvicultural itinerary
 - [`densite_max_ifn()`](https://pobsteta.github.io/nemeton/reference/densite_max_ifn.md)
