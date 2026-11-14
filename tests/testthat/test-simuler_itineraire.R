@@ -325,13 +325,31 @@ test_that("conformer_finn takes the residual quantile (predire_finn mocked)", {
   a <- data.frame(placette = pla, essence = "09", d1 = 20, d2 = 20, poids = 100,
                   statut = "vivant")
   g_obs <- 100 * pi * 0.1^2
-  local_mocked_bindings(predire_finn = function(calibration, arbres, environnement, ...) {
-    data.frame(placette = pla, g_predite = g_obs + seq_along(pla) / 10)
-  })
+  local_mocked_bindings(
+    predire_finn = function(calibration, arbres, environnement, ...) {
+      data.frame(placette = pla, g_predite = g_obs + seq_along(pla) / 10)
+    },
+    # mortalite : placettes rendues dans l'ordre inverse, rematchees
+    .finn_mortalite = function(calibration, arbres, environnement, ...) {
+      p <- rev(unique(as.character(arbres$placette)))
+      data.frame(placette = p, mort_observee = 1, mort_attendue = match(p, pla) / 100)
+    }
+  )
   cal <- conformer_finn(calibration_factice(), a, data.frame(placette = pla, x = 1))
   expect_equal(cal$conforme$n_placettes, 40)
   expect_equal(cal$conforme$residus, seq_along(pla) / 10)
   expect_null(cal$conforme$x)
+  expect_equal(cal$conforme$mortalite$residus, 1 - seq_along(pla) / 100)
+  expect_equal(cal$conforme$mortalite$n_placettes, 40)
+  sans <- conformer_finn(calibration_factice(), a, data.frame(placette = pla, x = 1),
+                         mortalite = FALSE)
+  expect_null(sans$conforme$mortalite)
+  # placette coupee : residu de mortalite NA
+  ac <- rbind(a, data.frame(placette = "Q3", essence = "09", d1 = 30, d2 = NA, poids = 5,
+                            statut = "coupe"))
+  cc <- conformer_finn(calibration_factice(), ac, data.frame(placette = pla, x = 1))
+  expect_true(is.na(cc$conforme$mortalite$residus[3]))
+  expect_equal(cc$conforme$mortalite$n_placettes, 39)
   xy <- data.frame(placette = pla, x = seq_along(pla), y = 0)
   cal2 <- conformer_finn(calibration_factice(), a, data.frame(placette = pla, x = 1),
                          coordonnees = xy)

@@ -1,3 +1,22 @@
+# nemeton 2026.11.27 (2026-11-14)
+
+## Nouveautés
+
+- **`surmortalite_finn()`** (spec 069) : mortalité observée entre deux
+  inventaires moins mortalité attendue par FINN depuis l'état du premier,
+  par placette ou par unité (`unites =`). La surmortalité est jugée contre
+  un seuil conforme unilatéral (95 % par défaut) ; pour une unité de `k`
+  placettes, le seuil vient de groupes de `k` placettes tenues à l'écart,
+  comme l'intervalle de `simuler_itineraire()`. Par placette, la fonction
+  avertit que le chiffre est bruité. Calibré sur les revisites IFN de BFC
+  de 2015-2017, avant les crises, FINN laisse 3,7 à 6,6 % des placettes
+  test de ces années au-dessus du seuil ; en 2021-2025, la mortalité de
+  l'épicéa est 4,9 fois l'attendue, celle du frêne 3,0, celle du hêtre 1,06.
+- **`conformer_finn(mortalite = TRUE)`** mesure aussi les résidus de
+  mortalité de ses placettes, pour ce seuil. Les calibrations conformées
+  avant cette version n'en ont pas : `surmortalite_finn()` rend alors un
+  seuil `NA` et invite à relancer `conformer_finn()`.
+
 # nemeton 2026.11.26 (2026-11-14)
 
 ## Nouveautés

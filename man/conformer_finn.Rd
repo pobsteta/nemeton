@@ -10,7 +10,8 @@ conformer_finn(
   environnement,
   niveau = 0.9,
   n_tirages = 10L,
-  coordonnees = NULL
+  coordonnees = NULL,
+  mortalite = TRUE
 )
 }
 \arguments{
@@ -33,12 +34,19 @@ projected CRS (metres), for the interval of units of several plots in
 \strong{neighbouring} plots. Without coordinates the groups are random, which
 ignores the spatial correlation of the errors and gives a narrower
 interval.}
+
+\item{mortalite}{Logical. Also measure the residuals of mortality
+(observed minus expected basal area of the dead trees, one FINN step)
+for the threshold of \code{\link[=surmortalite_finn]{surmortalite_finn()}}. Default \code{TRUE}; plots cut
+between the visits get \code{NA}.}
 }
 \value{
 The calibration, with an element \code{conforme}: a list with
 \code{niveau}, \code{demi_largeur} (m2/ha, for one step and one plot),
 \code{n_placettes}, \code{pas_annees}, and the signed residuals \code{residus} (with
-\code{x}, \code{y} when \code{coordonnees} is given) for the units.
+\code{x}, \code{y} when \code{coordonnees} is given) for the units; with
+\code{mortalite = TRUE}, \code{mortalite}: a list with the mortality residuals
+\code{residus} (same plots, same order) and \code{n_placettes}.
 }
 \description{
 Measures the error of a calibrated FINN model on plots that took no part
