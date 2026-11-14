@@ -132,8 +132,10 @@ projet, avec la même logique d'échelle que l'intervalle conforme d'UGF
 
 - **[S-1]** Référence : (a) calibration d'avant 2018, (b) modèle actuel
   et dire ce qu'il mesure, (c) exclusion par cause si l'IFN la donne.
-  Proposition : (a), les 1 724 placettes d'avant-crise suffisent ; la
-  surmortalité se lit alors sur les revisites 2018-2025.
+  **Décidé par Pascal le 2026-11-14 : (a).** Les 1 724 placettes
+  d'avant-crise calibrent la référence (poids du modèle B), le conforme
+  est restreint aux 311 placettes conformes revisitées en 2015-2017 ; la
+  surmortalité se lit sur les revisites 2018-2025.
 - **[S-2]** Échelle d'agrégation par défaut : placette (avec avertissement)
   ou unité seulement. Proposition : unité seulement, placette en
   diagnostic.

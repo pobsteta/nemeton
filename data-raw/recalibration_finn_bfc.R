@@ -20,6 +20,10 @@
 #                         (calibrer_finn(poids_perte =)) ;
 #   FINN_THREADS          threads torch, defaut 4 (deux runs en parallele sur
 #                         8 coeurs).
+#   FINN_RECAL_PLACETTES  facultatif : fichier texte d'identifiants IFN (un
+#                         par ligne) ; calibration et conforme sont restreints
+#                         a ces placettes (spec 069 S-1 : reference d'avant
+#                         les crises, revisites 2015-2017).
 
 suppressMessages({
   library(data.table)
@@ -38,6 +42,13 @@ if (!identical(poids, "auto")) {
 torch::torch_set_num_threads(as.integer(Sys.getenv("FINN_THREADS", "4")))
 
 train <- setdiff(unique(d$env$placette), c(d$conforme, d$test))
+f_pla <- Sys.getenv("FINN_RECAL_PLACETTES")
+if (nzchar(f_pla)) {
+  garder <- readLines(f_pla)
+  train <- intersect(train, garder)
+  d$conforme <- intersect(d$conforme, garder)
+  cat(sprintf("restreint a %s : %d placettes de conforme\n", f_pla, length(d$conforme)))
+}
 cat(sprintf("calibration sur %d placettes, %d epoques, poids %s\n", length(train), epoques,
             paste(format(poids), collapse = " ")))
 t0 <- Sys.time()
