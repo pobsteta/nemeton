@@ -1187,6 +1187,8 @@ une UGF de l'app n'en a pas au NDP 0.
   par exemple à ± 2 m) ; leur accroissement simulé de hauteur dominante en
   un pas donne l'attendu et sa dispersion. T4 devient disponible au NDP 0 ;
   avec un inventaire, (a) prend le relais.
+  **Décidé par Pascal le 2026-11-14 : (b)**, placettes IFN analogues ; avec
+  un inventaire de l'UGF, FINN simule l'UGF elle-même.
 
 **[T4-2] La hauteur depuis le diamètre.**
 - (a) l'allométrie de FINN (`parHeight`, non calibrée sur des hauteurs) ;
