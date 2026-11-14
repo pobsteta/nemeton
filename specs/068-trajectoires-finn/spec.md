@@ -1195,6 +1195,8 @@ une UGF de l'app n'en a pas au NDP 0.
 - (b) **proposé** : une allométrie hauteur-diamètre par essence (et SER si
   l'effectif suffit) ajustée sur `HTOT` de l'IFN, embarquée en
   `inst/extdata/`.
+  **Décidé par Pascal le 2026-11-14 : (b)**, allométrie ajustée sur `HTOT`
+  de l'IFN.
 
 **[T4-3] L'observé et sa comparaison.** Hauteur dominante FORMS-T de
 l'UGF (percentile 90, `extract_h_dom()`) chaque année ; accroissement =
