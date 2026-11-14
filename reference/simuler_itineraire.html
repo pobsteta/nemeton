@@ -13,7 +13,7 @@ dynamics only, the cuts are imposed from outside."><meta property="og:image" con
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.25.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.26</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -150,7 +150,8 @@ dynamics only, the cuts are imposed from outside.</p>
 <span>  filiere <span class="op">=</span> <span class="fu"><a href="parametres_filiere_bois.html">parametres_filiere_bois</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  biodiversite <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  seuil_tgb <span class="op">=</span> <span class="fl">67.5</span>,</span>
-<span>  decomposition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>feuillus <span class="op">=</span> <span class="fl">0.023</span>, resineux <span class="op">=</span> <span class="fl">0.069</span><span class="op">)</span></span>
+<span>  decomposition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>feuillus <span class="op">=</span> <span class="fl">0.023</span>, resineux <span class="op">=</span> <span class="fl">0.069</span><span class="op">)</span>,</span>
+<span>  correction <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -333,6 +334,12 @@ residues are not counted. Default <code>FALSE</code>.</p></dd>
 <dd><p>Named numeric, <code>feuillus</code> and <code>resineux</code>: annual
 decay rate of the deadwood. Default 0.023 and 0.069 (half-lives of 30
 and 10 years; INRA-IGN 2017, table 13.1, after Zell et al. 2009).</p></dd>
+
+
+<dt id="arg-correction">correction<a class="anchor" aria-label="anchor" href="#arg-correction"></a></dt>
+<dd><p>Logical. Apply the growth correction of
+<code><a href="corriger_finn.html">corriger_finn()</a></code> after every FINN step when the calibration carries
+one. Default <code>TRUE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

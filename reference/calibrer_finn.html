@@ -15,7 +15,7 @@ the interval between the two visits."><meta property="og:image" content="https:/
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.25.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.26</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -146,7 +146,8 @@ the interval between the two visits.</p>
 <span>  min_arbres_essence <span class="op">=</span> <span class="fl">300L</span>,</span>
 <span>  pas_annees <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  graine <span class="op">=</span> <span class="fl">42L</span>,</span>
-<span>  dossier <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  dossier <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  poids_perte <span class="op">=</span> <span class="st">"auto"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -239,6 +240,13 @@ for the simulations. Default 5.</p></dd>
 <dt id="arg-dossier">dossier<a class="anchor" aria-label="anchor" href="#arg-dossier"></a></dt>
 <dd><p>Character or <code>NULL</code>. Folder where FINN writes checkpoints
 every 100 epochs. Default <code>NULL</code> (none).</p></dd>
+
+
+<dt id="arg-poids-perte">poids_perte<a class="anchor" aria-label="anchor" href="#arg-poids-perte"></a></dt>
+<dd><p><code>"auto"</code> (default) or a numeric vector of six weights
+named <code>dbh</code>, <code>ba</code>, <code>trees</code>, <code>growth</code>, <code>mortality</code>, <code>regeneration</code>, the
+weights of the loss terms passed to FINN. <code>"auto"</code> lets FINN scale each
+term by its intercept-only baseline (it prints the values).</p></dd>
 
 </dl></div>
     <div class="section level2">

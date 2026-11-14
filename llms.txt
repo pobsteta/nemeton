@@ -1028,6 +1028,8 @@ chaque exclusion, comparaison qualitative ponderee par profil
   : Predict basal area with a calibrated FINN model
 - [`conformer_finn()`](https://pobsteta.github.io/nemeton/reference/conformer_finn.md)
   : Conformal residuals of a FINN calibration
+- [`corriger_finn()`](https://pobsteta.github.io/nemeton/reference/corriger_finn.md)
+  : Growth and recruitment correction of a FINN calibration
 - [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
   : Simulate stand trajectories under a silvicultural itinerary
 - [`densite_max_ifn()`](https://pobsteta.github.io/nemeton/reference/densite_max_ifn.md)

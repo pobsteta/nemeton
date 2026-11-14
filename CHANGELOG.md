@@ -13,6 +13,19 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.26\] - 2026-11-14
+
+### Added
+
+- [`corriger_finn()`](https://pobsteta.github.io/nemeton/reference/corriger_finn.md):
+  growth (survivors’ diameter increment) and recruitment factors as
+  smooth functions of the initial basal area, for broadleaves and
+  conifers (spec 068).
+- `calibrer_finn(poids_perte =)`: weights of the six terms of FINN’s
+  loss.
+- `simuler_itineraire(correction =)`, `predire_finn(correction =)`:
+  apply the correction of the calibration (default `TRUE`).
+
 ## \[2026.11.25\] - 2026-11-14
 
 ### Changed

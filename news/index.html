@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.25.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.26</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -116,6 +116,24 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.26" id="nemeton-20261126-2026-11-14">nemeton 2026.11.26 (2026-11-14)<a class="anchor" aria-label="anchor" href="#nemeton-20261126-2026-11-14"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-26">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-26"></a></h3>
+<ul><li>
+<strong><code><a href="../reference/corriger_finn.html">corriger_finn()</a></code></strong> (spec 068, décision D-G) corrige le biais de croissance de FINN. Elle mesure deux facteurs, en fonction de la surface terrière initiale de la placette, pour les feuillus et les résineux :
+<ul><li>sur l’accroissement en diamètre des arbres survivants ;</li>
+<li>sur le nombre de recrues.</li>
+</ul>
+Ce sont des courbes lisses (noyau gaussien de 5 m²/ha), avec les valeurs figées aux bouts de la plage de G, là où les placettes manquent. Les facteurs voyagent avec la calibration. Sur 780 placettes de test de BFC, la croissance FINN / observée passe de 0,81-1,17 à 0,99-1,13 selon la classe de G, et le biais de G à 5 ans de
+<ul><li>0,31 à + 0,16 m²/ha.</li>
+</ul></li>
+<li>
+<strong><code><a href="../reference/simuler_itineraire.html">simuler_itineraire()</a></code></strong> et <strong><code><a href="../reference/predire_finn.html">predire_finn()</a></code></strong> appliquent la correction après chaque pas quand la calibration la porte (<code>correction = TRUE</code> par défaut). Une calibration sans correction donne les mêmes résultats qu’avant.</li>
+<li>
+<strong><code>calibrer_finn(poids_perte =)</code></strong> : poids des six termes de la perte de FINN (« auto » par défaut, comme avant).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.25" id="nemeton-20261125-2026-11-14">nemeton 2026.11.25 (2026-11-14)<a class="anchor" aria-label="anchor" href="#nemeton-20261125-2026-11-14"></a></h2>
 <div class="section level3">

@@ -1,5 +1,31 @@
 # Changelog
 
+## nemeton 2026.11.26 (2026-11-14)
+
+### Nouveautés
+
+- **[`corriger_finn()`](https://pobsteta.github.io/nemeton/reference/corriger_finn.md)**
+  (spec 068, décision D-G) corrige le biais de croissance de FINN. Elle
+  mesure deux facteurs, en fonction de la surface terrière initiale de
+  la placette, pour les feuillus et les résineux :
+  - sur l’accroissement en diamètre des arbres survivants ;
+  - sur le nombre de recrues.
+
+  Ce sont des courbes lisses (noyau gaussien de 5 m²/ha), avec les
+  valeurs figées aux bouts de la plage de G, là où les placettes
+  manquent. Les facteurs voyagent avec la calibration. Sur 780 placettes
+  de test de BFC, la croissance FINN / observée passe de 0,81-1,17 à
+  0,99-1,13 selon la classe de G, et le biais de G à 5 ans de
+  - 0,31 à + 0,16 m²/ha.
+- **[`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)**
+  et
+  **[`predire_finn()`](https://pobsteta.github.io/nemeton/reference/predire_finn.md)**
+  appliquent la correction après chaque pas quand la calibration la
+  porte (`correction = TRUE` par défaut). Une calibration sans
+  correction donne les mêmes résultats qu’avant.
+- **`calibrer_finn(poids_perte =)`** : poids des six termes de la perte
+  de FINN (« auto » par défaut, comme avant).
+
 ## nemeton 2026.11.25 (2026-11-14)
 
 ### Performances

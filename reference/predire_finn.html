@@ -9,7 +9,7 @@ number of FINN steps, averaged over several draws (FINN is stochastic)."><meta p
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.25.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.26</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -126,7 +126,14 @@ number of FINN steps, averaged over several draws (FINN is stochastic).</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">predire_finn</span><span class="op">(</span><span class="va">calibration</span>, <span class="va">arbres</span>, <span class="va">environnement</span>, n_tirages <span class="op">=</span> <span class="fl">10L</span>, pas <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">predire_finn</span><span class="op">(</span></span>
+<span>  <span class="va">calibration</span>,</span>
+<span>  <span class="va">arbres</span>,</span>
+<span>  <span class="va">environnement</span>,</span>
+<span>  n_tirages <span class="op">=</span> <span class="fl">10L</span>,</span>
+<span>  pas <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  correction <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -156,6 +163,11 @@ variables of the calibration.</p></dd>
 <dt id="arg-pas">pas<a class="anchor" aria-label="anchor" href="#arg-pas"></a></dt>
 <dd><p>Integer. Number of FINN steps (each of
 <code>calibration$pas_annees</code> years). Default 1.</p></dd>
+
+
+<dt id="arg-correction">correction<a class="anchor" aria-label="anchor" href="#arg-correction"></a></dt>
+<dd><p>Logical. Apply the growth correction of
+<code><a href="corriger_finn.html">corriger_finn()</a></code> when the calibration carries one. Default <code>TRUE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -391,6 +391,20 @@ passe en tête sous ONF, naturaliste et propriétaire privé ; le
 technicien garde la libre évolution. Suite : B (bois mort, gros bois)
 depuis la simulation. Version nemetonshiny vérifiée : v2026.10.18.
 
+### 2026-11-14 (suite)
+
+**v2026.11.26** : biais de croissance de FINN corrigé (spec 068, D-G).
+Recalibration A (5 632 placettes) et B (poids de G × 3) : B meilleur
+(RMSE 3,42) sans effacer le biais.
+[`corriger_finn()`](https://pobsteta.github.io/nemeton/reference/corriger_finn.md)
+: facteurs lisses en G sur l’accroissement des survivants et le nombre
+de recrues, mesurés sur les placettes de calibration (même biais qu’hors
+calibration) ; sur le test, croissance FINN / observée dans l’intervalle
+bootstrap de 1 pour toutes les classes, biais + 0,31 → + 0,16 m²/ha.
+Spec 069 (surmortalité, idée de Pascal) ouverte, S-1 à S-4 décidées ;
+référence d’avant-crise (revisites 2015-2017) en calibration. Version
+nemetonshiny vérifiée : v2026.10.18.
+
 ### 2026-11-14
 
 **v2026.11.25** :

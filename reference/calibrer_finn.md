@@ -20,7 +20,8 @@ calibrer_finn(
   min_arbres_essence = 300L,
   pas_annees = 5,
   graine = 42L,
-  dossier = NULL
+  dossier = NULL,
+  poids_perte = "auto"
 )
 ```
 
@@ -116,6 +117,13 @@ calibrer_finn(
 
   Character or `NULL`. Folder where FINN writes checkpoints every 100
   epochs. Default `NULL` (none).
+
+- poids_perte:
+
+  `"auto"` (default) or a numeric vector of six weights named `dbh`,
+  `ba`, `trees`, `growth`, `mortality`, `regeneration`, the weights of
+  the loss terms passed to FINN. `"auto"` lets FINN scale each term by
+  its intercept-only baseline (it prints the values).
 
 ## Value
 

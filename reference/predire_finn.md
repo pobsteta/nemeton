@@ -6,7 +6,14 @@ number of FINN steps, averaged over several draws (FINN is stochastic).
 ## Usage
 
 ``` r
-predire_finn(calibration, arbres, environnement, n_tirages = 10L, pas = 1L)
+predire_finn(
+  calibration,
+  arbres,
+  environnement,
+  n_tirages = 10L,
+  pas = 1L,
+  correction = TRUE
+)
 ```
 
 ## Arguments
@@ -37,6 +44,12 @@ predire_finn(calibration, arbres, environnement, n_tirages = 10L, pas = 1L)
 
   Integer. Number of FINN steps (each of `calibration$pas_annees`
   years). Default 1.
+
+- correction:
+
+  Logical. Apply the growth correction of
+  [`corriger_finn()`](https://pobsteta.github.io/nemeton/reference/corriger_finn.md)
+  when the calibration carries one. Default `TRUE`.
 
 ## Value
 
