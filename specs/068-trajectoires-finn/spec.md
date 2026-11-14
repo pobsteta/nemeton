@@ -1163,7 +1163,7 @@ correction (`recal_b_corr`) au lieu de la calibration d'origine
   passe devant la régulière (0,52 contre 0,50), la régulière n'étant plus
   sur le front.
 
-### T4 : méthode proposée (2026-11-14, à valider)
+### T4 : méthode (2026-11-14, décidée)
 
 § 3.3 définit T4 comme l'écart entre la trajectoire de hauteur observée
 (FORMS-T) et celle attendue par FINN, rapporté à la dispersion des
@@ -1218,6 +1218,7 @@ hauteur dominante : ce n'est pas un défaut de vitalité.
   l'UGF dans la période (T3 / SUFOSAT) ou quand la hauteur dominante
   baisse de plus de 3 m d'une année à l'autre ; la surmortalité
   (spec 069) et R5 disent alors le reste.
+  **Décidé par Pascal le 2026-11-14 : comme proposé**, seuil de 3 m compris.
 
 Échelle (D-6) et place dans la famille T (conditionnel, 43 → 44) déjà
 décidées. Fiche obligatoire (§ 3.3), avec les pièges 1, 3 et 5 du § 4.
