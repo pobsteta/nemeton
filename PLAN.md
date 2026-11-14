@@ -404,7 +404,11 @@ bootstrap de 1 pour toutes les classes, biais + 0,31 → + 0,16 m²/ha.
 Spec 069 (surmortalité, idée de Pascal) ouverte, S-1 à S-4 décidées ;
 référence d’avant-crise (revisites 2015-2017) en calibration. Version
 nemetonshiny vérifiée : v2026.10.18. Release v2026.11.26 publiée (PR
-\#643, tag CI), cycle dev 2026.11.26.9000.
+\#643, tag CI), cycle dev 2026.11.26.9000. Spec 069 : référence
+d’avant-crise calibrée (1 724 placettes, 6,1 h) ; prototype
+`surmortalite_ifn_bfc.R` (4 598 placettes) : référence tenue avant 2018
+(4-7 % au-dessus du seuil à 95 %), excès épicéa ×4,9 et frêne ×3,0 en
+2021-25, hêtre à 1. Critère tenu ; suite `surmortalite_finn()`.
 
 ### 2026-11-14
 
