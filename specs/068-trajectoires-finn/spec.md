@@ -921,7 +921,7 @@ plafond de densité (v2026.11.21) traite ce cas ; une correction de
 croissance ne le ferait pas.
 
 Par essence dominante (n ≥ 50), le rapport cr FINN / obs. va de 0,92
-(épicéa de Sitka, 14) à 1,19 (hêtre, 09) et 1,18 (épicéa, 62) ; par
+(robinier, 14) à 1,19 (hêtre, 09) et 1,18 (épicéa, 62) ; par
 essence × classe (n ≥ 30), de 0,67 à 1,45, avec le même profil
 (sous-estimé sous 10 m²/ha, surestimé de 10 à 40).
 
@@ -954,3 +954,82 @@ doit découper les placettes en paquets.
 Proposition : **2 d'abord** (un seul run, la cause plutôt que le symptôme),
 mesuré avec ce même diagnostic ; **1 si le biais tient** après
 recalibration.
+
+### Recalibration : modèles A et B (2026-11-14, décision D-G option 2)
+
+`data-raw/recalibration_finn_bfc.R` calibre FINN sur les 5 632 placettes
+de BFC qui ne sont ni dans le jeu conforme ni dans le test (au lieu de
+1 000), 200 époques, avec `calibrer_finn(poids_perte =)` (nouvel argument,
+transmis à `FINN::fit(weights =)`). Deux runs :
+
+- **A** : poids « auto » de FINN (dbh 0,00369 ; ba 0,0694 ; trees 0,0134 ;
+  growth 204 ; mortality 4,46 ; regeneration 0,46), 7,7 h ;
+- **B** : même chose, poids de la surface terrière × 3 (ba 0,2082), 7,4 h.
+
+Mesure : `data-raw/diagnostic_biais_croissance.R` avec
+`FINN_DIAG_ENSEMBLE=test`, sur les 780 placettes de test non coupées
+(tenues à l'écart des trois calibrations), un pas, 3 tirages, par paquets
+de 250 placettes (1,7 min au lieu de plusieurs dizaines).
+
+| | RMSE G à 5 ans | biais | demi-largeur conforme |
+|---|---|---|---|
+| ancien (1 000 placettes) | 3,67 | + 0,40 | 4,58 |
+| A | 3,55 | + 0,50 | 4,73 |
+| B | **3,42** | **+ 0,32** | 4,64 |
+
+Croissance + recrutement, FINN / observé, par G initiale (m²/ha) :
+
+| G initiale | n | ancien | A | B |
+|---|---|---|---|---|
+| 0-10 | 88 | 0,71 | 0,88 | 0,82 |
+| 10-20 | 207 | 1,08 | 1,15 | 1,11 |
+| 20-30 | 267 | 1,17 | 1,23 | 1,17 |
+| 30-40 | 137 | 1,10 | 1,11 | 1,04 |
+| 40-50 | 51 | 1,07 | 1,11 | 1,02 |
+| ≥ 50 | 30 | 0,90 | 0,86 | 0,82 |
+
+**B est le meilleur des trois, sans effacer le biais.** Au-delà de
+30 m²/ha sa croissance est presque juste ; de 10 à 30 m²/ha (474 placettes
+sur 780) FINN croît encore 11 à 17 % trop vite, et le hêtre de 24 % (3,08
+contre 2,49 m²/ha en 5 ans). Plus de placettes et un autre poids ne
+redressent pas la relation densité-croissance : c'est une limite de forme,
+pas de données. B devient le modèle de référence.
+
+**La classe ≥ 50 m²/ha est une affaire de mortalité, pas de croissance.**
+L'IFN y observe 7,1 m²/ha de morts en 5 ans, FINN 4,0 ; les plus forts
+excès sont des épicéas, des sapins et des frênes (scolytes, dépérissement,
+chalarose ?). FINN reproduit la mortalité de compétition, pas les crises.
+Ce n'est pas à corriger dans FINN : voir spec 069 (surmortalité).
+
+### Proposition : correction de l'accroissement (D-G option 1, à valider)
+
+Après chaque pas FINN, et avant le plafond de densité :
+
+1. **Séparer croissance et recrutement côté FINN.** Une cohorte de sortie
+   dont le `cohortID` correspond à une cohorte d'entrée (règle
+   `(k − 1) S + s`, déjà utilisée pour la mortalité) est un survivant ; les
+   autres sont des recrues. Seuls les survivants sont corrigés.
+2. **Corriger l'accroissement en diamètre** :
+   `dbh1' = dbh0 + f × (dbh1 − dbh0)`, avec `f` par classe de G initiale
+   de la placette (0-10, 10-20, 20-30, 30-40, 40-50, ≥ 50) × groupe
+   (feuillus, résineux) de l'essence de la cohorte : 12 facteurs.
+3. **Mesurer `f` sur le jeu conforme** (pas sur le test) : rapport de la
+   croissance des survivants observée à la simulée, en G. Comme
+   ΔG ≈ π d Δd / 2, le rapport en G est appliqué à Δd puis ajusté par une
+   ou deux itérations jusqu'à retrouver la croissance observée. Une case de
+   moins de 30 placettes prend le facteur de son groupe toutes classes
+   confondues.
+4. **Publier `f` avec la calibration** (`calibration$correction`, rendue
+   par une nouvelle fonction `corriger_finn()` sur le modèle de
+   `conformer_finn()`) ; `simuler_itineraire()` l'applique quand elle est
+   présente. L'intervalle conforme est remesuré après correction.
+5. **Accepter si**, sur le test : rapport croissance FINN / observé entre
+   0,95 et 1,05 dans les classes 10-50 m²/ha ; RMSE pas pire que 3,42 ;
+   hêtre ramené sous + 10 %.
+
+Limites à écrire dans la fiche : la correction se compose sur 10 pas ;
+elle corrige une moyenne par case, pas la relation elle-même ; le
+recrutement reste celui de FINN. Changement de résultat pour toutes les
+trajectoires (section « Changements de résultat » de NEWS). À valider par
+Pascal : la correction est-elle appliquée par défaut quand la calibration
+la porte ?
