@@ -24,15 +24,24 @@ cal <- readRDS(file.path(dossier, "calibration.rds"))
 cal$modele <- torch::torch_load(file.path(dossier, "calibration.pt"))
 set.seed(17)
 
+# facteurs sur les placettes de calibration de B (le biais y est le meme que
+# hors calibration, spec 068, note du 2026-11-14) : toutes sauf conforme et
+# test ; conforme reserve a l'intervalle
 conf <- d$conforme
+train <- setdiff(unique(d$env$placette), c(d$conforme, d$test))
+at <- d$arbres[placette %in% train]; et <- d$env[placette %in% train]
 a <- d$arbres[placette %in% conf]; e <- d$env[placette %in% conf]
 t0 <- Sys.time()
-cal <- corriger_finn(cal, a, e,
+cal <- corriger_finn(cal, at, et, placettes_calibration = TRUE,
                      n_tirages = as.integer(Sys.getenv("FINN_CORR_TIRAGES", "3")),
                      iterations = as.integer(Sys.getenv("FINN_CORR_ITERATIONS", "2")))
 cat(sprintf("correction : %s\n", format(round(Sys.time() - t0, 1))))
-print(cal$correction$suivi)
-cat("\nfacteurs :\n"); print(round(cal$correction$facteurs, 3))
+co <- cal$correction
+cat(sprintf("%d placettes\n", co$n_placettes))
+g <- co$grille %in% seq(0, 80, by = 10)
+cat("\nfacteurs (croissance des survivants, recrutement) aux G multiples de 10 :\n")
+print(round(cbind(g = co$grille[g], croissance = co$croissance[g, ], recrutement = co$recrutement[g, ],
+                  n_eff = co$n_effectif[g, ]), 3))
 t1 <- Sys.time()
 cal <- conformer_finn(cal, a, e)
 cat(sprintf("\nconforme : demi-largeur %.2f m2/ha a 5 ans (%s)\n", cal$conforme$demi_largeur,

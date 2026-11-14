@@ -2,13 +2,15 @@
 % Please edit documentation in R/corriger_finn.R
 \name{corriger_finn}
 \alias{corriger_finn}
-\title{Growth correction of a FINN calibration}
+\title{Growth and recruitment correction of a FINN calibration}
 \usage{
 corriger_finn(
   calibration,
   arbres,
   environnement,
-  bornes = c(0, 10, 20, 30, 40, 50, Inf),
+  placettes_calibration = FALSE,
+  grille = seq(0, 80, by = 2.5),
+  largeur = 5,
   n_tirages = 3L,
   iterations = 2L,
   min_placettes = 30L
@@ -17,17 +19,27 @@ corriger_finn(
 \arguments{
 \item{calibration}{A \code{"finn_calibration"} object from \code{\link[=calibrer_finn]{calibrer_finn()}}.}
 
-\item{arbres}{data.frame of trees measured twice on plots \strong{not} used in
-the calibration, with the columns of \code{\link[=calibrer_finn]{calibrer_finn()}} (\code{placette},
-\code{essence}, \code{d1}, \code{d2}, \code{poids}, \code{statut}). Plots with a cut between the
-visits (\code{statut == "coupe"}) are left out.}
+\item{arbres}{data.frame of trees measured twice, with the columns of
+\code{\link[=calibrer_finn]{calibrer_finn()}} (\code{placette}, \code{essence}, \code{d1}, \code{d2}, \code{poids},
+\code{statut}). Plots with a cut between the visits (\code{statut == "coupe"})
+are left out.}
 
 \item{environnement}{data.frame, one row per plot: \code{placette} and the
 variables of the calibration.}
 
-\item{bornes}{Numeric. Bounds of the classes of initial basal area
-(m2/ha), increasing, from 0 to \code{Inf}. Default 0, 10, 20, 30, 40, 50,
-\code{Inf}.}
+\item{placettes_calibration}{Logical. Accept plots used in the
+calibration. Default \code{FALSE}. On BFC, FINN's bias on its calibration
+plots was the same as on held-out plots (spec 068), so the many
+calibration plots give steadier factors than the few held-out ones;
+keep held-out plots for \code{\link[=conformer_finn]{conformer_finn()}} and for the test.}
+
+\item{grille}{Numeric. Basal areas (m2/ha) where the factors are
+estimated; in between they are interpolated linearly, beyond they hold
+the value of the nearest end. Default 0 to 80 by 2.5.}
+
+\item{largeur}{Numeric. Bandwidth (m2/ha) of the Gaussian kernel: the
+factor at \code{g} is the ratio of the observed to the simulated sums over
+all plots, weighted by \code{exp(-((G0 - g) / largeur)^2 / 2)}. Default 5.}
 
 \item{n_tirages}{Integer. Draws averaged per plot. Default 3.}
 
@@ -36,39 +48,36 @@ the basal area grows with the square of the diameter, so a factor on
 the diameter increment is not exactly the ratio of the basal area
 increments; a second round absorbs the difference.}
 
-\item{min_placettes}{Integer. Plots needed in a cell (class x group);
-below, the cell takes the factor of its group over all classes, and a
-group below this number keeps a factor of 1. Default 30.}
+\item{min_placettes}{Integer. A group (broadleaves, conifers) with fewer
+plots keeps factors of 1; a point of \code{grille} with a smaller kernel
+effective number of plots takes the factor of the nearest point that
+has enough (the ends of the range of basal areas). Default 30.}
 }
 \value{
-The calibration, with an element \code{correction}: \code{bornes},
-\code{facteurs} (matrix, classes x \code{feuillus} / \code{resineux}), \code{n_placettes}
-(same shape), \code{resineux} (logical, one per species of the calibration),
-\code{suivi} (data.frame of the ratio observed / simulated growth per cell
-and iteration, before the adjustment of that iteration) and
-\code{placettes}. A conformal element \code{conforme} is dropped: measure it again
-with \code{\link[=conformer_finn]{conformer_finn()}} on other plots, after the correction.
+The calibration, with an element \code{correction}: \code{grille},
+\code{croissance} and \code{recrutement} (matrices, \code{grille} x \code{feuillus} /
+\code{resineux}), \code{n_effectif} (kernel effective number of plots, same
+shape), \code{resineux} (logical, one per species of the calibration),
+\code{largeur}, \code{n_placettes} and \code{placettes}. A conformal element
+\code{conforme} is dropped: measure it again with \code{\link[=conformer_finn]{conformer_finn()}} on
+held-out plots, after the correction.
 }
 \description{
-Measures, on plots that took no part in the calibration, how much the
-diameter growth of FINN's surviving trees must be scaled to match the
-observed growth, by class of initial basal area and by group (broadleaves,
-conifers). The factors travel with the calibration and
+Measures how much FINN's diameter growth of surviving trees and its
+number of recruits must be scaled to match the observed ones, as smooth
+functions of the initial basal area of the plot, for broadleaves and
+conifers. The factors travel with the calibration and
 \code{\link[=simuler_itineraire]{simuler_itineraire()}}, \code{\link[=predire_finn]{predire_finn()}} and \code{\link[=conformer_finn]{conformer_finn()}} apply them
 after every FINN step (spec 068, decision D-G option 1).
 }
 \details{
 After a FINN step, a surviving cohort of diameter \code{dbh0} at the start and
-\code{dbh1} at the end takes \code{dbh0 + f * (dbh1 - dbh0)}, \code{f} being the factor
-of the class of basal area of its plot at the start of the step and of
-the group of its species; the diameter never decreases. Recruits are not
-corrected. The factor corrects a mean per cell, not FINN's
-density-growth relation itself, and compounds over the steps of a long
-trajectory.
-
-On BFC (model calibrated on 5 632 plots, loss weight of the basal area
-x 3), FINN's growth plus recruitment was 11 to 17 \% too high between 10
-and 30 m2/ha of initial basal area on 780 held-out plots (spec 068).
+\code{dbh1} at the end takes \code{dbh0 + f * (dbh1 - dbh0)}; the diameter never
+decreases. A recruited cohort of \code{n} stems keeps \code{r * n} stems, rounded at
+random to an integer. \code{f} and \code{r} are read at the basal area of the plot
+at the start of the step, for the group of the species. The factors
+correct a mean, not FINN's density-growth relation itself, and compound
+over the steps of a long trajectory.
 }
 \seealso{
 \code{\link[=calibrer_finn]{calibrer_finn()}}, \code{\link[=conformer_finn]{conformer_finn()}}, \code{\link[=simuler_itineraire]{simuler_itineraire()}}

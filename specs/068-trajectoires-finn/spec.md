@@ -1084,3 +1084,57 @@ recrutement FINN / obs. 0,74, 1,62, 1,88, 2,00, 1,44, 1,25. Le hêtre y est
 à + 6 % seulement (+ 24 % sur les 81 placettes de test : bruit). FINN ne
 « connaît » donc pas mieux ses placettes de calibration : on peut y
 mesurer les facteurs, sur 5 632 placettes au lieu de 1 000.
+
+### Correction révisée : courbe lisse sur les placettes de calibration (2026-11-14)
+
+Méthode validée par Pascal le 2026-11-14 après le premier essai :
+
+- **facteurs mesurés sur les placettes de calibration de B**
+  (`corriger_finn(placettes_calibration = TRUE)`, 4 360 placettes non
+  coupées), le conforme restant réservé à l'intervalle et le test au
+  jugement ;
+- **courbe lisse en G au lieu de 12 cases** : en chaque point d'une grille
+  (0 à 80 m²/ha par 2,5), rapport des sommes observées et simulées
+  pondérées par un noyau gaussien de 5 m²/ha ; un point qui repose sur
+  moins de 30 placettes effectives prend la valeur du point fiable le plus
+  proche (sans ce garde-fou, les facteurs montaient à × 4 à 80 m²/ha sur
+  8 placettes effectives) ;
+- **facteur sur le nombre de recrues**, à côté de celui sur l'accroissement
+  des survivants (arrondi au hasard à un entier) ;
+- **critère bootstrap** : sur le test, l'intervalle à 95 % du rapport FINN /
+  observé (placettes tirées avec remise dans chaque classe) doit contenir 1.
+  Le critère hêtre est retiré : 81 placettes de test ne le jugent pas (+ 6 %
+  seulement sur ses placettes de calibration).
+
+Facteurs (22,5 min, deux itérations ; demi-largeur conforme 4,55 m²/ha) :
+
+| G | survivants feuillus | survivants résineux | recrues feuillus | recrues résineux |
+|---|---|---|---|---|
+| 0 | 1,28 | 1,72 | 1,96 | 4,00 |
+| 10 | 0,99 | 1,02 | 0,90 | 2,93 |
+| 20 | 0,89 | 0,89 | 0,53 | 1,48 |
+| 30 | 0,92 | 0,97 | 0,55 | 1,01 |
+| 40 | 1,03 | 1,08 | 0,62 | 0,69 |
+| 50 | 1,28 | 1,20 | 1,00 | 0,72 |
+| ≥ 60-70 | 1,42-1,49 | 1,31-1,32 | 0,89-1,43 | 0,32-0,55 |
+
+Sur les 780 placettes de test (croissance + recrutement, FINN / observé,
+intervalle bootstrap 95 %) :
+
+| G initiale | n | B | B corrigé |
+|---|---|---|---|
+| 0-10 | 88 | 0,81 [0,73-0,92] | 1,01 [0,91-1,12] |
+| 10-20 | 207 | 1,11 [1,03-1,21] | 0,99 [0,91-1,07] |
+| 20-30 | 267 | 1,17 [1,09-1,24] | 1,01 [0,95-1,08] |
+| 30-40 | 137 | 1,05 [0,98-1,13] | 1,00 [0,93-1,08] |
+| 40-50 | 51 | 1,02 [0,88-1,17] | 1,13 [0,97-1,30] |
+| ≥ 50 | 30 | 0,82 [0,69-1,00] | 1,09 [0,91-1,34] |
+
+**Critère tenu dans toutes les classes.** Le recrutement simulé suit
+l'observé de 10 à 40 m²/ha (0,36 / 0,18 / 0,13 contre 0,35 / 0,18 / 0,15).
+Biais de G à 5 ans + 0,31 → + 0,16 m²/ha ; RMSE inchangée (3,43 → 3,45) :
+l'erreur par placette vient surtout des mortalités par épisodes, hors de
+portée de la correction (spec 069). Au-delà de 40 m²/ha la correction
+pousse un peu (1,09 à 1,13), dans l'intervalle. Le facteur de recrutement
+des résineux clairs (4,00 à G = 0, butée) reste à surveiller sur les
+trajectoires longues.

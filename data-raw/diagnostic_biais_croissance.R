@@ -116,6 +116,16 @@ resume <- function(x) x[, .(n = .N, g0 = round(mean(g0), 1),
                             mort_obs = round(mean(mortalite), 2), mort_sim = round(mean(mort_sim), 2))]
 cat("\n1. Par classe de G initiale (m2/ha en 5 ans ; cr = croissance + recrutement)\n")
 print(cmp[, resume(.SD), keyby = classe])
+# intervalle bootstrap a 95 % du rapport FINN / observe (placettes tirees
+# avec remise dans chaque classe) : la correction est jugee sur le bruit
+boot <- function(x, sim, obs, n = 1000L) {
+  r <- replicate(n, { i <- sample(nrow(x), replace = TRUE); sum(x[[sim]][i]) / sum(x[[obs]][i]) })
+  sprintf("%.2f [%.2f-%.2f]", sum(x[[sim]]) / sum(x[[obs]]),
+          stats::quantile(r, 0.025), stats::quantile(r, 0.975))
+}
+cat("\n1c. Rapports FINN / observe et intervalle bootstrap 95 %\n")
+print(cmp[, .(n = .N, cr = boot(.SD, "cr_sim", "cr_obs"), survivants = boot(.SD, "surv_sim", "croissance"),
+              recrues = boot(.SD, "recr_sim", "recrutement")), keyby = classe])
 cat("\n1b. Survivants et recrues (m2/ha en 5 ans)\n")
 print(cmp[, .(n = .N, surv_obs = round(mean(croissance), 2), surv_sim = round(mean(surv_sim), 2),
               recr_obs = round(mean(recrutement), 2), recr_sim = round(mean(recr_sim), 2)),

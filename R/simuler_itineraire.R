@@ -949,9 +949,10 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
 }
 
 # Un pas FINN puis, si `correction` (corriger_finn()) n'est pas NULL, la
-# correction de l'accroissement en diametre des survivants : dbh0 + f x
-# (dbh1 - dbh0), f par classe de G du site au debut du pas x groupe
-# (feuillus, resineux) de l'essence. Les recrues ne sont pas corrigees.
+# correction : accroissement en diametre des survivants dbh0 + f x
+# (dbh1 - dbh0), nombre de tiges des recrues x r (arrondi au hasard), f et r
+# lus au G du site au debut du pas, pour le groupe (feuillus, resineux) de
+# l'essence.
 .itin_pas_corrige <- function(m, coh, env1, sp, n_sp, correction = NULL) {
   if (is.null(correction)) return(.itin_un_pas(m, coh, env1, sp, n_sp))
   g0 <- .itin_etat(coh[coh$trees > 0, , drop = FALSE], nrow(env1), sp)$g
@@ -962,12 +963,23 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
 .itin_corriger <- function(out, g0, correction) {
   dbh0 <- attr(out, "dbh_entree")
   if (is.null(dbh0) || !nrow(out)) return(out)
-  i <- which(is.finite(dbh0))
-  if (!length(i)) return(out)
-  cl <- findInterval(g0[out$siteID[i]], correction$bornes, rightmost.closed = TRUE)
-  cl <- pmin(pmax(cl, 1L), nrow(correction$facteurs))
-  grp <- 1L + as.integer(correction$resineux[out$species[i]])
-  f <- correction$facteurs[cbind(cl, grp)]
-  out$dbh[i] <- pmax(dbh0[i], dbh0[i] + f * (out$dbh[i] - dbh0[i]))
+  grp <- 1L + as.integer(correction$resineux[out$species])
+  g <- g0[out$siteID]
+  sv <- is.finite(dbh0)
+  i <- which(sv)
+  if (length(i)) {
+    f <- .finn_facteur(correction$croissance, correction$grille, g[i], grp[i])
+    out$dbh[i] <- pmax(dbh0[i], dbh0[i] + f * (out$dbh[i] - dbh0[i]))
+  }
+  i <- which(!sv)
+  if (length(i) && !is.null(correction$recrutement)) {
+    x <- out$trees[i] * .finn_facteur(correction$recrutement, correction$grille, g[i], grp[i])
+    out$trees[i] <- floor(x) + stats::rbinom(length(x), 1L, x - floor(x))
+    garde <- out$trees > 0
+    morts <- attr(out, "morts")
+    out <- out[garde, , drop = FALSE]
+    attr(out, "morts") <- morts
+    attr(out, "dbh_entree") <- dbh0[garde]
+  }
   out
 }

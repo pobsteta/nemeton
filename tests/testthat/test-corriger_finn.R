@@ -1,25 +1,32 @@
 # Tests de corriger_finn() et de la correction de croissance (spec 068, D-G
 # option 1).
 
-test_that(".itin_corriger scales the diameter increment of survivors only", {
+test_that(".itin_corriger scales survivors' growth and recruits' stems", {
   out <- data.frame(siteID = c(1L, 1L, 2L, 2L), species = c(1L, 2L, 1L, 1L),
-                    dbh = c(22, 33, 12, 8), trees = 1)
+                    dbh = c(22, 33, 12, 8), trees = c(1, 1, 1, 10))
   attr(out, "dbh_entree") <- c(20, 30, 10, NA)   # la 4e est une recrue
-  corr <- list(bornes = c(0, 10, Inf),
-               facteurs = matrix(c(0.5, 2, 1, 1.5), 2, 2,
-                                 dimnames = list(NULL, c("feuillus", "resineux"))),
+  attr(out, "morts") <- out[0, ]
+  corr <- list(grille = c(0, 20),
+               croissance = matrix(c(0.5, 2, 1, 1.5), 2, 2,
+                                   dimnames = list(NULL, c("feuillus", "resineux"))),
+               recrutement = matrix(c(0.5, 0.5, 1, 1), 2, 2),
                resineux = c(FALSE, TRUE))
-  r <- .itin_corriger(out, g0 = c(15, 5), correction = corr)
-  # site 1 : classe 2 ; feuillu f = 2, resineux f = 1.5
+  r <- .itin_corriger(out, g0 = c(20, 10), correction = corr)
+  # site 1 (G 20) : feuillu f = 2, resineux f = 1.5
   expect_equal(r$dbh[1:2], c(20 + 2 * 2, 30 + 1.5 * 3))
-  # site 2 : classe 1, feuillu f = 0.5 ; la recrue reste telle quelle
-  expect_equal(r$dbh[3:4], c(10 + 0.5 * 2, 8))
+  # site 2 (G 10, interpole) : feuillu f = 1.25 ; la recrue garde son diametre
+  expect_equal(r$dbh[3:4], c(10 + 1.25 * 2, 8))
+  # recrues : 10 tiges x 0.5 = 5, entier
+  expect_equal(r$trees[4], 5)
+  expect_equal(attr(r, "dbh_entree"), c(20, 30, 10, NA))
+  # au-dela de la grille : valeur du bout
+  expect_equal(.itin_corriger(out, c(50, 50), corr)$dbh[1], 24)
   # jamais de diametre qui baisse
   out$dbh[1] <- 19
-  expect_equal(.itin_corriger(out, c(15, 5), corr)$dbh[1], 20)
+  expect_equal(.itin_corriger(out, c(20, 10), corr)$dbh[1], 20)
   # sans attribut (pas simule par un faux) : rien ne change
   attr(out, "dbh_entree") <- NULL
-  expect_identical(.itin_corriger(out, c(15, 5), corr), out)
+  expect_identical(.itin_corriger(out, c(20, 10), corr), out)
 })
 
 test_that(".itin_pas_corrige leaves the step alone without a correction", {
@@ -31,7 +38,7 @@ test_that(".itin_pas_corrige leaves the step alone without a correction", {
   coh <- data.frame(siteID = 1L, species = 1L, dbh = 20, trees = 3)
   env1 <- data.frame(siteID = 1L)
   expect_equal(.itin_pas_corrige(NULL, coh, env1, 0.1, 1L)$dbh, 22)
-  corr <- list(bornes = c(0, Inf), facteurs = matrix(0.5, 1, 2), resineux = FALSE)
+  corr <- list(grille = c(0, 50), croissance = matrix(0.5, 2, 2), resineux = FALSE)
   expect_equal(.itin_pas_corrige(NULL, coh, env1, 0.1, 1L, corr)$dbh, 21)
 })
 
@@ -41,8 +48,9 @@ test_that("corriger_finn checks its inputs", {
                   statut = "vivant")
   e <- data.frame(placette = "P1", x = 1)
   expect_error(corriger_finn(list(), a, e), "calibrer_finn")
-  expect_error(corriger_finn(faux, a, e, bornes = c(0, 10)), "bornes")
-  expect_error(corriger_finn(faux, a, e, bornes = c(5, Inf)), "bornes")
+  expect_error(corriger_finn(faux, a, e, grille = 5), "grille")
+  expect_error(corriger_finn(faux, a, e, grille = c(10, 5)), "grille")
+  expect_error(corriger_finn(faux, a, e, largeur = 0), "largeur")
   expect_error(corriger_finn(faux, a, e, iterations = 0), "iterations")
   expect_error(corriger_finn(faux, a, e), "used in the calibration")
 })
@@ -58,13 +66,18 @@ test_that("corriger_finn fits factors that simuler_itineraire and predire_finn a
   e2 <- e; e2$placette <- sub("P", "Q", e2$placette)
   # placettes coupees ecartees : on retire les coupes du jeu de demo
   a2 <- a2[a2$statut != "coupe", ]
-  cal2 <- corriger_finn(cal, a2, e2, bornes = c(0, Inf), n_tirages = 1L,
+  cal2 <- corriger_finn(cal, a2, e2, grille = c(0, 20, 40), n_tirages = 1L,
                         min_placettes = 1L)
   co <- cal2$correction
-  expect_equal(dim(co$facteurs), c(1L, 2L))
-  expect_true(all(co$facteurs >= 0.25 & co$facteurs <= 4))
-  expect_equal(nrow(co$suivi), 2L * 2L)
+  expect_equal(dim(co$croissance), c(3L, 2L))
+  expect_equal(dim(co$recrutement), c(3L, 2L))
+  expect_true(all(co$croissance >= 0.25 & co$croissance <= 4))
   expect_equal(length(co$resineux), length(cal$essences))
+  # placettes de calibration : refusees sauf demande explicite
+  expect_error(corriger_finn(cal, a, e), "placettes_calibration")
+  cal_c <- corriger_finn(cal, a[a$statut != "coupe", ], e, placettes_calibration = TRUE,
+                         n_tirages = 1L, iterations = 1L, min_placettes = 1L)
+  expect_true(all(is.finite(cal_c$correction$croissance)))
   expect_null(cal2$conforme)
   p1 <- predire_finn(cal2, a, e, n_tirages = 1L)
   expect_true(all(is.finite(p1$g_predite)))
@@ -72,7 +85,7 @@ test_that("corriger_finn fits factors that simuler_itineraire and predire_finn a
   s0 <- simuler_itineraire(cal2, a, e, horizon = 10, n_tirages = 1L, correction = FALSE)
   expect_equal(dim(s), dim(s0))
   # une correction forte (x 4 partout) fait croitre G plus vite que sans
-  cal3 <- cal2; cal3$correction$facteurs[] <- 4
+  cal3 <- cal2; cal3$correction$croissance[] <- 4
   set.seed(3); g4 <- simuler_itineraire(cal3, a, e, horizon = 5, n_tirages = 3L)
   set.seed(3); g1 <- simuler_itineraire(cal3, a, e, horizon = 5, n_tirages = 3L,
                                         correction = FALSE)
