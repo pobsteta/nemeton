@@ -1162,3 +1162,63 @@ correction (`recal_b_corr`) au lieu de la calibration d'origine
   changement réel : propriétaire privé, hêtre UGF 1, la futaie irrégulière
   passe devant la régulière (0,52 contre 0,50), la régulière n'étant plus
   sur le front.
+
+### T4 : méthode (2026-11-14, décidée)
+
+§ 3.3 définit T4 comme l'écart entre la trajectoire de hauteur observée
+(FORMS-T) et celle attendue par FINN, rapporté à la dispersion des
+trajectoires simulées ; D-6 fixe l'échelle (0-100, rang de l'observé,
+50 = conforme à l'attendu). Quatre points restent ouverts avant le code.
+
+**Ce qui existe.** `charger_forms_t_hauteurs()` (2019-2024, 10 m, cache
+local de 38 Go) et `extract_h_dom()` (percentile 90 du CHM par unité).
+FINN porte des diamètres ; sa hauteur est `FINN::height(dbh, parHeight)`,
+une allométrie interne qui sert à la lumière et n'est pas calibrée sur des
+hauteurs mesurées. L'IFN mesure `HTOT` sur la plupart des arbres (173 540
+sur les 200 000 premières lignes de `ARBRE.csv`), mais ne la remesure pas
+à la revisite. Un pas FINN vaut 5 ans, l'intervalle 2019-2024 de FORMS-T.
+
+**[T4-1] L'état initial de l'UGF.** FINN part d'une liste d'arbres ;
+une UGF de l'app n'en a pas au NDP 0.
+- (a) T4 seulement avec un inventaire de l'UGF (NDP 3) : FINN simule
+  l'UGF elle-même.
+- (b) **proposé** : des placettes IFN analogues (même essence dominante,
+  même SER, hauteur dominante initiale voisine de celle de l'UGF en 2019,
+  par exemple à ± 2 m) ; leur accroissement simulé de hauteur dominante en
+  un pas donne l'attendu et sa dispersion. T4 devient disponible au NDP 0 ;
+  avec un inventaire, (a) prend le relais.
+  **Décidé par Pascal le 2026-11-14 : (b)**, placettes IFN analogues ; avec
+  un inventaire de l'UGF, FINN simule l'UGF elle-même.
+
+**[T4-2] La hauteur depuis le diamètre.**
+- (a) l'allométrie de FINN (`parHeight`, non calibrée sur des hauteurs) ;
+- (b) **proposé** : une allométrie hauteur-diamètre par essence (et SER si
+  l'effectif suffit) ajustée sur `HTOT` de l'IFN, embarquée en
+  `inst/extdata/`.
+  **Décidé par Pascal le 2026-11-14 : (b)**, allométrie ajustée sur `HTOT`
+  de l'IFN.
+
+**[T4-3] L'observé et sa comparaison.** Hauteur dominante FORMS-T de
+l'UGF (percentile 90, `extract_h_dom()`) chaque année ; accroissement =
+pente d'une droite ajustée sur les 6 années × 5 ans (moins sensible au
+bruit annuel qu'une différence 2024 − 2019). Simulé : accroissement en un
+pas de la hauteur dominante des 100 plus gros arbres/ha. Les deux
+définitions diffèrent (couvert vu d'en haut contre arbres les plus gros) :
+on compare des **accroissements**, pas des niveaux, ce qui retire la plus
+grande part de l'écart de définition. T4 = rang de l'accroissement observé
+dans les accroissements simulés des analogues (tirages FINN compris).
+- **proposé** : ainsi ; et vérifier sur un projet réel sans perturbation
+  connue (Dabo) que T4 se centre près de 50 avant de le publier.
+  **Décidé par Pascal le 2026-11-14 : comme proposé**, contrôle de
+  centrage sur Dabo compris.
+
+**[T4-4] Les coupes et les accidents.** Une coupe fait chuter la
+hauteur dominante : ce n'est pas un défaut de vitalité.
+- **proposé** : T4 `NA` avec un motif quand une coupe est détectée sur
+  l'UGF dans la période (T3 / SUFOSAT) ou quand la hauteur dominante
+  baisse de plus de 3 m d'une année à l'autre ; la surmortalité
+  (spec 069) et R5 disent alors le reste.
+  **Décidé par Pascal le 2026-11-14 : comme proposé**, seuil de 3 m compris.
+
+Échelle (D-6) et place dans la famille T (conditionnel, 43 → 44) déjà
+décidées. Fiche obligatoire (§ 3.3), avec les pièges 1, 3 et 5 du § 4.
