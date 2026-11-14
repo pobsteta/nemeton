@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.18** (release du 2026-10-19), relevée le 2026-11-13.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.18** (release du 2026-10-19), relevée le 2026-11-14.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -339,6 +339,17 @@ substitution d'environ 0,8 tCO₂/m³ récolté ; la gestion passe en tête sous
 ONF, naturaliste et propriétaire privé ; le technicien garde la libre
 évolution. Suite : B (bois mort, gros bois) depuis la simulation. Version
 nemetonshiny vérifiée : v2026.10.18.
+
+### 2026-11-14
+
+**v2026.11.25** : `simuler_itineraire()` appelle FINN par paquets de 250
+placettes (`.itin_un_pas()`), le coût d'un appel croissant plus vite que le
+nombre de sites (46 min pour 2 479 placettes en un appel, 1,7 min pour 780
+par paquets). Recalibration de FINN en cours (branche
+`feat/recalibration-finn`, décision D-G) : le modèle A (5 632 placettes,
+poids auto) ne corrige pas la surestimation de 10 à 40 m²/ha (+11 à +23 %
+sur le test) ; le modèle B (poids de la surface terrière × 3) est en fin de
+calibration. Version nemetonshiny vérifiée : v2026.10.18.
 
 ### 2026-11-13
 
