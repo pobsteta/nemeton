@@ -141,8 +141,9 @@ projet, avec la même logique d'échelle que l'intervalle conforme d'UGF
   (UGF, ou essence × SER × période en diagnostic régional) ; le chiffre
   par placette reste disponible en diagnostic, avec un avertissement.
 - **[S-3]** Statut : diagnostic (fonction du cœur, sans famille) ou
-  composante de R5. Proposition : diagnostic d'abord, R5 après le
-  prototype et la conversion pixel → G.
+  composante de R5. **Décidé par Pascal le 2026-11-14 : diagnostic
+  d'abord** (fonction du cœur, hors des 43 indicateurs) ; R5 seulement
+  après le prototype et la conversion pixel → G.
 - **[S-4]** Seuil : quantile à 95 % des résidus conformes, ou 90 % comme
   l'intervalle de G. Proposition : 95 % (on cherche l'anormal).
 
