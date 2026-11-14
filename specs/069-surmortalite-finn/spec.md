@@ -137,8 +137,9 @@ projet, avec la même logique d'échelle que l'intervalle conforme d'UGF
   est restreint aux 311 placettes conformes revisitées en 2015-2017 ; la
   surmortalité se lit sur les revisites 2018-2025.
 - **[S-2]** Échelle d'agrégation par défaut : placette (avec avertissement)
-  ou unité seulement. Proposition : unité seulement, placette en
-  diagnostic.
+  ou unité seulement. **Décidé par Pascal le 2026-11-14 : par unité**
+  (UGF, ou essence × SER × période en diagnostic régional) ; le chiffre
+  par placette reste disponible en diagnostic, avec un avertissement.
 - **[S-3]** Statut : diagnostic (fonction du cœur, sans famille) ou
   composante de R5. Proposition : diagnostic d'abord, R5 après le
   prototype et la conversion pixel → G.
