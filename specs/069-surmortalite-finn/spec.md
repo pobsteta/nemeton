@@ -1,6 +1,7 @@
 # Spec 069 — Surmortalité : la mortalité de FINN comme référence
 
-> **Statut** : **brouillon, ouvert avant le code** (2026-11-14). Idée de
+> **Statut** : **décisions S-1 à S-4 prises par Pascal le 2026-11-14** ;
+> prochaine étape : référence d'avant-crise puis prototype régional (§ 8). Idée de
 > Pascal, discutée le 2026-11-14 pendant la recalibration de FINN
 > (spec 068, décision D-G).
 > **Dépôt** : `nemeton` (cœur). Dépend de `calibrer_finn()` et de
@@ -145,7 +146,8 @@ projet, avec la même logique d'échelle que l'intervalle conforme d'UGF
   d'abord** (fonction du cœur, hors des 43 indicateurs) ; R5 seulement
   après le prototype et la conversion pixel → G.
 - **[S-4]** Seuil : quantile à 95 % des résidus conformes, ou 90 % comme
-  l'intervalle de G. Proposition : 95 % (on cherche l'anormal).
+  l'intervalle de G. **Décidé par Pascal le 2026-11-14 : 95 %**
+  (on cherche l'anormal).
 
 ## 8. Ordre proposé
 
@@ -153,5 +155,5 @@ projet, avec la même logique d'échelle que l'intervalle conforme d'UGF
    `CAMPAGNE` dans les données FINN et calibrer la référence 2015-2017
    (~7 h, comme le modèle B).
 2. Prototype régional (§ 4.1) avec le modèle B ; résultat écrit ici.
-3. Décisions S-1 à S-4 par Pascal.
+3. ~~Décisions S-1 à S-4 par Pascal~~ (prises le 2026-11-14, § 7).
 4. `surmortalite_finn()`, tests, release.
