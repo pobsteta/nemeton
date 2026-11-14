@@ -1,3 +1,14 @@
+# nemeton 2026.11.25 (2026-11-14)
+
+## Performances
+
+- **`simuler_itineraire()`** appelle FINN par paquets de 250 placettes au
+  plus. Le coût d'un appel FINN croît plus vite que le nombre de placettes :
+  un pas sur 2 479 placettes en un seul appel prenait 46 min, contre
+  1,7 min pour 780 placettes par paquets de 250. Résultats inchangés à
+  l'aléa des tirages près ; les petits runs (≤ 250 placettes) font toujours
+  un seul appel.
+
 # nemeton 2026.11.24 (2026-11-13)
 
 ## Nouveautés

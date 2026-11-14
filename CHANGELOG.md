@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.25] - 2026-11-14
+
+### Changed
+- `simuler_itineraire()` runs each FINN step by packets of at most 250 plots (the cost of one FINN call grows faster than the number of plots).
+
 ## [2026.11.24] - 2026-11-13
 
 ### Added

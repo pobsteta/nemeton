@@ -865,7 +865,33 @@ simuler_itineraire <- function(calibration, arbres, environnement, itineraire = 
 # cohorte de rang k d'un site s (S sites) ressort avec cohortID = (k - 1) S + s,
 # les recrues au-dela (data-raw/diagnostic_finn_processus.R) ; une cohorte
 # absente de la sortie est morte.
-.itin_un_pas <- function(m, coh, env1, sp, n_sp) {
+# Par paquets de `paquet` sites : le cout d'un appel FINN croit plus vite que
+# le nombre de sites (2 479 placettes en un appel : 46 min ; 780 par paquets
+# de 250 : 1,7 min, data-raw/diagnostic_biais_croissance.R). Les sites d'un
+# paquet sont renumerotes 1..n, puis decales au retour.
+.itin_un_pas <- function(m, coh, env1, sp, n_sp, paquet = 250L) {
+  n_sites <- nrow(env1)
+  if (n_sites <= paquet) return(.itin_un_pas_bloc(m, coh, env1, sp, n_sp))
+  debuts <- seq(1L, n_sites, by = paquet)
+  res <- lapply(debuts, function(d) {
+    f <- min(n_sites, d + paquet - 1L)
+    e <- env1[env1$siteID >= d & env1$siteID <= f, , drop = FALSE]
+    e$siteID <- e$siteID - (d - 1L)
+    ci <- coh[coh$siteID >= d & coh$siteID <= f, , drop = FALSE]
+    ci$siteID <- ci$siteID - (d - 1L)
+    r <- .itin_un_pas_bloc(m, ci, e, sp, n_sp)
+    mo <- attr(r, "morts")
+    r$siteID <- r$siteID + (d - 1L)
+    mo$siteID <- mo$siteID + (d - 1L)
+    list(out = r, morts = mo)
+  })
+  out <- do.call(rbind, lapply(res, `[[`, "out"))
+  attr(out, "morts") <- do.call(rbind, lapply(res, `[[`, "morts"))
+  rownames(out) <- NULL
+  out
+}
+
+.itin_un_pas_bloc <- function(m, coh, env1, sp, n_sp) {
   dt <- data.table::as.data.table
   vide_df <- data.frame(siteID = integer(), species = integer(), dbh = numeric(),
                         trees = numeric())

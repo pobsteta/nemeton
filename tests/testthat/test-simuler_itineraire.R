@@ -650,3 +650,27 @@ test_that("simuler_itineraire counts the self-thinning as deadwood, not the cuts
   expect_true(any(plaf$moyenne[plaf$variable == "volume_mort"] > 0))
   expect_true(any(plaf$moyenne[plaf$variable == "bois_mort"] > 0))
 })
+
+test_that(".itin_un_pas runs FINN by packets of sites and renumbers them back", {
+  vus <- list()
+  local_mocked_bindings(.itin_un_pas_bloc = function(m, coh, env1, sp, n_sp) {
+    vus[[length(vus) + 1L]] <<- env1$siteID
+    stopifnot(all(coh$siteID %in% env1$siteID))
+    out <- transform(coh, dbh = dbh + 1)
+    attr(out, "morts") <- coh[1, , drop = FALSE]
+    out
+  })
+  env1 <- data.frame(siteID = 1:5, tx_ete = 25, year = 0L)
+  coh <- data.frame(siteID = c(1L, 2L, 3L, 4L, 5L, 5L), species = 1L,
+                    dbh = c(10, 20, 30, 40, 50, 60), trees = 1)
+  r <- .itin_un_pas(NULL, coh, env1, 0.1, 1L, paquet = 2L)
+  # trois appels, sites renumerotes 1..n dans chacun
+  expect_equal(vus, list(1:2, 1:2, 1L))
+  expect_equal(r$siteID, coh$siteID)
+  expect_equal(r$dbh, coh$dbh + 1)
+  expect_equal(attr(r, "morts")$siteID, c(1L, 3L, 5L))
+  # sous le seuil : un seul appel, sites intacts
+  vus <- list()
+  .itin_un_pas(NULL, coh, env1, 0.1, 1L)
+  expect_equal(vus, list(1:5))
+})
