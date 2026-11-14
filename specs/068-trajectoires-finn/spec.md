@@ -1209,6 +1209,8 @@ grande part de l'écart de définition. T4 = rang de l'accroissement observé
 dans les accroissements simulés des analogues (tirages FINN compris).
 - **proposé** : ainsi ; et vérifier sur un projet réel sans perturbation
   connue (Dabo) que T4 se centre près de 50 avant de le publier.
+  **Décidé par Pascal le 2026-11-14 : comme proposé**, contrôle de
+  centrage sur Dabo compris.
 
 **[T4-4] Les coupes et les accidents.** Une coupe fait chuter la
 hauteur dominante : ce n'est pas un défaut de vitalité.
