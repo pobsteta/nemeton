@@ -55,6 +55,61 @@ test_that("corriger_finn checks its inputs", {
   expect_error(corriger_finn(faux, a, e), "used in the calibration")
 })
 
+test_that("corriger_finn fits the factors with a stand-in FINN step", {
+  # pas FINN factice : +1 cm a chaque cohorte, une recrue feuillue par site.
+  # Les observations : +2 cm et deux fois plus de recrues -> facteurs ~ 2.
+  local_mocked_bindings(
+    .finn_verifier_installation = function() invisible(TRUE),
+    .itin_un_pas = function(m, coh, env1, sp, n_sp) {
+      recr <- data.frame(siteID = sort(unique(coh$siteID)), species = 1L,
+                         dbh = 8, trees = 1)
+      out <- rbind(transform(coh, dbh = dbh + 1), recr)
+      attr(out, "dbh_entree") <- c(coh$dbh, rep(NA_real_, nrow(recr)))
+      attr(out, "morts") <- coh[0, ]
+      out
+    }
+  )
+  n <- 40L
+  pla <- sprintf("P%02d", seq_len(n))
+  d1 <- rep(15 + seq_len(n) / 2, each = 3) + rep(0:2, n)
+  arbres <- rbind(
+    data.frame(placette = rep(pla, each = 3), essence = "09", d1 = d1,
+               d2 = d1 + 2, poids = 10, statut = "vivant"),
+    data.frame(placette = pla, essence = "09", d1 = NA_real_, d2 = 8,
+               poids = 20, statut = "recrute"),
+    # une placette coupee est ecartee
+    data.frame(placette = "PX", essence = "09", d1 = 30, d2 = NA_real_,
+               poids = 10, statut = "coupe")
+  )
+  env <- data.frame(placette = c(pla, "PX"), x = 1)
+  calib <- structure(list(essences = c("09", "61"), variables_env = "x",
+                          surface_placette = 0.1, placettes = character(),
+                          modele = list(eval = function() NULL),
+                          conforme = list(demi_largeur = 1)),
+                     class = "finn_calibration")
+  expect_message(
+    r <- corriger_finn(calib, arbres, env, n_tirages = 1L, min_placettes = 5L),
+    "conformer_finn"
+  )
+  co <- r$correction
+  expect_null(r$conforme)
+  expect_equal(co$n_placettes, n)
+  expect_false("PX" %in% co$placettes)
+  expect_equal(co$resineux, c(FALSE, TRUE))
+  # feuillus : pres de 2 la ou il y a des placettes, tenu au-dela
+  expect_equal(unname(co$croissance[, "feuillus"]), rep(2, length(co$grille)),
+               tolerance = 0.02)
+  expect_equal(unname(co$recrutement[, "feuillus"]), rep(2, length(co$grille)),
+               tolerance = 0.02)
+  # aucun resineux : facteurs a 1, effectif nul
+  expect_true(all(co$croissance[, "resineux"] == 1))
+  expect_true(all(co$recrutement[, "resineux"] == 1))
+  expect_true(all(co$n_effectif[, "resineux"] == 0))
+  expect_equal(.finn_facteur(co$croissance, co$grille, c(1, 100),
+                             c("feuillus", "resineux")),
+               c(co$croissance[1, "feuillus"], 1), tolerance = 0.02)
+})
+
 test_that("corriger_finn fits factors that simuler_itineraire and predire_finn apply", {
   skip_on_cran()
   skip_if_not_installed("FINN")
