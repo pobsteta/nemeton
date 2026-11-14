@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.24.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.25</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -125,6 +125,14 @@
 <h2 id="unreleased"><a href="https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD" class="external-link">Unreleased</a><a class="anchor" aria-label="anchor" href="#unreleased"></a></h2>
 </div>
 <div class="section level2">
+<h2 id="id_20261125---2026-11-14">[2026.11.25] - 2026-11-14<a class="anchor" aria-label="anchor" href="#id_20261125---2026-11-14"></a></h2>
+<div class="section level3">
+<h3 id="changed">Changed<a class="anchor" aria-label="anchor" href="#changed"></a></h3>
+<ul><li>
+<code><a href="reference/simuler_itineraire.html">simuler_itineraire()</a></code> runs each FINN step by packets of at most 250 plots (the cost of one FINN call grows faster than the number of plots).</li>
+</ul></div>
+</div>
+<div class="section level2">
 <h2 id="id_20261124---2026-11-13">[2026.11.24] - 2026-11-13<a class="anchor" aria-label="anchor" href="#id_20261124---2026-11-13"></a></h2>
 <div class="section level3">
 <h3 id="added">Added<a class="anchor" aria-label="anchor" href="#added"></a></h3>
@@ -132,7 +140,7 @@
 <code>simuler_itineraire(biodiversite = TRUE)</code>: variables <code>volume_mort</code>, <code>bois_mort</code> (first-order decay, <code>decomposition</code>) and <code>tiges_tgb</code> (<code>seuil_tgb</code>), spec 068.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed">Changed<a class="anchor" aria-label="anchor" href="#changed"></a></h3>
+<h3 id="changed-1">Changed<a class="anchor" aria-label="anchor" href="#changed-1"></a></h3>
 <ul><li>
 <code>comparer_itineraires(trajectoires =)</code> reads family B from <code>bois_mort</code> at the horizon.</li>
 </ul></div>
@@ -181,7 +189,7 @@
 <code><a href="reference/simuler_itineraire.html">simuler_itineraire()</a></code>: rule <code>norme_g_selon_dg</code>, basal area left after thinning as a function of the quadratic mean diameter (spec 065, D-10).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-1">Changed<a class="anchor" aria-label="anchor" href="#changed-1"></a></h3>
+<h3 id="changed-2">Changed<a class="anchor" aria-label="anchor" href="#changed-2"></a></h3>
 <ul><li>Catalogue code <code>bfc_futaie_irreguliere_pro_silva</code> renamed <code>bfc_hetre_futaie_irreguliere</code>.</li>
 </ul></div>
 </div>
@@ -203,7 +211,7 @@
 <code>simuler_itineraire(carbone = TRUE)</code>: stem-wood carbon and harvested carbon along the trajectories (spec 068).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-2">Changed<a class="anchor" aria-label="anchor" href="#changed-2"></a></h3>
+<h3 id="changed-3">Changed<a class="anchor" aria-label="anchor" href="#changed-3"></a></h3>
 <ul><li>
 <code><a href="reference/indicateur_c1_biomasse.html">indicateur_c1_biomasse()</a></code> in CHM mode uses the basic wood density instead of the air-dry density of <code>wood_density.csv</code>: C1 drops by 15 to 25 % in that mode.</li>
 </ul></div>
@@ -236,7 +244,7 @@
 <code><a href="reference/conformer_finn.html">conformer_finn()</a></code>: split conformal residuals of a FINN calibration on held-out revisited plots.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-3">Changed<a class="anchor" aria-label="anchor" href="#changed-3"></a></h3>
+<h3 id="changed-4">Changed<a class="anchor" aria-label="anchor" href="#changed-4"></a></h3>
 <ul><li>
 <code><a href="reference/calibrer_finn.html">calibrer_finn()</a></code> returns the identifiers of the calibration plots (<code>placettes</code>).</li>
 </ul></div>
@@ -244,7 +252,7 @@
 <div class="section level2">
 <h2 id="id_20261110---2026-11-09">[2026.11.10] - 2026-11-09<a class="anchor" aria-label="anchor" href="#id_20261110---2026-11-09"></a></h2>
 <div class="section level3">
-<h3 id="changed-4">Changed<a class="anchor" aria-label="anchor" href="#changed-4"></a></h3>
+<h3 id="changed-5">Changed<a class="anchor" aria-label="anchor" href="#changed-5"></a></h3>
 <ul><li>
 <code><a href="reference/calibrer_finn.html">calibrer_finn()</a></code> gains <code>min_arbres_essence = 300L</code>: species with fewer trees in the initial state are pooled into <code>"other"</code> instead of getting their own parameters; it removes the bootstrap explosions seen on rare species (spec 068).</li>
 </ul></div>
@@ -257,7 +265,7 @@
 <code><a href="reference/calibrer_finn.html">calibrer_finn()</a></code>, <code><a href="reference/predire_finn.html">predire_finn()</a></code>: calibration of FINN mechanistic processes on revisited plots and basal-area prediction averaged over draws; FINN patch of 0.7 ha by default, cut trees removed from the initial state, neural processes refused (spec 068, step 3).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-5">Changed<a class="anchor" aria-label="anchor" href="#changed-5"></a></h3>
+<h3 id="changed-6">Changed<a class="anchor" aria-label="anchor" href="#changed-6"></a></h3>
 <ul><li>FINN and torch added to Suggests (spec 068, D-1).</li>
 </ul></div>
 </div>
@@ -286,7 +294,7 @@
 <code><a href="reference/simulate_density_sensitivity.html">simulate_density_sensitivity()</a></code>: B5 stability under thinning of the LiDAR cloud (by pulse with <code>gpstime</code>, else by return), per-density summary and a <code>densite_suffisante</code> / <code>densite_limite</code> / <code>non_simule</code> conclusion (spec 067, dimensioning).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-6">Changed<a class="anchor" aria-label="anchor" href="#changed-6"></a></h3>
+<h3 id="changed-7">Changed<a class="anchor" aria-label="anchor" href="#changed-7"></a></h3>
 <ul><li>B5 counting factored (per-return codes, tabulation, scoring) and LAZ tile reading isolated in an internal helper; behaviour unchanged.</li>
 </ul></div>
 </div>
@@ -297,7 +305,7 @@
 <ul><li>B5, vertical stratification from the LiDAR point cloud (spec 067, without ForPT): <code><a href="reference/indicateur_b5_stratification.html">indicateur_b5_stratification()</a></code>, Shannon evenness of returns over five height strata (0-100), <code>"points"</code> (default) or <code>"densite_foliaire"</code> (MacArthur-Horn gap fraction) profile; point table, <code>LAS</code> object or LAZ tiles (lidR); statuses <code>calculated</code>, <code>skipped_no_lidar</code>, <code>skipped_no_coverage</code>, <code>skipped_low_density</code>. Fiche <code>fiche-b5-stratification_fr</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-7">Changed<a class="anchor" aria-label="anchor" href="#changed-7"></a></h3>
+<h3 id="changed-8">Changed<a class="anchor" aria-label="anchor" href="#changed-8"></a></h3>
 <ul><li>43 indicators (12 source-conditional); <code>massif_demo_units</code> carries <code>B5</code>, <code>b5_status</code>, <code>B5_norm</code> (NA without LiDAR, families unchanged).</li>
 </ul></div>
 </div>
@@ -317,7 +325,7 @@
 <code><a href="reference/probe_indicator.html">probe_indicator()</a></code>: per-indicator ridge probe of a foundation-model embedding with spatial block cross-validation (R2, RMSE, reading <code>voit</code> / <code>partiel</code> / <code>angle_mort</code>, <code>source_commune</code> flag); diagnostic only (spec 066).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-8">Changed<a class="anchor" aria-label="anchor" href="#changed-8"></a></h3>
+<h3 id="changed-9">Changed<a class="anchor" aria-label="anchor" href="#changed-9"></a></h3>
 <ul><li>Spatial block cross-validation of <code><a href="reference/embedding_regress.html">embedding_regress()</a></code> factored into a shared helper; behaviour unchanged.</li>
 </ul></div>
 </div>
@@ -343,7 +351,7 @@
 <li>B4/L3 embedding mode (<code>embedding =</code>, <code>layers =</code>): fixed 32-cluster dictionary <code><a href="reference/aef_clusters.html">aef_clusters()</a></code> (<code>inst/extdata/aef_clusters_v1.*</code>), soft assignment (tau = 0.1) and Jensen-Shannon window diversity for B4, 100 m windows on a fixed grid, status <code>calculated_embedding</code> with its own normalisation bounds; <code>b4_methode</code> / <code>l3_methode</code> columns.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-9">Changed<a class="anchor" aria-label="anchor" href="#changed-9"></a></h3>
+<h3 id="changed-10">Changed<a class="anchor" aria-label="anchor" href="#changed-10"></a></h3>
 <ul><li>42 indicators (11 conditional); <code>massif_demo_units</code> carries <code>N5</code>, <code>n5_status</code>, <code>N5_norm</code> (NA).</li>
 </ul></div>
 </div>
@@ -364,7 +372,7 @@
 <code>gstat</code> and <code>automap</code> from Suggests.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-10">Changed<a class="anchor" aria-label="anchor" href="#changed-10"></a></h3>
+<h3 id="changed-11">Changed<a class="anchor" aria-label="anchor" href="#changed-11"></a></h3>
 <ul><li>
 <code><a href="reference/meteoland_daily_grid.html">meteoland_daily_grid()</a></code> and <code><a href="reference/build_safran_stations.html">build_safran_stations()</a></code> moved unchanged to <code>R/meteoland_grid.R</code>.</li>
 </ul></div>
@@ -451,7 +459,7 @@
 <li>Marculus-like symbology and IGN/OSM XYZ base maps in the video-inventory QField project.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-11">Changed<a class="anchor" aria-label="anchor" href="#changed-11"></a></h3>
+<h3 id="changed-12">Changed<a class="anchor" aria-label="anchor" href="#changed-12"></a></h3>
 <ul><li>QField layer order as on Groma’s map; <code>houppiers</code> hidden by default.</li>
 </ul></div>
 </div>
@@ -474,7 +482,7 @@
 <code><a href="reference/resoudre_espar.html">resoudre_espar()</a></code> resolves French labels (<code>lib_espar</code>, accents ignored; ambiguous → <code>NA</code>).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-12">Changed<a class="anchor" aria-label="anchor" href="#changed-12"></a></h3>
+<h3 id="changed-13">Changed<a class="anchor" aria-label="anchor" href="#changed-13"></a></h3>
 <ul><li>QField layers named after their table; <code>projet</code>, <code>detections</code>, <code>centres_mesures</code>, <code>arbres</code> no longer locked at project level; project title « Inventaire vidéo — <name> ».</name></li>
 <li>
 <code><a href="reference/importer_inventaire_video.html">importer_inventaire_video()</a></code> uses the most recent measured centre; <code><a href="reference/valider_inventaire_video.html">valider_inventaire_video()</a></code> reports several centres per plot as an information.</li>
@@ -488,7 +496,7 @@
 <code>era5_cache_dir</code> argument to <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> and <code><a href="reference/load_biljou_forcing.html">load_biljou_forcing()</a></code> (defaults to <code>cache_dir</code>): ERA5 files shareable across projects.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-13">Changed<a class="anchor" aria-label="anchor" href="#changed-13"></a></h3>
+<h3 id="changed-14">Changed<a class="anchor" aria-label="anchor" href="#changed-14"></a></h3>
 <ul><li>ERA5 monthly requests of all missing years (and points) are submitted to the CDS together and tracked as a batch (at most 6 at once, <code>nemeton.era5_max_simultanees</code>), instead of one after the other. A CDS queue-limit rejection lowers the cap instead of burning a try.</li>
 <li>
 <code>regen_expo:era5_mois</code> is emitted per completed month; <code>mois_n</code> is the batch size.</li>
@@ -511,7 +519,7 @@
 <code><a href="reference/indicateur_t2_changement.html">indicateur_t2_changement()</a></code>: the N2 / T1 stability proxy. Without FORMS-T, T2 is <code>NA</code>; a unit outside the series gets <code>t2_status = "no_source"</code> (the <code>"proxy"</code> status is gone). <code>t1_values</code> is kept but deprecated and ignored.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-14">Changed<a class="anchor" aria-label="anchor" href="#changed-14"></a></h3>
+<h3 id="changed-15">Changed<a class="anchor" aria-label="anchor" href="#changed-15"></a></h3>
 <ul><li>
 <code><a href="reference/nemeton_compute.html">nemeton_compute()</a></code>: T2 is no longer a composite computed last.</li>
 <li>
@@ -527,7 +535,7 @@
 <code>inst/inventaire_video/</code>: shared GeoPackage schema, SQLite triggers, tree species reference (BD Forêt V2).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-15">Changed<a class="anchor" aria-label="anchor" href="#changed-15"></a></h3>
+<h3 id="changed-16">Changed<a class="anchor" aria-label="anchor" href="#changed-16"></a></h3>
 <ul><li>
 <code><a href="reference/validate_field_data.html">validate_field_data()</a></code>: arguments <code>dbh_max_cm</code> (300) and <code>dbh_alerte_cm</code> (<code>NULL</code>); defaults unchanged.</li>
 <li>
@@ -548,7 +556,7 @@
 <code><a href="reference/charger_forms_t_hauteurs.html">charger_forms_t_hauteurs()</a></code> (experimental): FORMS-T yearly height series over an area, from a local copy or Theia.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-16">Changed<a class="anchor" aria-label="anchor" href="#changed-16"></a></h3>
+<h3 id="changed-17">Changed<a class="anchor" aria-label="anchor" href="#changed-17"></a></h3>
 <ul><li>T2 indicator sheet, tooltip and diagram describe the measured path.</li>
 <li>
 <code>Remotes</code>: lidaRtRee is no longer cloned from forge.inrae.fr (401 errors and timeouts broke CI); it comes from CRAN again (4.0.9).</li>
@@ -565,14 +573,14 @@
 <code>theia_configure_s3()</code>, deprecated since 0.136.0 and without effect (THEIA assets are read through pre-signed URLs).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-17">Changed<a class="anchor" aria-label="anchor" href="#changed-17"></a></h3>
+<h3 id="changed-18">Changed<a class="anchor" aria-label="anchor" href="#changed-18"></a></h3>
 <ul><li>Sampling tutorial and THEIA notes in <code>inst/datasources/FR.json</code> updated.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_2026101---2026-10-09">[2026.10.1] - 2026-10-09<a class="anchor" aria-label="anchor" href="#id_2026101---2026-10-09"></a></h2>
 <div class="section level3">
-<h3 id="changed-18">Changed<a class="anchor" aria-label="anchor" href="#changed-18"></a></h3>
+<h3 id="changed-19">Changed<a class="anchor" aria-label="anchor" href="#changed-19"></a></h3>
 <ul><li>Versionnage calendaire <code>AAAA.M.N</code> à la place du versionnage sémantique (spec 057 § 8) ; rupture d’une fonction stable seulement après dépréciation (3 mois ou plus aucun appelant) et section « Changements cassants » dans NEWS.</li>
 <li>CI <code>version-consistency</code> : forme <code>AAAA.M.N</code> et cohérence année/mois avec la date de l’entrée NEWS.</li>
 </ul></div>
@@ -595,7 +603,7 @@
 <code><a href="reference/traiter_nuage_points.html">traiter_nuage_points()</a></code> (experimental, spec 059) : MNT, MNS et MNH depuis un nuage IGN, LiDAR drone ou photogrammétrie drone ; reclassification bruit + sol (CSF/PTD) par défaut ; MNT externe et recalage vertical sur le sol nu pour la photogrammétrie.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-19">Changed<a class="anchor" aria-label="anchor" href="#changed-19"></a></h3>
+<h3 id="changed-20">Changed<a class="anchor" aria-label="anchor" href="#changed-20"></a></h3>
 <ul><li>
 <code><a href="reference/resolve_project_layers.html">resolve_project_dem()</a></code> / <code><a href="reference/resolve_project_layers.html">resolve_project_chm()</a></code> : produits drone en premier, puis LiDAR HD publié, puis <code>ign_mnt/</code> / <code>ign_mnh/</code> recalculés.</li>
 <li>
@@ -631,7 +639,7 @@
 <code><a href="reference/load_parcelles_personnes_morales.html">load_parcelles_personnes_morales()</a></code> : plusieurs communes.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-20">Changed<a class="anchor" aria-label="anchor" href="#changed-20"></a></h3>
+<h3 id="changed-21">Changed<a class="anchor" aria-label="anchor" href="#changed-21"></a></h3>
 <ul><li>
 <code><a href="reference/construire_ugf_onf.html">construire_ugf_onf()</a></code> : un <code>cadastre</code> fourni n’est plus filtré sur <code>insee</code>.</li>
 </ul></div>
@@ -707,7 +715,7 @@
 <div class="section level2">
 <h2 id="id_02140---2026-10-05">[0.214.0] - 2026-10-05<a class="anchor" aria-label="anchor" href="#id_02140---2026-10-05"></a></h2>
 <div class="section level3">
-<h3 id="changed-21">Changed<a class="anchor" aria-label="anchor" href="#changed-21"></a></h3>
+<h3 id="changed-22">Changed<a class="anchor" aria-label="anchor" href="#changed-22"></a></h3>
 <ul><li>
 <code>withr</code> en Imports (graines locales) ; <code><a href="reference/list_alerts.html">list_alerts()</a></code> typé sous SQLite ; <code><a href="reference/db_migrate.html">db_migrate()</a></code> sérialisé, <code><a href="reference/db_connect.html">db_connect()</a></code> décode l’URL ; CI pkgdown en lecture seule.</li>
 </ul></div>
@@ -719,7 +727,7 @@
 <div class="section level2">
 <h2 id="id_02130---2026-10-05">[0.213.0] - 2026-10-05<a class="anchor" aria-label="anchor" href="#id_02130---2026-10-05"></a></h2>
 <div class="section level3">
-<h3 id="changed-22">Changed<a class="anchor" aria-label="anchor" href="#changed-22"></a></h3>
+<h3 id="changed-23">Changed<a class="anchor" aria-label="anchor" href="#changed-23"></a></h3>
 <ul><li>Erreurs de validation des indicateurs via <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_abort()</a></code> partout ; <code>lang</code> documenté inutilisé.</li>
 <li>
 <code><a href="reference/run_fordead_dieback.html">run_fordead_dieback()</a></code> : <code>status = "error"</code> quand le post-traitement ou l’insertion échoue.</li>
@@ -765,7 +773,7 @@
 <div class="section level2">
 <h2 id="id_02110---2026-10-03">[0.211.0] - 2026-10-03<a class="anchor" aria-label="anchor" href="#id_02110---2026-10-03"></a></h2>
 <div class="section level3">
-<h3 id="changed-23">Changed<a class="anchor" aria-label="anchor" href="#changed-23"></a></h3>
+<h3 id="changed-24">Changed<a class="anchor" aria-label="anchor" href="#changed-24"></a></h3>
 <ul><li>Release déclenchée par la réussite de R-CMD-check ; CI en échec sur warning.</li>
 <li>
 <code>ggrepel</code>, <code>signal</code> en Suggests ; dépendances de base déclarées.</li>
@@ -863,7 +871,7 @@
 <div class="section level2">
 <h2 id="id_02060---2026-10-01">[0.206.0] - 2026-10-01<a class="anchor" aria-label="anchor" href="#id_02060---2026-10-01"></a></h2>
 <div class="section level3">
-<h3 id="changed-24">Changed<a class="anchor" aria-label="anchor" href="#changed-24"></a></h3>
+<h3 id="changed-25">Changed<a class="anchor" aria-label="anchor" href="#changed-25"></a></h3>
 <ul><li>
 <code><a href="reference/ifn_production_domaines.html">ifn_production_domaines()</a></code> : variance du domaine calée selon sa surface (au lieu du σᵥ² national) ; <code>nature = "prediction"</code> pour un domaine sans placette ; colonnes <code>predicteur</code>, <code>variance_domaine</code> et <code>hors_calibrage</code>.</li>
 </ul></div>
@@ -901,7 +909,7 @@
 <code><a href="reference/ifn_volume_reference.html">ifn_volume_reference()</a></code> / <code><a href="reference/completer_volume_ifn.html">completer_volume_ifn()</a></code> : <code>methode = "fay_herriot"</code> (FH poolé essence × SER, échelle log, GVF), provenance <code>"ifn_fh_ser"</code>. Table <code>inst/extdata/ifn_volume_fh_ser.csv</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-25">Changed<a class="anchor" aria-label="anchor" href="#changed-25"></a></h3>
+<h3 id="changed-26">Changed<a class="anchor" aria-label="anchor" href="#changed-26"></a></h3>
 <ul><li>
 <code><a href="reference/estimer_fay_herriot.html">estimer_fay_herriot()</a></code> : REML sans matrice n × n ; erreurs explicites sur divergence et valeurs non finies.</li>
 </ul></div>
@@ -921,7 +929,7 @@
 <div class="section level2">
 <h2 id="id_02010---2026-10-01">[0.201.0] - 2026-10-01<a class="anchor" aria-label="anchor" href="#id_02010---2026-10-01"></a></h2>
 <div class="section level3">
-<h3 id="changed-26">Changed<a class="anchor" aria-label="anchor" href="#changed-26"></a></h3>
+<h3 id="changed-27">Changed<a class="anchor" aria-label="anchor" href="#changed-27"></a></h3>
 <ul><li>Production IFN (<code><a href="reference/ifn_production_ser.html">ifn_production_ser()</a></code>) : PV avec croissance en hauteur (allométrie H ~ D^beta estimée dans l’IFN) et production des arbres coupés entre deux passages. Contrôle national 97 % de l’IGN (78 % en v0.200.0).</li>
 </ul></div>
 <div class="section level3">
@@ -960,7 +968,7 @@
 <div class="section level2">
 <h2 id="id_01990---2026-09-23">[0.199.0] - 2026-09-23<a class="anchor" aria-label="anchor" href="#id_01990---2026-09-23"></a></h2>
 <div class="section level3">
-<h3 id="changed-27">Changed<a class="anchor" aria-label="anchor" href="#changed-27"></a></h3>
+<h3 id="changed-28">Changed<a class="anchor" aria-label="anchor" href="#changed-28"></a></h3>
 <ul><li>Couche <code>probability</code> des manifestes RECONFORT = P(atteinte) (somme des bandes 2..n, 0–1000), dérivée dans <code>p_atteinte_&lt;source&gt;.tif</code>.</li>
 </ul></div>
 <div class="section level3">
@@ -996,7 +1004,7 @@
 <code>.signal_cancel_reconfort()</code> (interne, <code>R/cancel.R</code>).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-28">Changed<a class="anchor" aria-label="anchor" href="#changed-28"></a></h3>
+<h3 id="changed-29">Changed<a class="anchor" aria-label="anchor" href="#changed-29"></a></h3>
 <ul><li>Un run RECONFORT annulé conserve son répertoire de travail même avec <code>keep_workdir = FALSE</code> : ce qui a été produit reste exploitable par un re-run <code>skip_ingest = TRUE</code>.</li>
 </ul></div>
 </div>
@@ -1040,7 +1048,7 @@
 <strong>Le motif « constante silencieuse »</strong> dans huit indicateurs (B3, R3, L1, R1, T1, T2, W1) : une composante manquante remplacée par 50 — ou par 0 — sans avertissement.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-29">Changed<a class="anchor" aria-label="anchor" href="#changed-29"></a></h3>
+<h3 id="changed-30">Changed<a class="anchor" aria-label="anchor" href="#changed-30"></a></h3>
 <ul><li>Entrée « Fiche C1 » dans le menu Articles de <code>_pkgdown.yml</code>. ## [0.191.1] - 2026-08-27</li>
 </ul></div>
 <div class="section level3">
@@ -1081,7 +1089,7 @@
 <li>Tooltips B4 et L3 : la grandeur et son échelle sont nommées.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-30">Changed<a class="anchor" aria-label="anchor" href="#changed-30"></a></h3>
+<h3 id="changed-31">Changed<a class="anchor" aria-label="anchor" href="#changed-31"></a></h3>
 <ul><li>
 <strong>ERA5 : un événement de progression par MOIS</strong> (<code>regen_expo:era5_mois</code>, avec <code>category</code> / <code>year</code> / <code>mois_i</code> / <code>mois_n</code>). <code>emit</code> n’était appelé qu’une fois par année — « 1/1 » puis 1 h 36 de silence, sur ~3 h 15 de téléchargement CDS par run. <code>category</code> descend désormais jusqu’au téléchargement ; l’événement annuel <code>regen_expo:era5</code> est conservé ; <code>emit = NULL</code> reste un no-op.</li>
 </ul></div>
@@ -1151,7 +1159,7 @@
 <code>indicateur_r1_feu(fire_exp_weights = c(exposure = 0.5, slope = 0.25, climate = 0.25))</code> : le chemin <code>fireexposuR</code> module l’exposition par la pente et la sécheresse climatique. Une composante indisponible sort du calcul et son poids est redistribué au prorata ; les poids retenus sont journalisés. <code>c(exposure = 1)</code> restitue l’exposition brute.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-31">Changed<a class="anchor" aria-label="anchor" href="#changed-31"></a></h3>
+<h3 id="changed-32">Changed<a class="anchor" aria-label="anchor" href="#changed-32"></a></h3>
 <ul><li>La pente du chemin <code>fireexposuR</code> est dérivée de la grille du <code>hazard</code> (30 m) et non du MNT plein format — résolution des modèles de propagation, et le chemin reste rapide.</li>
 <li>Composantes pente et climat factorisées (<code>.r1_slope_factor</code>, <code>.r1_climate_factor</code>), partagées par les deux chemins de R1.</li>
 </ul></div>
@@ -1195,7 +1203,7 @@
 <code><a href="reference/get_famille_col.html">get_famille_col()</a></code> et <code><a href="reference/get_famille_code.html">get_famille_code()</a></code> exportées et vectorisées (validation explicite des codes ; <code>NA</code> pour une colonne non-famille).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-32">Changed<a class="anchor" aria-label="anchor" href="#changed-32"></a></h3>
+<h3 id="changed-33">Changed<a class="anchor" aria-label="anchor" href="#changed-33"></a></h3>
 <ul><li>
 <code>_pkgdown.yml</code> : les deux accesseurs de famille rejoignent la section « Table des familles d’indicateurs ».</li>
 </ul></div>
@@ -1211,7 +1219,7 @@
 <li>Tests verrouillant l’API : ordre et effectif des familles, noms non vides en FR et EN, appariement positionnel <code>indicators</code> ↔︎ <code>column_names</code>, convention <code>&lt;code&gt;&lt;n&gt;</code>, croisement historique F/L, et surtout le lien table ↔︎ moteur (chaque colonne déclarée est produite par une fonction exportée et normalisée par une règle explicite).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-33">Changed<a class="anchor" aria-label="anchor" href="#changed-33"></a></h3>
+<h3 id="changed-34">Changed<a class="anchor" aria-label="anchor" href="#changed-34"></a></h3>
 <ul><li>
 <code>_pkgdown.yml</code> : nouvelle section « Table des familles d’indicateurs ».</li>
 </ul></div>
@@ -1229,7 +1237,7 @@
 <code>.eobs_point_vect()</code> ne reprojette plus le point du clic quand le CRS du raster est déjà celui du clic : l’opération PROJ 4326 → 4326 était sans effet et échouait sur un runtime à PROJ dégradé.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-34">Changed<a class="anchor" aria-label="anchor" href="#changed-34"></a></h3>
+<h3 id="changed-35">Changed<a class="anchor" aria-label="anchor" href="#changed-35"></a></h3>
 <ul><li>Nouvel argument <code>dem_target_res</code> sur <code><a href="reference/indicateur_r1_feu.html">indicateur_r1_feu()</a></code>, <code><a href="reference/indicateur_r2_tempete.html">indicateur_r2_tempete()</a></code>, <code><a href="reference/indicateur_r3_secheresse.html">indicateur_r3_secheresse()</a></code>, <code><a href="reference/indicateur_w2_zones_humides.html">indicateur_w2_zones_humides()</a></code>, <code><a href="reference/indicateur_w3_humidite.html">indicateur_w3_humidite()</a></code>, <code><a href="reference/indicateur_f2_erosion.html">indicateur_f2_erosion()</a></code>, <code><a href="reference/indicateur_s1_routes.html">indicateur_s1_routes()</a></code>, <code><a href="reference/indicateur_s2_bati.html">indicateur_s2_bati()</a></code>. <code>NULL</code> conserve la résolution native. À garder identique sur W2/W3/F2/R3 (clé du cache TWI).</li>
 <li>Résolution de travail topographique portée de 10 m à <strong>2 m</strong> et exposée comme réglage paquet : <code>options(nemeton.topo_target_res = )</code> / <code>NEMETON_TOPO_TARGET_RES</code>, défaut <code>.topo_target_res()</code> sur les huit indicateurs. Les scores des projets à MNT LiDAR bougent de l’ordre du point /100 et les caches TWI existants sont recalculés une fois.</li>
 <li>
@@ -1247,7 +1255,7 @@
 <div class="section level2">
 <h2 id="id_01610---2026-07-16">[0.161.0] - 2026-07-16<a class="anchor" aria-label="anchor" href="#id_01610---2026-07-16"></a></h2>
 <div class="section level3">
-<h3 id="changed-35">Changed<a class="anchor" aria-label="anchor" href="#changed-35"></a></h3>
+<h3 id="changed-36">Changed<a class="anchor" aria-label="anchor" href="#changed-36"></a></h3>
 <ul><li>Normalisation 0-100 de tous les indicateurs (spec 038). <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> persiste <code>sensibilite_score</code> (R6 borné 0-100, high = favorable) réutilisant les échelles de <code><a href="reference/indicateur_r6_sensibilite.html">indicateur_r6_sensibilite()</a></code>, en parallèle du z-score <code>sensibilite</code> gardé pour le rang. <code><a href="reference/normalize_indicator.html">normalize_indicator()</a></code> gagne des cases explicites R6/R7 (passthrough clamp, pas d’inversion) et un garde-fou (<code>.NORMALIZE_NATIVE_0_100</code>) qui avertit si un indicateur connu retombe sur le repli naïf. Rétro-compatible.</li>
 </ul></div>
 </div>
@@ -1278,7 +1286,7 @@
 <div class="section level2">
 <h2 id="id_01571---2026-07-15">[0.157.1] - 2026-07-15<a class="anchor" aria-label="anchor" href="#id_01571---2026-07-15"></a></h2>
 <div class="section level3">
-<h3 id="changed-36">Changed<a class="anchor" aria-label="anchor" href="#changed-36"></a></h3>
+<h3 id="changed-37">Changed<a class="anchor" aria-label="anchor" href="#changed-37"></a></h3>
 <ul><li>
 <code>.regen_attach_precomputed()</code> now emits an informational (<code>cli_inform</code>) message instead of a warning when the app passes the full result <code>sf</code> (all indicators + geom + ids) to <code><a href="reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> / <code><a href="reference/regen_sensibilite.html">regen_sensibilite()</a></code> — the normal path. The message is concise (columns kept + count ignored) instead of dumping the whole ~20-name list, which read as a problem on every run when the behaviour is correct.</li>
 </ul></div>
@@ -1311,7 +1319,7 @@
 <div class="section level2">
 <h2 id="id_01360---2026-07-05">[0.136.0] - 2026-07-05<a class="anchor" aria-label="anchor" href="#id_01360---2026-07-05"></a></h2>
 <div class="section level3">
-<h3 id="changed-37">Changed<a class="anchor" aria-label="anchor" href="#changed-37"></a></h3>
+<h3 id="changed-38">Changed<a class="anchor" aria-label="anchor" href="#changed-38"></a></h3>
 <ul><li>All THEIA asset consumers now go through the signing gateway for full coherence: <code>resolve_theia_assets()</code> / <code><a href="reference/load_theia_source.html">load_theia_source()</a></code> (FORMS) return pre-signed <code>/vsicurl/</code> URLs instead of unreadable <code>/vsis3/</code> (validated reading the real FORMS-T height map); <code>.get_s2_band_raster()</code> signs <code>/vsis3/</code> THEIA hrefs in the FAST MUSCATE fallback.</li>
 <li>
 <code>theia_signed_href()</code> rewritten in pure R on top of <code>theia_sign_urls()</code> — drops the reticulate / Python <code>teledetection</code> dependency for this function.</li>
@@ -1371,7 +1379,7 @@
 <div class="section level2">
 <h2 id="id_01330---2026-07-05">[0.133.0] - 2026-07-05<a class="anchor" aria-label="anchor" href="#id_01330---2026-07-05"></a></h2>
 <div class="section level3">
-<h3 id="changed-38">Changed<a class="anchor" aria-label="anchor" href="#changed-38"></a></h3>
+<h3 id="changed-39">Changed<a class="anchor" aria-label="anchor" href="#changed-39"></a></h3>
 <ul><li>
 <code>load_biljou_forcing(source = "safran")</code> now fetches SAFRAN from the GéoSAS OGC API-EDR (<code>safran-isba</code>, Météo-France SIM daily, no authentication) via a per-centroid EDR position query (EPSG:2154), instead of the biljouR default DOI which was only a pointer to an external catalog (yielded <code>NULL</code>). Validated end-to-end on real data; no CDS key needed for SAFRAN. Pure EDR URL builder <code>.biljou_safran_edr_url()</code> is CI-tested.</li>
 </ul></div>
@@ -1384,7 +1392,7 @@
 <code>load_biljou_forcing(aoi, years, source, cache_dir, raw, …)</code> and <code>build_biljou_soil(units, ewm, …)</code> (spec 027 L2, option B): core acquisition of the <code>meteo</code> (biljouR daily format, per-unit named list; SAFRAN default DOI or ERA5-Land via <code>mcera5</code>) and <code>sol</code> (<code>biljou_soil</code> object) inputs of <code><a href="reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code>, unblocking the real soil-water-balance engine from the app without data logic app-side. Tested <code>raw</code>-injection path; SAFRAN/ERA5 downloads degrade to <code>NULL</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-39">Changed<a class="anchor" aria-label="anchor" href="#changed-39"></a></h3>
+<h3 id="changed-40">Changed<a class="anchor" aria-label="anchor" href="#changed-40"></a></h3>
 <ul><li>
 <code><a href="reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> now derives its grid points via <code>.biljou_points()</code> (shared with <code><a href="reference/load_biljou_forcing.html">load_biljou_forcing()</a></code> so per-unit <code>meteo</code> ids align).</li>
 </ul></div>
@@ -1429,7 +1437,7 @@
 <code><a href="reference/lai_sentinel2.html">lai_sentinel2()</a></code> increment 2 (spec 033): automatic MUSCATE reflectance assembly (D4) when <code>refl</code> is <code>NULL</code> — MUSCATE STAC search + stateless per-scene band fetch (<code>.get_s2_band_raster</code>), reusing the S2 pipeline; and a shipped pre-trained PROSAIL model <code>inst/extdata/prosail_lai_Sentinel_2A_B4-B5-B8.rds</code> (D3) loaded without retraining (serialization verified, prediction CI-tested; regenerate via <code>data-raw/prosail_lai_model.R</code>).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-40">Changed<a class="anchor" aria-label="anchor" href="#changed-40"></a></h3>
+<h3 id="changed-41">Changed<a class="anchor" aria-label="anchor" href="#changed-41"></a></h3>
 <ul><li>
 <code><a href="reference/lai_sentinel2.html">lai_sentinel2()</a></code> default <code>selected_bands</code> is now <code>c("B4","B5","B8")</code> (red, red-edge, NIR — the S2 pipeline does not expose B03/green).</li>
 </ul></div>
@@ -1461,7 +1469,7 @@
 <ul><li>Multi-epoch consolidation of ancient forest for N2 (spec 031). <code>build_foret_ ancienne_mask()</code> now accepts a named list of historical sources (e.g. Cassini + état-major) and returns a non-overlapping tiered layer with an integer <code>anciennete</code> column (number of epochs covering each polygon) and an <code>epoques</code> label, via <code><a href="https://r-spatial.github.io/sf/reference/geos_binary_ops.html" class="external-link">sf::st_intersection</a></code> self-overlay. Single-source forms unchanged.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-41">Changed<a class="anchor" aria-label="anchor" href="#changed-41"></a></h3>
+<h3 id="changed-42">Changed<a class="anchor" aria-label="anchor" href="#changed-42"></a></h3>
 <ul><li>
 <code><a href="reference/indicateur_n2_continuite.html">indicateur_n2_continuite()</a></code> gains <code>weight_anciennete = TRUE</code>: when the <code>foret_ancienne</code> layer carries an <code>anciennete</code> tier column, the ancient-forest coverage is weighted by tier depth (forest present at more epochs counts more). Backward compatible — single-epoch layers keep the binary behaviour; <code>weight_anciennete = FALSE</code> forces it. Ready to fold in a vectorised Cassini (~1750) layer once available (Cassini ships raster-only from IGN).</li>
 </ul></div>
@@ -1483,7 +1491,7 @@
 <div class="section level2">
 <h2 id="id_01240---2026-07-03">[0.124.0] - 2026-07-03<a class="anchor" aria-label="anchor" href="#id_01240---2026-07-03"></a></h2>
 <div class="section level3">
-<h3 id="changed-42">Changed<a class="anchor" aria-label="anchor" href="#changed-42"></a></h3>
+<h3 id="changed-43">Changed<a class="anchor" aria-label="anchor" href="#changed-43"></a></h3>
 <ul><li>
 <code><a href="reference/microclimate_detect_years.html">microclimate_detect_years()</a></code> (spec 027 L2, core item 2) now accepts a per-year summer <code>SpatRaster</code> E-OBS input (one layer per year, JJA-aggregated) in addition to the precomputed named-numeric series: each layer is cropped + masked to the AOI (units’ union) and averaged (<code><a href="https://rspatial.github.io/terra/reference/global.html" class="external-link">terra::global</a></code>) into the yearly summer-heat index feeding the average/heatwave year selection for <code><a href="reference/indicateur_r6_sensibilite.html">indicateur_r6_sensibilite()</a></code>. Years come from layer names or a new <code>years</code> argument. This wires the previously deferred E-OBS raster path. Backward compatible; testable offline (20 tests, incl. AOI crop/mask).</li>
 </ul></div>
@@ -1506,7 +1514,7 @@
 <div class="section level2">
 <h2 id="id_01211---2026-07-03">[0.121.1] - 2026-07-03<a class="anchor" aria-label="anchor" href="#id_01211---2026-07-03"></a></h2>
 <div class="section level3">
-<h3 id="changed-43">Changed<a class="anchor" aria-label="anchor" href="#changed-43"></a></h3>
+<h3 id="changed-44">Changed<a class="anchor" aria-label="anchor" href="#changed-44"></a></h3>
 <ul><li>Declared <code>biljouR</code> in <code>Suggests</code> + <code>Remotes</code> (<code>pobsteta/biljouR</code>): the BILJOU water-balance engine used by <code><a href="reference/regen_bilan_hydrique.html">regen_bilan_hydrique()</a></code> is now an official optional dependency (still loaded via <code><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace()</a></code> with clean degradation). The engine-path error message points to the repository.</li>
 </ul></div>
 </div>
@@ -1522,7 +1530,7 @@
 <code><a href="reference/european_species_tolerances.html">european_species_tolerances()</a></code> gains a <code>species_class</code> column (genus-rule link to the 11 classes).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-44">Changed<a class="anchor" aria-label="anchor" href="#changed-44"></a></h3>
+<h3 id="changed-45">Changed<a class="anchor" aria-label="anchor" href="#changed-45"></a></h3>
 <ul><li>
 <code>indice_priorite_regen(species=)</code> resolves both tolerance tables: a class code (<code>essence_hetraie</code>) or a European species code (<code>fagus_sylvatica</code>).</li>
 </ul></div>
@@ -1591,7 +1599,7 @@
 <ul><li>Indicator <strong>A5 “Rafraîchissement urbain”</strong> (<code><a href="reference/indicateur_a5_rafraichissement.html">indicateur_a5_rafraichissement()</a></code>, spec 032 reoriented): relative surface-temperature freshness of a tree unit vs its local surroundings, from an LST raster (Theia Thermocity). High = cooler than surroundings. Source-conditional (NULL LST -&gt; NA); joins the A family (A1-A5) but not <code><a href="reference/list_indicators.html">list_indicators()</a></code>. <code>theia_lst</code> (<code>thermocity-lst</code>) wired as <code>consumed_by: A5</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-45">Changed<a class="anchor" aria-label="anchor" href="#changed-45"></a></h3>
+<h3 id="changed-46">Changed<a class="anchor" aria-label="anchor" href="#changed-46"></a></h3>
 <ul><li>Spec 032 reoriented from “A3 régulation thermique (albedo + LST)” to “A5 urban cooling (LST only)”. Albedo is dropped — it is not a valid cooling proxy for a tree (shade + evapotranspiration dominate; canopy albedo is low and radiatively warming). LST covers only metropolises, matching the urban-tree scope. <code>cesbio-s2albedo</code> is not wired. The A3 slot is already taken by spec 027’s under-canopy microclimate indicator.</li>
 </ul></div>
 </div>
@@ -1603,7 +1611,7 @@
 <code><a href="reference/build_foret_ancienne_mask.html">build_foret_ancienne_mask()</a></code> (spec 031): source-agnostic helper that builds the <code>foret_ancienne</code> polygon layer consumed by <code><a href="reference/indicateur_n2_continuite.html">indicateur_n2_continuite()</a></code>, from a user-supplied historical forest source — an sf/sfc of ancient-forest polygons, or a terra SpatRaster classified/threshold map (polygonised, patch-split, area-filtered).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-46">Changed<a class="anchor" aria-label="anchor" href="#changed-46"></a></h3>
+<h3 id="changed-47">Changed<a class="anchor" aria-label="anchor" href="#changed-47"></a></h3>
 <ul><li>Spec 031 reoriented: the planned N4 “Forêt ancienne” indicator fed by Corona 4B is dropped — the Theia <code>corona-4b</code> collection has zero France coverage (3 Middle-East items only) and N2 already handles ancient-forest continuity via its <code>foret_ancienne</code> argument (N4 would be redundant). <code>corona-4b</code> is not declared as a datasource.</li>
 </ul></div>
 </div>
@@ -1671,7 +1679,7 @@
 <code>reconfort_cache_manifest(cache_dir, zone_id, run_id = NULL, include_range)</code> : découverte cache des couches d’affichage RECONFORT (parité <code>read_fordead_layer</code>), pour réafficher les rasters après un rechargement de projet sans le <code>result</code> en mémoire. Schéma byte-identique à <code><a href="reference/reconfort_layer_manifest.html">reconfort_layer_manifest()</a></code>. 18 tests (<code>test-reconfort-cache-manifest.R</code>).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-47">Changed<a class="anchor" aria-label="anchor" href="#changed-47"></a></h3>
+<h3 id="changed-48">Changed<a class="anchor" aria-label="anchor" href="#changed-48"></a></h3>
 <ul><li>
 <code><a href="reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> (phase <code>persist</code>) cache aussi le score continu et la probabilité run-scopés (<code>reconfort_score_&lt;run_id&gt;.tif</code>, <code>reconfort_proba_&lt;run_id&gt;.tif</code>) à côté du masque, pour que ces couches réapparaissent après rechargement.</li>
 </ul></div>
@@ -1717,7 +1725,7 @@
 <div class="section level2">
 <h2 id="id_0912---2026-06-17">[0.91.2] - 2026-06-17<a class="anchor" aria-label="anchor" href="#id_0912---2026-06-17"></a></h2>
 <div class="section level3">
-<h3 id="changed-48">Changed<a class="anchor" aria-label="anchor" href="#changed-48"></a></h3>
+<h3 id="changed-49">Changed<a class="anchor" aria-label="anchor" href="#changed-49"></a></h3>
 <ul><li>
 <code>ingest_s2_raw_bands_to_cache()</code> (FORDEAD ingest) no longer reads the <code>plot</code> table at all: it dropped the <code>.fetch_plots_sf()</code> call and the legacy per-plot bbox fallback (a pre-spec-012/017 leftover). FORDEAD is a per-pixel diagnostic whose AOI is the zone geometry (<code>zone_wkt</code>); a zone without a usable <code>zone_wkt</code> now warns + returns empty (pointing to <code><a href="reference/register_monitoring_zone.html">register_monitoring_zone()</a></code>) instead of reconstructing an AOI from the placettes. The <code>s2:search</code> progress payload reports <code>n_plots = 0</code>.</li>
 </ul></div>
@@ -1778,7 +1786,7 @@
 <code><a href="reference/extract_pixel_trend.html">extract_pixel_trend()</a></code> — the per-pixel counterpart of the FAST trend raster. For a point <code>xy</code> it returns the yearly seasonal composite series plus the Theil-Sen / Mann-Kendall result, strictly consistent with <code>read_fast_alert_raster(mode = "trend")</code> at the same pixel (cross-checked in tests). Reads the raw per-scene series via <code><a href="reference/extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code> (scene-by-scene, no zone-wide mosaic — immune to the multi-tile resolution bug). Returns <code>composites</code>, <code>n_years</code>, <code>theil_sen_slope/intercept</code>, <code>mann_kendall_p/tau</code>, <code>significant_decline</code>, <code>alert_value</code> (<code>abs(slope)</code> if significant, <code>0</code> if not, <code>NA</code> below <code>min_years</code>) and <code>enough_years</code>. Drives the “why this pixel has this colour” graph in <code>nemetonshiny</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-49">Changed<a class="anchor" aria-label="anchor" href="#changed-49"></a></h3>
+<h3 id="changed-50">Changed<a class="anchor" aria-label="anchor" href="#changed-50"></a></h3>
 <ul><li>Factored the scalar Theil-Sen / Mann-Kendall fit into the shared internal <code>.trend_fit_one()</code>, now used by <code><a href="reference/extract_pixel_trend.html">extract_pixel_trend()</a></code> and <code><a href="reference/extract_trend_series.html">extract_trend_series()</a></code> (consistent with the vectorised <code>.trend_fit_cells()</code> the raster uses) so pixel, zone and raster never diverge.</li>
 </ul></div>
 </div>
@@ -1809,7 +1817,7 @@
 <code><a href="reference/ingest_sentinel2_timeseries.html">ingest_sentinel2_timeseries()</a></code> now caches the red-edge bands B05 + B8A best-effort on every ingest (like B11 for NDMI), even with the default <code>bands = c("NDVI", "NBR")</code>, so all four FAST indices — NDVI/NBR/NDMI/NDRE, including the trend maps — are always renderable without re-ingesting or passing <code>bands = "NDRE"</code>. This removes the <code>NDRE_trend</code> pre-warm soft-skip on fresh ingests at the source.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-50">Changed<a class="anchor" aria-label="anchor" href="#changed-50"></a></h3>
+<h3 id="changed-51">Changed<a class="anchor" aria-label="anchor" href="#changed-51"></a></h3>
 <ul><li>New shared internal predicate <code>.fast_alert_combo_ok()</code> / <code>.fast_alert_combos()</code> enumerates the valid <code>(index, mode)</code> pairs once for the wrapper. Count / rolling cache hashes are byte-identical (no recompute of existing COGs).</li>
 </ul></div>
 </div>
@@ -1844,7 +1852,7 @@
 <div class="section level2">
 <h2 id="id_0831---2026-06-14">[0.83.1] - 2026-06-14<a class="anchor" aria-label="anchor" href="#id_0831---2026-06-14"></a></h2>
 <div class="section level3">
-<h3 id="changed-51">Changed<a class="anchor" aria-label="anchor" href="#changed-51"></a></h3>
+<h3 id="changed-52">Changed<a class="anchor" aria-label="anchor" href="#changed-52"></a></h3>
 <ul><li>FAST <code>trend</code> mode (spec 023): <code>.fast_raster_trend()</code> now fits Theil-Sen / Mann-Kendall with a vectorised pre-filter + matrix-wide computation instead of a per-pixel <code><a href="https://rspatial.github.io/terra/reference/app.html" class="external-link">terra::app</a></code> callback (~9× faster, byte-identical output). Rare tied-value pixels fall back to the exact tie-corrected <code>.mann_kendall()</code>. <code>terra::app(cores=)</code> and a furrr/PSOCK split were both measured slower than serial here, so the lever is vectorisation, not parallelism. A <code><a href="https://cli.r-lib.org/reference/cli_alert.html" class="external-link">cli::cli_alert_info</a></code> reports the candidate-pixel count.</li>
 </ul></div>
 <div class="section level3">
@@ -1863,7 +1871,7 @@
 <div class="section level2">
 <h2 id="id_0820---2026-06-14">[0.82.0] - 2026-06-14<a class="anchor" aria-label="anchor" href="#id_0820---2026-06-14"></a></h2>
 <div class="section level3">
-<h3 id="changed-52">Changed<a class="anchor" aria-label="anchor" href="#changed-52"></a></h3>
+<h3 id="changed-53">Changed<a class="anchor" aria-label="anchor" href="#changed-53"></a></h3>
 <ul><li>Broadleaf terrain-validation vocabulary <code>HEALTH_VALIDATION_STADES_FEUILLUS</code> finalised against the real DSF DEPERIS protocol (MB + MR criteria, A–F notation, &gt; 50 % crown-damage threshold): sain / deperissement_faible / deperissement_marque / deperissement_grave / mort / coupe_rase. “PROVISIONAL” note removed.</li>
 </ul></div>
 <div class="section level3">
@@ -1911,7 +1919,7 @@
 <div class="section level2">
 <h2 id="id_0762---2026-06-13">[0.76.2] - 2026-06-13<a class="anchor" aria-label="anchor" href="#id_0762---2026-06-13"></a></h2>
 <div class="section level3">
-<h3 id="changed-53">Changed<a class="anchor" aria-label="anchor" href="#changed-53"></a></h3>
+<h3 id="changed-54">Changed<a class="anchor" aria-label="anchor" href="#changed-54"></a></h3>
 <ul><li>RAG corpus: the 4 scanned BILJOU papers (Bréda 1993/2002/2008, Granier 1996), demoted to <code>link_only</code> in 0.76.1, are now OCR’d (<code>tesseract</code> fra+eng, 300 dpi) and re-ingested as full-text. Prod corpus: 60 full-text / 81 (6120 chunks). OCR text (<code>data-raw/references/biljou/ocr/*.md</code>) is gitignored (copyright).</li>
 </ul></div>
 <div class="section level3">
@@ -1947,7 +1955,7 @@
 <div class="section level2">
 <h2 id="id_0754---2026-06-13">[0.75.4] - 2026-06-13<a class="anchor" aria-label="anchor" href="#id_0754---2026-06-13"></a></h2>
 <div class="section level3">
-<h3 id="changed-54">Changed<a class="anchor" aria-label="anchor" href="#changed-54"></a></h3>
+<h3 id="changed-55">Changed<a class="anchor" aria-label="anchor" href="#changed-55"></a></h3>
 <ul><li>RAG corpus: 44 BILJOU reference papers (+ user-deposited Monnet &amp; Peiffer) wired to full-text from the PDFs hosted by INRAE on the BILJOU portal (<code>appgeodb.nancy.inrae.fr/biljou/pdf/</code>). Ex-<code>copyright</code> rows retagged <code>license=HAL</code> (open archive, non-commercial), consistent with Bontemps/Charru. Also fills 2 institutional gaps (Bréthes 1997 soils, Badeau RENECOFOR feasibility “Livre Jaune”). Manifest: 60 full-text + 21 references (81/81, 0 skipped). Remaining references: 4 non-BILJOU copyright papers, unhosted books (Quae/Biotope/AFORCE), EFI (dead links), portal-only docs.</li>
 </ul></div>
 <div class="section level3">
@@ -1959,14 +1967,14 @@
 <div class="section level2">
 <h2 id="id_0753---2026-06-13">[0.75.3] - 2026-06-13<a class="anchor" aria-label="anchor" href="#id_0753---2026-06-13"></a></h2>
 <div class="section level3">
-<h3 id="changed-55">Changed<a class="anchor" aria-label="anchor" href="#changed-55"></a></h3>
+<h3 id="changed-56">Changed<a class="anchor" aria-label="anchor" href="#changed-56"></a></h3>
 <ul><li>RAG corpus: retrieved open-access PDFs (non-Cloudflare hosts) for 3 docs, flipped from <code>link_only</code> to full-text <code>full</code>: Duplat &amp; Tran-Ha 1997 (EDP afs-journal), Larrieu IBP guide (CNPF v3.2), EU Forest Strategy COM(2021) 572 (EUR-Lex). Manifest: 14 full-text + 67 references (81/81). Non-retrievable PDFs (Monnet via MDPI/HAL Cloudflare, OFB/ONF/CNPF portals, paywalls) stay <code>link_only</code>; direct links recorded in the references README.</li>
 </ul></div>
 </div>
 <div class="section level2">
 <h2 id="id_0752---2026-06-13">[0.75.2] - 2026-06-13<a class="anchor" aria-label="anchor" href="#id_0752---2026-06-13"></a></h2>
 <div class="section level3">
-<h3 id="changed-56">Changed<a class="anchor" aria-label="anchor" href="#changed-56"></a></h3>
+<h3 id="changed-57">Changed<a class="anchor" aria-label="anchor" href="#changed-57"></a></h3>
 <ul><li>RAG corpus: the 21 <code>cleared</code>/<code>full</code> rows without an attached PDF (previously skipped at build) now all ingest. IPCC 2019 (Vol.4 Ch.4 Forest Land) PDF retrieved → <code>full</code>; the other 20 → <code>link_only</code> citable references. Manifest: 81/81 ingestible, 0 skipped (11 full-text + 70 references).</li>
 <li>Fixed <code>monnet_mermin_2014</code> metadata (it is <em>Forests</em> 5(9):2307-2326, DOI 10.3390/f5092307, open on HAL — was wrongly <em>Remote Sensing 6(8)</em>); added open HAL <code>source_url</code> for <code>duplat_tranha_1997</code> and <code>larrieu_2018_ibp</code>.</li>
 </ul></div>
@@ -1979,7 +1987,7 @@
 <div class="section level2">
 <h2 id="id_0751---2026-06-13">[0.75.1] - 2026-06-13<a class="anchor" aria-label="anchor" href="#id_0751---2026-06-13"></a></h2>
 <div class="section level3">
-<h3 id="changed-57">Changed<a class="anchor" aria-label="anchor" href="#changed-57"></a></h3>
+<h3 id="changed-58">Changed<a class="anchor" aria-label="anchor" href="#changed-58"></a></h3>
 <ul><li>RAG corpus: lifted the D5 license gate across the whole manifest — the 50 <code>to_confirm</code> rows (BILJOU + 4 copyright papers) are now <code>cleared</code> (explicit override). All being <code>abstract_only</code>, they ingest as citable references (<code>link_only</code>), not full text. Manifest: 81 cleared / 0 to_confirm. Prod pgvector re-synced (FRESH): 60 docs (10 full-text + 50 references), 2354 chunks, 0 missing embeddings; 21 skipped (cleared <code>full</code> without an attached PDF — kept <code>full</code> for later full-text ingestion).</li>
 </ul></div>
 <div class="section level3">
@@ -1991,7 +1999,7 @@
 <div class="section level2">
 <h2 id="id_0750---2026-06-13">[0.75.0] - 2026-06-13<a class="anchor" aria-label="anchor" href="#id_0750---2026-06-13"></a></h2>
 <div class="section level3">
-<h3 id="changed-58">Changed<a class="anchor" aria-label="anchor" href="#changed-58"></a></h3>
+<h3 id="changed-59">Changed<a class="anchor" aria-label="anchor" href="#changed-59"></a></h3>
 <ul><li>RAG knowledge corpus (E7) curation of <code>inst/extdata/knowledge_corpus_v1.csv</code> (spec 009/009.1): removed the 12 internal MIT seed docs (tutorials + specs 005/008); added 54 references cited by the BILJOU tool (INRAE Nancy, forest water-balance model) under the conservative D5 license gate (<code>to_confirm</code> / <code>abstract_only</code> / <code>copyright</code>); promoted 8 institutional reports to <code>cleared</code> (ONF/RENECOFOR <code>LO-Etalab</code>, FAO paper 56 <code>CC-BY-NC</code>, EFI WSCTU n°1 <code>CC-BY</code>) with public source URLs. Manifest 39 → 81 docs (31 cleared / 50 to_confirm); full-text build plan 7 → 10 PDFs.</li>
 </ul></div>
 <div class="section level3">
@@ -2066,7 +2074,7 @@
 <ul><li>spec 021 (RECONFORT, 3rd health-monitoring method for broadleaves): design docs only — <code>plan.md</code> (6 open questions resolved against the verified upstream repo) + <code>spec.md</code>. ADR-013 amendment A4 (multi-method health monitoring) lives in <code>nemetonplateform</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-59">Changed<a class="anchor" aria-label="anchor" href="#changed-59"></a></h3>
+<h3 id="changed-60">Changed<a class="anchor" aria-label="anchor" href="#changed-60"></a></h3>
 <ul><li>CI back to green (R-CMD-check, tests, coverage, pkgdown). The <code>tests</code> job now runs the real suite via <code><a href="https://devtools.r-lib.org/reference/test.html" class="external-link">devtools::test()</a></code>; <code>R-CMD-check</code> uses <code>--no-tests</code>/<code>--no-build-vignettes</code>; <code>pkgdown</code> gains <code>rsconnect</code> and a complete reference index (111 missing topics added). A capability guard (<code>skip_if_terra_write_broken()</code>) skips raster tests on a GitHub runner exhibiting a terra “no valid constructor” anomaly (not reproducible locally; the whole suite passes locally), running them fully everywhere else.</li>
 </ul></div>
 </div>
@@ -2105,7 +2113,7 @@
 <div class="section level2">
 <h2 id="id_0652---2026-06-03">[0.65.2] - 2026-06-03<a class="anchor" aria-label="anchor" href="#id_0652---2026-06-03"></a></h2>
 <div class="section level3">
-<h3 id="changed-60">Changed<a class="anchor" aria-label="anchor" href="#changed-60"></a></h3>
+<h3 id="changed-61">Changed<a class="anchor" aria-label="anchor" href="#changed-61"></a></h3>
 <ul><li>FAST D6 cache COGs now use a verbose, deterministic filename <code>fast_&lt;INDEX&gt;_&lt;MODE&gt;_thr&lt;threshold&gt;_&lt;from&gt;_&lt;to&gt;_w&lt;window&gt;_&lt;hash8&gt;.tif</code> (was <code>fast_&lt;index&gt;_&lt;mode&gt;_&lt;hash&gt;.tif</code>). Key parameters are legible straight from the name; an 8-char slice of the unchanged D6 hash still discriminates the scene-id list and mask polygon. Same parameters yield the same name, so cache idempotence is preserved. Pre-0.65.2 files are no longer matched as hits — they recompute on first demand and are reclaimed by the LRU GC; remove them manually to free disk at once (see NEWS).</li>
 </ul></div>
 </div>
@@ -2136,7 +2144,7 @@
 <ul><li>NDMI index in the FAST health-monitoring subsystem (spec 019): <code>NDMI = (B08 - B11) / (B08 + B11)</code> (NIR − SWIR1), a vegetation-moisture proxy. <code><a href="reference/build_index_stack.html">build_index_stack()</a></code>, <code><a href="reference/extract_pixel_timeseries.html">extract_pixel_timeseries()</a></code>, <code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code> and <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code> accept <code>index/indices = "NDMI"</code>; <code><a href="reference/read_s2_band_raster.html">read_s2_band_raster()</a></code> / <code><a href="reference/read_s2_band_stack.html">read_s2_band_stack()</a></code> accept band <code>"B11"</code>. The FAST default stays NDVI (back-compatible); the D6 cache key includes the index, so NDMI COGs (<code>fast_NDMI_*</code>) never collide with existing NDVI/NBR caches.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-61">Changed<a class="anchor" aria-label="anchor" href="#changed-61"></a></h3>
+<h3 id="changed-62">Changed<a class="anchor" aria-label="anchor" href="#changed-62"></a></h3>
 <ul><li>
 <code><a href="reference/ingest_sentinel2_timeseries.html">ingest_sentinel2_timeseries()</a></code> accepts <code>bands = "NDMI"</code> and now caches B11 systematically (best-effort, spec 019 D3): a scene lacking the B11 asset is skipped without failing NDVI/NBR ingestion. <code>.s2_required_bands()</code> maps <code>NDMI -&gt; B08, B11</code>; <code>.cache_scene_bands()</code> gains an <code>optional_bands</code> argument.</li>
 </ul></div>
@@ -2149,7 +2157,7 @@
 <code>R/knowledge-corpus.R</code> — public API for RAG corpus administration (spec 009.2), so a <code>nemetonshiny</code> admin tab can edit the manifest and import the corpus without re-implementing business logic: <code><a href="reference/knowledge_manifest_vocab.html">knowledge_manifest_vocab()</a></code> (single source of truth for the controlled vocabularies), <code>knowledge_manifest_path(writable)</code> (packaged seed vs writable project copy, D1), <code><a href="reference/read_knowledge_manifest.html">read_knowledge_manifest()</a></code>, <code><a href="reference/validate_knowledge_manifest.html">validate_knowledge_manifest()</a></code> (structured issues incl. license-gate D5 invariants), <code><a href="reference/write_knowledge_manifest.html">write_knowledge_manifest()</a></code> (deterministic minimal quoting), and <code>build_knowledge_corpus(con, …, dry_run, progress)</code> (ingestion orchestrator returning a structured per-document report).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-62">Changed<a class="anchor" aria-label="anchor" href="#changed-62"></a></h3>
+<h3 id="changed-63">Changed<a class="anchor" aria-label="anchor" href="#changed-63"></a></h3>
 <ul><li>
 <code>data-raw/build_knowledge_corpus.R</code> reduced to a thin CLI wrapper over <code><a href="reference/build_knowledge_corpus.html">build_knowledge_corpus()</a></code>; environment-variable semantics (including the “no fallback to <code>NEMETON_DB_URL</code>” safety rule) preserved.</li>
 <li>
@@ -2169,7 +2177,7 @@
 <div class="section level2">
 <h2 id="id_0612---2026-06-02">[0.61.2] - 2026-06-02<a class="anchor" aria-label="anchor" href="#id_0612---2026-06-02"></a></h2>
 <div class="section level3">
-<h3 id="changed-63">Changed<a class="anchor" aria-label="anchor" href="#changed-63"></a></h3>
+<h3 id="changed-64">Changed<a class="anchor" aria-label="anchor" href="#changed-64"></a></h3>
 <ul><li>RAG corpus manifest: license arbitration (spec 009.1 D5, decided by Pascal). <code>bernard_doridant_2024_fordead</code> (ONF/DSF, basis of the R5 guardrails) cleared as Licence Ouverte; <code>set_revue_foret_croissance_climat</code> cleared as open/CC-BY (the only <code>to_confirm</code> row with a local PDF, now ingestible). The four copyright papers (Mouret 2022, Fassnacht 2016, McCool 1987, Beven &amp; Kirkby 1979) stay <code>to_confirm</code>. Manifest is now 35 cleared / 4 to_confirm.</li>
 </ul></div>
 </div>
@@ -2214,7 +2222,7 @@
 <li>Internal helpers <code>.insert_obs_pixel()</code> and <code>.find_cached_obs_dates()</code> removed; <code>.extract_scene_obs()</code> replaced by <code>.cache_scene_bands()</code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-64">Changed<a class="anchor" aria-label="anchor" href="#changed-64"></a></h3>
+<h3 id="changed-65">Changed<a class="anchor" aria-label="anchor" href="#changed-65"></a></h3>
 <ul><li>Migration <code>0004_drop_obs_pixel.sql</code> (PG + SQLite) drops the <code>obs_pixel</code> table (idempotent). The pure per-pixel FAST diagnostic (<code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code>, spec 017) has been its only path since v0.55.0.</li>
 </ul></div>
 <div class="section level3">
@@ -2258,7 +2266,7 @@
 <code>.insert_obs_pixel()</code> : correction d’une erreur fatale <code>near "DO": syntax error</code> sur le backend SQLite local. L’<code>INSERT … SELECT … ON CONFLICT … DO NOTHING</code> souffrait de l’ambiguïté d’analyse UPSERT/jointure de SQLite ; ajout d’une clause <code>WHERE 1=1</code> sur le <code>SELECT</code> pour lever l’ambiguïté (no-op sous PostgreSQL). Test de non-régression SQLite ajouté. ## [0.55.0] - 2026-05-31</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-65">Changed<a class="anchor" aria-label="anchor" href="#changed-65"></a></h3>
+<h3 id="changed-66">Changed<a class="anchor" aria-label="anchor" href="#changed-66"></a></h3>
 <ul><li>FAST alert map (<code>read_fast_alert_raster</code>) is now <strong>mono-index</strong>: new <code>index = c("NDVI","NBR")</code> (default NDVI) and a single <code>threshold</code> replace <code>threshold_ndvi</code>/<code>threshold_nbr</code>; the NDVI-OR-NBR combination is dropped (spec 017 D1).</li>
 <li>
 <code>compute_fast_alert_mask</code> discretises into <strong>quartiles of the strictly-positive pixels</strong> (class 0 = no alert; classes 1-4 = <code>c(0, q25, q50, q75, Inf)</code>) for both <code>count</code> and <code>rolling</code>, replacing the fixed breaks (spec 017 D2). <code>breaks</code> stays overridable.</li>
@@ -2275,7 +2283,7 @@
 <div class="section level2">
 <h2 id="id_0540---2026-05-31">[0.54.0] - 2026-05-31<a class="anchor" aria-label="anchor" href="#id_0540---2026-05-31"></a></h2>
 <div class="section level3">
-<h3 id="changed-66">Changed<a class="anchor" aria-label="anchor" href="#changed-66"></a></h3>
+<h3 id="changed-67">Changed<a class="anchor" aria-label="anchor" href="#changed-67"></a></h3>
 <ul><li>Test-DB isolation guard. Integration DB access now goes through <code>.guard_test_db()</code> + <code>.test_db_connect()</code> in <code>helper-monitoring.R</code>, which require <code>NEMETON_DB_URL_TEST</code> to be set, distinct from <code>NEMETON_DB_URL</code>, and free of application tables (<code>projects</code>/<code>users</code>/<code>parcels</code>). This prevents the destructive <code>DROP TABLE … CASCADE</code> integration helper from wiping a production DB (villards incidents 2026-05-25 &amp; 2026-05-31). Without <code>NEMETON_DB_URL_TEST</code>, integration tests skip (suite stays green). Override with <code>NEMETON_DB_URL_TEST_ALLOW_DESTRUCTIVE=TRUE</code>.</li>
 </ul></div>
 <div class="section level3">
@@ -2297,7 +2305,7 @@
 <li>A cancel flag already present at entry is ignored as a stale leftover (with a warning); <code>cancel_path = NULL</code> performs zero filesystem polls.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-67">Changed<a class="anchor" aria-label="anchor" href="#changed-67"></a></h3>
+<h3 id="changed-68">Changed<a class="anchor" aria-label="anchor" href="#changed-68"></a></h3>
 <ul><li>The <code><a href="reference/ingest_sentinel2_timeseries.html">ingest_sentinel2_timeseries()</a></code> summary <code>data.frame</code> now carries a trailing <code>status</code> column (additive; by-name access unaffected).</li>
 </ul></div>
 </div>
@@ -2314,7 +2322,7 @@
 </ul></li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-68">Changed<a class="anchor" aria-label="anchor" href="#changed-68"></a></h3>
+<h3 id="changed-69">Changed<a class="anchor" aria-label="anchor" href="#changed-69"></a></h3>
 <ul><li>
 <code><a href="reference/build_index_stack.html">build_index_stack()</a></code> “Skipped N/total scenes (incomplete cache)” message downgraded from a per-call <code>cli_warn</code> to <code>rlang::inform(.frequency = "once")</code> (was spamming ~12 identical lines per Shiny load).</li>
 </ul></div>
@@ -2330,7 +2338,7 @@
 <code>pdftools</code> added to Suggests (offline PDF ingestion).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-69">Changed<a class="anchor" aria-label="anchor" href="#changed-69"></a></h3>
+<h3 id="changed-70">Changed<a class="anchor" aria-label="anchor" href="#changed-70"></a></h3>
 <ul><li>
 <code>vector(3072)</code> embedding column carries <strong>no</strong> ivfflat index (pgvector caps ivfflat/hnsw at 2000 dims); PostgreSQL retrieval is exact KNN. halfvec(3072)+hnsw deferred to ADR-012 when the corpus grows.</li>
 </ul></div>
@@ -2349,7 +2357,7 @@
 <div class="section level2">
 <h2 id="id_0490---2026-05-27">[0.49.0] - 2026-05-27<a class="anchor" aria-label="anchor" href="#id_0490---2026-05-27"></a></h2>
 <div class="section level3">
-<h3 id="changed-70">Changed<a class="anchor" aria-label="anchor" href="#changed-70"></a></h3>
+<h3 id="changed-71">Changed<a class="anchor" aria-label="anchor" href="#changed-71"></a></h3>
 <ul><li>All raster readers in the FAST / FORDEAD pipeline mask their outputs to the UGF polygon by default (<code>apply_zone_mask = TRUE</code>). Pixels outside the UGFs become <code>NA</code>. The on-disk COG cache is unchanged (still a rectangle aligned to the pixel grid) ; the mask is applied after read, before return. Spec 016.</li>
 <li>
 <code><a href="reference/read_fast_alert_raster.html">read_fast_alert_raster()</a></code>, <code><a href="reference/compute_fast_alert_mask.html">compute_fast_alert_mask()</a></code>, <code><a href="reference/read_fast_alert_mask.html">read_fast_alert_mask()</a></code>, <code><a href="reference/read_fordead_dieback_mask.html">read_fordead_dieback_mask()</a></code> gain <code>apply_zone_mask = TRUE</code> / <code>mask_polygon = NULL</code> arguments. Pass <code>apply_zone_mask = FALSE</code> for the pre-v0.49.0 rectangle output.</li>
@@ -2482,7 +2490,7 @@
 <div class="section level2">
 <h2 id="id_0450---2026-05-23">[0.45.0] - 2026-05-23<a class="anchor" aria-label="anchor" href="#id_0450---2026-05-23"></a></h2>
 <div class="section level3">
-<h3 id="changed-71">Changed<a class="anchor" aria-label="anchor" href="#changed-71"></a></h3>
+<h3 id="changed-72">Changed<a class="anchor" aria-label="anchor" href="#changed-72"></a></h3>
 <ul><li>FAST (<code><a href="reference/ingest_sentinel2_timeseries.html">ingest_sentinel2_timeseries()</a></code>) and FORDEAD-ingest (<code>ingest_s2_raw_bands_to_cache()</code>) now resolve their Sentinel-2 AOI through <code>monitoring_zone.zone_wkt</code> via the new shared helper <code><a href="reference/dot-get_zone_aoi.html">.get_zone_aoi()</a></code> (moved to <code>R/zone_aoi.R</code>). Both pipelines crop the COG to the same extent → the on-disk cache is reusable across them. Spec 012.</li>
 <li>
 <code>.extract_scene_obs()</code> gains an optional <code>crop_aoi</code> argument.</li>
@@ -2579,7 +2587,7 @@
 <code>services.theia_s3</code> entry in <code>FR.json</code> (endpoint, bucket).</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-72">Changed<a class="anchor" aria-label="anchor" href="#changed-72"></a></h3>
+<h3 id="changed-73">Changed<a class="anchor" aria-label="anchor" href="#changed-73"></a></h3>
 <ul><li>
 <code>resolve_theia_assets()</code> returns <code>/vsis3/</code> paths (gateway / <code>s3://</code> / <code>https://</code> hrefs are normalised).</li>
 <li>
@@ -2589,7 +2597,7 @@
 <div class="section level2">
 <h2 id="id_0370---2026-05-20">[0.37.0] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0370---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="changed-73">Changed<a class="anchor" aria-label="anchor" href="#changed-73"></a></h3>
+<h3 id="changed-74">Changed<a class="anchor" aria-label="anchor" href="#changed-74"></a></h3>
 <ul><li>THEIA STAC API endpoint corrected to <code>https://api.stac.teledetection.fr</code> (verified against the FORMSpoT data-access notebook). <code>services.theia_stac</code> documents the required teledetection API-key authentication.</li>
 <li>FORMSpoT metadata verified: collection <code>FORMSpoT</code>, yearly items <code>FORMSpoT-{year}</code> (2014-2024), <code>height_{year}</code> assets, height in decimetres.</li>
 </ul></div>
@@ -2617,7 +2625,7 @@
 <div class="section level2">
 <h2 id="id_0352---2026-05-20">[0.35.2] - 2026-05-20<a class="anchor" aria-label="anchor" href="#id_0352---2026-05-20"></a></h2>
 <div class="section level3">
-<h3 id="changed-74">Changed<a class="anchor" aria-label="anchor" href="#changed-74"></a></h3>
+<h3 id="changed-75">Changed<a class="anchor" aria-label="anchor" href="#changed-75"></a></h3>
 <ul><li>
 <code>formspot</code> datasource entry: FORMSpoT is wired into the C1/P1/P2/B2 indicators through the existing <code>chm</code> argument (the shared CHM interface used by FORMS-T and chm_opencanopy). The <code>consumed_by</code> block now names the precise indicator functions, <code>products</code> splits into <code>height</code> / <code>biomass</code>, and an <code>integration_note</code> documents the integration path.</li>
 </ul></div>
@@ -2658,7 +2666,7 @@
 <ul><li>Theia data sources, phase 3a: <code><a href="reference/indicateur_c2_ndvi.html">indicateur_c2_ndvi()</a></code> gains a <code>fapar</code> argument (FAPAR-based vitality) and <code><a href="reference/indicateur_a1_couverture.html">indicateur_a1_couverture()</a></code> gains an <code>fvc</code> argument (FVC-based tree coverage), wiring the Theia <code>s2_biophysical</code> product into the C2 and A1 indicators. Both arguments are optional and backward-compatible.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-75">Changed<a class="anchor" aria-label="anchor" href="#changed-75"></a></h3>
+<h3 id="changed-76">Changed<a class="anchor" aria-label="anchor" href="#changed-76"></a></h3>
 <ul><li>
 <code><a href="reference/indicateur_a1_couverture.html">indicateur_a1_couverture()</a></code>: <code>land_cover</code> now defaults to <code>NULL</code> (required only in legacy mode, ignored in FVC mode).</li>
 </ul></div>
@@ -2704,7 +2712,7 @@
 <div class="section level2">
 <h2 id="id_01911---2026-04-24">[0.19.11] - 2026-04-24<a class="anchor" aria-label="anchor" href="#id_01911---2026-04-24"></a></h2>
 <div class="section level3">
-<h3 id="changed-76">Changed<a class="anchor" aria-label="anchor" href="#changed-76"></a></h3>
+<h3 id="changed-77">Changed<a class="anchor" aria-label="anchor" href="#changed-77"></a></h3>
 <ul><li>
 <code><a href="reference/create_sampling_plan.html">create_sampling_plan()</a></code> now clamps <code>n_base + n_over</code> to the candidate-frame capacity upfront, preserving the Base/Over ratio and emitting a <code>cli_warn()</code>. Prevents the silent LPM2 fallback that could drop all Over plots on small AOIs with strict forest-cover / slope filters.</li>
 </ul></div>
@@ -2716,7 +2724,7 @@
 <div class="section level2">
 <h2 id="id_01910---2026-04-24">[0.19.10] - 2026-04-24<a class="anchor" aria-label="anchor" href="#id_01910---2026-04-24"></a></h2>
 <div class="section level3">
-<h3 id="changed-77">Changed<a class="anchor" aria-label="anchor" href="#changed-77"></a></h3>
+<h3 id="changed-78">Changed<a class="anchor" aria-label="anchor" href="#changed-78"></a></h3>
 <ul><li>
 <code><a href="reference/create_sampling_plan.html">create_sampling_plan()</a></code> now auto-simplifies the stratification (drops TPI, then type) when the full 3D combination would contain thin strata, instead of skipping GRTS entirely. A <code>cli_inform()</code> reports which dimensions were dropped. Extends GRTS coverage to small AOIs where the 3D stratification produces too many singletons.</li>
 </ul></div>
@@ -2728,7 +2736,7 @@
 <div class="section level2">
 <h2 id="id_0199---2026-04-24">[0.19.9] - 2026-04-24<a class="anchor" aria-label="anchor" href="#id_0199---2026-04-24"></a></h2>
 <div class="section level3">
-<h3 id="changed-78">Changed<a class="anchor" aria-label="anchor" href="#changed-78"></a></h3>
+<h3 id="changed-79">Changed<a class="anchor" aria-label="anchor" href="#changed-79"></a></h3>
 <ul><li>
 <code><a href="reference/create_sampling_plan.html">create_sampling_plan()</a></code> now prints an informative <code><a href="https://cli.r-lib.org/reference/cli_abort.html" class="external-link">cli::cli_inform()</a></code> message on the two previously silent GRTS-skip paths (no usable stratification, <code>spsurvey</code> not installed), listing the concrete reasons. Users no longer have to guess why the draw fell back to LPM2 or random.</li>
 </ul></div>
@@ -2755,7 +2763,7 @@
 <h2 id="id_0195---2026-04-24">
 <a href="https://github.com/pobsteta/nemeton/compare/v0.19.4...v0.19.5" class="external-link">0.19.5</a> - 2026-04-24<a class="anchor" aria-label="anchor" href="#id_0195---2026-04-24"></a></h2>
 <div class="section level3">
-<h3 id="changed-79">Changed<a class="anchor" aria-label="anchor" href="#changed-79"></a></h3>
+<h3 id="changed-80">Changed<a class="anchor" aria-label="anchor" href="#changed-80"></a></h3>
 <ul><li>
 <code><a href="reference/detect_ndp.html">detect_ndp()</a></code> emits <code>"height_lidar"</code> in the augmented vector when <code>chm_source == "lidar_hd"</code>, distinct from the existing <code>"height_ml"</code> flag used for Open-Canopy.</li>
 </ul></div>
@@ -2773,7 +2781,7 @@
 <h2 id="id_0193---2026-04-24">
 <a href="https://github.com/pobsteta/nemeton/compare/v0.19.2...v0.19.3" class="external-link">0.19.3</a> - 2026-04-24<a class="anchor" aria-label="anchor" href="#id_0193---2026-04-24"></a></h2>
 <div class="section level3">
-<h3 id="changed-80">Changed<a class="anchor" aria-label="anchor" href="#changed-80"></a></h3>
+<h3 id="changed-81">Changed<a class="anchor" aria-label="anchor" href="#changed-81"></a></h3>
 <ul><li>Flip every BD Forêt v2 TFV row in <code>inst/extdata/bdforet_v2_mapping.csv</code> from <code>confidence = "ambiguous"</code> to <code>"clear"</code> (9 rows touched). The secondary candidate stays in <code>alt_context_key</code> for reference.</li>
 </ul></div>
 <div class="section level3">
@@ -2786,7 +2794,7 @@
 <h2 id="id_0192---2026-04-24">
 <a href="https://github.com/pobsteta/nemeton/compare/v0.19.1...v0.19.2" class="external-link">0.19.2</a> - 2026-04-24<a class="anchor" aria-label="anchor" href="#id_0192---2026-04-24"></a></h2>
 <div class="section level3">
-<h3 id="changed-81">Changed<a class="anchor" aria-label="anchor" href="#changed-81"></a></h3>
+<h3 id="changed-82">Changed<a class="anchor" aria-label="anchor" href="#changed-82"></a></h3>
 <ul><li>Tour optimisation now uses <code><a href="https://rdrr.io/pkg/TSP/man/solve_TSP.html" class="external-link">TSP::solve_TSP()</a></code> (nearest_insertion + 2-opt) — same recipe as tutorial 09-sampling. Hand-rolled fallback kept when the <code>TSP</code> package is not installed. <code>TSP (&gt;= 1.2.0)</code> added to <code>Suggests</code>.</li>
 </ul></div>
 </div>
@@ -2825,7 +2833,7 @@
 <code>inst/extdata/cv_typology.csv</code> and <code>inst/extdata/bdforet_v2_mapping.csv</code> — editable reference tables.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changed-82">Changed<a class="anchor" aria-label="anchor" href="#changed-82"></a></h3>
+<h3 id="changed-83">Changed<a class="anchor" aria-label="anchor" href="#changed-83"></a></h3>
 <ul><li>
 <code>bdforet_v2_mapping.csv</code> now carries a <code>label_key</code> column (the normalized French libellé per TFV code). <code><a href="reference/cv_from_bdforet.html">cv_from_bdforet()</a></code> does a two-pass join — TFV code first, label fallback — so projects where the IGN WFS delivers libellés (instead of codes) in the <code>tfv</code> field no longer return NA / 0 % coverage.</li>
 <li>File renames: <code>R/qfield_export.R</code> → <code>R/qgis_export.R</code>, <code>R/qfield_import.R</code> → <code>R/qgis_import.R</code>, tests renamed accordingly. The exported function names (<code>create_qfield_project</code>, <code>import_qfield_gpkg</code>) are unchanged.</li>

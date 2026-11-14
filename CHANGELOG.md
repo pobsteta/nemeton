@@ -13,6 +13,14 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.25\] - 2026-11-14
+
+### Changed
+
+- [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
+  runs each FINN step by packets of at most 250 plots (the cost of one
+  FINN call grows faster than the number of plots).
+
 ## \[2026.11.24\] - 2026-11-13
 
 ### Added
