@@ -1222,3 +1222,49 @@ hauteur dominante : ce n'est pas un défaut de vitalité.
 
 Échelle (D-6) et place dans la famille T (conditionnel, 43 → 44) déjà
 décidées. Fiche obligatoire (§ 3.3), avec les pièges 1, 3 et 5 du § 4.
+
+### T4 : premières mesures et bruit de FORMS-T (2026-11-15)
+
+**Allométrie (T4-2).** 128 808 arbres vivants de BFC à `HTOT` mesurée
+(les arbres simplifiés n'en ont pas). Michaelis-Menten
+`h = 1,3 + a·d / (b + d)` et Chapman-Richards font la même erreur de test
+(2,7 à 4 m selon l'essence) ; la courbe par SER gagne au plus 0,25 m
+(chênes). 29 essences + `other`, 61 courbes essence × SER (≥ 500 arbres) :
+`inst/extdata/allometrie_hauteur_ifn.csv`.
+
+**Analogues (T4-1).** 3 398 placettes BFC de première visite 2017-2021,
+un pas FINN (modèle B corrigé) sous le climat E-OBS 2019-2023, 20 tirages :
+`inst/extdata/t4_analogues_bfc.csv.gz`. La croissance en diamètre simulée
+suit celle de l'IFN (1,3 à 1,9 cm en 5 ans pour les gros arbres).
+
+**Comparaison à FORMS-T.** Hauteur dominante FORMS-T (percentile 90 des
+pixels ≥ 5 m) sur un disque de 250 m autour du point public de chaque
+placette (coordonnées floutées : comparaison valable par essence, pas par
+placette), pente de Theil-Sen × 5.
+
+| Essence | n | Observé (m / 5 ans) | Simulé | T4 médian |
+|---|---|---|---|---|
+| Chêne sessile | 833 | 0,54 | 0,33 | 73 |
+| Hêtre | 425 | 0,44 | 0,30 | 73 |
+| Chêne pédonculé | 398 | 0,13 | 0,23 | 25 |
+| Charme | 365 | 0,65 | 0,39 | 75 |
+| Sapin | 231 | 0,67 | 0,63 | 52 |
+| Épicéa | 214 | 0,51 | 0,57 | 43 |
+| Douglas | 154 | 1,30 | 1,77 | 32 |
+
+Le niveau est juste à quelques dixièmes près (la crainte d'un attendu deux
+à trois fois trop faible, tirée des courbes de Duplat, ne tient pas :
+FORMS-T voit aussi environ 0,5 m en 5 ans). Mais l'observé varie bien plus
+que les tirages FINN (écart-type 1,35 m contre 0,1 m) : classé parmi les
+seuls tirages, de 27 à 43 % des disques dépassent 90 au lieu de 10 %.
+
+**Décidé par Pascal le 2026-11-15 : (a)**. La référence de T4 est l'attendu
+FINN des analogues élargi du bruit d'observation de FORMS-T : les résidus
+observé − simulé des disques autour des placettes IFN, par essence (toutes
+essences sous 100 disques), biais moyen compris.
+T4 = 100 × P(simulé + résidu < observé). Les résidus incluent la variabilité
+entre peuplements et le décalage du floutage : la référence est prudente
+(scores moins extrêmes). Écartés : (b) classer parmi les accroissements
+FORMS-T des analogues sans FINN ; (c) classer parmi les seuls tirages.
+Limite : le bruit est mesuré sur des disques d'environ 20 ha ; une UGF
+plus petite est plus bruitée.
