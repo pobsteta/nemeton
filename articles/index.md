@@ -94,6 +94,8 @@
   couvert](https://pobsteta.github.io/nemeton/articles/fiche-t2-changement_fr.md):
 - [Fiche indicateur T3 - Coupes rases
   (SUFOSAT)](https://pobsteta.github.io/nemeton/articles/fiche-t3-coupes-rases_fr.md):
+- [Fiche indicateur T4 - Vitalité dynamique (FORMS-T contre
+  FINN)](https://pobsteta.github.io/nemeton/articles/fiche-t4-vitalite_fr.md):
 - [Fiche indicateur W1 - Reseau
   hydrographique](https://pobsteta.github.io/nemeton/articles/fiche-w1-reseau_fr.md):
 - [Fiche indicateur W2 - Zones

@@ -13,6 +13,26 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.28\] - 2026-11-15
+
+### Added
+
+- [`indicateur_t4_vitalite()`](https://pobsteta.github.io/nemeton/reference/indicateur_t4_vitalite.md):
+  T4, dynamic vitality — FORMS-T dominant-height growth ranked against
+  FINN-expected growth of IFN analogue plots plus FORMS-T observation
+  noise (spec 068). Conditional; 44 indicators, 13 conditional.
+- [`accroissement_hdom_finn()`](https://pobsteta.github.io/nemeton/reference/accroissement_hdom_finn.md):
+  dominant-height increment over one FINN step, heights from IFN
+  height-diameter curves.
+- `inst/extdata/allometrie_hauteur_ifn.csv`, `t4_analogues_bfc.csv.gz`,
+  `t4_residus_forms_bfc.csv` and their `data-raw/` scripts.
+- Indicator sheet `fiche-t4-vitalite_fr`.
+
+### Changed
+
+- `massif_demo_units` regenerated: `T4`, `t4_status`, `T4_norm`; current
+  N5 status.
+
 ## \[2026.11.27\] - 2026-11-14
 
 ### Added

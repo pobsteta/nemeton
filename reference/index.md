@@ -114,7 +114,8 @@ Structure du paysage et connectivite
 
 ### Famille T : Dynamique temporelle
 
-Anciennete des peuplements et changements d’occupation
+Anciennete des peuplements, changements d’occupation et vitalite
+dynamique
 
 - [`indicateur_t1_anciennete()`](https://pobsteta.github.io/nemeton/reference/indicateur_t1_anciennete.md)
   : Calculate Stand Age Index (T1)
@@ -122,6 +123,8 @@ Anciennete des peuplements et changements d’occupation
   : Calculate Canopy Stability (T2)
 - [`indicateur_t3_coupes_rases()`](https://pobsteta.github.io/nemeton/reference/indicateur_t3_coupes_rases.md)
   : Calculate Clear-cut Pressure Index (T3)
+- [`indicateur_t4_vitalite()`](https://pobsteta.github.io/nemeton/reference/indicateur_t4_vitalite.md)
+  : Calculate dynamic vitality (T4)
 
 ### Famille R : Risques & Resilience
 
@@ -783,6 +786,8 @@ chaque exclusion, comparaison qualitative ponderee par profil
   : Growth and recruitment correction of a FINN calibration
 - [`surmortalite_finn()`](https://pobsteta.github.io/nemeton/reference/surmortalite_finn.md)
   : Excess mortality against a FINN baseline
+- [`accroissement_hdom_finn()`](https://pobsteta.github.io/nemeton/reference/accroissement_hdom_finn.md)
+  : Dominant-height increment expected by FINN
 - [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
   : Simulate stand trajectories under a silvicultural itinerary
 - [`densite_max_ifn()`](https://pobsteta.github.io/nemeton/reference/densite_max_ifn.md)

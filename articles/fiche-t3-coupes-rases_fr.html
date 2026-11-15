@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.27.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.28</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -93,6 +93,7 @@
     <li><a class="dropdown-item" href="../articles/fiche-t1-anciennete_fr.html">T1 - Anciennete</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-t2-changement_fr.html">T2 - Stabilite temporelle</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-t3-coupes-rases_fr.html">T3 - Coupes rases (SUFOSAT)</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-t4-vitalite_fr.html">T4 - Vitalite dynamique (FORMS-T contre FINN)</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille R - Risques &amp; Resilience</h6></li>
     <li><a class="dropdown-item" href="../articles/fiche-r1-feu_fr.html">R1 - Risque d'incendie</a></li>
@@ -147,7 +148,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-11-14</h4>
+            <h4 data-toc-skip class="date">2026-11-15</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-t3-coupes-rases_fr.Rmd" class="external-link"><code>vignettes/fiche-t3-coupes-rases_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-t3-coupes-rases_fr.Rmd</code></div>
@@ -338,7 +339,7 @@ confiance.</li>
 <pre><code>indicateur_t3_coupes_rases()  -&gt;  colonne indicateur_t3_coupes_rases (0-100, haut = coupes)
       |
       +- normalize_indicator()     -&gt; 100 - valeur    (inversion)
-      +- create_family_index("T")  -&gt; famille_temporelle = moy(T1, T2, T3)</code></pre>
+      +- create_family_index("T")  -&gt; famille_temporelle = moy(T1, T2, T3, T4)</code></pre>
 </div>
 <div class="section level2">
 <h2 id="diagramme-densemble">6. Diagramme d’ensemble<a class="anchor" aria-label="anchor" href="#diagramme-densemble"></a>
@@ -362,7 +363,7 @@ brut : haut = coupé</text><rect x="586" y="34" width="226" height="42" rx="3" f
 : haut = beaucoup coupé</text><rect x="586" y="98" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text><text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">score
 = 100 - valeur</text><text x="598" y="149" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">comme
 R1 à R5 (spec 048)</text><rect x="586" y="178" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="197" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“T”)</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_temporel</text><text x="598" y="229" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
-de T1 à T3</text><rect x="586" y="258" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="277" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="293" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
+de T1 à T4</text><rect x="586" y="258" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="277" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="293" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
 · confiance φ</text><line x1="260" y1="63" x2="282" y2="63" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><path d="M260 127 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 183 H271 V155 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">puis</text><line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="155" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="566" y2="155" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="158" x2="699" y2="172" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="238" x2="699" y2="252" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="10" y="326" font-size="10.5" fill="currentColor" opacity=".62">Le
 sens brut est inversé par rapport au score : ne jamais lire la colonne
 brute comme un score.</text><text x="10" y="342" font-size="10.5" fill="currentColor" opacity=".62">Une

@@ -107,7 +107,8 @@ Stable: covered by the 1.0 API contract (spec 057).
 ## See also
 
 Other temporal-indicators:
-[`indicateur_t2_changement()`](https://pobsteta.github.io/nemeton/reference/indicateur_t2_changement.md)
+[`indicateur_t2_changement()`](https://pobsteta.github.io/nemeton/reference/indicateur_t2_changement.md),
+[`indicateur_t4_vitalite()`](https://pobsteta.github.io/nemeton/reference/indicateur_t4_vitalite.md)
 
 ## Examples
 

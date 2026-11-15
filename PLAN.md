@@ -7,8 +7,8 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.10.18**
-> (release du 2026-10-19), relevée le 2026-11-14.
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.11.1**
+> (release du 2026-11-15), relevée le 2026-11-15.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
@@ -390,6 +390,29 @@ lit C = forêt + produits et E = substitution. Run des 9 UGF : produits +
 passe en tête sous ONF, naturaliste et propriétaire privé ; le
 technicien garde la libre évolution. Suite : B (bois mort, gros bois)
 depuis la simulation. Version nemetonshiny vérifiée : v2026.10.18.
+
+### 2026-11-15
+
+**v2026.11.28** : T4, vitalité dynamique (spec 068). Méthode décidée par
+Pascal (T4-1 à T4-4 le 2026-11-14, bruit FORMS-T (a) le 2026-11-15) :
+placettes IFN analogues (3 398 placettes BFC 2017-2021, un pas FINN,
+E-OBS 2019-2023, 20 tirages), allométrie IFN HTOT (128 808 arbres),
+résidus observé − simulé FORMS-T autour des placettes, même essence et
+même hauteur.
+[`indicateur_t4_vitalite()`](https://pobsteta.github.io/nemeton/reference/indicateur_t4_vitalite.md) +
+[`accroissement_hdom_finn()`](https://pobsteta.github.io/nemeton/reference/accroissement_hdom_finn.md),
+44 indicateurs (13 conditionnels), fiche T4. Contrôle Dabo : médiane 57,
+quantiles 5-95 % à 13-98. Version nemetonshiny vérifiée : v2026.11.1.
+nemetonshiny **v2026.11.1** publiée (`nemetonshiny@eaa47428`, PR \#280 ;
+cycle dev `2026.10.18.9001` → `.9018`, rouvert en `2026.11.1.9000`).
+Pilotage par IA (VICTOR, AIGORA via nemetonmcp) : erreurs MCP classées,
+jeton de confirmation des écritures (ADR 0002 de l’app), outils longs en
+tâche de fond, contrat nemetonmcp à 33 objets. Santé : FAST, FORDEAD et
+RECONFORT calculés sur `_tot` et découpés à la strate, « Aucune alerte
+dans cette strate », surcouche du Plan de validation par moteur. Plan
+d’actions : fiches PDF par UGF. ADR 0003 de l’app acceptée (pilotage par
+IA ouvert à tous, tout client MCP, avertissement). Aucune release cœur
+requise (brief `2026-11-15-plan-nemetonshiny-v2026.11.1`).
 
 ### 2026-11-14 (suite)
 

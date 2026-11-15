@@ -173,25 +173,26 @@ ind[!is.na(ind$doc_url), c("code", "doc_url", "doc_lang")]
 #> 22   T1
 #> 23   T2
 #> 24   T3
-#> 25   R1
-#> 26   R2
-#> 27   R3
-#> 28   R4
-#> 29   R5
-#> 30   R6
-#> 31   R7
-#> 32   S1
-#> 33   S2
-#> 34   S3
-#> 35   P1
-#> 36   P2
-#> 37   P3
-#> 38   E1
-#> 39   E2
-#> 40   N1
-#> 41   N2
-#> 42   N3
-#> 43   N5
+#> 25   T4
+#> 26   R1
+#> 27   R2
+#> 28   R3
+#> 29   R4
+#> 30   R5
+#> 31   R6
+#> 32   R7
+#> 33   S1
+#> 34   S2
+#> 35   S3
+#> 36   P1
+#> 37   P2
+#> 38   P3
+#> 39   E1
+#> 40   E2
+#> 41   N1
+#> 42   N2
+#> 43   N3
+#> 44   N5
 #>                                                                                 doc_url
 #> 1                 https://pobsteta.github.io/nemeton/articles/fiche-c1-biomasse_fr.html
 #> 2                     https://pobsteta.github.io/nemeton/articles/fiche-c2-ndvi_fr.html
@@ -217,25 +218,26 @@ ind[!is.na(ind$doc_url), c("code", "doc_url", "doc_lang")]
 #> 22              https://pobsteta.github.io/nemeton/articles/fiche-t1-anciennete_fr.html
 #> 23              https://pobsteta.github.io/nemeton/articles/fiche-t2-changement_fr.html
 #> 24            https://pobsteta.github.io/nemeton/articles/fiche-t3-coupes-rases_fr.html
-#> 25                     https://pobsteta.github.io/nemeton/articles/fiche-r1-feu_fr.html
-#> 26                 https://pobsteta.github.io/nemeton/articles/fiche-r2-tempete_fr.html
-#> 27              https://pobsteta.github.io/nemeton/articles/fiche-r3-secheresse_fr.html
-#> 28          https://pobsteta.github.io/nemeton/articles/fiche-r4-abroutissement_fr.html
-#> 29           https://pobsteta.github.io/nemeton/articles/fiche-r5-deperissement_fr.html
-#> 30             https://pobsteta.github.io/nemeton/articles/fiche-r6-sensibilite_fr.html
-#> 31                     https://pobsteta.github.io/nemeton/articles/fiche-r7-gel_fr.html
-#> 32                  https://pobsteta.github.io/nemeton/articles/fiche-s1-routes_fr.html
-#> 33                    https://pobsteta.github.io/nemeton/articles/fiche-s2-bati_fr.html
-#> 34              https://pobsteta.github.io/nemeton/articles/fiche-s3-population_fr.html
-#> 35                  https://pobsteta.github.io/nemeton/articles/fiche-p1-volume_fr.html
-#> 36                 https://pobsteta.github.io/nemeton/articles/fiche-p2-station_fr.html
-#> 37            https://pobsteta.github.io/nemeton/articles/fiche-p3-qualite-bois_fr.html
-#> 38            https://pobsteta.github.io/nemeton/articles/fiche-e1-bois-energie_fr.html
-#> 39               https://pobsteta.github.io/nemeton/articles/fiche-e2-evitement_fr.html
-#> 40                https://pobsteta.github.io/nemeton/articles/fiche-n1-distance_fr.html
-#> 41              https://pobsteta.github.io/nemeton/articles/fiche-n2-continuite_fr.html
-#> 42              https://pobsteta.github.io/nemeton/articles/fiche-n3-naturalite_fr.html
-#> 43      https://pobsteta.github.io/nemeton/articles/fiche-n5-distance-reference_fr.html
+#> 25                https://pobsteta.github.io/nemeton/articles/fiche-t4-vitalite_fr.html
+#> 26                     https://pobsteta.github.io/nemeton/articles/fiche-r1-feu_fr.html
+#> 27                 https://pobsteta.github.io/nemeton/articles/fiche-r2-tempete_fr.html
+#> 28              https://pobsteta.github.io/nemeton/articles/fiche-r3-secheresse_fr.html
+#> 29          https://pobsteta.github.io/nemeton/articles/fiche-r4-abroutissement_fr.html
+#> 30           https://pobsteta.github.io/nemeton/articles/fiche-r5-deperissement_fr.html
+#> 31             https://pobsteta.github.io/nemeton/articles/fiche-r6-sensibilite_fr.html
+#> 32                     https://pobsteta.github.io/nemeton/articles/fiche-r7-gel_fr.html
+#> 33                  https://pobsteta.github.io/nemeton/articles/fiche-s1-routes_fr.html
+#> 34                    https://pobsteta.github.io/nemeton/articles/fiche-s2-bati_fr.html
+#> 35              https://pobsteta.github.io/nemeton/articles/fiche-s3-population_fr.html
+#> 36                  https://pobsteta.github.io/nemeton/articles/fiche-p1-volume_fr.html
+#> 37                 https://pobsteta.github.io/nemeton/articles/fiche-p2-station_fr.html
+#> 38            https://pobsteta.github.io/nemeton/articles/fiche-p3-qualite-bois_fr.html
+#> 39            https://pobsteta.github.io/nemeton/articles/fiche-e1-bois-energie_fr.html
+#> 40               https://pobsteta.github.io/nemeton/articles/fiche-e2-evitement_fr.html
+#> 41                https://pobsteta.github.io/nemeton/articles/fiche-n1-distance_fr.html
+#> 42              https://pobsteta.github.io/nemeton/articles/fiche-n2-continuite_fr.html
+#> 43              https://pobsteta.github.io/nemeton/articles/fiche-n3-naturalite_fr.html
+#> 44      https://pobsteta.github.io/nemeton/articles/fiche-n5-distance-reference_fr.html
 #>    doc_lang
 #> 1        fr
 #> 2        fr
@@ -280,6 +282,7 @@ ind[!is.na(ind$doc_url), c("code", "doc_url", "doc_lang")]
 #> 41       fr
 #> 42       fr
 #> 43       fr
+#> 44       fr
 
 # A fact sheet served in a language other than the one requested
 en <- indicator_labels(lang = "en")
@@ -309,23 +312,24 @@ en[!is.na(en$doc_lang) & en$doc_lang != "en", c("code", "doc_lang")]
 #> 22   T1       fr
 #> 23   T2       fr
 #> 24   T3       fr
-#> 25   R1       fr
-#> 26   R2       fr
-#> 27   R3       fr
-#> 28   R4       fr
-#> 29   R5       fr
-#> 30   R6       fr
-#> 31   R7       fr
-#> 32   S1       fr
-#> 33   S2       fr
-#> 34   S3       fr
-#> 35   P1       fr
-#> 36   P2       fr
-#> 37   P3       fr
-#> 38   E1       fr
-#> 39   E2       fr
-#> 40   N1       fr
-#> 41   N2       fr
-#> 42   N3       fr
-#> 43   N5       fr
+#> 25   T4       fr
+#> 26   R1       fr
+#> 27   R2       fr
+#> 28   R3       fr
+#> 29   R4       fr
+#> 30   R5       fr
+#> 31   R6       fr
+#> 32   R7       fr
+#> 33   S1       fr
+#> 34   S2       fr
+#> 35   S3       fr
+#> 36   P1       fr
+#> 37   P2       fr
+#> 38   P3       fr
+#> 39   E1       fr
+#> 40   E2       fr
+#> 41   N1       fr
+#> 42   N2       fr
+#> 43   N3       fr
+#> 44   N5       fr
 ```

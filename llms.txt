@@ -9,7 +9,7 @@ biophysiques multi-famille** pour la gestion forestiere durable.
 
 ## Architecture (ADR-009)
 
-    nemeton (ce repo)       -> Package coeur R (GPL-3). 43 indicateurs, 12 familles, NDP, radar.
+    nemeton (ce repo)       -> Package coeur R (GPL-3). 44 indicateurs, 12 familles, NDP, radar.
     nemetonshiny            -> Application Shiny (EUPL v1.2). Interface web interactive.
     tree_sat_nemeton        -> Classification d'essences Sentinel-1/2. NDP 0. MIT.
     maestro_nemeton         -> Classification MAESTRO ViT (ortho+MNT). NDP 1+. MIT.
@@ -147,7 +147,7 @@ nemetonshiny::run_app(language = "fr")
 L’application permet de :
 
 - Rechercher et selectionner des parcelles cadastrales par commune
-- Calculer automatiquement les 43 indicateurs (12 familles)
+- Calculer automatiquement les 44 indicateurs (12 familles)
 - Visualiser les resultats (radar avec NDP, cartes, tableaux)
 - Generer des perspectives IA par profil d’acteur (18 profils)
 - Exporter en PDF ou GeoPackage
@@ -363,7 +363,8 @@ Structure du paysage et connectivite
 
 ### Famille T : Dynamique temporelle
 
-Anciennete des peuplements et changements d’occupation
+Anciennete des peuplements, changements d’occupation et vitalite
+dynamique
 
 - [`indicateur_t1_anciennete()`](https://pobsteta.github.io/nemeton/reference/indicateur_t1_anciennete.md)
   : Calculate Stand Age Index (T1)
@@ -371,6 +372,8 @@ Anciennete des peuplements et changements d’occupation
   : Calculate Canopy Stability (T2)
 - [`indicateur_t3_coupes_rases()`](https://pobsteta.github.io/nemeton/reference/indicateur_t3_coupes_rases.md)
   : Calculate Clear-cut Pressure Index (T3)
+- [`indicateur_t4_vitalite()`](https://pobsteta.github.io/nemeton/reference/indicateur_t4_vitalite.md)
+  : Calculate dynamic vitality (T4)
 
 ### Famille R : Risques & Resilience
 
@@ -1032,6 +1035,8 @@ chaque exclusion, comparaison qualitative ponderee par profil
   : Growth and recruitment correction of a FINN calibration
 - [`surmortalite_finn()`](https://pobsteta.github.io/nemeton/reference/surmortalite_finn.md)
   : Excess mortality against a FINN baseline
+- [`accroissement_hdom_finn()`](https://pobsteta.github.io/nemeton/reference/accroissement_hdom_finn.md)
+  : Dominant-height increment expected by FINN
 - [`simuler_itineraire()`](https://pobsteta.github.io/nemeton/reference/simuler_itineraire.md)
   : Simulate stand trajectories under a silvicultural itinerary
 - [`densite_max_ifn()`](https://pobsteta.github.io/nemeton/reference/densite_max_ifn.md)
@@ -1414,6 +1419,8 @@ lancez nemetonshiny::run_app(language = “fr”).
   couvert](https://pobsteta.github.io/nemeton/articles/fiche-t2-changement_fr.md):
 - [Fiche indicateur T3 - Coupes rases
   (SUFOSAT)](https://pobsteta.github.io/nemeton/articles/fiche-t3-coupes-rases_fr.md):
+- [Fiche indicateur T4 - Vitalité dynamique (FORMS-T contre
+  FINN)](https://pobsteta.github.io/nemeton/articles/fiche-t4-vitalite_fr.md):
 - [Fiche indicateur W1 - Reseau
   hydrographique](https://pobsteta.github.io/nemeton/articles/fiche-w1-reseau_fr.md):
 - [Fiche indicateur W2 - Zones

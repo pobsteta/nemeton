@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.27.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.28</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -93,6 +93,7 @@
     <li><a class="dropdown-item" href="../articles/fiche-t1-anciennete_fr.html">T1 - Anciennete</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-t2-changement_fr.html">T2 - Stabilite temporelle</a></li>
     <li><a class="dropdown-item" href="../articles/fiche-t3-coupes-rases_fr.html">T3 - Coupes rases (SUFOSAT)</a></li>
+    <li><a class="dropdown-item" href="../articles/fiche-t4-vitalite_fr.html">T4 - Vitalite dynamique (FORMS-T contre FINN)</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Famille R - Risques &amp; Resilience</h6></li>
     <li><a class="dropdown-item" href="../articles/fiche-r1-feu_fr.html">R1 - Risque d'incendie</a></li>
@@ -147,7 +148,7 @@
                         <h4 data-toc-skip class="author">Pascal
 Obstetar</h4>
             
-            <h4 data-toc-skip class="date">2026-11-14</h4>
+            <h4 data-toc-skip class="date">2026-11-15</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/pobsteta/nemeton/blob/main/vignettes/fiche-t1-anciennete_fr.Rmd" class="external-link"><code>vignettes/fiche-t1-anciennete_fr.Rmd</code></a></small>
       <div class="d-none name"><code>fiche-t1-anciennete_fr.Rmd</code></div>
@@ -432,7 +433,7 @@ type.</p></li>
 <pre><code>indicateur_t1_anciennete()  -&gt;  colonne indicateur_t1_anciennete (annees)
       |
       +- normalize_indicator()     -&gt; ecretage [0, 100] (cf. piege 1)
-      +- create_family_index("T")  -&gt; famille_temporelle = moy(T1, T2, T3)</code></pre>
+      +- create_family_index("T")  -&gt; famille_temporelle = moy(T1, T2, T3, T4)</code></pre>
 <p>T1 alimente aussi <strong>T2</strong> en repli
 (<code>t1_values</code>).</p>
 </div>
@@ -464,7 +465,7 @@ du NDVI</text><text x="300" y="329" font-size="11" font-family="ui-monospace,SFM
 âge inventé</text><rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"></rect><text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_t1_anciennete</text><text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">âge,
 en années</text><rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text><text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">âge
 / 200 ans × 100</text><rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index(“T”)</text><text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_temporel</text><text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne
-de T1 à T3</text><rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
+de T1 à T4</text><rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"></rect><text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text><text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci
 · confiance φ</text><line x1="260" y1="55" x2="282" y2="55" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><path d="M260 111 H271 V131 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 175 H271 V223 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 239 H271 V315 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><path d="M260 295 H271 V391 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></path><line x1="306" y1="78" x2="306" y2="104" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="94" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text><line x1="306" y1="154" x2="306" y2="180" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="170" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text><line x1="306" y1="262" x2="306" y2="288" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="278" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text><line x1="306" y1="338" x2="306" y2="364" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"></line><text x="312" y="354" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text><line x1="550" y1="55" x2="566" y2="55" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="131" x2="566" y2="131" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="223" x2="566" y2="223" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="315" x2="566" y2="315" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="550" y1="391" x2="566" y2="391" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="55" x2="566" y2="391" stroke="#2C6B60" stroke-width="1.2" opacity=".6"></line><line x1="566" y1="55" x2="580" y2="55" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"></line><text x="10" y="438" font-size="10.5" fill="currentColor" opacity=".62">L’unité
 est l’année : normalisée sur une borne de 200 ans depuis la 0.197.0,
 plus par écrêtage à 100.</text><text x="10" y="454" font-size="10.5" fill="currentColor" opacity=".62">Une

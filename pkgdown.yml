@@ -48,6 +48,7 @@ articles:
   fiche-t1-anciennete_fr: fiche-t1-anciennete_fr.html
   fiche-t2-changement_fr: fiche-t2-changement_fr.html
   fiche-t3-coupes-rases_fr: fiche-t3-coupes-rases_fr.html
+  fiche-t4-vitalite_fr: fiche-t4-vitalite_fr.html
   fiche-w1-reseau_fr: fiche-w1-reseau_fr.html
   fiche-w2-zones-humides_fr: fiche-w2-zones-humides_fr.html
   fiche-w3-humidite_fr: fiche-w3-humidite_fr.html
@@ -60,7 +61,7 @@ articles:
   tarifs-schaeffer-ser_fr: tarifs-schaeffer-ser_fr.html
   temporal-analysis_fr: temporal-analysis_fr.html
   tutorial-guide: tutorial-guide.html
-last_built: 2026-11-14T22:23Z
+last_built: 2026-11-15T10:58Z
 urls:
   reference: https://pobsteta.github.io/nemeton/reference
   article: https://pobsteta.github.io/nemeton/articles
