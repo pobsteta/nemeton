@@ -75,7 +75,8 @@ NULL
 #' \code{\link{get_placette_schema}} (\code{name}, \code{type}, \code{widget},
 #' \code{qgis_widget}, \code{label}, \code{domain}, \code{required},
 #' \code{min}, \code{max}, \code{default}), plus \code{readonly},
-#' \code{hidden} and, for \code{essence_arbre}, \code{labels} (code to label).
+#' \code{hidden} and, for \code{essence_arbre}, \code{qualite_gnss},
+#' \code{dbh_source} and \code{source_azimut}, \code{labels} (code to label).
 #'
 #' @param couche Character or \code{NULL}. A layer name (\code{"placettes"},
 #'   \code{"centres_mesures"}, \code{"cibles"}, \code{"arbres"},
@@ -114,13 +115,23 @@ schema_inventaire_video <- function(couche = NULL) {
   out
 }
 
+# Libelles affiches dans QField pour les valeurs de quelques domaines (le
+# code reste stocke). Les autres domaines affichent leur code.
+.IV_LIBELLES_DOMAINES <- list(
+  qualite_gnss = c(fix = "RTK fixe", float = "RTK flottant",
+                   telephone = "t\u00e9l\u00e9phone"),
+  dbh_source = c(estime = "estim\u00e9 (vid\u00e9o)", mesure = "mesur\u00e9 (ruban)"),
+  source_azimut = c(boussole_visee = "boussole de vis\u00e9e",
+                    boussole_telephone = "boussole du t\u00e9l\u00e9phone")
+)
+
 .iv_couche_descripteurs <- function(couche, domaines) {
   types <- c(TEXT = "character", REAL = "double", INTEGER = "integer",
              DATETIME = "datetime")
   champs <- lapply(couche$colonnes, function(col) {
     type <- unname(types[col$type]) %||% "character"
     domaine <- if (!is.null(col$domaine)) unlist(domaines[[col$domaine]]) else NULL
-    etiquettes <- NULL
+    etiquettes <- if (!is.null(col$domaine)) .IV_LIBELLES_DOMAINES[[col$domaine]]
     if (identical(col$domaine_externe, "essences_bdforet_v2")) {
       ess <- .iv_essences()
       domaine <- ess$code
@@ -179,7 +190,7 @@ schema_inventaire_video <- function(couche = NULL) {
 #'   offsets by the meridian convergence first).
 #' @param dbh_cm Numeric. Diameter at 1.30 m (cm).
 #' @param id Character. Stable tree identifiers (uuid), compared byte-wise.
-#' @param rayon_m Plot radius (m). Default 20.
+#' @param rayon_m Plot radius (m). Default 15 (ONF LiDAR calibration plots).
 #' @param seuil_diam_cm Minimal diameter (cm). Default 7.5.
 #' @param unite_azimut \code{"deg"} or \code{"gr"}: unit of the returned
 #'   azimuth.
@@ -199,7 +210,7 @@ schema_inventaire_video <- function(couche = NULL) {
 #'
 #' @export
 numeroter_arbres <- function(x, y, dbh_cm, id,
-                             rayon_m = 20, seuil_diam_cm = 7.5,
+                             rayon_m = 15, seuil_diam_cm = 7.5,
                              unite_azimut = c("deg", "gr"),
                              tolerance_deg = 1) {
   unite_azimut <- match.arg(unite_azimut)
@@ -446,7 +457,9 @@ affecter_hauteur_houppier <- function(arbres, houppiers, h_min = 1, h_max = 70) 
   saisi <- Reduce(`|`, lapply(c("essence_arbre", "qualite", "notes", "photos"),
                               function(k) !.iv_vide(.iv_col(df, k, NA_character_))))
   statut <- as.character(.iv_col(df, "statut", NA_character_))
-  saisi | (!.iv_vide(statut) & statut != "vivant")
+  # un diametre au ruban (schema 1.4.0) est une saisie de terrain
+  ruban <- as.character(.iv_col(df, "dbh_source", NA_character_)) %in% "mesure"
+  saisi | (!.iv_vide(statut) & statut != "vivant") | ruban
 }
 
 # Table en x/y : un sf POINT perd sa géométrie au profit de colonnes x, y.
@@ -476,8 +489,9 @@ affecter_hauteur_houppier <- function(arbres, houppiers, h_min = 1, h_max = 70) 
 #' \itemize{
 #'   \item Matched: field attributes kept (\code{essence_arbre}, \code{espece},
 #'     \code{statut}, \code{qualite}, \code{notes}, \code{photos}, measured
-#'     \code{h_m}); position, \code{dbh_cm}, \code{methode} and CHM height
-#'     updated; \code{definitif} if \code{essence_arbre} is filled in, else
+#'     \code{h_m}, tape diameter: \code{dbh_cm} with
+#'     \code{dbh_source = "mesure"}, schema 1.4.0); position, \code{dbh_cm}
+#'     (unless taped), \code{methode} and CHM height updated; \code{definitif} if \code{essence_arbre} is filled in, else
 #'     \code{a_completer}. A \code{faux_positif} stays so (alert
 #'     \code{faux_positif_retrouve}). Alert \code{ecart_dbh} when the diameter
 #'     gap exceeds \code{ecart_dbh_alerte_cm} \emph{and}
@@ -493,7 +507,8 @@ affecter_hauteur_houppier <- function(arbres, houppiers, h_min = 1, h_max = 70) 
 #'     azimuth), so \code{tree_id} stays unique and non-empty.
 #'   \item A tree that leaves the inventory once measured (outside the radius
 #'     or under the threshold) is kept as \code{a_verifier} when it carries
-#'     field attributes or was provisional, and dropped otherwise.
+#'     field attributes (a tape diameter counts) or was provisional, and
+#'     dropped otherwise.
 #' }
 #' No field attribute is ever lost.
 #'
@@ -541,7 +556,7 @@ affecter_hauteur_houppier <- function(arbres, houppiers, h_min = 1, h_max = 70) 
 #' @export
 rapprocher_arbres <- function(provisoires, definitifs, centre,
                               convergence_deg = 0, tolerance_m = 0.5,
-                              rayon_m = 20, seuil_diam_cm = 7.5,
+                              rayon_m = 15, seuil_diam_cm = 7.5,
                               unite_azimut = c("deg", "gr"), tolerance_deg = 1,
                               poids_dbh_m_par_cm = 0.01,
                               ecart_dbh_alerte_cm = 10, ecart_dbh_alerte_rel = 0.5,
@@ -610,6 +625,8 @@ rapprocher_arbres <- function(provisoires, definitifs, centre,
   faux <- !is.na(etat) & etat == "faux_positif"
   a_essence <- !.iv_vide(.iv_col(sortie, "essence_arbre", NA_character_))
   mesuree <- !is.na(sortie$h_source) & sortie$h_source == "mesuree"
+  # diametre au ruban (dbh_source = "mesure", schema 1.4.0) : jamais remplace
+  ruban <- as.character(.iv_col(sortie, "dbh_source", NA_character_)) %in% "mesure"
 
   apparies <- data.frame(uuid = character(0), definitif = integer(0),
                          distance_m = numeric(0), stringsAsFactors = FALSE)
@@ -617,7 +634,7 @@ rapprocher_arbres <- function(provisoires, definitifs, centre,
     j <- colonne[i]
     sortie$x[i] <- def$x[j]
     sortie$y[i] <- def$y[j]
-    sortie$dbh_cm[i] <- dbh_d[j]
+    if (!ruban[i]) sortie$dbh_cm[i] <- dbh_d[j]
     if ("methode" %in% names(def) && !is.na(def$methode[j])) sortie$methode[i] <- def$methode[j]
     if ("houppier_id" %in% names(def) && !is.na(def$houppier_id[j])) {
       sortie$houppier_id[i] <- as.integer(def$houppier_id[j])
@@ -668,6 +685,7 @@ rapprocher_arbres <- function(provisoires, definitifs, centre,
     nv$h_source <- ifelse(.iv_vide(hs), ifelse(is.na(h_def), "aucune", "mnh"), hs)
     nv$houppier_id <- as.integer(.iv_col(def, "houppier_id", NA_integer_))[libres]
     nv$statut <- "vivant"
+    if ("dbh_source" %in% names(nv)) nv$dbh_source <- "estime"
     nv$methode <- as.character(.iv_col(def, "methode", NA_character_))[libres]
     nv$num_provisoire <- NA_character_
     nv$etat_detection <- "a_completer"
@@ -733,13 +751,26 @@ rapprocher_arbres <- function(provisoires, definitifs, centre,
   }
   g <- import_qgis_gpkg(gpkg)
   couches <- sf::st_layers(gpkg)$name
-  for (l in c("centres_mesures", "detections")) {
+  for (l in c("centres_mesures", "detections", "cibles")) {
     # fid lu : un centre n'est jamais réécrit, la plus grande valeur compte.
     g[[l]] <- if (l %in% couches) {
       sf::st_read(gpkg, layer = l, quiet = TRUE, fid_column_name = "fid")
     } else NULL
   }
   g
+}
+
+# Placettes dont le centre retenu (le plus recent) a ete mesure au GNSS du
+# telephone (schema 1.6.0) : plot_id et precision_h_m.
+.iv_centres_telephone <- function(centres) {
+  vide <- data.frame(plot_id = character(0), precision_h_m = numeric(0))
+  if (is.null(centres) || !nrow(centres) || !"qualite_gnss" %in% names(centres)) return(vide)
+  d <- .iv_derniers_centres(centres)
+  d <- d[as.character(d$qualite_gnss) %in% "telephone", , drop = FALSE]
+  if (!nrow(d)) return(vide)
+  data.frame(plot_id = as.character(d$plot_id),
+             precision_h_m = as.numeric(.iv_col(d, "precision_h_m", NA_real_)),
+             stringsAsFactors = FALSE)
 }
 
 # Centre mesuré le plus récent de chaque placette : Groma ajoute une ligne à
@@ -760,15 +791,19 @@ rapprocher_arbres <- function(provisoires, definitifs, centre,
 #' \code{dbh_alerte_cm = 200} (any diameter accepted, flagged above 2 m), on
 #' the trees that are not \code{faux_positif}, then the video-specific checks:
 #' \code{tree_id} unique and non-empty, \code{uuid} unique and non-empty,
-#' domains of \code{etat_detection}, \code{h_source}, \code{methode} and
-#' \code{essence_arbre}, and, when \code{plan} is given, sampling-design
+#' domains of \code{etat_detection}, \code{h_source}, \code{methode},
+#' \code{essence_arbre} and \code{dbh_source} (trees), \code{qualite_gnss}
+#' (measured centres) and \code{source_azimut} (targets), and, when \code{plan} is given, sampling-design
 #' columns and plot positions identical to the original plan.
 #'
 #' The read-only layers \code{parcelles}, \code{ugf} and \code{projet}
 #' (schema 1.2.0) are not checked. A plot may have several rows in
 #' \code{centres_mesures} (Groma never rewrites a centre): this is reported
 #' as an information (\code{severity = "info"} in \code{warnings}), the most
-#' recent centre being the one used.
+#' recent centre being the one used. A plot whose centre was measured with
+#' the phone GNSS (\code{qualite_gnss = "telephone"}, schema 1.6.0) gets a
+#' warning with its \code{precision_h_m}: the whole plot may be shifted by a
+#' few metres.
 #'
 #' @param gpkg Path to \code{inventaire_video.gpkg}, or a list with
 #'   \code{placettes} and \code{arbres} (as returned by
@@ -811,7 +846,8 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
                                          field = "uuid", issue = "Duplicate uuid.")))
     }
     domaines <- list(etat_detection = dom$etat_detection, h_source = dom$h_source,
-                     methode = dom$methode, essence_arbre = .iv_essences()$code)
+                     methode = dom$methode, essence_arbre = .iv_essences()$code,
+                     dbh_source = dom$dbh_source)
     for (col in names(domaines)) {
       val <- as.character(.iv_col(df, col, NA_character_))
       bad <- which(!.iv_vide(val) & !val %in% domaines[[col]])
@@ -858,8 +894,30 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
     }
   }
 
+  # Domaines des centres (qualite_gnss) et des cibles (source_azimut)
+  for (cd in list(list(g$centres_mesures, "qualite_gnss"), list(g$cibles, "source_azimut"))) {
+    t <- cd[[1]]
+    if (is.null(t) || !nrow(t) || !cd[[2]] %in% names(t)) next
+    val <- as.character(t[[cd[[2]]]])
+    bad <- which(!.iv_vide(val) & !val %in% dom[[cd[[2]]]])
+    if (length(bad)) {
+      issues <- c(issues, list(.mk_issue(
+        plot_id = as.character(.iv_col(t, "plot_id", NA_character_))[bad], field = cd[[2]],
+        issue = sprintf("Value not in the %s domain.", cd[[2]]))))
+    }
+  }
+
   warnings <- v$warnings
   centres <- g$centres_mesures
+  tel <- .iv_centres_telephone(centres)
+  if (nrow(tel)) {
+    warnings <- rbind(warnings, .mk_issue(
+      plot_id = tel$plot_id, field = "qualite_gnss",
+      issue = sprintf("Centre measured with the phone GNSS (precision %s m): the whole plot may be shifted by a few metres.",
+                      ifelse(is.na(tel$precision_h_m), "unknown",
+                             format(round(tel$precision_h_m, 1), nsmall = 1))),
+      severity = "warning"))
+  }
   if (!is.null(centres) && nrow(centres) && "plot_id" %in% names(centres)) {
     n <- table(as.character(centres$plot_id))
     multi <- names(n)[n > 1]
@@ -1289,7 +1347,7 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #'
 #' @param placettes sf POINT of the sampling plan (\code{plot_id} required).
 #' @param plot_ids Optional character vector: plots to include.
-#' @param rayon_m Plot radius (m). Default 20.
+#' @param rayon_m Plot radius (m). Default 15 (ONF LiDAR calibration plots).
 #' @param seuil_diam_cm Minimal diameter (cm). Default 7.5.
 #' @param unite_azimut \code{"deg"} or \code{"gr"}.
 #' @param declinaison_deg Magnetic declination (degrees, positive towards
@@ -1340,7 +1398,7 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #'
 #' @export
 creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
-                                          rayon_m = 20, seuil_diam_cm = 7.5,
+                                          rayon_m = 15, seuil_diam_cm = 7.5,
                                           unite_azimut = c("deg", "gr"),
                                           declinaison_deg = NULL,
                                           avec_lidar = TRUE, dem = NULL, chm = NULL,
@@ -1480,6 +1538,164 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   split(tout, tout$plot_id)
 }
 
+# ---- Saisies de terrain envoyees par Groma (terrain.zip, schema 1.5.0) ----
+
+# Entrees sures d'une archive terrain.zip : `terrain.gpkg` et `photos/<nom>`,
+# sans chemin absolu, lecteur, barre oblique inverse ni composant `..`
+# (l'archive est une entree externe).
+.iv_terrain_entrees_sures <- function(noms) {
+  ok_nom <- !grepl("\\\\", noms) & !grepl("^/", noms) & !grepl("^[A-Za-z]:", noms) &
+    !vapply(strsplit(noms, "/", fixed = TRUE), function(p) any(p %in% c("..", ".")), logical(1))
+  photo <- grepl("^photos/[^/]+$", noms) & !grepl("^photos/\\.+$", noms)
+  noms[ok_nom & (noms == "terrain.gpkg" | photo)]
+}
+
+# Extrait une archive terrain.zip dans `dest` (dossier vide cree) ; rend le
+# chemin du terrain.gpkg, NULL si l'archive n'en a pas.
+.iv_terrain_extraire <- function(zip, dest) {
+  entrees <- utils::unzip(zip, list = TRUE)$Name
+  sures <- .iv_terrain_entrees_sures(entrees)
+  ignorees <- setdiff(entrees[!grepl("/$", entrees)], sures)
+  if (length(ignorees)) {
+    cli::cli_warn("{.path {basename(zip)}}: {length(ignorees)} entr{?y/ies} ignored ({.val {utils::head(ignorees, 3)}}).")
+  }
+  if (!"terrain.gpkg" %in% sures) {
+    cli::cli_warn("{.path {basename(zip)}} has no {.file terrain.gpkg}; ignored.")
+    return(NULL)
+  }
+  dir.create(dest, recursive = TRUE, showWarnings = FALSE)
+  utils::unzip(zip, files = sures, exdir = dest, junkpaths = FALSE)
+  file.path(dest, "terrain.gpkg")
+}
+
+# Archives terrain.zip designees par `terrain` (fichiers, ou dossiers ou l'on
+# cherche les *terrain.zip, comme ceux de groma_telecharger_resultats()).
+.iv_terrain_archives <- function(terrain) {
+  unlist(lapply(terrain, function(t) {
+    if (dir.exists(t)) list.files(t, pattern = "terrain\\.zip$", full.names = TRUE, recursive = TRUE)
+    else t
+  }))
+}
+
+# Reecrit les chemins de photos d'une colonne (un ou plusieurs, separes par
+# « ; ») : `photos/<nom>` emballes sont copies dans `dossier_photos/<plot_id>/`
+# et pointes depuis `base` ; un chemin non emballe garde sa valeur.
+.iv_terrain_photos <- function(valeurs, plot_id, racine, dossier_photos, base) {
+  vapply(seq_along(valeurs), function(i) {
+    v <- valeurs[i]
+    if (.iv_vide(v)) return(v)
+    parts <- trimws(strsplit(as.character(v), ";", fixed = TRUE)[[1]])
+    parts <- vapply(parts, function(ch) {
+      src <- file.path(racine, ch)
+      if (!grepl("^photos/[^/]+$", ch) || !file.exists(src)) return(ch)
+      cible_dir <- file.path(dossier_photos, plot_id[i])
+      dir.create(cible_dir, recursive = TRUE, showWarnings = FALSE)
+      cible <- file.path(cible_dir, basename(ch))
+      file.copy(src, cible, overwrite = TRUE)
+      .iv_chemin_relatif(cible, base)
+    }, character(1))
+    paste(parts, collapse = ";")
+  }, character(1))
+}
+
+# Chemin de `f` relatif a `base` quand il est dedans, sinon absolu.
+.iv_chemin_relatif <- function(f, base) {
+  f <- normalizePath(f, winslash = "/", mustWork = FALSE)
+  if (is.null(base)) return(f)
+  b <- paste0(sub("/+$", "", normalizePath(base, winslash = "/", mustWork = FALSE)), "/")
+  if (startsWith(f, b)) substring(f, nchar(b) + 1L) else f
+}
+
+# Lit les terrain.gpkg (une placette chacun) : liste par couche, photos
+# copiees et chemins reecrits.
+.iv_lire_terrain <- function(archives, dossier_photos, base) {
+  couches <- c("placettes", "arbres", "centres_mesures", "cibles", "detections")
+  out <- stats::setNames(vector("list", length(couches)), couches)
+  for (z in archives) {
+    dest <- tempfile("terrain_")
+    gp <- .iv_terrain_extraire(z, dest)
+    if (is.null(gp)) next
+    presentes <- sf::st_layers(gp)$name
+    for (l in intersect(couches, presentes)) {
+      # fid des centres lu : le plus recent compte (.iv_derniers_centres)
+      x <- if (l == "centres_mesures") {
+        sf::st_read(gp, layer = l, quiet = TRUE, fid_column_name = "fid")
+      } else {
+        sf::st_read(gp, layer = l, quiet = TRUE)
+      }
+      if (!nrow(x)) next
+      if (inherits(x, "sf")) x <- sf::st_transform(x, 2154)
+      if ("photos" %in% names(x) && l %in% c("arbres", "placettes")) {
+        x$photos <- .iv_terrain_photos(x$photos, as.character(x$plot_id), dest,
+                                       dossier_photos, base)
+      }
+      out[[l]] <- .iv_empiler(out[[l]], x)
+    }
+  }
+  out
+}
+
+# Attributs saisis dans la copie de QField d'une placette que le terrain du
+# serveur remplace, et absents ou differents dans le terrain : signales.
+.iv_saisies_qfield_perdues <- function(qf, terrain, pid) {
+  champs <- c("essence_arbre", "statut", "qualite", "notes", "photos")
+  vide <- data.frame(plot_id = character(0), uuid = character(0), motif = character(0),
+                     detail = character(0), stringsAsFactors = FALSE)
+  if (is.null(qf) || !nrow(qf)) return(vide)
+  a <- sf::st_drop_geometry(qf)
+  b <- if (is.null(terrain)) a[0, , drop = FALSE] else sf::st_drop_geometry(terrain)
+  out <- list()
+  for (i in seq_len(nrow(a))) {
+    j <- match(a$uuid[i], b$uuid)
+    for (k in intersect(champs, names(a))) {
+      va <- a[[k]][i]
+      if (.iv_vide(va) || (k == "statut" && identical(as.character(va), "vivant"))) next
+      vb <- if (is.na(j) || !k %in% names(b)) NA else b[[k]][j]
+      if (.iv_vide(vb) || as.character(va) != as.character(vb)) {
+        out[[length(out) + 1L]] <- data.frame(plot_id = pid, uuid = a$uuid[i],
+                                              motif = "saisie_qfield_ignoree",
+                                              detail = sprintf("%s = %s", k, va),
+                                              stringsAsFactors = FALSE)
+      }
+    }
+  }
+  if (length(out)) do.call(rbind, out) else vide
+}
+
+# Remplace dans `g` (couches lues de la copie de QField, ou NULL) les
+# placettes du terrain du serveur ; rend list(g, alertes).
+.iv_appliquer_terrain <- function(g, ter) {
+  alertes <- list()
+  pids <- unique(as.character(ter$placettes$plot_id))
+  if (is.null(g)) g <- list()
+  for (l in names(ter)) {
+    t <- ter[[l]]
+    if (is.null(t)) next
+    x <- g[[l]]
+    if (!is.null(x) && nrow(x) && "plot_id" %in% names(x)) {
+      x <- sf::st_transform(x, 2154)
+      if (l == "placettes") {
+        doubles <- intersect(pids, unique(as.character(x$plot_id)))
+        if (length(doubles)) {
+          alertes[[length(alertes) + 1L]] <- data.frame(
+            plot_id = doubles, uuid = NA_character_, motif = "terrain_serveur_prefere",
+            detail = "QField copy replaced by the field data sent by Groma",
+            stringsAsFactors = FALSE)
+        }
+      }
+      if (l == "arbres") {
+        for (pid in intersect(pids, unique(as.character(x$plot_id)))) {
+          alertes[[length(alertes) + 1L]] <- .iv_saisies_qfield_perdues(
+            x[x$plot_id == pid, ], t[t$plot_id == pid, ], pid)
+        }
+      }
+      x <- x[!as.character(x$plot_id) %in% pids, ]
+    }
+    g[[l]] <- .iv_empiler(x, t)
+  }
+  list(g = g, alertes = do.call(rbind, alertes), pids = pids)
+}
+
 #' Import a video inventory into the project field data
 #'
 #' The \dQuote{Integrate} step: reads \code{inventaire_video.gpkg}
@@ -1501,8 +1717,24 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
 #' carries a \code{source} column (\code{"inventaire_terrain"} or
 #' \code{"inventaire_video"}).
 #'
+#' \strong{Field data sent by Groma} (\code{terrain}, schema 1.5.0). Groma
+#' sends, per plot, a \code{terrain.zip} holding \code{terrain.gpkg} (the
+#' same schema as the QField copy, one plot) and \code{photos/}. For its
+#' plots, it replaces the QField copy: if both exist, the server wins, with
+#' the alert \code{terrain_serveur_prefere}, and each attribute entered only
+#' in QField gets the alert \code{saisie_qfield_ignoree}. Only
+#' \code{terrain.gpkg} and \code{photos/<name>} are extracted, never outside
+#' a temporary folder; packed photos are copied to
+#' \code{dossier_photos/<plot_id>/} and their paths rewritten.
+#'
+#' A plot whose centre was measured with the phone GNSS
+#' (\code{qualite_gnss = "telephone"}, schema 1.6.0) gets the alert
+#' \code{centre_telephone}: the whole plot may be shifted by a few metres.
+#' The matching tolerance is not widened: provisional and definitive trees
+#' are both placed from that centre.
+#'
 #' @param gpkg Path to the \code{inventaire_video.gpkg} returned from the
-#'   field.
+#'   field (QField copy). May be \code{NULL} when \code{terrain} is given.
 #' @param resultats Optional paths (files or directories) of the definitive
 #'   GeoPackages of the Groma server (layer \code{detections}), e.g. from
 #'   \code{\link{groma_telecharger_resultats}}.
@@ -1513,6 +1745,13 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
 #' @param priorite \code{"classique"} (default) or \code{"video"}: which
 #'   version of a plot inventoried both ways enters the main layers.
 #' @param region Character. Species region. Default \code{"BFC"}.
+#' @param terrain Optional paths of \code{terrain.zip} archives, or of
+#'   directories searched for \code{*terrain.zip} (as written by
+#'   \code{\link{groma_telecharger_resultats}}).
+#' @param dossier_photos Directory receiving the photos of \code{terrain}.
+#'   Default \code{photos/} next to \code{field_data_gpkg}, else next to
+#'   \code{gpkg}; photo paths are written relative to that folder's parent
+#'   when inside it.
 #'
 #' @return A list with \code{placettes}, \code{arbres} (video inventory after
 #'   reconciliation, without \code{faux_positif}), \code{agregats} (tagged
@@ -1520,18 +1759,41 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
 #'   \code{a_completer} and \code{a_verifier} (subsets of \code{arbres} by
 #'   \code{etat_detection}), \code{classique_conserve} (plots whose classical
 #'   inventory stayed in the main layers), \code{ndp} (integer, NDP level of
-#'   \code{agregats}), \code{alertes} and \code{numeros_modifies}
-#'   (reconciliation) and \code{field_data_gpkg} (path or \code{NULL}).
+#'   \code{agregats}), \code{alertes} (\code{plot_id}, \code{uuid},
+#'   \code{motif}, \code{dbh_provisoire}, \code{dbh_definitif},
+#'   \code{detail}: reconciliation, field data and phone centres) and
+#'   \code{numeros_modifies} (reconciliation) and \code{field_data_gpkg}
+#'   (path or \code{NULL}).
 #'
 #' @section Lifecycle:
 #' Experimental (spec 061).
 #'
 #' @export
-importer_inventaire_video <- function(gpkg, resultats = NULL, field_data_gpkg = NULL,
+importer_inventaire_video <- function(gpkg = NULL, resultats = NULL, field_data_gpkg = NULL,
                                       plan = NULL, priorite = c("classique", "video"),
-                                      region = "BFC") {
+                                      region = "BFC", terrain = NULL, dossier_photos = NULL) {
   priorite <- match.arg(priorite)
-  g <- .iv_lire(gpkg)
+  if (is.null(gpkg) && is.null(terrain)) {
+    cli::cli_abort("Give the QField copy {.arg gpkg}, the Groma field data {.arg terrain}, or both.")
+  }
+  g <- if (!is.null(gpkg)) .iv_lire(gpkg)
+  alertes_terrain <- NULL
+  if (!is.null(terrain)) {
+    # Saisies envoyees par Groma (terrain.zip) : elles remplacent la copie de
+    # QField pour leurs placettes (schema 1.5.0).
+    base <- if (!is.null(field_data_gpkg)) dirname(field_data_gpkg) else
+      if (is.character(gpkg)) dirname(gpkg) else NULL
+    if (is.null(dossier_photos)) dossier_photos <- file.path(base %||% tempdir(), "photos")
+    ter <- .iv_lire_terrain(.iv_terrain_archives(terrain), dossier_photos, base)
+    if (!is.null(ter$placettes)) {
+      appl <- .iv_appliquer_terrain(g, ter)
+      g <- appl$g
+      alertes_terrain <- appl$alertes
+    }
+  }
+  if (is.null(g$placettes) || !nrow(g$placettes)) {
+    cli::cli_abort("No plot to import.")
+  }
   placettes <- sf::st_transform(g$placettes, 2154)
   arbres <- g$arbres
   if (is.null(arbres)) arbres <- .iv_conformer(NULL, schema_inventaire_video("arbres"), "POINT")
@@ -1556,7 +1818,7 @@ importer_inventaire_video <- function(gpkg, resultats = NULL, field_data_gpkg = 
     prov <- arbres[arbres$plot_id == pid, ]
     r <- rapprocher_arbres(prov, par_plot[[pid]], centre = centre,
                            convergence_deg = num("convergence_deg", 0),
-                           rayon_m = num("rayon_m", 20),
+                           rayon_m = num("rayon_m", 15),
                            seuil_diam_cm = num("seuil_diam_cm", 7.5),
                            unite_azimut = num("unite_azimut", "deg"))
     r$arbres$plot_id <- pid
@@ -1581,7 +1843,9 @@ importer_inventaire_video <- function(gpkg, resultats = NULL, field_data_gpkg = 
     arbres <- arbres[is.na(arbres$etat_detection) | arbres$etat_detection != "faux_positif", ]
   }
 
-  validation <- valider_inventaire_video(list(placettes = placettes, arbres = arbres),
+  validation <- valider_inventaire_video(list(placettes = placettes, arbres = arbres,
+                                              centres_mesures = g$centres_mesures,
+                                              cibles = g$cibles),
                                          plan = plan, region = region)
   if (!validation$ok) {
     cli::cli_warn("The video inventory has {nrow(validation$errors)} validation error{?s}.")
@@ -1589,7 +1853,7 @@ importer_inventaire_video <- function(gpkg, resultats = NULL, field_data_gpkg = 
 
   # Agrégats par groupe de rayon.
   rayon <- as.numeric(.iv_col(placettes, "rayon_m", NA_real_))
-  rayon[is.na(rayon)] <- 20
+  rayon[is.na(rayon)] <- 15
   agregats <- do.call(rbind, lapply(sort(unique(rayon)), function(r) {
     aggregate_plot_metrics(placettes[rayon == r, ],
                            arbres[arbres$plot_id %in% placettes$plot_id[rayon == r], ],
@@ -1604,7 +1868,23 @@ importer_inventaire_video <- function(gpkg, resultats = NULL, field_data_gpkg = 
   etat <- as.character(.iv_col(arbres, "etat_detection", NA_character_))
 
   vide_alertes <- data.frame(plot_id = character(0), uuid = character(0), motif = character(0),
-                             dbh_provisoire = numeric(0), dbh_definitif = numeric(0))
+                             dbh_provisoire = numeric(0), dbh_definitif = numeric(0),
+                             detail = character(0))
+  # Centres au GNSS du telephone (schema 1.6.0) et saisies du terrain
+  tel <- .iv_centres_telephone(g$centres_mesures)
+  tel <- tel[tel$plot_id %in% placettes$plot_id, , drop = FALSE]
+  autres <- list(alertes_terrain, if (nrow(tel)) data.frame(
+    plot_id = tel$plot_id, uuid = NA_character_, motif = "centre_telephone",
+    detail = sprintf("precision_h_m = %s", tel$precision_h_m), stringsAsFactors = FALSE))
+  for (a in Filter(function(x) !is.null(x) && nrow(x), autres)) {
+    a$dbh_provisoire <- NA_real_
+    a$dbh_definitif <- NA_real_
+    alertes[[length(alertes) + 1L]] <- a[, names(vide_alertes)]
+  }
+  alertes <- lapply(alertes, function(a) {
+    if (!"detail" %in% names(a)) a$detail <- NA_character_
+    a[, names(vide_alertes)]
+  })
   vide_modifies <- data.frame(plot_id = character(0), uuid = character(0),
                               ancien = character(0), nouveau = character(0))
   list(placettes = placettes, arbres = arbres, agregats = agregats,
@@ -1744,7 +2024,7 @@ renvoyer_inventaire_video <- function(import, gpkg = NULL, rasters = NULL,
     sprintf('"etat_detection" IN (%s)', paste0("'", etats, "'", collapse = ", "))
   }
   rayon <- as.numeric(.iv_col(placettes, "rayon_m", NA_real_))
-  rayon[is.na(rayon)] <- 20
+  rayon[is.na(rayon)] <- 15
   bbox <- tryCatch(sf::st_bbox(sf::st_buffer(placettes, rayon + 10)),
                    error = function(e) NULL)
   .iv_empaqueter(stage, gpkg_rel, fichiers_r, schema, bbox, project_name,
@@ -1839,16 +2119,20 @@ renvoyer_inventaire_video <- function(import, gpkg = NULL, rasters = NULL,
 #' \code{groma_etat_placettes()} lists the plots known to the Groma server
 #' (\code{GET /placettes}) and their processing state.
 #' \code{groma_telecharger_resultats()} downloads, for each plot, the
-#' definitive result (\code{GET /placettes/{plot_id}/resultat.gpkg}) and the
-#' reports (\code{rapport.json}, \code{rapport.html}). Requires \pkg{httr2}.
+#' definitive result (\code{GET /placettes/{plot_id}/resultat.gpkg}), the
+#' reports (\code{rapport.json}, \code{rapport.html}) and the field data
+#' entered in Groma (\code{terrain.zip}, schema 1.5.0; HTTP 404 while
+#' nothing was sent, without warning). Each call downloads afresh: run it
+#' again when \code{terrain_envoye_le} of \code{groma_etat_placettes()}
+#' changes. Requires \pkg{httr2}.
 #'
 #' @param url Base URL of the Groma server.
 #' @param jeton Bearer token (\code{NULL} for none).
 #' @param plot_ids Character vector of plots to download.
 #' @param dossier Destination directory (created if needed).
-#' @param fichiers Files to download per plot. Default all three.
+#' @param fichiers Files to download per plot. Default all four.
 #'
-#' @return \code{groma_etat_placettes()}: a data.frame, one row per plot.
+#' @return \code{groma_etat_placettes()}: a data.frame, one row per plot (with \code{terrain_envoye_le} since schema 1.5.0; a plot with field data only has \code{etat = "sans_paquet"}).
 #'   \code{groma_telecharger_resultats()}: character vector of the downloaded
 #'   files (\code{<plot_id>_<fichier>}), with the attribute \code{detail}, a
 #'   data.frame \code{plot_id}, \code{fichier}, \code{chemin} (\code{NA} when
@@ -1871,7 +2155,7 @@ groma_etat_placettes <- function(url, jeton = NULL) {
 #' @export
 groma_telecharger_resultats <- function(url, jeton = NULL, plot_ids, dossier,
                                         fichiers = c("resultat.gpkg", "rapport.json",
-                                                     "rapport.html")) {
+                                                     "rapport.html", "terrain.zip")) {
   if (any(!grepl("^[A-Za-z0-9_.-]+$", plot_ids))) {
     cli::cli_abort("{.arg plot_ids} must be made of letters, digits, {.val _}, {.val .} or {.val -}.")
   }
@@ -1889,7 +2173,8 @@ groma_telecharger_resultats <- function(url, jeton = NULL, plot_ids, dossier,
       if (statut < 300) {
         writeBin(httr2::resp_body_raw(resp), cible)
         chemin <- cible
-      } else {
+      } else if (!(f == "terrain.zip" && statut == 404L)) {
+        # terrain.zip absent (404) : rien n'a ete saisi dans Groma, normal
         cli::cli_warn("Groma: {.val {pid}}/{f} unavailable (HTTP {statut}).")
       }
       lignes[[length(lignes) + 1L]] <- data.frame(plot_id = pid, fichier = f, chemin = chemin,

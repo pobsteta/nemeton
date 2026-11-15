@@ -1,3 +1,54 @@
+# nemeton 2026.11.29 (2026-11-15)
+
+## Nouveautés
+
+Inventaire vidéo Groma au schéma **1.6.0** (spec 061 § 4 ter, cinq briefs de
+Groma des 11 et 13 novembre). Le schéma, les déclencheurs et le plugin QField
+viennent de `groma`.
+
+- **Diamètre au ruban** (schéma 1.4.0) : nouvelle colonne `dbh_source`
+  (`estime` par défaut, `mesure`). `dbh_cm` et `dbh_source` sont en lecture
+  seule dans QField. `rapprocher_arbres()` garde le diamètre d'un arbre
+  `mesure`. L'alerte `ecart_dbh` reste calculée sur ce diamètre. Un arbre
+  mesuré qui sort de l'inventaire reste `a_verifier`.
+- **Saisies de terrain envoyées par Groma** (schéma 1.5.0) :
+  - `groma_telecharger_resultats()` télécharge aussi `terrain.zip`. Une
+    réponse 404 veut dire que rien n'a été saisi : elle ne déclenche pas
+    d'avertissement.
+  - `importer_inventaire_video(terrain =, dossier_photos =)` lit ces
+    saisies à la place de la copie de QField pour leurs placettes. Si les
+    deux existent, le serveur l'emporte, avec l'alerte
+    `terrain_serveur_prefere`. Chaque attribut saisi seulement dans QField
+    donne l'alerte `saisie_qfield_ignoree`.
+  - Les photos emballées sont copiées et leurs chemins réécrits.
+  - Seuls `terrain.gpkg` et `photos/<nom>` sont extraits.
+  - `gpkg` devient facultatif quand `terrain` est donné.
+  - Nouvelle valeur `terrain` du domaine `methode` : un arbre ajouté à la
+    main dans Groma.
+- **Centre mesuré au GNSS du téléphone** (schéma 1.6.0) : nouvelle valeur
+  `telephone` de `qualite_gnss`, affichée « téléphone ».
+  - Dans QField, le centre est dessiné dans une couleur d'alerte.
+  - `valider_inventaire_video()` le signale avec sa précision.
+  - `importer_inventaire_video()` ajoute l'alerte `centre_telephone`.
+  - La tolérance d'appariement n'est pas élargie : arbres provisoires et
+    définitifs sont placés depuis le même centre.
+  - `centres_mesures` gagne cinq colonnes de qualité de la réception.
+- **Cibles saisies dans Groma** (schéma 1.3.0) : la couche `cibles` passe en
+  lecture seule dans QField et gagne la colonne `source_azimut`.
+- `valider_inventaire_video()` contrôle les domaines `dbh_source`,
+  `qualite_gnss` et `source_azimut`.
+
+## Changements
+
+- **Rayon de placette par défaut : 15 m** au lieu de 20 m, comme les
+  placettes de calibration LiDAR de l'ONF. Cela vaut pour
+  `creer_projet_inventaire_video()`, `numeroter_arbres()` et
+  `rapprocher_arbres()`, et pour une placette sans `rayon_m`. Un projet
+  existant garde le rayon écrit dans chacune de ses placettes.
+- `centres_mesures` et `cibles` sont écrites sans index spatial : le SQLite
+  d'Android n'a pas le module R*Tree.
+- `importer_inventaire_video()$alertes` gagne la colonne `detail`.
+
 # nemeton 2026.11.28 (2026-11-15)
 
 ## Nouveautés

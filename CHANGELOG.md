@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.29] - 2026-11-15
+
+### Added
+- Groma video-inventory schema 1.6.0 (spec 061): `dbh_source` (tape diameter kept by `rapprocher_arbres()`), `terrain.zip` download in `groma_telecharger_resultats()` and `importer_inventaire_video(terrain =, dossier_photos =)` (server field data win over the QField copy, sanitised extraction, photos copied), `qualite_gnss = "telephone"` (alert colour, validation warning, `centre_telephone` alert), read-only `cibles` with `source_azimut`, `methode = "terrain"`.
+- `valider_inventaire_video()` checks the `dbh_source`, `qualite_gnss` and `source_azimut` domains.
+
+### Changed
+- Default plot radius 15 m (was 20 m) in `creer_projet_inventaire_video()`, `numeroter_arbres()`, `rapprocher_arbres()`.
+- `centres_mesures` and `cibles` written without spatial index.
+- `importer_inventaire_video()$alertes` has a `detail` column; `gpkg` may be `NULL` with `terrain`.
+
 ## [2026.11.28] - 2026-11-15
 
 ### Added

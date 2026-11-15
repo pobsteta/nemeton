@@ -27,7 +27,7 @@ test_that("schema_inventaire_video lit le schéma partagé", {
   s <- schema_inventaire_video()
   expect_setequal(names(s), c("placettes", "centres_mesures", "cibles", "arbres",
                               "detections", "houppiers", "parcelles", "ugf", "projet"))
-  expect_equal(attr(s, "version"), "1.2.0")
+  expect_equal(attr(s, "version"), "1.6.0")
   for (couche in c("parcelles", "ugf", "projet")) {
     expect_true(attr(s[[couche]], "lecture_seule"))
   }
@@ -493,7 +493,7 @@ test_that("importer et valider : plusieurs centres par placette, sans erreur", {
   })
 })
 
-test_that("l'exemple Groma au schéma 1.2.0 passe la validation", {
+test_that("l'exemple Groma au schéma 1.6.0 passe la validation", {
   gpkg <- iv_fixture("inventaire_video.gpkg")
   expect_true(all(c("projet", "parcelles", "ugf") %in% sf::st_layers(gpkg)$name))
   expect_true(valider_inventaire_video(gpkg)$ok)

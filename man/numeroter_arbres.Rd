@@ -9,7 +9,7 @@ numeroter_arbres(
   y,
   dbh_cm,
   id,
-  rayon_m = 20,
+  rayon_m = 15,
   seuil_diam_cm = 7.5,
   unite_azimut = c("deg", "gr"),
   tolerance_deg = 1
@@ -24,7 +24,7 @@ offsets by the meridian convergence first).}
 
 \item{id}{Character. Stable tree identifiers (uuid), compared byte-wise.}
 
-\item{rayon_m}{Plot radius (m). Default 20.}
+\item{rayon_m}{Plot radius (m). Default 15 (ONF LiDAR calibration plots).}
 
 \item{seuil_diam_cm}{Minimal diameter (cm). Default 7.5.}
 
