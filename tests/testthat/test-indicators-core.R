@@ -180,7 +180,8 @@ test_that("list_indicators filters by category = 'temporal'", {
   skip_if_not_installed("terra")
   temporal <- list_indicators(category = "temporal")
 
-  expect_length(temporal, 3)
+  expect_length(temporal, 4)
+  expect_true("indicateur_t4_vitalite" %in% temporal)
   expect_true("indicateur_t3_coupes_rases" %in% temporal)
   expect_true("indicateur_t1_anciennete" %in% temporal)
   expect_true("indicateur_t2_changement" %in% temporal)
