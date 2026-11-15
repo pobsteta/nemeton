@@ -10,6 +10,12 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.30] - 2026-11-15
+
+### Added
+- `groma_telecharger_resultats(etat =)`: `terrain.zip` downloaded only when `terrain_envoye_le` changed (spec 061); `detail` gains `telecharge`.
+- `valider_inventaire_video()` returns `dbh_ruban`, the share of tape-measured trees per plot.
+
 ## [2026.11.29] - 2026-11-15
 
 ### Added

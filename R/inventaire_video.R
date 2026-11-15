@@ -812,7 +812,12 @@ rapprocher_arbres <- function(provisoires, definitifs, centre,
 #' @param region Character. Species region. Default \code{"BFC"}.
 #'
 #' @return A list with \code{ok}, \code{errors} and \code{warnings}, as
-#'   \code{\link{validate_field_data}}.
+#'   \code{\link{validate_field_data}}, and \code{dbh_ruban}: a data.frame,
+#'   one row per plot, \code{plot_id}, \code{n_arbres} (trees, false
+#'   positives excluded), \code{n_ruban} (trees with \code{dbh_source =
+#'   "mesure"}, diameter taped) and \code{part_ruban} (their share);
+#'   \code{n_ruban} and \code{part_ruban} are \code{NA} when the project has
+#'   no \code{dbh_source} column (before schema 1.4.0).
 #'
 #' @section Lifecycle:
 #' Experimental (spec 061).
@@ -930,7 +935,26 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
   }
 
   errors <- if (length(issues)) rbind(v$errors, do.call(rbind, issues)) else v$errors
-  list(ok = nrow(errors) == 0, errors = errors, warnings = warnings)
+  list(ok = nrow(errors) == 0, errors = errors, warnings = warnings,
+       dbh_ruban = .iv_part_ruban(arbres))
+}
+
+# Part des arbres mesures au ruban (dbh_source = "mesure", schema 1.4.0) par
+# placette, faux positifs deja retires. Sans colonne dbh_source (projet
+# anterieur), n_ruban et part_ruban sont NA : inconnu, pas zero.
+.iv_part_ruban <- function(arbres) {
+  vide <- data.frame(plot_id = character(), n_arbres = integer(), n_ruban = integer(),
+                     part_ruban = numeric(), stringsAsFactors = FALSE)
+  if (is.null(arbres) || !nrow(arbres) || !"plot_id" %in% names(arbres)) return(vide)
+  df <- sf::st_drop_geometry(arbres)
+  pid <- as.character(df$plot_id)
+  connu <- "dbh_source" %in% names(df)
+  ruban <- if (connu) as.character(df$dbh_source) %in% "mesure" else rep(NA, nrow(df))
+  plots <- sort(unique(pid[!is.na(pid)]))
+  n <- vapply(plots, function(p) sum(pid %in% p), integer(1))
+  r <- vapply(plots, function(p) if (connu) sum(ruban[pid %in% p]) else NA_integer_, integer(1))
+  data.frame(plot_id = plots, n_arbres = unname(n), n_ruban = unname(r),
+             part_ruban = unname(r / n), stringsAsFactors = FALSE)
 }
 
 
@@ -2122,21 +2146,29 @@ renvoyer_inventaire_video <- function(import, gpkg = NULL, rasters = NULL,
 #' definitive result (\code{GET /placettes/{plot_id}/resultat.gpkg}), the
 #' reports (\code{rapport.json}, \code{rapport.html}) and the field data
 #' entered in Groma (\code{terrain.zip}, schema 1.5.0; HTTP 404 while
-#' nothing was sent, without warning). Each call downloads afresh: run it
-#' again when \code{terrain_envoye_le} of \code{groma_etat_placettes()}
-#' changes. Requires \pkg{httr2}.
+#' nothing was sent, without warning). Without \code{etat}, each call
+#' downloads everything afresh. With \code{etat}, \code{terrain.zip} is
+#' requested only for plots whose \code{terrain_envoye_le} is set, and only
+#' when it differs from the date of the last download (kept next to the
+#' archive in \code{<plot_id>_terrain.envoye_le}); otherwise the archive on
+#' disk is kept. Requires \pkg{httr2}.
 #'
 #' @param url Base URL of the Groma server.
 #' @param jeton Bearer token (\code{NULL} for none).
 #' @param plot_ids Character vector of plots to download.
 #' @param dossier Destination directory (created if needed).
 #' @param fichiers Files to download per plot. Default all four.
+#' @param etat Optional data.frame returned by \code{groma_etat_placettes()}:
+#'   \code{terrain.zip} is then downloaded only when its
+#'   \code{terrain_envoye_le} changed. Default \code{NULL} (download all).
 #'
 #' @return \code{groma_etat_placettes()}: a data.frame, one row per plot (with \code{terrain_envoye_le} since schema 1.5.0; a plot with field data only has \code{etat = "sans_paquet"}).
 #'   \code{groma_telecharger_resultats()}: character vector of the downloaded
-#'   files (\code{<plot_id>_<fichier>}), with the attribute \code{detail}, a
-#'   data.frame \code{plot_id}, \code{fichier}, \code{chemin} (\code{NA} when
-#'   the download failed), \code{statut} (HTTP status).
+#'   (or kept up-to-date) files (\code{<plot_id>_<fichier>}), with the
+#'   attribute \code{detail}, a data.frame \code{plot_id}, \code{fichier},
+#'   \code{chemin} (\code{NA} when the download failed or nothing was sent),
+#'   \code{statut} (HTTP status, \code{NA} when no request was made) and
+#'   \code{telecharge} (\code{TRUE} when the file was downloaded by this call).
 #'
 #' @section Lifecycle:
 #' Experimental (spec 061).
@@ -2155,16 +2187,37 @@ groma_etat_placettes <- function(url, jeton = NULL) {
 #' @export
 groma_telecharger_resultats <- function(url, jeton = NULL, plot_ids, dossier,
                                         fichiers = c("resultat.gpkg", "rapport.json",
-                                                     "rapport.html", "terrain.zip")) {
+                                                     "rapport.html", "terrain.zip"),
+                                        etat = NULL) {
   if (any(!grepl("^[A-Za-z0-9_.-]+$", plot_ids))) {
     cli::cli_abort("{.arg plot_ids} must be made of letters, digits, {.val _}, {.val .} or {.val -}.")
   }
   fichiers <- match.arg(fichiers, several.ok = TRUE)
+  envois <- .groma_envois_terrain(etat, plot_ids)
   dir.create(dossier, showWarnings = FALSE, recursive = TRUE)
   lignes <- list()
   for (pid in plot_ids) {
     for (f in fichiers) {
       cible <- file.path(dossier, paste0(pid, "_", f))
+      if (f == "terrain.zip" && !is.null(envois)) {
+        # Date d'envoi connue : rien d'envoye -> pas de requete ; meme date
+        # que le dernier telechargement (fichier temoin) -> archive gardee.
+        envoi <- envois[[pid]]
+        temoin <- file.path(dossier, paste0(pid, "_terrain.envoye_le"))
+        if (is.na(envoi)) {
+          lignes[[length(lignes) + 1L]] <- data.frame(
+            plot_id = pid, fichier = f, chemin = NA_character_, statut = NA_integer_,
+            telecharge = FALSE, stringsAsFactors = FALSE)
+          next
+        }
+        if (file.exists(cible) && file.exists(temoin) &&
+              identical(readLines(temoin, n = 1L, warn = FALSE), envoi)) {
+          lignes[[length(lignes) + 1L]] <- data.frame(
+            plot_id = pid, fichier = f, chemin = cible, statut = NA_integer_,
+            telecharge = FALSE, stringsAsFactors = FALSE)
+          next
+        }
+      }
       req <- httr2::req_error(.groma_requete(url, jeton, c("placettes", pid, f)),
                               is_error = function(resp) FALSE)
       resp <- httr2::req_perform(req)
@@ -2173,18 +2226,36 @@ groma_telecharger_resultats <- function(url, jeton = NULL, plot_ids, dossier,
       if (statut < 300) {
         writeBin(httr2::resp_body_raw(resp), cible)
         chemin <- cible
+        if (f == "terrain.zip" && !is.null(envois)) {
+          writeLines(envois[[pid]], file.path(dossier, paste0(pid, "_terrain.envoye_le")))
+        }
       } else if (!(f == "terrain.zip" && statut == 404L)) {
         # terrain.zip absent (404) : rien n'a ete saisi dans Groma, normal
         cli::cli_warn("Groma: {.val {pid}}/{f} unavailable (HTTP {statut}).")
       }
       lignes[[length(lignes) + 1L]] <- data.frame(plot_id = pid, fichier = f, chemin = chemin,
-                                                  statut = statut, stringsAsFactors = FALSE)
+                                                  statut = statut, telecharge = statut < 300,
+                                                  stringsAsFactors = FALSE)
     }
   }
   detail <- do.call(rbind, lignes)
   chemins <- detail$chemin[!is.na(detail$chemin)]
   attr(chemins, "detail") <- detail
   chemins
+}
+
+# Dates d'envoi du terrain (`terrain_envoye_le` de groma_etat_placettes()),
+# nommees par plot_id ; NA = rien d'envoye (ou placette inconnue). NULL sans
+# `etat`, ou si `etat` n'a pas la colonne (serveur anterieur au schema 1.5.0).
+.groma_envois_terrain <- function(etat, plot_ids) {
+  if (is.null(etat)) return(NULL)
+  if (!is.data.frame(etat) || !"plot_id" %in% names(etat)) {
+    cli::cli_abort("{.arg etat} must be the data.frame returned by {.fn groma_etat_placettes}.")
+  }
+  if (!"terrain_envoye_le" %in% names(etat)) return(NULL)
+  envoi <- as.character(etat$terrain_envoye_le)[match(plot_ids, as.character(etat$plot_id))]
+  envoi[!is.na(envoi) & !nzchar(envoi)] <- NA_character_
+  stats::setNames(as.list(envoi), plot_ids)
 }
 
 # Empreinte SHA-256 d'un fichier (openssl, installé avec httr2).

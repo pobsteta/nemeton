@@ -218,3 +218,66 @@ test_that("the Groma client fetches terrain.zip, quietly absent when 404", {
     expect_true("terrain.zip" %in% eval(formals(groma_telecharger_resultats)$fichiers))
   })
 })
+
+test_that("with etat, terrain.zip is fetched only when terrain_envoye_le changes", {
+  skip_if_not_installed("httr2")
+  withr::with_tempdir({
+    appels <- character()
+    httr2::local_mocked_responses(function(req) {
+      appels <<- c(appels, req$url)
+      httr2::response(status_code = 200, body = charToRaw("zip"))
+    })
+    etat <- data.frame(plot_id = c("P001", "P002"),
+                       terrain_envoye_le = c("2026-11-15T10:00:00Z", NA))
+    tel <- function(e) groma_telecharger_resultats("https://groma.example", NULL,
+                                                   c("P001", "P002"), "dl",
+                                                   fichiers = "terrain.zip", etat = e)
+    res <- tel(etat)
+    # P002 n'a rien envoye : aucune requete
+    expect_equal(length(appels), 1L)
+    expect_equal(basename(res), "P001_terrain.zip")
+    expect_equal(readLines(file.path("dl", "P001_terrain.envoye_le")), "2026-11-15T10:00:00Z")
+    expect_equal(attr(res, "detail")$telecharge, c(TRUE, FALSE))
+
+    # meme date : archive gardee, pas de requete, chemin rendu
+    res <- tel(etat)
+    expect_equal(length(appels), 1L)
+    expect_equal(basename(res), "P001_terrain.zip")
+    expect_false(attr(res, "detail")$telecharge[1])
+
+    # date changee : retelechargee
+    etat$terrain_envoye_le[1] <- "2026-11-15T11:00:00Z"
+    res <- tel(etat)
+    expect_equal(length(appels), 2L)
+    expect_equal(readLines(file.path("dl", "P001_terrain.envoye_le")), "2026-11-15T11:00:00Z")
+
+    # sans etat : tout est retelecharge, comme avant
+    tel(NULL)
+    expect_equal(length(appels), 4L)
+    expect_error(tel(data.frame(x = 1)), "groma_etat_placettes")
+  })
+})
+
+test_that("validation reports the share of taped diameters per plot", {
+  g <- nemeton:::.iv_lire(iv_fixture("inventaire_video.gpkg"))
+  g$arbres$dbh_source <- "estime"
+  g$arbres$dbh_source[1] <- "mesure"
+  v <- valider_inventaire_video(g)
+  pid1 <- as.character(g$arbres$plot_id[1])
+  ligne <- v$dbh_ruban[v$dbh_ruban$plot_id == pid1, ]
+  expect_equal(ligne$n_ruban, 1L)
+  expect_equal(ligne$part_ruban, 1 / ligne$n_arbres)
+
+  ar <- data.frame(plot_id = c("P1", "P1", "P1", "P2"),
+                   dbh_source = c("mesure", "estime", "mesure", "estime"),
+                   etat_detection = c("provisoire", "provisoire", "faux_positif", "provisoire"))
+  pr <- nemeton:::.iv_part_ruban(ar[ar$etat_detection != "faux_positif", ])
+  expect_equal(pr$plot_id, c("P1", "P2"))
+  expect_equal(pr$n_arbres, c(2L, 1L))
+  expect_equal(pr$n_ruban, c(1L, 0L))
+  expect_equal(pr$part_ruban, c(0.5, 0))
+  # projet anterieur au schema 1.4.0 : inconnu, pas zero
+  sans <- nemeton:::.iv_part_ruban(ar[, c("plot_id", "etat_detection")])
+  expect_true(all(is.na(sans$n_ruban)) && all(is.na(sans$part_ruban)))
+  expect_equal(nrow(nemeton:::.iv_part_ruban(NULL)), 0L)
+})

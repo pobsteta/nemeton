@@ -23,3 +23,19 @@
    `qualite_gnss`, `source_azimut`.
 5. **Rayon** : 15 m par défaut à la création du projet de terrain (un
    champ de saisie du rayon, s'il existe, doit proposer 15).
+
+## Complément 2026.11.30
+
+6. **« Intégrer », téléchargement incrémental** : passer à
+   `groma_telecharger_resultats(..., etat = groma_etat_placettes(url, jeton))`.
+   `terrain.zip` n'est alors demandé que pour les placettes qui en ont envoyé
+   un, et seulement si `terrain_envoye_le` a changé depuis le dernier
+   téléchargement (témoin `<plot_id>_terrain.envoye_le` dans le dossier).
+   Sinon l'archive déjà sur disque est gardée et son chemin est rendu.
+   `attr(res, "detail")$telecharge` dit ce qui a été téléchargé par l'appel.
+   Sans `etat`, rien ne change (`video_telecharger()` actuel).
+7. **Validation, part des arbres mesurés au ruban** :
+   `valider_inventaire_video()` rend un nouvel élément `dbh_ruban`
+   (`plot_id`, `n_arbres`, `n_ruban`, `part_ruban`, faux positifs exclus ;
+   `NA` pour un projet antérieur au schéma 1.4.0). À afficher par placette
+   (« x arbres sur n mesurés au ruban »).
