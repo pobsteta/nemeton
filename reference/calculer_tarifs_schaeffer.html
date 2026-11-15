@@ -8,9 +8,13 @@ data), \(17.5 \le D \le 80\) cm with \(D = 100 C13 / \pi\); four
 numbers per tree (numero_tarif_schaeffer); per group and
 species, mean weighted by the tree volume and coefficient of variation
 (weighted standard deviation / |mean|, reliability weights). A species is
-kept in a group from 3 trees on. Low-form species (holm oak, downy oak)
-can get a negative number on the slower tariffs: it is kept, as in
-PPtools; the coefficient of variation stays positive.'><meta property="og:description" content='The computing chain shared by the reference table
+kept in a group from 3 trees on. Low-form species (holm oak, willows,
+hawthorn) get a mean number at or below 0 on the slower tariffs (the
+formula has no lower bound: the volume stays positive down to -8). Such a
+number is outside the range of the tariffs and its coefficient of
+variation, relative to a mean near 0, is meaningless: since 2026.11.31
+both are NA for that type (the row is kept, with n_arbres
+and part_houppier); PPtools kept the raw value.'><meta property="og:description" content='The computing chain shared by the reference table
 (data-raw/build_ifn_tarifs_schaeffer.R) and by
 tarif_schaeffer_local, after PPtools::TarifFindSch():
 living trees (VEGET == "0") with a volume V, circumference
@@ -19,9 +23,13 @@ data), \(17.5 \le D \le 80\) cm with \(D = 100 C13 / \pi\); four
 numbers per tree (numero_tarif_schaeffer); per group and
 species, mean weighted by the tree volume and coefficient of variation
 (weighted standard deviation / |mean|, reliability weights). A species is
-kept in a group from 3 trees on. Low-form species (holm oak, downy oak)
-can get a negative number on the slower tariffs: it is kept, as in
-PPtools; the coefficient of variation stays positive.'><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
+kept in a group from 3 trees on. Low-form species (holm oak, willows,
+hawthorn) get a mean number at or below 0 on the slower tariffs (the
+formula has no lower bound: the volume stays positive down to -8). Such a
+number is outside the range of the tariffs and its coefficient of
+variation, relative to a mean near 0, is meaningless: since 2026.11.31
+both are NA for that type (the row is kept, with n_arbres
+and part_houppier); PPtools kept the raw value.'><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -29,7 +37,7 @@ PPtools; the coefficient of variation stays positive.'><meta property="og:image"
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.30.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.31</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -150,9 +158,13 @@ data), \(17.5 \le D \le 80\) cm with \(D = 100 C13 / \pi\); four
 numbers per tree (<code><a href="numero_tarif_schaeffer.html">numero_tarif_schaeffer</a></code>); per group and
 species, mean weighted by the tree volume and coefficient of variation
 (weighted standard deviation / |mean|, reliability weights). A species is
-kept in a group from 3 trees on. Low-form species (holm oak, downy oak)
-can get a negative number on the slower tariffs: it is kept, as in
-PPtools; the coefficient of variation stays positive.</p>
+kept in a group from 3 trees on. Low-form species (holm oak, willows,
+hawthorn) get a mean number at or below 0 on the slower tariffs (the
+formula has no lower bound: the volume stays positive down to -8). Such a
+number is outside the range of the tariffs and its coefficient of
+variation, relative to a mean near 0, is meaningless: since 2026.11.31
+both are <code>NA</code> for that type (the row is kept, with <code>n_arbres</code>
+and <code>part_houppier</code>); PPtools kept the raw value.</p>
     </div>
 
     <div class="section level2">
@@ -179,7 +191,7 @@ character, as read by <code><a href="ifn_charger.html">ifn_charger</a></code>.</
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data.frame with the <code>groupes</code> columns, <code>espar</code>,
   <code>type</code> (<code>SCHR</code>, <code>SCHI</code>, <code>SCHL</code>, <code>SCHTL</code>),
-  <code>numero</code> (to 0.1), <code>cv</code> (percent, to 0.1), <code>n_arbres</code> and
+  <code>numero</code> (to 0.1, <code>NA</code> at or below 0), <code>cv</code> (percent, to 0.1), <code>n_arbres</code> and
   <code>n_placettes</code>, and <code>part_houppier</code> (percent, to 0.1) when
   <code>HTOT</code> is given.</p>
     </div>

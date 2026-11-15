@@ -11,8 +11,12 @@ volume `V`, circumference `100 * C13 >= 50` cm (`C13` is in
 per group and species, mean weighted by the tree volume and coefficient
 of variation (weighted standard deviation / \|mean\|, reliability
 weights). A species is kept in a group from 3 trees on. Low-form species
-(holm oak, downy oak) can get a negative number on the slower tariffs:
-it is kept, as in PPtools; the coefficient of variation stays positive.
+(holm oak, willows, hawthorn) get a mean number at or below 0 on the
+slower tariffs (the formula has no lower bound: the volume stays
+positive down to -8). Such a number is outside the range of the tariffs
+and its coefficient of variation, relative to a mean near 0, is
+meaningless: since 2026.11.31 both are `NA` for that type (the row is
+kept, with `n_arbres` and `part_houppier`); PPtools kept the raw value.
 
 ## Usage
 
@@ -36,9 +40,9 @@ calculer_tarifs_schaeffer(arbres, groupes = character(0))
 ## Value
 
 A data.frame with the `groupes` columns, `espar`, `type` (`SCHR`,
-`SCHI`, `SCHL`, `SCHTL`), `numero` (to 0.1), `cv` (percent, to 0.1),
-`n_arbres` and `n_placettes`, and `part_houppier` (percent, to 0.1) when
-`HTOT` is given.
+`SCHI`, `SCHL`, `SCHTL`), `numero` (to 0.1, `NA` at or below 0), `cv`
+(percent, to 0.1), `n_arbres` and `n_placettes`, and `part_houppier`
+(percent, to 0.1) when `HTOT` is given.
 
 ## Details
 
