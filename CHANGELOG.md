@@ -13,6 +13,33 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.29\] - 2026-11-15
+
+### Added
+
+- Groma video-inventory schema 1.6.0 (spec 061): `dbh_source` (tape
+  diameter kept by
+  [`rapprocher_arbres()`](https://pobsteta.github.io/nemeton/reference/rapprocher_arbres.md)),
+  `terrain.zip` download in
+  [`groma_telecharger_resultats()`](https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.md)
+  and `importer_inventaire_video(terrain =, dossier_photos =)` (server
+  field data win over the QField copy, sanitised extraction, photos
+  copied), `qualite_gnss = "telephone"` (alert colour, validation
+  warning, `centre_telephone` alert), read-only `cibles` with
+  `source_azimut`, `methode = "terrain"`.
+- [`valider_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/valider_inventaire_video.md)
+  checks the `dbh_source`, `qualite_gnss` and `source_azimut` domains.
+
+### Changed
+
+- Default plot radius 15 m (was 20 m) in
+  [`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md),
+  [`numeroter_arbres()`](https://pobsteta.github.io/nemeton/reference/numeroter_arbres.md),
+  [`rapprocher_arbres()`](https://pobsteta.github.io/nemeton/reference/rapprocher_arbres.md).
+- `centres_mesures` and `cibles` written without spatial index.
+- `importer_inventaire_video()$alertes` has a `detail` column; `gpkg`
+  may be `NULL` with `terrain`.
+
 ## \[2026.11.28\] - 2026-11-15
 
 ### Added

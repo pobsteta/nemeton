@@ -4,12 +4,14 @@ Python and Kotlin code, and returns it as field descriptors in the format of
 get_placette_schema (name, type, widget,
 qgis_widget, label, domain, required,
 min, max, default), plus readonly,
-hidden and, for essence_arbre, labels (code to label)."><meta property="og:description" content="Reads the schema of inventaire_video.gpkg, shared with the Groma
+hidden and, for essence_arbre, qualite_gnss,
+dbh_source and source_azimut, labels (code to label)."><meta property="og:description" content="Reads the schema of inventaire_video.gpkg, shared with the Groma
 Python and Kotlin code, and returns it as field descriptors in the format of
 get_placette_schema (name, type, widget,
 qgis_widget, label, domain, required,
 min, max, default), plus readonly,
-hidden and, for essence_arbre, labels (code to label)."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
+hidden and, for essence_arbre, qualite_gnss,
+dbh_source and source_azimut, labels (code to label)."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -17,7 +19,7 @@ hidden and, for essence_arbre, labels (code to label)."><meta property="og:image
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.28.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.29</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -134,7 +136,8 @@ Python and Kotlin code, and returns it as field descriptors in the format of
 <code><a href="get_placette_schema.html">get_placette_schema</a></code> (<code>name</code>, <code>type</code>, <code>widget</code>,
 <code>qgis_widget</code>, <code>label</code>, <code>domain</code>, <code>required</code>,
 <code>min</code>, <code>max</code>, <code>default</code>), plus <code>readonly</code>,
-<code>hidden</code> and, for <code>essence_arbre</code>, <code>labels</code> (code to label).</p>
+<code>hidden</code> and, for <code>essence_arbre</code>, <code>qualite_gnss</code>,
+<code>dbh_source</code> and <code>source_azimut</code>, <code>labels</code> (code to label).</p>
     </div>
 
     <div class="section level2">
@@ -176,8 +179,8 @@ layer.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [1] "plot_id"        "tree_id"        "espece"         "dbh_cm"        </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [5] "h_m"            "statut"         "qualite"        "photos"        </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>  [9] "notes"          "uuid"           "num_provisoire" "azimut"        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [13] "distance_m"     "essence_arbre"  "h_source"       "houppier_id"   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [17] "etat_detection" "methode"       </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [13] "distance_m"     "essence_arbre"  "h_source"       "dbh_source"    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [17] "houppier_id"    "etat_detection" "methode"       </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">arbres</span>, <span class="st">"index_spatial"</span><span class="op">)</span>  <span class="co"># FALSE</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] FALSE</span>
 <span class="r-in"><span></span></span>

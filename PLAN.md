@@ -403,16 +403,23 @@ même hauteur.
 [`accroissement_hdom_finn()`](https://pobsteta.github.io/nemeton/reference/accroissement_hdom_finn.md),
 44 indicateurs (13 conditionnels), fiche T4. Contrôle Dabo : médiane 57,
 quantiles 5-95 % à 13-98. Version nemetonshiny vérifiée : v2026.11.1.
-nemetonshiny **v2026.11.1** publiée (`nemetonshiny@eaa47428`, PR \#280 ;
-cycle dev `2026.10.18.9001` → `.9018`, rouvert en `2026.11.1.9000`).
-Pilotage par IA (VICTOR, AIGORA via nemetonmcp) : erreurs MCP classées,
-jeton de confirmation des écritures (ADR 0002 de l’app), outils longs en
-tâche de fond, contrat nemetonmcp à 33 objets. Santé : FAST, FORDEAD et
-RECONFORT calculés sur `_tot` et découpés à la strate, « Aucune alerte
-dans cette strate », surcouche du Plan de validation par moteur. Plan
-d’actions : fiches PDF par UGF. ADR 0003 de l’app acceptée (pilotage par
-IA ouvert à tous, tout client MCP, avertissement). Aucune release cœur
-requise (brief `2026-11-15-plan-nemetonshiny-v2026.11.1`).
+**v2026.11.29** : inventaire vidéo Groma au schéma 1.6.0 (spec 061 § 4
+ter, cinq briefs Groma des 11 et 13 novembre) : diamètre au ruban
+conservé au rapprochement, `terrain.zip` téléchargé et intégré à la
+place de la copie de QField (serveur prioritaire, alertes, photos),
+centre au téléphone signalé, cibles en lecture seule, rayon par défaut
+15 m. Brief app (`terrain_envoye_le`, statuts d’alerte). Version
+nemetonshiny vérifiée : v2026.11.1. nemetonshiny **v2026.11.1** publiée
+(`nemetonshiny@eaa47428`, PR \#280 ; cycle dev `2026.10.18.9001` →
+`.9018`, rouvert en `2026.11.1.9000`). Pilotage par IA (VICTOR, AIGORA
+via nemetonmcp) : erreurs MCP classées, jeton de confirmation des
+écritures (ADR 0002 de l’app), outils longs en tâche de fond, contrat
+nemetonmcp à 33 objets. Santé : FAST, FORDEAD et RECONFORT calculés sur
+`_tot` et découpés à la strate, « Aucune alerte dans cette strate »,
+surcouche du Plan de validation par moteur. Plan d’actions : fiches PDF
+par UGF. ADR 0003 de l’app acceptée (pilotage par IA ouvert à tous, tout
+client MCP, avertissement). Aucune release cœur requise (brief
+`2026-11-15-plan-nemetonshiny-v2026.11.1`).
 
 ### 2026-11-14 (suite)
 

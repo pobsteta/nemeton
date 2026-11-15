@@ -16,7 +16,7 @@ rapprocher_arbres(
   centre,
   convergence_deg = 0,
   tolerance_m = 0.5,
-  rayon_m = 20,
+  rayon_m = 15,
   seuil_diam_cm = 7.5,
   unite_azimut = c("deg", "gr"),
   tolerance_deg = 1,
@@ -83,12 +83,13 @@ A list with `arbres` (same class as `provisoires`), `apparies`
 ## Details
 
 - Matched: field attributes kept (`essence_arbre`, `espece`, `statut`,
-  `qualite`, `notes`, `photos`, measured `h_m`); position, `dbh_cm`,
-  `methode` and CHM height updated; `definitif` if `essence_arbre` is
-  filled in, else `a_completer`. A `faux_positif` stays so (alert
-  `faux_positif_retrouve`). Alert `ecart_dbh` when the diameter gap
-  exceeds `ecart_dbh_alerte_cm` *and* `ecart_dbh_alerte_rel` of the
-  smaller diameter.
+  `qualite`, `notes`, `photos`, measured `h_m`, tape diameter: `dbh_cm`
+  with `dbh_source = "mesure"`, schema 1.4.0); position, `dbh_cm`
+  (unless taped), `methode` and CHM height updated; `definitif` if
+  `essence_arbre` is filled in, else `a_completer`. A `faux_positif`
+  stays so (alert `faux_positif_retrouve`). Alert `ecart_dbh` when the
+  diameter gap exceeds `ecart_dbh_alerte_cm` *and*
+  `ecart_dbh_alerte_rel` of the smaller diameter.
 
 - New (definitive without provisional): new `uuid`, `statut = "vivant"`,
   `a_completer`.
@@ -104,7 +105,8 @@ A list with `arbres` (same class as `provisoires`), `apparies`
 
 - A tree that leaves the inventory once measured (outside the radius or
   under the threshold) is kept as `a_verifier` when it carries field
-  attributes or was provisional, and dropped otherwise.
+  attributes (a tape diameter counts) or was provisional, and dropped
+  otherwise.
 
 No field attribute is ever lost.
 

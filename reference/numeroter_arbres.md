@@ -17,7 +17,7 @@ numeroter_arbres(
   y,
   dbh_cm,
   id,
-  rayon_m = 20,
+  rayon_m = 15,
   seuil_diam_cm = 7.5,
   unite_azimut = c("deg", "gr"),
   tolerance_deg = 1
@@ -42,7 +42,7 @@ numeroter_arbres(
 
 - rayon_m:
 
-  Plot radius (m). Default 20.
+  Plot radius (m). Default 15 (ONF LiDAR calibration plots).
 
 - seuil_diam_cm:
 

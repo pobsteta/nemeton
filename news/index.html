@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.28.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.29</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,6 +117,51 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.29" id="nemeton-20261129-2026-11-15">nemeton 2026.11.29 (2026-11-15)<a class="anchor" aria-label="anchor" href="#nemeton-20261129-2026-11-15"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-29">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-29"></a></h3>
+<p>Inventaire vidéo Groma au schéma <strong>1.6.0</strong> (spec 061 § 4 ter, cinq briefs de Groma des 11 et 13 novembre). Le schéma, les déclencheurs et le plugin QField viennent de <code>groma</code>.</p>
+<ul><li>
+<strong>Diamètre au ruban</strong> (schéma 1.4.0) : nouvelle colonne <code>dbh_source</code> (<code>estime</code> par défaut, <code>mesure</code>). <code>dbh_cm</code> et <code>dbh_source</code> sont en lecture seule dans QField. <code><a href="../reference/rapprocher_arbres.html">rapprocher_arbres()</a></code> garde le diamètre d’un arbre <code>mesure</code>. L’alerte <code>ecart_dbh</code> reste calculée sur ce diamètre. Un arbre mesuré qui sort de l’inventaire reste <code>a_verifier</code>.</li>
+<li>
+<strong>Saisies de terrain envoyées par Groma</strong> (schéma 1.5.0) :
+<ul><li>
+<code><a href="../reference/groma_etat_placettes.html">groma_telecharger_resultats()</a></code> télécharge aussi <code>terrain.zip</code>. Une réponse 404 veut dire que rien n’a été saisi : elle ne déclenche pas d’avertissement.</li>
+<li>
+<code>importer_inventaire_video(terrain =, dossier_photos =)</code> lit ces saisies à la place de la copie de QField pour leurs placettes. Si les deux existent, le serveur l’emporte, avec l’alerte <code>terrain_serveur_prefere</code>. Chaque attribut saisi seulement dans QField donne l’alerte <code>saisie_qfield_ignoree</code>.</li>
+<li>Les photos emballées sont copiées et leurs chemins réécrits.</li>
+<li>Seuls <code>terrain.gpkg</code> et <code>photos/&lt;nom&gt;</code> sont extraits.</li>
+<li>
+<code>gpkg</code> devient facultatif quand <code>terrain</code> est donné.</li>
+<li>Nouvelle valeur <code>terrain</code> du domaine <code>methode</code> : un arbre ajouté à la main dans Groma.</li>
+</ul></li>
+<li>
+<strong>Centre mesuré au GNSS du téléphone</strong> (schéma 1.6.0) : nouvelle valeur <code>telephone</code> de <code>qualite_gnss</code>, affichée « téléphone ».
+<ul><li>Dans QField, le centre est dessiné dans une couleur d’alerte.</li>
+<li>
+<code><a href="../reference/valider_inventaire_video.html">valider_inventaire_video()</a></code> le signale avec sa précision.</li>
+<li>
+<code><a href="../reference/importer_inventaire_video.html">importer_inventaire_video()</a></code> ajoute l’alerte <code>centre_telephone</code>.</li>
+<li>La tolérance d’appariement n’est pas élargie : arbres provisoires et définitifs sont placés depuis le même centre.</li>
+<li>
+<code>centres_mesures</code> gagne cinq colonnes de qualité de la réception.</li>
+</ul></li>
+<li>
+<strong>Cibles saisies dans Groma</strong> (schéma 1.3.0) : la couche <code>cibles</code> passe en lecture seule dans QField et gagne la colonne <code>source_azimut</code>.</li>
+<li>
+<code><a href="../reference/valider_inventaire_video.html">valider_inventaire_video()</a></code> contrôle les domaines <code>dbh_source</code>, <code>qualite_gnss</code> et <code>source_azimut</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="changements-2026-11-29">Changements<a class="anchor" aria-label="anchor" href="#changements-2026-11-29"></a></h3>
+<ul><li>
+<strong>Rayon de placette par défaut : 15 m</strong> au lieu de 20 m, comme les placettes de calibration LiDAR de l’ONF. Cela vaut pour <code><a href="../reference/creer_projet_inventaire_video.html">creer_projet_inventaire_video()</a></code>, <code><a href="../reference/numeroter_arbres.html">numeroter_arbres()</a></code> et <code><a href="../reference/rapprocher_arbres.html">rapprocher_arbres()</a></code>, et pour une placette sans <code>rayon_m</code>. Un projet existant garde le rayon écrit dans chacune de ses placettes.</li>
+<li>
+<code>centres_mesures</code> et <code>cibles</code> sont écrites sans index spatial : le SQLite d’Android n’a pas le module R*Tree.</li>
+<li>
+<code>importer_inventaire_video()$alertes</code> gagne la colonne <code>detail</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.28" id="nemeton-20261128-2026-11-15">nemeton 2026.11.28 (2026-11-15)<a class="anchor" aria-label="anchor" href="#nemeton-20261128-2026-11-15"></a></h2>
 <div class="section level3">

@@ -23,7 +23,7 @@ source = "inventaire_video").'><meta property="og:image" content="https://pobste
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.28.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.29</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -149,12 +149,14 @@ the NDP source (<code><a href="tag_field_data_sources.html">tag_field_data_sourc
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">importer_inventaire_video</span><span class="op">(</span></span>
-<span>  <span class="va">gpkg</span>,</span>
+<span>  gpkg <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  resultats <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  field_data_gpkg <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  plan <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  priorite <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"classique"</span>, <span class="st">"video"</span><span class="op">)</span>,</span>
-<span>  region <span class="op">=</span> <span class="st">"BFC"</span></span>
+<span>  region <span class="op">=</span> <span class="st">"BFC"</span>,</span>
+<span>  terrain <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  dossier_photos <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -164,7 +166,7 @@ the NDP source (<code><a href="tag_field_data_sources.html">tag_field_data_sourc
 
 <dl><dt id="arg-gpkg">gpkg<a class="anchor" aria-label="anchor" href="#arg-gpkg"></a></dt>
 <dd><p>Path to the <code>inventaire_video.gpkg</code> returned from the
-field.</p></dd>
+field (QField copy). May be <code>NULL</code> when <code>terrain</code> is given.</p></dd>
 
 
 <dt id="arg-resultats">resultats<a class="anchor" aria-label="anchor" href="#arg-resultats"></a></dt>
@@ -191,6 +193,19 @@ version of a plot inventoried both ways enters the main layers.</p></dd>
 <dt id="arg-region">region<a class="anchor" aria-label="anchor" href="#arg-region"></a></dt>
 <dd><p>Character. Species region. Default <code>"BFC"</code>.</p></dd>
 
+
+<dt id="arg-terrain">terrain<a class="anchor" aria-label="anchor" href="#arg-terrain"></a></dt>
+<dd><p>Optional paths of <code>terrain.zip</code> archives, or of
+directories searched for <code>*terrain.zip</code> (as written by
+<code><a href="groma_etat_placettes.html">groma_telecharger_resultats</a></code>).</p></dd>
+
+
+<dt id="arg-dossier-photos">dossier_photos<a class="anchor" aria-label="anchor" href="#arg-dossier-photos"></a></dt>
+<dd><p>Directory receiving the photos of <code>terrain</code>.
+Default <code>photos/</code> next to <code>field_data_gpkg</code>, else next to
+<code>gpkg</code>; photo paths are written relative to that folder's parent
+when inside it.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -200,8 +215,11 @@ version of a plot inventoried both ways enters the main layers.</p></dd>
   <code>a_completer</code> and <code>a_verifier</code> (subsets of <code>arbres</code> by
   <code>etat_detection</code>), <code>classique_conserve</code> (plots whose classical
   inventory stayed in the main layers), <code>ndp</code> (integer, NDP level of
-  <code>agregats</code>), <code>alertes</code> and <code>numeros_modifies</code>
-  (reconciliation) and <code>field_data_gpkg</code> (path or <code>NULL</code>).</p>
+  <code>agregats</code>), <code>alertes</code> (<code>plot_id</code>, <code>uuid</code>,
+  <code>motif</code>, <code>dbh_provisoire</code>, <code>dbh_definitif</code>,
+  <code>detail</code>: reconciliation, field data and phone centres) and
+  <code>numeros_modifies</code> (reconciliation) and <code>field_data_gpkg</code>
+  (path or <code>NULL</code>).</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -213,6 +231,20 @@ aggregated downstream) and the other goes to
 <code>placettes_alternatives</code> / <code>arbres_alternatives</code>. Every row
 carries a <code>source</code> column (<code>"inventaire_terrain"</code> or
 <code>"inventaire_video"</code>).</p>
+<p><strong>Field data sent by Groma</strong> (<code>terrain</code>, schema 1.5.0). Groma
+sends, per plot, a <code>terrain.zip</code> holding <code>terrain.gpkg</code> (the
+same schema as the QField copy, one plot) and <code>photos/</code>. For its
+plots, it replaces the QField copy: if both exist, the server wins, with
+the alert <code>terrain_serveur_prefere</code>, and each attribute entered only
+in QField gets the alert <code>saisie_qfield_ignoree</code>. Only
+<code>terrain.gpkg</code> and <code>photos/&lt;name&gt;</code> are extracted, never outside
+a temporary folder; packed photos are copied to
+<code>dossier_photos/&lt;plot_id&gt;/</code> and their paths rewritten.</p>
+<p>A plot whose centre was measured with the phone GNSS
+(<code>qualite_gnss = "telephone"</code>, schema 1.6.0) gets the alert
+<code>centre_telephone</code>: the whole plot may be shifted by a few metres.
+The matching tolerance is not widened: provisional and definitive trees
+are both placed from that centre.</p>
     </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>

@@ -3,25 +3,33 @@
 dbh_alerte_cm = 200 (any diameter accepted, flagged above 2 m), on
 the trees that are not faux_positif, then the video-specific checks:
 tree_id unique and non-empty, uuid unique and non-empty,
-domains of etat_detection, h_source, methode and
-essence_arbre, and, when plan is given, sampling-design
+domains of etat_detection, h_source, methode,
+essence_arbre and dbh_source (trees), qualite_gnss
+(measured centres) and source_azimut (targets), and, when plan is given, sampling-design
 columns and plot positions identical to the original plan.
 The read-only layers parcelles, ugf and projet
 (schema 1.2.0) are not checked. A plot may have several rows in
 centres_mesures (Groma never rewrites a centre): this is reported
 as an information (severity = "info" in warnings), the most
-recent centre being the one used.'><meta property="og:description" content='Runs validate_field_data with dbh_max_cm = Inf and
+recent centre being the one used. A plot whose centre was measured with
+the phone GNSS (qualite_gnss = "telephone", schema 1.6.0) gets a
+warning with its precision_h_m: the whole plot may be shifted by a
+few metres.'><meta property="og:description" content='Runs validate_field_data with dbh_max_cm = Inf and
 dbh_alerte_cm = 200 (any diameter accepted, flagged above 2 m), on
 the trees that are not faux_positif, then the video-specific checks:
 tree_id unique and non-empty, uuid unique and non-empty,
-domains of etat_detection, h_source, methode and
-essence_arbre, and, when plan is given, sampling-design
+domains of etat_detection, h_source, methode,
+essence_arbre and dbh_source (trees), qualite_gnss
+(measured centres) and source_azimut (targets), and, when plan is given, sampling-design
 columns and plot positions identical to the original plan.
 The read-only layers parcelles, ugf and projet
 (schema 1.2.0) are not checked. A plot may have several rows in
 centres_mesures (Groma never rewrites a centre): this is reported
 as an information (severity = "info" in warnings), the most
-recent centre being the one used.'><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
+recent centre being the one used. A plot whose centre was measured with
+the phone GNSS (qualite_gnss = "telephone", schema 1.6.0) gets a
+warning with its precision_h_m: the whole plot may be shifted by a
+few metres.'><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -29,7 +37,7 @@ recent centre being the one used.'><meta property="og:image" content="https://po
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.28.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.29</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -145,14 +153,18 @@ recent centre being the one used.'><meta property="og:image" content="https://po
 <code>dbh_alerte_cm = 200</code> (any diameter accepted, flagged above 2 m), on
 the trees that are not <code>faux_positif</code>, then the video-specific checks:
 <code>tree_id</code> unique and non-empty, <code>uuid</code> unique and non-empty,
-domains of <code>etat_detection</code>, <code>h_source</code>, <code>methode</code> and
-<code>essence_arbre</code>, and, when <code>plan</code> is given, sampling-design
+domains of <code>etat_detection</code>, <code>h_source</code>, <code>methode</code>,
+<code>essence_arbre</code> and <code>dbh_source</code> (trees), <code>qualite_gnss</code>
+(measured centres) and <code>source_azimut</code> (targets), and, when <code>plan</code> is given, sampling-design
 columns and plot positions identical to the original plan.</p>
 <p>The read-only layers <code>parcelles</code>, <code>ugf</code> and <code>projet</code>
 (schema 1.2.0) are not checked. A plot may have several rows in
 <code>centres_mesures</code> (Groma never rewrites a centre): this is reported
 as an information (<code>severity = "info"</code> in <code>warnings</code>), the most
-recent centre being the one used.</p>
+recent centre being the one used. A plot whose centre was measured with
+the phone GNSS (<code>qualite_gnss = "telephone"</code>, schema 1.6.0) gets a
+warning with its <code>precision_h_m</code>: the whole plot may be shifted by a
+few metres.</p>
     </div>
 
     <div class="section level2">

@@ -6,7 +6,8 @@ format of
 [`get_placette_schema`](https://pobsteta.github.io/nemeton/reference/get_placette_schema.md)
 (`name`, `type`, `widget`, `qgis_widget`, `label`, `domain`, `required`,
 `min`, `max`, `default`), plus `readonly`, `hidden` and, for
-`essence_arbre`, `labels` (code to label).
+`essence_arbre`, `qualite_gnss`, `dbh_source` and `source_azimut`,
+`labels` (code to label).
 
 ## Usage
 
@@ -42,8 +43,8 @@ vapply(arbres, `[[`, character(1), "name")
 #>  [1] "plot_id"        "tree_id"        "espece"         "dbh_cm"        
 #>  [5] "h_m"            "statut"         "qualite"        "photos"        
 #>  [9] "notes"          "uuid"           "num_provisoire" "azimut"        
-#> [13] "distance_m"     "essence_arbre"  "h_source"       "houppier_id"   
-#> [17] "etat_detection" "methode"       
+#> [13] "distance_m"     "essence_arbre"  "h_source"       "dbh_source"    
+#> [17] "houppier_id"    "etat_detection" "methode"       
 attr(arbres, "index_spatial")  # FALSE
 #> [1] FALSE
 ```
