@@ -168,9 +168,13 @@ volume_tarif_schaeffer <- function(numero, diametre_cm, type) {
 #' numbers per tree (\code{\link{numero_tarif_schaeffer}}); per group and
 #' species, mean weighted by the tree volume and coefficient of variation
 #' (weighted standard deviation / |mean|, reliability weights). A species is
-#' kept in a group from 3 trees on. Low-form species (holm oak, downy oak)
-#' can get a negative number on the slower tariffs: it is kept, as in
-#' PPtools; the coefficient of variation stays positive.
+#' kept in a group from 3 trees on. Low-form species (holm oak, willows,
+#' hawthorn) get a mean number at or below 0 on the slower tariffs (the
+#' formula has no lower bound: the volume stays positive down to -8). Such a
+#' number is outside the range of the tariffs and its coefficient of
+#' variation, relative to a mean near 0, is meaningless: since 2026.11.31
+#' both are \code{NA} for that type (the row is kept, with \code{n_arbres}
+#' and \code{part_houppier}); PPtools kept the raw value.
 #'
 #' When \code{arbres} has a \code{HTOT} column (total height, m), the
 #' \strong{crown share} \code{part_houppier} is added: the share of the
@@ -192,7 +196,7 @@ volume_tarif_schaeffer <- function(numero, diametre_cm, type) {
 #'
 #' @return A data.frame with the \code{groupes} columns, \code{espar},
 #'   \code{type} (\code{SCHR}, \code{SCHI}, \code{SCHL}, \code{SCHTL}),
-#'   \code{numero} (to 0.1), \code{cv} (percent, to 0.1), \code{n_arbres} and
+#'   \code{numero} (to 0.1, \code{NA} at or below 0), \code{cv} (percent, to 0.1), \code{n_arbres} and
 #'   \code{n_placettes}, and \code{part_houppier} (percent, to 0.1) when
 #'   \code{HTOT} is given.
 #'
@@ -236,11 +240,19 @@ calculer_tarifs_schaeffer <- function(arbres, groupes = character(0)) {
   out <- lapply(morceaux, function(i) {
     lignes <- lapply(.TARIF_TYPES, function(t) {
       s <- .stats_ponderees(numero_tarif_schaeffer(a$V[i], a$D[i], t), a$V[i])
-      data.frame(type = t, numero = round(unname(s["moyenne"]), 1),
-                 # |moyenne| : une essence de faible forme (chêne vert) a un
-                 # numéro négatif ; un CV négatif serait pris pour le meilleur.
-                 cv = round(100 * sqrt(unname(s["variance"])) / abs(unname(s["moyenne"])), 1),
-                 stringsAsFactors = FALSE)
+      num <- round(unname(s["moyenne"]), 1)
+      cv <- round(100 * sqrt(unname(s["variance"])) / abs(unname(s["moyenne"])), 1)
+      # Numéro moyen <= 0 (arrondi) : essence de faible forme (chêne vert,
+      # saules, aubépine) sur un tarif trop lent pour elle. La formule n'a pas
+      # de borne (V > 0 dès N > -8), mais un tel numéro sort de la gamme des
+      # tarifs et son CV, rapporté à une moyenne proche de 0, n'a plus de sens :
+      # publiés vides (brief Marculus 2026-11-10). Un type plus rapide de la
+      # même essence reste proposé ; type_conseille ne retient jamais celui-ci.
+      if (!is.na(num) && num <= 0) {
+        num <- NA_real_
+        cv <- NA_real_
+      }
+      data.frame(type = t, numero = num, cv = cv, stringsAsFactors = FALSE)
     })
     tete <- a[i[1], c(groupes, "espar"), drop = FALSE]
     res <- cbind(tete[rep(1, 4), , drop = FALSE], do.call(rbind, lignes),

@@ -81,6 +81,11 @@ tab <- rbindlist(list(ser_t, gre_t, fr_t), fill = TRUE)
 corr <- as.data.table(ifn_espar_correspondance())
 depad <- function(v) sub("^0([0-9])$", "\\1", v)
 tab[, essence_libelle := corr$lib_espar[match(depad(espar), depad(corr$espar))]]
+# Résidus exotiques de l'IGN, absents du référentiel nemeton : libellés de la
+# documentation IFN (documentation_2.txt), brief Marculus du 2026-11-10.
+exotiques <- c("29AF" = "Autre feuillu exotique", "68CE" = "Autre conifère exotique")
+tab[is.na(essence_libelle) & espar %in% names(exotiques),
+    essence_libelle := exotiques[espar]]
 manquants <- unique(tab[is.na(essence_libelle), espar])
 if (length(manquants)) message("Essences sans libelle : ", paste(manquants, collapse = ", "))
 tab[, millesime := millesime]

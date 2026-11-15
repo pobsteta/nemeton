@@ -68,11 +68,33 @@ test_that("moyenne pondérée par le volume et CV à poids de fiabilité", {
   expect_true(all(calculer_tarifs_schaeffer(petits)$cv > 0))
 })
 
-test_that("CV positif pour une essence à numéro négatif", {
+test_that("numéro moyen <= 0 publié vide, avec son CV ; la ligne reste", {
   a <- rbind(arbre_tarif(-1, 30, "SCHTL"), arbre_tarif(-2, 40, "SCHTL"), arbre_tarif(0.5, 35, "SCHTL"))
   r <- calculer_tarifs_schaeffer(a)
-  expect_lt(r$numero[r$type == "SCHTL"], 0)
-  expect_true(all(r$cv >= 0))
+  expect_true(is.na(r$numero[r$type == "SCHTL"]))
+  expect_true(is.na(r$cv[r$type == "SCHTL"]))
+  expect_equal(nrow(r), 4L)
+  expect_equal(unique(r$n_arbres), 3L)
+  # Les mêmes arbres sur un tarif plus rapide gardent un numéro positif.
+  expect_gt(r$numero[r$type == "SCHR"], 0)
+  expect_true(all(r$cv >= 0, na.rm = TRUE))
+  # Zéro exactement (après arrondi) : vide aussi.
+  z <- rbind(arbre_tarif(0, 30, "SCHL"), arbre_tarif(0, 40, "SCHL"), arbre_tarif(0, 50, "SCHL"))
+  rz <- calculer_tarifs_schaeffer(z)
+  expect_true(is.na(rz$numero[rz$type == "SCHL"]))
+})
+
+test_that("la table embarquée n'a aucun numéro <= 0 et libelle 29AF / 68CE", {
+  d <- ifn_tarif_schaeffer_ser()
+  expect_false(any(d$numero <= 0, na.rm = TRUE))
+  expect_true(all(is.na(d$cv[is.na(d$numero)])))
+  expect_false(anyNA(d$essence_libelle))
+  expect_equal(unique(d$essence_libelle[d$espar == "29AF"]), "Autre feuillu exotique")
+  expect_equal(unique(d$essence_libelle[d$espar == "68CE"]), "Autre conifère exotique")
+  # Chêne vert, France : SCHTL vide, type conseillé jamais un type vide.
+  r <- ifn_tarif_schaeffer_reference("06")
+  expect_true(is.na(r$numero[r$type == "SCHTL"]))
+  expect_false(is.na(r$numero[r$type == r$type_conseille[1]]))
 })
 
 test_that("regroupement par SER", {

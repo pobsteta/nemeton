@@ -1030,7 +1030,8 @@ test_that("get_or_compute_twi returns from memory cache on second call", {
   # Key should now be in memory cache (inclut la résolution TWI *effective* :
   # sur un DEM plus grossier que la cible, l'agrégation est un no-op).
   # 1.0.0 (spec 056) : la clé porte aussi la version de la méthode TWI et,
-  # pour un MNT lon/lat seulement, le CRS de reprojection ("" ici).
+  # pour un MNT lon/lat seulement, le CRS de reprojection ("" ici) ;
+  # 2026.11.31 : plus l'empreinte du contenu du MNT.
   key <- paste(nemeton:::.TWI_CACHE_VERSION,
                nrow(dem), ncol(dem),
                paste(as.vector(terra::ext(dem)), collapse = ","),
@@ -1038,6 +1039,7 @@ test_that("get_or_compute_twi returns from memory cache on second call", {
                signif(nemeton:::.dem_working_res_value(
                  dem, nemeton:::.topo_target_res()), 6),
                "",
+               nemeton:::.dem_empreinte_contenu(dem),
                sep = "|")
   expect_true(exists(key, envir = twi_cache))
 
@@ -2272,6 +2274,7 @@ test_that("get_or_compute_twi: memory cache hit returns cached", {
                  signif(nemeton:::.dem_working_res_value(
                    dem, nemeton:::.topo_target_res()), 6),
                  "",
+                 nemeton:::.dem_empreinte_contenu(dem),
                  sep = "|")
     expect_true(exists(key, envir = twi_cache))
 

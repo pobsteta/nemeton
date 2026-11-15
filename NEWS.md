@@ -1,3 +1,38 @@
+# nemeton 2026.11.31 (2026-11-15)
+
+## Corrections
+
+- **TWI : un raster vide ne passe plus par le cache.** À Couchey, un TWI
+  calculé le 8 octobre sur un MNT encore vide avait été mis en cache. Comme
+  la clé ne décrivait que la grille, il a été relu après le
+  retéléchargement du MNT, et la famille Eau est tombée à 0 (W2 = 0,
+  W3 = NA). `get_or_compute_twi()` :
+  - n'écrit plus, ni sur disque ni en mémoire, un TWI dont la part de
+    cellules valides, hors couronne de bord, est inférieure à la moitié de
+    celle du MNT ; un avertissement le signale ;
+  - à la relecture, ignore, supprime et recalcule un fichier vide ou
+    illisible ;
+  - inclut dans la clé une empreinte du contenu du MNT (cellules valides et
+    somme sur un échantillon régulier). Tous les TWI en cache sont donc
+    recalculés une fois.
+- **W1 sur une couche de cours d'eau vide** : il vaut 0, sans les deux
+  avertissements `min(numeric(0))` qu'il émettait.
+
+## Changements de données
+
+- **Tarifs Schaeffer : un numéro moyen ≤ 0 est publié vide**, avec son
+  `cv`, dans `calculer_tarifs_schaeffer()`, et donc dans
+  `tarif_schaeffer_local()` et dans la table embarquée. Ces numéros viennent
+  d'essences de faible forme (chêne vert, saules, aubépine) placées sur un
+  tarif trop lent. La formule n'a pas de borne, et leur CV, rapporté à une
+  moyenne proche de 0, n'a pas de sens. La ligne reste, avec `n_arbres` et
+  `part_houppier`. `type_conseille` ne désigne jamais un type au numéro
+  vide. Dans la table embarquée, 1 590 numéros sont vidés et le format ne
+  change pas.
+- Les codes `29AF` et `68CE` reçoivent leurs libellés IGN, « Autre feuillu
+  exotique » et « Autre conifère exotique ». Plus aucune ligne de la table
+  n'est sans libellé.
+
 # nemeton 2026.11.30 (2026-11-15)
 
 ## Nouveautés
