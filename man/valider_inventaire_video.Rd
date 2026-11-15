@@ -17,7 +17,12 @@ valider_inventaire_video(gpkg, plan = NULL, region = "BFC")
 }
 \value{
 A list with \code{ok}, \code{errors} and \code{warnings}, as
-  \code{\link{validate_field_data}}.
+  \code{\link{validate_field_data}}, and \code{dbh_ruban}: a data.frame,
+  one row per plot, \code{plot_id}, \code{n_arbres} (trees, false
+  positives excluded), \code{n_ruban} (trees with \code{dbh_source =
+  "mesure"}, diameter taped) and \code{part_ruban} (their share);
+  \code{n_ruban} and \code{part_ruban} are \code{NA} when the project has
+  no \code{dbh_source} column (before schema 1.4.0).
 }
 \description{
 Runs \code{\link{validate_field_data}} with \code{dbh_max_cm = Inf} and

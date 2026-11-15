@@ -12,7 +12,8 @@ groma_telecharger_resultats(
   jeton = NULL,
   plot_ids,
   dossier,
-  fichiers = c("resultat.gpkg", "rapport.json", "rapport.html", "terrain.zip")
+  fichiers = c("resultat.gpkg", "rapport.json", "rapport.html", "terrain.zip"),
+  etat = NULL
 )
 }
 \arguments{
@@ -25,13 +26,19 @@ groma_telecharger_resultats(
 \item{dossier}{Destination directory (created if needed).}
 
 \item{fichiers}{Files to download per plot. Default all four.}
+
+\item{etat}{Optional data.frame returned by \code{groma_etat_placettes()}:
+\code{terrain.zip} is then downloaded only when its
+\code{terrain_envoye_le} changed. Default \code{NULL} (download all).}
 }
 \value{
 \code{groma_etat_placettes()}: a data.frame, one row per plot (with \code{terrain_envoye_le} since schema 1.5.0; a plot with field data only has \code{etat = "sans_paquet"}).
   \code{groma_telecharger_resultats()}: character vector of the downloaded
-  files (\code{<plot_id>_<fichier>}), with the attribute \code{detail}, a
-  data.frame \code{plot_id}, \code{fichier}, \code{chemin} (\code{NA} when
-  the download failed), \code{statut} (HTTP status).
+  (or kept up-to-date) files (\code{<plot_id>_<fichier>}), with the
+  attribute \code{detail}, a data.frame \code{plot_id}, \code{fichier},
+  \code{chemin} (\code{NA} when the download failed or nothing was sent),
+  \code{statut} (HTTP status, \code{NA} when no request was made) and
+  \code{telecharge} (\code{TRUE} when the file was downloaded by this call).
 }
 \description{
 \code{groma_etat_placettes()} lists the plots known to the Groma server
@@ -40,9 +47,12 @@ groma_telecharger_resultats(
 definitive result (\code{GET /placettes/{plot_id}/resultat.gpkg}), the
 reports (\code{rapport.json}, \code{rapport.html}) and the field data
 entered in Groma (\code{terrain.zip}, schema 1.5.0; HTTP 404 while
-nothing was sent, without warning). Each call downloads afresh: run it
-again when \code{terrain_envoye_le} of \code{groma_etat_placettes()}
-changes. Requires \pkg{httr2}.
+nothing was sent, without warning). Without \code{etat}, each call
+downloads everything afresh. With \code{etat}, \code{terrain.zip} is
+requested only for plots whose \code{terrain_envoye_le} is set, and only
+when it differs from the date of the last download (kept next to the
+archive in \code{<plot_id>_terrain.envoye_le}); otherwise the archive on
+disk is kept. Requires \pkg{httr2}.
 }
 \section{Lifecycle}{
 
