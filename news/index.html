@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.29.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.30</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,6 +117,17 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.30" id="nemeton-20261130-2026-11-15">nemeton 2026.11.30 (2026-11-15)<a class="anchor" aria-label="anchor" href="#nemeton-20261130-2026-11-15"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-30">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-30"></a></h3>
+<p>Inventaire vidéo Groma : les deux points restants des briefs du 11 novembre (spec 061 § 4 ter).</p>
+<ul><li>
+<code><a href="../reference/groma_etat_placettes.html">groma_telecharger_resultats()</a></code> prend un argument <code>etat</code>, le tableau rendu par <code><a href="../reference/groma_etat_placettes.html">groma_etat_placettes()</a></code>. Avec lui, <code>terrain.zip</code> n’est demandé que pour les placettes qui en ont envoyé un, et seulement quand <code>terrain_envoye_le</code> a changé depuis le dernier téléchargement (date gardée dans <code>&lt;plot_id&gt;_terrain.envoye_le</code>, à côté de l’archive). Sinon l’archive déjà sur disque est gardée. Le tableau <code>detail</code> gagne la colonne <code>telecharge</code>. Sans <code>etat</code>, le comportement ne change pas.</li>
+<li>
+<code><a href="../reference/valider_inventaire_video.html">valider_inventaire_video()</a></code> rend <code>dbh_ruban</code> : par placette, le nombre d’arbres, le nombre mesurés au ruban (<code>dbh_source = "mesure"</code>) et leur part, faux positifs exclus. Pour un projet sans <code>dbh_source</code> (antérieur au schéma 1.4.0), le nombre et la part sont <code>NA</code>, pas zéro.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.29" id="nemeton-20261129-2026-11-15">nemeton 2026.11.29 (2026-11-15)<a class="anchor" aria-label="anchor" href="#nemeton-20261129-2026-11-15"></a></h2>
 <div class="section level3">

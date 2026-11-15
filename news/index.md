@@ -1,5 +1,27 @@
 # Changelog
 
+## nemeton 2026.11.30 (2026-11-15)
+
+### Nouveautés
+
+Inventaire vidéo Groma : les deux points restants des briefs du 11
+novembre (spec 061 § 4 ter).
+
+- [`groma_telecharger_resultats()`](https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.md)
+  prend un argument `etat`, le tableau rendu par
+  [`groma_etat_placettes()`](https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.md).
+  Avec lui, `terrain.zip` n’est demandé que pour les placettes qui en
+  ont envoyé un, et seulement quand `terrain_envoye_le` a changé depuis
+  le dernier téléchargement (date gardée dans
+  `<plot_id>_terrain.envoye_le`, à côté de l’archive). Sinon l’archive
+  déjà sur disque est gardée. Le tableau `detail` gagne la colonne
+  `telecharge`. Sans `etat`, le comportement ne change pas.
+- [`valider_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/valider_inventaire_video.md)
+  rend `dbh_ruban` : par placette, le nombre d’arbres, le nombre mesurés
+  au ruban (`dbh_source = "mesure"`) et leur part, faux positifs exclus.
+  Pour un projet sans `dbh_source` (antérieur au schéma 1.4.0), le
+  nombre et la part sont `NA`, pas zéro.
+
 ## nemeton 2026.11.29 (2026-11-15)
 
 ### Nouveautés

@@ -409,7 +409,14 @@ conservé au rapprochement, `terrain.zip` téléchargé et intégré à la
 place de la copie de QField (serveur prioritaire, alertes, photos),
 centre au téléphone signalé, cibles en lecture seule, rayon par défaut
 15 m. Brief app (`terrain_envoye_le`, statuts d’alerte). Version
-nemetonshiny vérifiée : v2026.11.1. nemetonshiny **v2026.11.1** publiée
+nemetonshiny vérifiée : v2026.11.1. **v2026.11.30** : les deux points
+restants des briefs Groma du 11 novembre :
+`groma_telecharger_resultats(etat =)` ne retélécharge `terrain.zip` que
+si `terrain_envoye_le` a changé, `valider_inventaire_video()$dbh_ruban`
+donne la part des arbres mesurés au ruban. Tolérance d’appariement d’un
+centre au téléphone volontairement inchangée (signalement seul, permis
+par le brief). Brief app complété (points 6 et 7). Version nemetonshiny
+vérifiée : v2026.11.1. nemetonshiny **v2026.11.1** publiée
 (`nemetonshiny@eaa47428`, PR \#280 ; cycle dev `2026.10.18.9001` →
 `.9018`, rouvert en `2026.11.1.9000`). Pilotage par IA (VICTOR, AIGORA
 via nemetonmcp) : erreurs MCP classées, jeton de confirmation des

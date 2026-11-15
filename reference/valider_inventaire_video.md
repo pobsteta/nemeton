@@ -44,7 +44,12 @@ valider_inventaire_video(gpkg, plan = NULL, region = "BFC")
 ## Value
 
 A list with `ok`, `errors` and `warnings`, as
-[`validate_field_data`](https://pobsteta.github.io/nemeton/reference/validate_field_data.md).
+[`validate_field_data`](https://pobsteta.github.io/nemeton/reference/validate_field_data.md),
+and `dbh_ruban`: a data.frame, one row per plot, `plot_id`, `n_arbres`
+(trees, false positives excluded), `n_ruban` (trees with
+`dbh_source = "mesure"`, diameter taped) and `part_ruban` (their share);
+`n_ruban` and `part_ruban` are `NA` when the project has no `dbh_source`
+column (before schema 1.4.0).
 
 ## Lifecycle
 

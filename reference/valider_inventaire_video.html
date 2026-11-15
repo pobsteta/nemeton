@@ -37,7 +37,7 @@ few metres.'><meta property="og:image" content="https://pobsteta.github.io/nemet
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.29.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.30</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -193,7 +193,12 @@ few metres.</p>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list with <code>ok</code>, <code>errors</code> and <code>warnings</code>, as
-  <code><a href="validate_field_data.html">validate_field_data</a></code>.</p>
+  <code><a href="validate_field_data.html">validate_field_data</a></code>, and <code>dbh_ruban</code>: a data.frame,
+  one row per plot, <code>plot_id</code>, <code>n_arbres</code> (trees, false
+  positives excluded), <code>n_ruban</code> (trees with <code>dbh_source =
+  "mesure"</code>, diameter taped) and <code>part_ruban</code> (their share);
+  <code>n_ruban</code> and <code>part_ruban</code> are <code>NA</code> when the project has
+  no <code>dbh_source</code> column (before schema 1.4.0).</p>
     </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>

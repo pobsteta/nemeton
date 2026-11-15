@@ -5,17 +5,23 @@ groma_telecharger_resultats() downloads, for each plot, the
 definitive result (GET /placettes/{plot_id}/resultat.gpkg), the
 reports (rapport.json, rapport.html) and the field data
 entered in Groma (terrain.zip, schema 1.5.0; HTTP 404 while
-nothing was sent, without warning). Each call downloads afresh: run it
-again when terrain_envoye_le of groma_etat_placettes()
-changes. Requires httr2."><meta property="og:description" content="groma_etat_placettes() lists the plots known to the Groma server
+nothing was sent, without warning). Without etat, each call
+downloads everything afresh. With etat, terrain.zip is
+requested only for plots whose terrain_envoye_le is set, and only
+when it differs from the date of the last download (kept next to the
+archive in &amp;lt;plot_id&amp;gt;_terrain.envoye_le); otherwise the archive on
+disk is kept. Requires httr2."><meta property="og:description" content="groma_etat_placettes() lists the plots known to the Groma server
 (GET /placettes) and their processing state.
 groma_telecharger_resultats() downloads, for each plot, the
 definitive result (GET /placettes/{plot_id}/resultat.gpkg), the
 reports (rapport.json, rapport.html) and the field data
 entered in Groma (terrain.zip, schema 1.5.0; HTTP 404 while
-nothing was sent, without warning). Each call downloads afresh: run it
-again when terrain_envoye_le of groma_etat_placettes()
-changes. Requires httr2."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
+nothing was sent, without warning). Without etat, each call
+downloads everything afresh. With etat, terrain.zip is
+requested only for plots whose terrain_envoye_le is set, and only
+when it differs from the date of the last download (kept next to the
+archive in &amp;lt;plot_id&amp;gt;_terrain.envoye_le); otherwise the archive on
+disk is kept. Requires httr2."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -23,7 +29,7 @@ changes. Requires httr2."><meta property="og:image" content="https://pobsteta.gi
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.29.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.30</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -141,9 +147,12 @@ changes. Requires httr2."><meta property="og:image" content="https://pobsteta.gi
 definitive result (<code>GET /placettes/{plot_id}/resultat.gpkg</code>), the
 reports (<code>rapport.json</code>, <code>rapport.html</code>) and the field data
 entered in Groma (<code>terrain.zip</code>, schema 1.5.0; HTTP 404 while
-nothing was sent, without warning). Each call downloads afresh: run it
-again when <code>terrain_envoye_le</code> of <code>groma_etat_placettes()</code>
-changes. Requires <span class="pkg">httr2</span>.</p>
+nothing was sent, without warning). Without <code>etat</code>, each call
+downloads everything afresh. With <code>etat</code>, <code>terrain.zip</code> is
+requested only for plots whose <code>terrain_envoye_le</code> is set, and only
+when it differs from the date of the last download (kept next to the
+archive in <code>&lt;plot_id&gt;_terrain.envoye_le</code>); otherwise the archive on
+disk is kept. Requires <span class="pkg">httr2</span>.</p>
     </div>
 
     <div class="section level2">
@@ -155,7 +164,8 @@ changes. Requires <span class="pkg">httr2</span>.</p>
 <span>  jeton <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">plot_ids</span>,</span>
 <span>  <span class="va">dossier</span>,</span>
-<span>  fichiers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"resultat.gpkg"</span>, <span class="st">"rapport.json"</span>, <span class="st">"rapport.html"</span>, <span class="st">"terrain.zip"</span><span class="op">)</span></span>
+<span>  fichiers <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"resultat.gpkg"</span>, <span class="st">"rapport.json"</span>, <span class="st">"rapport.html"</span>, <span class="st">"terrain.zip"</span><span class="op">)</span>,</span>
+<span>  etat <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -182,14 +192,22 @@ changes. Requires <span class="pkg">httr2</span>.</p>
 <dt id="arg-fichiers">fichiers<a class="anchor" aria-label="anchor" href="#arg-fichiers"></a></dt>
 <dd><p>Files to download per plot. Default all four.</p></dd>
 
+
+<dt id="arg-etat">etat<a class="anchor" aria-label="anchor" href="#arg-etat"></a></dt>
+<dd><p>Optional data.frame returned by <code>groma_etat_placettes()</code>:
+<code>terrain.zip</code> is then downloaded only when its
+<code>terrain_envoye_le</code> changed. Default <code>NULL</code> (download all).</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>groma_etat_placettes()</code>: a data.frame, one row per plot (with <code>terrain_envoye_le</code> since schema 1.5.0; a plot with field data only has <code>etat = "sans_paquet"</code>).
   <code>groma_telecharger_resultats()</code>: character vector of the downloaded
-  files (<code>&lt;plot_id&gt;_&lt;fichier&gt;</code>), with the attribute <code>detail</code>, a
-  data.frame <code>plot_id</code>, <code>fichier</code>, <code>chemin</code> (<code>NA</code> when
-  the download failed), <code>statut</code> (HTTP status).</p>
+  (or kept up-to-date) files (<code>&lt;plot_id&gt;_&lt;fichier&gt;</code>), with the
+  attribute <code>detail</code>, a data.frame <code>plot_id</code>, <code>fichier</code>,
+  <code>chemin</code> (<code>NA</code> when the download failed or nothing was sent),
+  <code>statut</code> (HTTP status, <code>NA</code> when no request was made) and
+  <code>telecharge</code> (<code>TRUE</code> when the file was downloaded by this call).</p>
     </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
