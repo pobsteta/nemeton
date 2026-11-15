@@ -10,7 +10,7 @@ rapprocher_arbres(
   centre,
   convergence_deg = 0,
   tolerance_m = 0.5,
-  rayon_m = 20,
+  rayon_m = 15,
   seuil_diam_cm = 7.5,
   unite_azimut = c("deg", "gr"),
   tolerance_deg = 1,
@@ -71,8 +71,9 @@ between close candidates (a greedy match would lose trees).
 \itemize{
   \item Matched: field attributes kept (\code{essence_arbre}, \code{espece},
     \code{statut}, \code{qualite}, \code{notes}, \code{photos}, measured
-    \code{h_m}); position, \code{dbh_cm}, \code{methode} and CHM height
-    updated; \code{definitif} if \code{essence_arbre} is filled in, else
+    \code{h_m}, tape diameter: \code{dbh_cm} with
+    \code{dbh_source = "mesure"}, schema 1.4.0); position, \code{dbh_cm}
+    (unless taped), \code{methode} and CHM height updated; \code{definitif} if \code{essence_arbre} is filled in, else
     \code{a_completer}. A \code{faux_positif} stays so (alert
     \code{faux_positif_retrouve}). Alert \code{ecart_dbh} when the diameter
     gap exceeds \code{ecart_dbh_alerte_cm} \emph{and}
@@ -88,7 +89,8 @@ between close candidates (a greedy match would lose trees).
     azimuth), so \code{tree_id} stays unique and non-empty.
   \item A tree that leaves the inventory once measured (outside the radius
     or under the threshold) is kept as \code{a_verifier} when it carries
-    field attributes or was provisional, and dropped otherwise.
+    field attributes (a tape diameter counts) or was provisional, and
+    dropped otherwise.
 }
 No field attribute is ever lost.
 }

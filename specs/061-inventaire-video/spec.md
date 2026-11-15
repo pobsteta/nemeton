@@ -98,6 +98,43 @@ résultat de `importer_inventaire_video()`. Choix :
 - l'assemblage du `.qgz` est partagé avec `creer_projet_inventaire_video()`
   (`.iv_empaqueter()`).
 
+## 4 ter. Schéma Groma 1.6.0 (2026-11-15)
+
+Cinq briefs de Groma (2026-11-11 et 2026-11-13, décisions de Pascal), traités
+en une montée de schéma 1.2.0 → 1.6.0. Schéma, `declencheurs.sql` et plugin
+QField recopiés de `groma` (commit `ac93cb4`).
+
+- **1.3.0, cibles saisies dans Groma** : couche `cibles` en lecture seule
+  dans QField, colonne `source_azimut` (`boussole_visee`,
+  `boussole_telephone`).
+- **1.4.0, attributs saisis dans Groma** : colonne `dbh_source` (`estime`
+  par défaut, `mesure` = diamètre au ruban), `dbh_cm` et `dbh_source` en
+  lecture seule dans QField ; les déclencheurs ne remplacent pas un diamètre
+  `mesure`. `rapprocher_arbres()` garde `dbh_cm` et `dbh_source` d'un arbre
+  `mesure` apparié (alerte `ecart_dbh` toujours calculée) et compte
+  `dbh_source = "mesure"` parmi les attributs de terrain (un arbre mesuré qui
+  sort de l'inventaire reste `a_verifier`). Même règle que
+  `groma.rapprochement`.
+- **1.5.0, terrain sans QField** : `groma_telecharger_resultats()`
+  télécharge aussi `terrain.zip` ; `importer_inventaire_video(terrain =)`
+  lit les `terrain.gpkg` (une placette chacun) à la place de la copie de
+  QField pour leurs placettes, photos copiées et chemins réécrits ; si les
+  deux existent, le serveur gagne, avec une alerte. Extraction assainie
+  (seuls `terrain.gpkg` et `photos/<nom>`, jamais hors du dossier).
+  Valeur `terrain` du domaine `methode` (arbre ajouté à la main).
+- **1.6.0, centre au téléphone** : valeur `telephone` de `qualite_gnss`,
+  libellé « téléphone », centre mis en évidence (couleur d'alerte) dans
+  QField, cinq colonnes de qualité de réception de `centres_mesures`.
+  `valider_inventaire_video()` signale un centre `telephone` avec sa
+  précision ; `importer_inventaire_video()` l'ajoute aux alertes.
+  La tolérance d'appariement n'est pas élargie : tout l'inventaire est
+  décalé du même vecteur, les positions relatives des arbres restent
+  justes (option « mention dans le rapport » du brief).
+- **Rayon 15 m** (2026-11-13) : rayon par défaut 20 → 15 m (placettes de
+  calibration LiDAR de l'ONF). Un projet existant garde le sien.
+- `centres_mesures` et `cibles` sans index spatial (le SQLite d'Android n'a
+  pas le module R*Tree).
+
 ## 5. Tests
 
 `test-numerotation.R` (fourni), `test-rapprochement.R` (5 cas, absence de

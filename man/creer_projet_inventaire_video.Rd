@@ -7,7 +7,7 @@
 creer_projet_inventaire_video(
   placettes,
   plot_ids = NULL,
-  rayon_m = 20,
+  rayon_m = 15,
   seuil_diam_cm = 7.5,
   unite_azimut = c("deg", "gr"),
   declinaison_deg = NULL,
@@ -28,7 +28,7 @@ creer_projet_inventaire_video(
 
 \item{plot_ids}{Optional character vector: plots to include.}
 
-\item{rayon_m}{Plot radius (m). Default 20.}
+\item{rayon_m}{Plot radius (m). Default 15 (ONF LiDAR calibration plots).}
 
 \item{seuil_diam_cm}{Minimal diameter (cm). Default 7.5.}
 

@@ -19,6 +19,7 @@
   houppier = "#2e7d32",
   # Groma, carte/Couches.kt.
   parcelle = "#ffd54f", centre = "#d500f9", cible = "#ff6f00", detection = "#f57c00",
+  centre_telephone = "#d50000",
   contour_placette = "#212121"
 )
 
@@ -185,8 +186,15 @@
       list(renderer = .iv_renderer_categories("etat_traitement", cats),
            labeling = .iv_etiquette("\"plot_id\"", 9, 25000))
     },
-    centres_mesures = list(renderer = .iv_renderer_unique(
-      .iv_marqueur("0", .IV_COULEURS$centre, 3.5, .IV_COULEURS$centre, "cross2", 0.6))),
+    # Centre au GNSS du telephone (schema 1.6.0) : couleur d'alerte, sa
+    # precision est de plusieurs metres.
+    centres_mesures = list(renderer = .iv_renderer_categories("qualite_gnss", list(
+      list(valeur = "telephone", libelle = "T\u00e9l\u00e9phone (pr\u00e9cision de quelques m\u00e8tres)",
+           symbole = function(n) .iv_marqueur(n, .IV_COULEURS$centre_telephone, 4.5,
+                                              .IV_COULEURS$centre_telephone, "cross2", 0.9)),
+      list(valeur = "", libelle = "RTK",
+           symbole = function(n) .iv_marqueur(n, .IV_COULEURS$centre, 3.5,
+                                              .IV_COULEURS$centre, "cross2", 0.6))))),
     cibles = list(renderer = .iv_renderer_unique(
       .iv_marqueur("0", .IV_COULEURS$cible, 2.6, .IV_COULEURS$contour_placette, "square")),
       labeling = .iv_etiquette("\"id_cible\"", 8, 1000)),

@@ -5,17 +5,19 @@
 \title{Import a video inventory into the project field data}
 \usage{
 importer_inventaire_video(
-  gpkg,
+  gpkg = NULL,
   resultats = NULL,
   field_data_gpkg = NULL,
   plan = NULL,
   priorite = c("classique", "video"),
-  region = "BFC"
+  region = "BFC",
+  terrain = NULL,
+  dossier_photos = NULL
 )
 }
 \arguments{
 \item{gpkg}{Path to the \code{inventaire_video.gpkg} returned from the
-field.}
+field (QField copy). May be \code{NULL} when \code{terrain} is given.}
 
 \item{resultats}{Optional paths (files or directories) of the definitive
 GeoPackages of the Groma server (layer \code{detections}), e.g. from
@@ -31,6 +33,15 @@ GeoPackages of the Groma server (layer \code{detections}), e.g. from
 version of a plot inventoried both ways enters the main layers.}
 
 \item{region}{Character. Species region. Default \code{"BFC"}.}
+
+\item{terrain}{Optional paths of \code{terrain.zip} archives, or of
+directories searched for \code{*terrain.zip} (as written by
+\code{\link{groma_telecharger_resultats}}).}
+
+\item{dossier_photos}{Directory receiving the photos of \code{terrain}.
+Default \code{photos/} next to \code{field_data_gpkg}, else next to
+\code{gpkg}; photo paths are written relative to that folder's parent
+when inside it.}
 }
 \value{
 A list with \code{placettes}, \code{arbres} (video inventory after
@@ -39,8 +50,11 @@ A list with \code{placettes}, \code{arbres} (video inventory after
   \code{a_completer} and \code{a_verifier} (subsets of \code{arbres} by
   \code{etat_detection}), \code{classique_conserve} (plots whose classical
   inventory stayed in the main layers), \code{ndp} (integer, NDP level of
-  \code{agregats}), \code{alertes} and \code{numeros_modifies}
-  (reconciliation) and \code{field_data_gpkg} (path or \code{NULL}).
+  \code{agregats}), \code{alertes} (\code{plot_id}, \code{uuid},
+  \code{motif}, \code{dbh_provisoire}, \code{dbh_definitif},
+  \code{detail}: reconciliation, field data and phone centres) and
+  \code{numeros_modifies} (reconciliation) and \code{field_data_gpkg}
+  (path or \code{NULL}).
 }
 \description{
 The \dQuote{Integrate} step: reads \code{inventaire_video.gpkg}
@@ -62,6 +76,22 @@ aggregated downstream) and the other goes to
 \code{placettes_alternatives} / \code{arbres_alternatives}. Every row
 carries a \code{source} column (\code{"inventaire_terrain"} or
 \code{"inventaire_video"}).
+
+\strong{Field data sent by Groma} (\code{terrain}, schema 1.5.0). Groma
+sends, per plot, a \code{terrain.zip} holding \code{terrain.gpkg} (the
+same schema as the QField copy, one plot) and \code{photos/}. For its
+plots, it replaces the QField copy: if both exist, the server wins, with
+the alert \code{terrain_serveur_prefere}, and each attribute entered only
+in QField gets the alert \code{saisie_qfield_ignoree}. Only
+\code{terrain.gpkg} and \code{photos/<name>} are extracted, never outside
+a temporary folder; packed photos are copied to
+\code{dossier_photos/<plot_id>/} and their paths rewritten.
+
+A plot whose centre was measured with the phone GNSS
+(\code{qualite_gnss = "telephone"}, schema 1.6.0) gets the alert
+\code{centre_telephone}: the whole plot may be shifted by a few metres.
+The matching tolerance is not widened: provisional and definitive trees
+are both placed from that centre.
 }
 \section{Lifecycle}{
 

@@ -12,7 +12,7 @@ groma_telecharger_resultats(
   jeton = NULL,
   plot_ids,
   dossier,
-  fichiers = c("resultat.gpkg", "rapport.json", "rapport.html")
+  fichiers = c("resultat.gpkg", "rapport.json", "rapport.html", "terrain.zip")
 )
 }
 \arguments{
@@ -24,10 +24,10 @@ groma_telecharger_resultats(
 
 \item{dossier}{Destination directory (created if needed).}
 
-\item{fichiers}{Files to download per plot. Default all three.}
+\item{fichiers}{Files to download per plot. Default all four.}
 }
 \value{
-\code{groma_etat_placettes()}: a data.frame, one row per plot.
+\code{groma_etat_placettes()}: a data.frame, one row per plot (with \code{terrain_envoye_le} since schema 1.5.0; a plot with field data only has \code{etat = "sans_paquet"}).
   \code{groma_telecharger_resultats()}: character vector of the downloaded
   files (\code{<plot_id>_<fichier>}), with the attribute \code{detail}, a
   data.frame \code{plot_id}, \code{fichier}, \code{chemin} (\code{NA} when
@@ -37,8 +37,12 @@ groma_telecharger_resultats(
 \code{groma_etat_placettes()} lists the plots known to the Groma server
 (\code{GET /placettes}) and their processing state.
 \code{groma_telecharger_resultats()} downloads, for each plot, the
-definitive result (\code{GET /placettes/{plot_id}/resultat.gpkg}) and the
-reports (\code{rapport.json}, \code{rapport.html}). Requires \pkg{httr2}.
+definitive result (\code{GET /placettes/{plot_id}/resultat.gpkg}), the
+reports (\code{rapport.json}, \code{rapport.html}) and the field data
+entered in Groma (\code{terrain.zip}, schema 1.5.0; HTTP 404 while
+nothing was sent, without warning). Each call downloads afresh: run it
+again when \code{terrain_envoye_le} of \code{groma_etat_placettes()}
+changes. Requires \pkg{httr2}.
 }
 \section{Lifecycle}{
 

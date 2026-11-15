@@ -26,7 +26,8 @@ Python and Kotlin code, and returns it as field descriptors in the format of
 \code{\link{get_placette_schema}} (\code{name}, \code{type}, \code{widget},
 \code{qgis_widget}, \code{label}, \code{domain}, \code{required},
 \code{min}, \code{max}, \code{default}), plus \code{readonly},
-\code{hidden} and, for \code{essence_arbre}, \code{labels} (code to label).
+\code{hidden} and, for \code{essence_arbre}, \code{qualite_gnss},
+\code{dbh_source} and \code{source_azimut}, \code{labels} (code to label).
 }
 \section{Lifecycle}{
 

@@ -24,15 +24,19 @@ Runs \code{\link{validate_field_data}} with \code{dbh_max_cm = Inf} and
 \code{dbh_alerte_cm = 200} (any diameter accepted, flagged above 2 m), on
 the trees that are not \code{faux_positif}, then the video-specific checks:
 \code{tree_id} unique and non-empty, \code{uuid} unique and non-empty,
-domains of \code{etat_detection}, \code{h_source}, \code{methode} and
-\code{essence_arbre}, and, when \code{plan} is given, sampling-design
+domains of \code{etat_detection}, \code{h_source}, \code{methode},
+\code{essence_arbre} and \code{dbh_source} (trees), \code{qualite_gnss}
+(measured centres) and \code{source_azimut} (targets), and, when \code{plan} is given, sampling-design
 columns and plot positions identical to the original plan.
 
 The read-only layers \code{parcelles}, \code{ugf} and \code{projet}
 (schema 1.2.0) are not checked. A plot may have several rows in
 \code{centres_mesures} (Groma never rewrites a centre): this is reported
 as an information (\code{severity = "info"} in \code{warnings}), the most
-recent centre being the one used.
+recent centre being the one used. A plot whose centre was measured with
+the phone GNSS (\code{qualite_gnss = "telephone"}, schema 1.6.0) gets a
+warning with its \code{precision_h_m}: the whole plot may be shifted by a
+few metres.
 }
 \section{Lifecycle}{
 
