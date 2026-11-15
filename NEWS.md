@@ -1,3 +1,43 @@
+# nemeton 2026.11.28 (2026-11-15)
+
+## Nouveautés
+
+- **T4, vitalité dynamique** (`indicateur_t4_vitalite()`, spec 068) :
+  nouvel indicateur conditionnel de la famille T, sur une échelle de 0 à
+  100. Il compare la croissance en hauteur dominante observée sur FORMS-T
+  de 2019 à 2024 (percentile 90 des pixels d'au moins 5 m, pente de
+  Theil-Sen ramenée à 5 ans) à celle que FINN attend pour des placettes IFN
+  analogues : même essence dominante, même SER, hauteur dominante 2019 à
+  ± 2 m. La référence ajoute aux accroissements simulés le bruit
+  d'observation de FORMS-T, mesuré autour des placettes IFN de même essence
+  et de même hauteur. 50 veut dire « croît comme attendu ». T4 vaut `NA`,
+  avec son statut, sans FORMS-T, sans essence, sans analogues, après une
+  coupe (`T3 > 0`) ou après une chute de plus de 3 m d'une année sur
+  l'autre. Avec un inventaire de l'unité, l'argument `attendu` remplace les
+  analogues. Sur 1 072 cellules de 4 ha des sapinières-pessières de Dabo,
+  T4 a pour médiane 57 et pour quantiles 5 % et 95 % 13 et 98.
+- **`accroissement_hdom_finn()`** : accroissement de la hauteur dominante
+  (hauteur moyenne des 100 plus gros arbres à l'hectare) en un pas FINN.
+  Les hauteurs viennent d'une relation hauteur-diamètre par essence (et par
+  SER quand l'effectif suffit), ajustée sur les 128 808 hauteurs mesurées
+  par l'IFN en Bourgogne-Franche-Comté.
+- Données embarquées : `allometrie_hauteur_ifn.csv`,
+  `t4_analogues_bfc.csv.gz` (3 398 placettes, 20 tirages chacune) et
+  `t4_residus_forms_bfc.csv`. Scripts dans `data-raw/`. T4 n'a pas besoin de
+  FINN ni de libtorch pour se calculer.
+
+## Changements
+
+- **44 indicateurs, dont 13 conditionnels** : `list_indicators()`,
+  `indicator_families()` et `indicator_labels()` incluent T4.
+  `nemeton_compute()` lit la couche `forms_t` du catalogue, et les colonnes
+  `essence` et `ser` des unités. La fixture `massif_demo_units` gagne `T4`,
+  `t4_status` et `T4_norm` (NA, sans FORMS-T). Régénérée, elle reprend
+  aussi le statut actuel de N5 (`"skipped_no_embedding"` au lieu de
+  `"no_embedding"`).
+- Fiche T4 (`vignette("fiche-t4-vitalite_fr")`). Les fiches T1 à T3
+  indiquent la famille T à quatre indicateurs.
+
 # nemeton 2026.11.27 (2026-11-14)
 
 ## Nouveautés

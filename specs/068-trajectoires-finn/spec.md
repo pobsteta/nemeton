@@ -1268,3 +1268,21 @@ entre peuplements et le décalage du floutage : la référence est prudente
 FORMS-T des analogues sans FINN ; (c) classer parmi les seuls tirages.
 Limite : le bruit est mesuré sur des disques d'environ 20 ha ; une UGF
 plus petite est plus bruitée.
+
+**Résidus par hauteur.** Un premier contrôle sur Dabo, résidus par essence
+toutes hauteurs, donnait un T4 médian de 62 : au-delà de 28 m, FORMS-T voit
+0,5 à 1,2 m de croissance de plus que FINN (l'allométrie statique sature),
+alors que le biais moyen de l'essence n'est que d'environ 0,2 m. Les
+résidus sont donc pris dans la même classe que l'unité : même essence et
+hauteur dominante à ± 2 m, puis ± 4 m, puis toutes essences.
+
+**Contrôle de centrage (Dabo, 2026-11-15).** 1 351 cellules hexagonales de
+4 ha dans les peuplements purs de la BD Forêt, SER D11
+(`data-raw/t4_controle_dabo.R`). Sapinières-pessières codées sapin (61),
+1 072 cellules : quantiles 5 / 10 / 25 / 50 / 75 / 90 / 95 % de T4 à
+13 / 19 / 33 / 57 / 81 / 94 / 98 ; codées épicéa (62), médiane 56. Les
+sapinières vosgiennes poussent un peu plus vite (0,97 m en 5 ans) que leurs
+analogues de BFC (0,76 m), surtout pris hors D11 (une dizaine d'analogues en
+D11). 243 cellules sans analogues (peuplements de plus de 33 m, quelques
+jeunes), 4 chutes de plus de 3 m. **Pascal, 2026-11-15 : centrage
+suffisant, T4 publié** (2026.11.28).

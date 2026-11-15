@@ -16,10 +16,12 @@
 #'   paths. `NULL` (default): T4 is not computed (`NA`).
 #' @param essence Dominant species of each unit, as IFN `ESPAR` codes (for
 #'   example `"03"` sessile oak, `"09"` beech, `"62"` Norway spruce): a
-#'   character vector of length `nrow(units)` or the name of a column of
-#'   `units`.
+#'   character vector of length `nrow(units)`, a single code for every unit,
+#'   or the name of a column of `units`. `NULL` (default): the column
+#'   `essence` of `units` when present.
 #' @param ser Optional sylvo-ecoregion (SER) code of each unit, vector or
-#'   column name. Without it, analogues are taken in every SER.
+#'   column name. `NULL` (default): the column `ser` of `units` when
+#'   present; otherwise analogues are taken in every SER.
 #' @param coupes Optional logical vector, `TRUE` for units with a cut
 #'   detected over the series (for instance `T3 > 0`). `NULL` (default): the
 #'   `T3` column of `units` is used when present.
@@ -65,8 +67,11 @@
 #' **Score.** FORMS-T varies far more than FINN draws (standard deviation
 #' 1.35 m against 0.1 m per 5 years around IFN plots): the reference adds to
 #' the simulated increments the residuals observed minus simulated measured
-#' around the IFN plots, by species (all species below 100 plots), mean bias
-#' included (`data-raw/t4_residus_forms_bfc.R`).
+#' around the IFN plots of the same species and initial dominant height
+#' (within `tolerance_h`, then twice that, then all species), mean bias
+#' included (`data-raw/t4_residus_forms_bfc.R`): beyond 28 m FORMS-T keeps
+#' growing while the height-diameter curves level off, so the bias depends
+#' on height.
 #' `T4 = 100 * P(simulated + residual < observed)`.
 #'
 #' **Not computed** after a cut (`coupes`) or a fall of the dominant height
@@ -79,7 +84,12 @@
 #' FORMS-T is a height predicted from Sentinel-1/2 and GEDI, not measured.
 #' The analogues cover Bourgogne-Franche-Comte (FINN calibration domain).
 #'
+#' **Centring check** (spec 068, 2026-11-15): on 1 072 fir and spruce cells
+#' of 4 ha at Dabo (Vosges, no known disturbance), median 57, 5 % and 95 %
+#' quantiles 13 and 98; stands over about 33 m find no analogue.
+#'
 #' @family temporal-indicators
+#' @seealso [accroissement_hdom_finn()], [charger_forms_t_hauteurs()]
 #' @export
 indicateur_t4_vitalite <- function(units, forms_t = NULL, essence = NULL, ser = NULL,
                                    coupes = NULL, attendu = NULL, tolerance_h = 2,
@@ -156,10 +166,14 @@ indicateur_t4_vitalite <- function(units, forms_t = NULL, essence = NULL, ser = 
 # Vecteur par unite depuis un vecteur ou un nom de colonne de `units`.
 .t4_colonne <- function(units, x, nom) {
   n <- nrow(units)
-  if (is.null(x)) return(rep(NA_character_, n))
-  if (is.character(x) && length(x) == 1L && n != 1L) {
-    if (!x %in% names(units)) cli::cli_abort("{.arg {nom}}: no column {.field {x}} in {.arg units}.")
-    x <- units[[x]]
+  if (is.null(x)) {
+    if (!nom %in% names(units)) return(rep(NA_character_, n))
+    x <- nom
+  }
+  # une chaine seule qui nomme une colonne est une colonne ; sinon une
+  # valeur commune a toutes les unites
+  if (length(x) == 1L) {
+    x <- if (is.character(x) && x %in% names(units)) units[[x]] else rep(x, n)
   }
   if (length(x) != n) cli::cli_abort("{.arg {nom}} must have one value per unit.")
   as.character(x)

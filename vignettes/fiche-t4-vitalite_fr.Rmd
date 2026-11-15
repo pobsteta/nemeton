@@ -1,0 +1,211 @@
+---
+title: "Fiche indicateur T4 - Vitalité dynamique (FORMS-T contre FINN)"
+author: "Pascal Obstetar"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Fiche indicateur T4 - Vitalité dynamique (FORMS-T contre FINN)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+> **Document de référence** — Néméton (package cœur), 2026-11-15.
+> Indicateur **conditionné** : calculé seulement si la série de hauteurs
+> FORMS-T et l'essence dominante de l'unité sont fournies (spec 068).
+
+---
+
+## 1. Carte d'identité
+
+| Élément | Valeur |
+|---|---|
+| Code | `T4` |
+| Nom long / colonne | `indicateur_t4_vitalite` |
+| Famille | **T — Dynamique temporelle** |
+| Grandeur mesurée | Croissance en hauteur dominante observée, rapportée à celle qu'attend le modèle FINN |
+| Unité brute | **rang 0–100** ; 50 = croissance attendue |
+| Sens | haut = bon, sans inversion (natif 0–100) |
+| Fonction | `indicateur_t4_vitalite()` — `R/indicateur_t4_vitalite.R` |
+| Sources | FORMS-T 2019-2024 (hauteur de canopée annuelle, 10 m) ; IFN BFC ; FINN calibré sur l'IFN ; E-OBS |
+
+## 2. Le calcul
+
+```
+observé   : chaque année, hauteur dominante de l'unité = percentile 90
+            des pixels FORMS-T d'au moins 5 m ;
+            accroissement = pente de Theil-Sen 2019-2024 × 5   (m / 5 ans)
+
+attendu   : placettes IFN analogues (même essence dominante, même SER,
+            hauteur dominante 2019 à ± 2 m ; sinon toutes SER, puis ± 4 m) ;
+            accroissement simulé par FINN en un pas de 5 ans, climat
+            E-OBS 2019-2023, 20 tirages par placette
+
+bruit     : résidus observé − simulé autour des placettes IFN de même
+            essence et de même hauteur (biais moyen compris)
+
+T4 = 100 × P(simulé + résidu < observé)
+```
+
+La hauteur des arbres simulés vient d'une relation hauteur-diamètre par
+essence (et par SER quand au moins 500 arbres ont été mesurés), ajustée sur
+les 128 808 hauteurs totales mesurées par l'IFN en Bourgogne-Franche-Comté
+(`inst/extdata/allometrie_hauteur_ifn.csv`). La hauteur dominante simulée
+est la hauteur moyenne des 100 plus gros arbres à l'hectare.
+
+**Pourquoi un résidu.** FORMS-T varie bien plus que les tirages FINN :
+autour des placettes IFN, l'accroissement observé a un écart-type de
+1,35 m sur 5 ans, contre 0,1 m entre tirages. Classée parmi les seuls
+tirages, une unité tomberait presque toujours près de 0 ou de 100. Le résidu
+élargit la référence de ce bruit et recentre l'attendu : au-delà de 28 m,
+FORMS-T voit encore 0,5 à 1,2 m de croissance que les courbes
+hauteur-diamètre ne donnent plus.
+
+**Exemples** (hêtre, 20 m, attendu 1 m sur 5 ans) :
+
+| Observé (m / 5 ans) | T4 | Lecture |
+|---|---|---|
+| 1,0 | ≈ 50 | croissance attendue |
+| 0,0 | proche de 0 | déficit de croissance |
+| 2,5 | proche de 100 | croissance supérieure à l'attendu |
+
+**Non calculé** (`NA`, avec un statut) : après une coupe détectée sur la
+période (`T3 > 0` ou argument `coupes`, statut `skipped_cut`), après une
+chute de la hauteur dominante de plus de 3 m d'une année sur l'autre
+(`skipped_drop`), sans essence (`skipped_no_essence`), sans assez
+d'analogues (`skipped_no_analogues`, typiquement les peuplements de plus de
+33 m) ou sans assez de pixels de couvert (`skipped_no_coverage`). Une coupe
+n'est pas un défaut de vitalité : la surmortalité (`surmortalite_finn()`,
+spec 069) et R5 disent alors le reste.
+
+## 3. Le calcul par niveau NDP
+
+| NDP | Ce qui existe | T4 |
+|---|---|---|
+| **0** sans FORMS-T | rien | **`NA`** |
+| **0** + FORMS-T | hauteurs annuelles, essence de la BD Forêt | **calculé** sur les placettes IFN analogues |
+| **1–2** | LiDAR, orthophotos | inchangé : la série annuelle reste FORMS-T |
+| **3** | inventaire de l'unité | FINN simule l'unité elle-même : `accroissement_hdom_finn()` puis argument `attendu` |
+| **4** | — | — |
+
+## 4. Pièges
+
+1. **Un modèle calibré ailleurs.** FINN est démontré sur la FIA de
+   l'Oregon ; il est ici calibré sur les placettes IFN de
+   Bourgogne-Franche-Comté. Hors de ce domaine, les analogues viennent
+   d'une autre région : à Dabo (Vosges), les sapinières poussent un peu plus
+   vite que leurs analogues de BFC et T4 se centre vers 57 plutôt que 50.
+2. **Climat récent.** L'attendu suppose le climat E-OBS 2019-2023 ; T4 ne
+   se compare pas d'une fenêtre d'années à l'autre.
+3. **T4 compare deux incertitudes** : la hauteur FORMS-T, prédite depuis
+   Sentinel-1/2 et GEDI et non mesurée (erreur de l'ordre du mètre), et la
+   trajectoire simulée. Le résidu mesure le bruit sur des disques d'environ
+   20 ha autour de coordonnées IFN floutées : il comprend la variabilité
+   entre peuplements, ce qui rend T4 prudent ; une unité plus petite est
+   plus bruitée que ce que suppose la référence.
+4. **L'essence doit être juste.** Une sapinière-pessière notée « sapin » ou
+   « épicéa » ne change presque rien (médiane 57 ou 56 à Dabo), mais une
+   essence fausse change les analogues.
+
+## 5. Contrôle de centrage
+
+Sur 1 072 cellules de 4 ha des sapinières-pessières de Dabo (Vosges, sans
+perturbation connue, SER D11) :
+
+| Quantile | 5 % | 10 % | 25 % | 50 % | 75 % | 90 % | 95 % |
+|---|---|---|---|---|---|---|---|
+| Attendu si centré | 5 | 10 | 25 | 50 | 75 | 90 | 95 |
+| T4 à Dabo | 13 | 19 | 33 | 57 | 81 | 94 | 98 |
+
+Script : `data-raw/t4_controle_dabo.R`. Les tables embarquées viennent de
+`data-raw/allometrie_hauteur_ifn.R`, `data-raw/t4_analogues_bfc.R` et
+`data-raw/t4_residus_forms_bfc.R`.
+
+## 6. Aval
+
+```
+indicateur_t4_vitalite()  ->  colonne T4 (0-100, 50 = attendu)
+      |
+      +- normalize_indicator()     -> natif 0-100, sans inversion
+      +- create_family_index("T")  -> famille_temporel = moy(T1 à T4)
+```
+
+## 7. Diagramme d'ensemble
+
+<!-- diagramme:auto:debut -->
+<figure>
+<svg viewBox="0 0 820 368" style="width:100%;height:auto;max-width:100%" role="img" aria-label="Chaine de calcul de T4 : la croissance en hauteur dominante observee sur FORMS-T est classee parmi les accroissements que FINN simule pour des placettes IFN analogues, elargis du bruit d'observation mesure autour de ces placettes ; 50 = croissance attendue.">
+<defs>
+<marker id="fd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+</marker>
+</defs>
+<g fill="currentColor" font-size="10" letter-spacing="1.3" opacity=".55">
+<text x="10" y="16">ENTRÉES</text>
+<text x="290" y="16">CALCUL — PREMIER CHEMIN SERVI</text>
+<text x="588" y="16">AVAL</text>
+</g>
+<rect x="8" y="34" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="53" font-size="12.5" font-weight="600" fill="currentColor">FORMS-T — hauteur annuelle</text>
+<text x="20" y="69" font-size="11" fill="currentColor" opacity=".78">10 m, 2019 à 2024, en cm</text>
+<text x="20" y="85" font-size="11" fill="currentColor" opacity=".78">essence dominante, SER</text>
+<rect x="8" y="106" width="252" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="20" y="125" font-size="12.5" font-weight="600" fill="currentColor">Placettes IFN analogues</text>
+<text x="20" y="141" font-size="11" fill="currentColor" opacity=".78">FINN, un pas de 5 ans, 20 tirages</text>
+<text x="20" y="157" font-size="11" fill="currentColor" opacity=".78">allométrie IFN HTOT</text>
+<rect x="8" y="178" width="252" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"/>
+<text x="20" y="197" font-size="12.5" font-weight="600" fill="currentColor">Coupe ou chute &gt; 3 m</text>
+<text x="20" y="213" font-size="11" fill="currentColor" opacity=".78">T3 &gt; 0 ou baisse annuelle</text>
+<rect x="288" y="34" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="53" font-size="12.5" font-weight="600" fill="currentColor">Accroissement observé</text>
+<text x="300" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">p90 des pixels ≥ 5 m par an</text>
+<text x="300" y="85" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">pente de Theil-Sen × 5</text>
+<rect x="288" y="126" width="262" height="74" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="300" y="145" font-size="12.5" font-weight="600" fill="currentColor">Référence attendue</text>
+<text x="300" y="161" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">simulé + résidu FORMS-T</text>
+<text x="300" y="177" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">même essence, même hauteur</text>
+<text x="300" y="193" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">T4 = 100 × P(réf. &lt; observé)</text>
+<rect x="288" y="234" width="262" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="4 3"/>
+<text x="300" y="253" font-size="12.5" font-weight="600" fill="currentColor">NA</text>
+<text x="300" y="269" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">pas un défaut de vitalité</text>
+<text x="300" y="285" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">surmortalité, R5 : le relais</text>
+<rect x="586" y="34" width="226" height="42" rx="3" fill="#2C6B600F" stroke="#2C6B60" stroke-width="1.2" opacity=".95"/>
+<text x="598" y="53" font-size="12.5" font-weight="600" fill="#2C6B60">indicateur_t4_vitalite</text>
+<text x="598" y="69" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">rang 0–100, 50 = attendu</text>
+<rect x="586" y="98" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="117" font-size="12.5" font-weight="600" fill="currentColor">normalize_indicator()</text>
+<text x="598" y="133" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">natif 0–100, sans inversion</text>
+<rect x="586" y="162" width="226" height="58" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="181" font-size="12.5" font-weight="600" fill="currentColor">create_family_index("T")</text>
+<text x="598" y="197" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">famille_temporel</text>
+<text x="598" y="213" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">moyenne de T1 à T4</text>
+<rect x="586" y="242" width="226" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+<text x="598" y="261" font-size="12.5" font-weight="600" fill="currentColor">compute_general_index()</text>
+<text x="598" y="277" font-size="11" font-family="ui-monospace,SFMono-Regular,Menlo,monospace" fill="currentColor" opacity=".78">Fibonacci · confiance φ</text>
+<line x1="260" y1="63" x2="282" y2="63" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 135 H271 V163 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<path d="M260 199 H271 V263 H282" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="306" y1="94" x2="306" y2="120" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"/>
+<text x="312" y="110" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text>
+<line x1="306" y1="202" x2="306" y2="228" stroke="currentColor" stroke-width="1.2" opacity=".75" stroke-dasharray="3 3" marker-end="url(#fd)"/>
+<text x="312" y="218" font-size="10" fill="currentColor" opacity=".55" text-anchor="start">sinon</text>
+<line x1="550" y1="63" x2="566" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="550" y1="163" x2="566" y2="163" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="550" y1="263" x2="566" y2="263" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="566" y2="263" stroke="#2C6B60" stroke-width="1.2" opacity=".6"/>
+<line x1="566" y1="63" x2="580" y2="63" stroke="#2C6B60" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="78" x2="699" y2="92" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="142" x2="699" y2="156" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<line x1="699" y1="222" x2="699" y2="236" stroke="currentColor" stroke-width="1.2" opacity=".75" marker-end="url(#fd)"/>
+<text x="10" y="318" font-size="10.5" fill="currentColor" opacity=".62">FORMS-T varie bien plus que les tirages FINN (1,35 m contre 0,1 m sur 5 ans) : sans le résidu, T4 serait presque toujours 0 ou 100.</text>
+<text x="10" y="334" font-size="10.5" fill="currentColor" opacity=".62">Analogues de Bourgogne-Franche-Comté : à Dabo (Vosges), T4 se centre vers 57.</text>
+<text x="10" y="350" font-size="10.5" fill="currentColor" opacity=".62">Peuplements de plus de 33 m : pas d'analogue, T4 vaut NA.</text>
+</svg>
+<figcaption style="font-size:.9em;opacity:.75">
+T4 dit si l'unité pousse comme des peuplements comparables le feraient selon FINN sous le climat récent, une fois le bruit de FORMS-T pris en compte ; une coupe ou une chute brutale le laisse NA.
+</figcaption>
+</figure>
+<!-- diagramme:auto:fin -->

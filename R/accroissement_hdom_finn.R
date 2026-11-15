@@ -42,7 +42,7 @@
 #' (spec 068, T4-3). Species pooled as `"other"` by the calibration use the
 #' `"other"` curve.
 #'
-#' @family finn
+#' @seealso [indicateur_t4_vitalite()], [calibrer_finn()], [corriger_finn()]
 #' @export
 accroissement_hdom_finn <- function(calibration, arbres, environnement, ser = NULL,
                                     n_tirages = 20L, correction = TRUE) {
