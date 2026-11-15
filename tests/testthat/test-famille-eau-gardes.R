@@ -28,6 +28,7 @@ test_that("an all-NA DEM yields no TWI cache file, with a warning", {
 })
 
 test_that("an all-NA TWI file in cache is ignored, deleted and recomputed", {
+  skip_if_terra_write_broken()
   vider_cache_twi()
   cache <- withr::local_tempdir()
   dem <- mnt_test()
