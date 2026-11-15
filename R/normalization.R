@@ -561,7 +561,10 @@ invert_indicator <- function(data,
   # N5 est un score 0-100 natif, haut = proche de la reference (spec 064).
   "indicateur_n5_distance_reference",
   # B5 est un score 0-100 natif, haut = profil vertical equilibre (spec 067).
-  "indicateur_b5_stratification"
+  "indicateur_b5_stratification",
+  # T4 est un rang 0-100 natif, 50 = croissance attendue, haut = vigoureux
+  # (spec 068).
+  "indicateur_t4_vitalite"
 )
 
 # Indicateurs pour lesquels `normalize_indicator()` applique une règle EXPLICITE

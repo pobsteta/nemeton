@@ -251,16 +251,17 @@ INDICATOR_FAMILIES <- list(
     code = "T",
     name_fr = "Dynamique Temporelle",
     name_en = "Temporal Dynamics",
-    description_fr = "Anciennet\u00e9 foresti\u00e8re, taux de changement et pression de coupe rase",
-    description_en = "Forest age, change rate and clear-cut pressure",
+    description_fr = "Anciennet\u00e9 foresti\u00e8re, taux de changement, pression de coupe rase et vitalit\u00e9 dynamique",
+    description_en = "Forest age, change rate, clear-cut pressure and dynamic vitality",
     icon = "clock-fill",
     color = "#FFD700",
-    indicators = c("T1", "T2", "T3"),
-    column_names = c("indicateur_t1_anciennete", "indicateur_t2_changement", "indicateur_t3_coupes_rases"),
+    indicators = c("T1", "T2", "T3", "T4"),
+    column_names = c("indicateur_t1_anciennete", "indicateur_t2_changement", "indicateur_t3_coupes_rases", "indicateur_t4_vitalite"),
     indicator_labels = list(
       T1 = list(fr = "Anciennet\u00e9 foresti\u00e8re", en = "Forest Age"),
       T2 = list(fr = "Taux de changement", en = "Change Rate"),
-      T3 = list(fr = "Coupes rases", en = "Clear-cuts")
+      T3 = list(fr = "Coupes rases", en = "Clear-cuts"),
+      T4 = list(fr = "Vitalit\u00e9 dynamique", en = "Dynamic Vitality")
     ),
     indicator_tooltips = list(
       T1 = list(
@@ -274,12 +275,17 @@ INDICATOR_FAMILIES <- list(
       T3 = list(
         fr = "Pression de coupe rase (produit SUFOSAT, radar Sentinel-1). Fraction r\u00e9cente coup\u00e9e \u00e0 blanc, pond\u00e9r\u00e9e par r\u00e9cence. Sens invers\u00e9 : plus de coupe = indice plus bas.",
         en = "Clear-cut pressure (SUFOSAT product, Sentinel-1 radar). Recency-weighted recently clear-cut fraction. Inverted sense: more clear-cutting = lower score."
+      ),
+      T4 = list(
+        fr = "Croissance en hauteur dominante de 2019 \u00e0 2024 (FORMS-T) compar\u00e9e \u00e0 celle qu'attend le mod\u00e8le FINN pour des peuplements IFN comparables (m\u00eame essence, SER, hauteur). 50 = croissance attendue, bas = d\u00e9ficit de croissance. Non calcul\u00e9 apr\u00e8s une coupe ou une chute de plus de 3 m. Conditionnel : exige FORMS-T et l'essence dominante.",
+        en = "Dominant-height growth from 2019 to 2024 (FORMS-T) compared with the growth the FINN model expects for comparable IFN stands (same species, SER, height). 50 = expected growth, low = growth deficit. Not computed after a cut or a fall of more than 3 m. Conditional: needs FORMS-T and the dominant species."
       )
     ),
     indicator_docs = list(
       T1 = list(fr = "articles/fiche-t1-anciennete_fr.html"),
       T2 = list(fr = "articles/fiche-t2-changement_fr.html"),
-      T3 = list(fr = "articles/fiche-t3-coupes-rases_fr.html")
+      T3 = list(fr = "articles/fiche-t3-coupes-rases_fr.html"),
+      T4 = list(fr = "articles/fiche-t4-vitalite_fr.html")
     )
   ),
 

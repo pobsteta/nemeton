@@ -97,6 +97,7 @@ t2[, c("T2", "t2_status", "t2_perte_pct", "t2_croissance_m_an")]
 }
 \seealso{
 Other temporal-indicators:
-\code{\link[=indicateur_t1_anciennete]{indicateur_t1_anciennete()}}
+\code{\link[=indicateur_t1_anciennete]{indicateur_t1_anciennete()}},
+\code{\link[=indicateur_t4_vitalite]{indicateur_t4_vitalite()}}
 }
 \concept{temporal-indicators}

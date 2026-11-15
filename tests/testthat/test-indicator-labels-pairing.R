@@ -22,7 +22,7 @@
 test_that("aucun code ne contredit le slug de sa colonne (CA-3)", {
   ind <- indicator_labels()
 
-  expect_equal(nrow(ind), 43L)
+  expect_equal(nrow(ind), 44L)
 
   slug_ok <- startsWith(
     ind$column_name,

@@ -1040,7 +1040,7 @@ FICHES <- list(
       list(titre = "NA", lignes = "aucun âge inventé", tirets = TRUE)
     ),
     aval = av("indicateur_t1_anciennete", "âge, en années",
-              "âge / 200 ans × 100", "T", "famille_temporel", "T1 à T3"),
+              "âge / 200 ans × 100", "T", "famille_temporel", "T1 à T4"),
     notes = c(
       "L'unité est l'année : normalisée sur une borne de 200 ans depuis la 0.197.0, plus par écrêtage à 100.",
       "Une mesure passe avant une estimation ; sans aucune source, T1 vaut NA (50 ans en dur jusqu'à la 0.211.0).",
@@ -1070,7 +1070,7 @@ FICHES <- list(
                                     "t2_status = \"no_source\""), tirets = TRUE)
     ),
     aval = av("indicateur_t2_changement", "score 0–100, natif",
-              "écrêtage natif 0–100", "T", "famille_temporel", "T1 à T3"),
+              "écrêtage natif 0–100", "T", "famille_temporel", "T1 à T4"),
     notes = c(
       "Diagnostics : t2_perte_pct, t2_croissance_m_an (Theil-Sen), t2_annees, t2_status.",
       "Ne pas comparer deux T2 calculés sur des fenêtres d'années différentes.",
@@ -1104,7 +1104,7 @@ FICHES <- list(
     aval = list(
       list(titre = "indicateur_t3_coupes_rases", lignes = "brut : haut = beaucoup coupé", accent = TRUE),
       list(titre = "normalize_indicator()", lignes = c("score = 100 - valeur", "comme R1 à R5 (spec 048)")),
-      list(titre = "create_family_index(\"T\")", lignes = c("famille_temporel", "moyenne de T1 à T3")),
+      list(titre = "create_family_index(\"T\")", lignes = c("famille_temporel", "moyenne de T1 à T4")),
       list(titre = "compute_general_index()", lignes = "Fibonacci · confiance φ")
     ),
     notes = c(
@@ -1115,6 +1115,39 @@ FICHES <- list(
     legende = paste("Un des six indicateurs — R1 à R5 et lui — dont la normalisation retourne le sens.",
                     "La colonne brute mesure une pression de coupe ; le score, lui, mesure son",
                     "absence — deux lectures opposées du même nombre.")
+  ),
+  T4 = list(
+    code = "T4", fichier = "fiche-t4-vitalite_fr.Rmd",
+    titre = paste("Chaine de calcul de T4 : la croissance en hauteur dominante observee",
+                  "sur FORMS-T est classee parmi les accroissements que FINN simule pour",
+                  "des placettes IFN analogues, elargis du bruit d'observation mesure",
+                  "autour de ces placettes ; 50 = croissance attendue."),
+    entrees = list(
+      list(titre = "FORMS-T — hauteur annuelle", lignes = c("10 m, 2019 à 2024, en cm",
+                                                            "essence dominante, SER"), vers = 1),
+      list(titre = "Placettes IFN analogues", lignes = c("FINN, un pas de 5 ans, 20 tirages",
+                                                         "allométrie IFN HTOT"), vers = 2),
+      list(titre = "Coupe ou chute > 3 m", lignes = "T3 > 0 ou baisse annuelle", vers = 3, tirets = TRUE)
+    ),
+    chemins = list(
+      list(titre = "Accroissement observé", lignes = c("p90 des pixels ≥ 5 m par an",
+                                                       "pente de Theil-Sen × 5")),
+      list(titre = "Référence attendue", lignes = c("simulé + résidu FORMS-T",
+                                                    "même essence, même hauteur",
+                                                    "T4 = 100 × P(réf. < observé)")),
+      list(titre = "NA", lignes = c("pas un défaut de vitalité",
+                                    "surmortalité, R5 : le relais"), tirets = TRUE)
+    ),
+    aval = av("indicateur_t4_vitalite", "rang 0–100, 50 = attendu",
+              "natif 0–100, sans inversion", "T", "famille_temporel", "T1 à T4"),
+    notes = c(
+      "FORMS-T varie bien plus que les tirages FINN (1,35 m contre 0,1 m sur 5 ans) : sans le résidu, T4 serait presque toujours 0 ou 100.",
+      "Analogues de Bourgogne-Franche-Comté : à Dabo (Vosges), T4 se centre vers 57.",
+      "Peuplements de plus de 33 m : pas d'analogue, T4 vaut NA."
+    ),
+    legende = paste("T4 dit si l'unité pousse comme des peuplements comparables le feraient",
+                    "selon FINN sous le climat récent, une fois le bruit de FORMS-T pris en",
+                    "compte ; une coupe ou une chute brutale le laisse NA.")
   ),
   # ============================================================ R — Risques ==
   R1 = list(

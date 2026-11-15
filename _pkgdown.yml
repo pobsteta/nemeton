@@ -89,6 +89,8 @@ navbar:
         href: articles/fiche-t2-changement_fr.html
       - text: "T3 - Coupes rases (SUFOSAT)"
         href: articles/fiche-t3-coupes-rases_fr.html
+      - text: "T4 - Vitalite dynamique (FORMS-T contre FINN)"
+        href: articles/fiche-t4-vitalite_fr.html
       - text: "---"
       - text: "Famille R - Risques & Resilience"
       - text: "R1 - Risque d'incendie"
@@ -242,11 +244,12 @@ reference:
     - indicateur_l3_het_spectrale
 
   - subtitle: "Famille T : Dynamique temporelle"
-    desc: "Anciennete des peuplements et changements d'occupation"
+    desc: "Anciennete des peuplements, changements d'occupation et vitalite dynamique"
     contents:
     - indicateur_t1_anciennete
     - indicateur_t2_changement
     - indicateur_t3_coupes_rases
+    - indicateur_t4_vitalite
 
   - subtitle: "Famille R : Risques & Resilience"
     desc: "Vulnerabilite aux incendies, tempetes et secheresse"
@@ -636,6 +639,7 @@ reference:
     - conformer_finn
     - corriger_finn
     - surmortalite_finn
+    - accroissement_hdom_finn
     - simuler_itineraire
     - densite_max_ifn
     - parametres_filiere_bois

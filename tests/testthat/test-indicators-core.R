@@ -8,12 +8,12 @@
 # list_indicators() — return_type = "names" (default)
 # ══════════════════════════════════════════════════════════════════
 
-test_that("list_indicators returns all 43 indicator names by default", {
+test_that("list_indicators returns all 44 indicator names by default", {
   skip_if_not_installed("terra")
   indicators <- list_indicators()
 
   expect_type(indicators, "character")
-  expect_length(indicators, 43)
+  expect_length(indicators, 44)
   # Meme liste et meme ordre que la table des familles (source unique)
   expect_identical(indicators, indicator_labels()$column_name)
 
@@ -56,7 +56,7 @@ test_that("list_indicators returns details data.frame when requested", {
   details <- list_indicators(return_type = "details")
 
   expect_s3_class(details, "data.frame")
-  expect_equal(nrow(details), 43)
+  expect_equal(nrow(details), 44)
   expect_true(all(c("name", "code", "family", "category", "description",
                     "conditionnel", "source_conditionnelle") %in% names(details)))
   expect_type(details$conditionnel, "logical")
@@ -86,11 +86,11 @@ test_that("list_indicators details contain correct family codes", {
   expect_equal(naturalness_row$family, "N")
 })
 
-test_that("list_indicators flags the twelve source-conditional indicators", {
+test_that("list_indicators flags the thirteen source-conditional indicators", {
   details <- list_indicators(return_type = "details")
   cond <- details$code[details$conditionnel]
   expect_setequal(cond, c("B4", "B5", "L3", "W4", "A3", "A4", "A5",
-                          "R5", "R6", "R7", "T3", "N5"))
+                          "R5", "R6", "R7", "T3", "T4", "N5"))
   expect_true(all(!is.na(details$source_conditionnelle[details$conditionnel])))
   expect_true(all(is.na(details$source_conditionnelle[!details$conditionnel])))
 
@@ -180,7 +180,8 @@ test_that("list_indicators filters by category = 'temporal'", {
   skip_if_not_installed("terra")
   temporal <- list_indicators(category = "temporal")
 
-  expect_length(temporal, 3)
+  expect_length(temporal, 4)
+  expect_true("indicateur_t4_vitalite" %in% temporal)
   expect_true("indicateur_t3_coupes_rases" %in% temporal)
   expect_true("indicateur_t1_anciennete" %in% temporal)
   expect_true("indicateur_t2_changement" %in% temporal)
@@ -399,14 +400,14 @@ test_that("nemeton_compute expands 'all' to full indicator list", {
     )
   )
 
-  # indicators = "all" should attempt all 43 indicators of list_indicators()
+  # indicators = "all" should attempt all 44 indicators of list_indicators()
   # Many will fail with mock data, producing expected "Indicator X calculation failed" warnings
   result <- suppressWarnings(
     nemeton_compute(units, layers, indicators = "all", preprocess = FALSE)
   )
 
   expect_s3_class(result, "sf")
-  # All 43 indicator columns should exist (even if NA from failures)
+  # All 44 indicator columns should exist (even if NA from failures)
   all_indicator_names <- list_indicators()
   for (ind in all_indicator_names) {
     expect_true(ind %in% names(result), info = paste("Missing indicator column:", ind))
