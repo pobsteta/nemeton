@@ -364,6 +364,16 @@ part des arbres mesurés au ruban. Tolérance d'appariement d'un centre au
 téléphone volontairement inchangée (signalement seul, permis par le brief).
 Brief app complété (points 6 et 7). Version nemetonshiny vérifiée :
 v2026.11.1.
+**v2026.11.31** : trois briefs reçus le 2026-11-15.
+- TWI (victor) : un raster vide n'est plus ni mis en cache ni relu, et la clé
+  porte le contenu du MNT. C'était la cause de la famille Eau à 0 à Couchey.
+- W1 à NA à Couchey : la cause est côté app, une réponse WFS vide est
+  traitée comme un échec. Brief `vers-nemetonshiny/2026-11-15-w1-reponse-wfs-vide.md`.
+- Tarifs (Marculus) : un numéro ≤ 0 est publié vide, cause expliquée (faible
+  forme × tarif lent), libellés 29AF/68CE ajoutés. Réponse
+  `vers-marculus/`, copie `vers-nemetonshiny/`.
+- C1 CHM : simple information de l'app, archivée.
+Version nemetonshiny vérifiée : v2026.11.1.
 nemetonshiny **v2026.11.1** publiée (`nemetonshiny@eaa47428`, PR #280 ;
 cycle dev `2026.10.18.9001` → `.9018`, rouvert en `2026.11.1.9000`).
 Pilotage par IA (VICTOR, AIGORA via nemetonmcp) : erreurs MCP classées,

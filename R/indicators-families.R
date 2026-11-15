@@ -358,6 +358,7 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
                terra::crs(dem, describe = TRUE)$code,
                signif(.dem_working_res_value(dem, twi_target_res), 6),
                if (terra::is.lonlat(dem)) .crs_label(crs) else "",
+               .dem_empreinte_contenu(dem),
                sep = "|")
 
   # 1. Memory cache (instant)
@@ -375,12 +376,16 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
   cache_file <- file.path(cache_dir, .twi_cache_file(key))
 
   if (file.exists(cache_file)) {
-    tryCatch({
-      twi_raster <- .normalize_crs(terra::rast(cache_file))
-      assign(key, twi_raster, envir = .twi_cache)
+    relu <- tryCatch(.normalize_crs(terra::rast(cache_file)), error = function(e) NULL)
+    if (!is.null(relu) && .twi_valide(relu, dem)) {
+      assign(key, relu, envir = .twi_cache)
       cli::cli_alert_info("TWI: Loaded from file cache")
-      return(twi_raster)
-    }, error = function(e) NULL)
+      return(relu)
+    }
+    # Fichier illisible ou TWI vide (MNT vide ou incomplet au premier calcul) :
+    # jamais repris, supprime puis recalcule.
+    cli::cli_warn("TWI: empty or unreadable file cache ignored, recomputing ({.file {basename(cache_file)}}).")
+    unlink(cache_file)
   }
 
   # 3. Compute: prefer GRASS, fallback terra D8 (agrégation à twi_target_res)
@@ -388,6 +393,16 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
     twi_raster <- calculate_twi_grass(dem, target_res = twi_target_res, crs = crs)
   } else {
     twi_raster <- calculate_twi_terra(dem, target_res = twi_target_res, crs = crs)
+  }
+
+  # Un TWI sans valeur (ou presque) n'entre dans aucun cache : il serait
+  # resservi tel quel au prochain calcul sur la meme grille.
+  if (!.twi_valide(twi_raster, dem)) {
+    cli::cli_warn(c(
+      "TWI: computed raster is empty or mostly NA, not cached.",
+      "i" = "Check the DEM (empty or incomplete tiles); W2, W3, F2 and R3 will be NA or 0."
+    ))
+    return(twi_raster)
   }
 
   # Save to both caches
@@ -399,6 +414,52 @@ get_or_compute_twi <- function(dem, cache_dir = NULL,
   }, error = function(e) NULL)
 
   twi_raster
+}
+
+# Part minimale de cellules valides du TWI (hors couronne de bord), rapportee a
+# celle du MNT : en dessous, le TWI est tenu pour vide (ni ecrit ni relu en
+# cache). Un TWI sain couvre l'essentiel de ce que couvre le MNT.
+.TWI_PART_VALIDE_MIN <- 0.5
+
+# Part de cellules non NA d'un raster (premiere couche).
+.part_valide <- function(r) {
+  1 - terra::global(is.na(r[[1]]), "mean", na.rm = TRUE)[1, 1]
+}
+
+# Raster sans sa couronne d'une cellule (le TWI n'y est pas defini) ; rendu
+# tel quel s'il a moins de 3 lignes ou colonnes.
+.sans_bord <- function(r) {
+  if (terra::nrow(r) < 3 || terra::ncol(r) < 3) return(r)
+  rs <- terra::res(r)
+  e <- terra::ext(r)
+  terra::crop(r, terra::ext(e$xmin + rs[1], e$xmax - rs[1], e$ymin + rs[2], e$ymax - rs[2]))
+}
+
+# TRUE si le TWI a des valeurs : au moins une cellule, et une part valide
+# (hors couronne de bord) d'au moins .TWI_PART_VALIDE_MIN fois celle du MNT
+# (MNT sans valeur : FALSE).
+.twi_valide <- function(twi, dem = NULL) {
+  ok <- tryCatch({
+    p_twi <- .part_valide(.sans_bord(twi))
+    p_dem <- if (inherits(dem, "SpatRaster")) .part_valide(dem) else 1
+    is.finite(p_twi) && p_twi > 0 && is.finite(p_dem) && p_dem > 0 &&
+      p_twi >= .TWI_PART_VALIDE_MIN * p_dem
+  }, error = function(e) FALSE)
+  isTRUE(ok)
+}
+
+# Empreinte legere du CONTENU d'un MNT pour la cle de cache du TWI : nombre de
+# cellules valides et somme sur un echantillon regulier (deterministe) d'au
+# plus 10 000 cellules. La geometrie seule ne suffisait pas : un MNT
+# retelecharge sur la meme grille (dalles LiDAR completees) reprenait le TWI
+# vide du premier calcul (Couchey, 2026-11-15).
+.dem_empreinte_contenu <- function(dem) {
+  tryCatch({
+    v <- terra::spatSample(dem[[1]], size = min(10000, terra::ncell(dem)),
+                           method = "regular", na.rm = FALSE)[[1]]
+    sprintf("n%d_s%s", sum(!is.na(v)), format(signif(sum(v, na.rm = TRUE), 10),
+                                               scientific = FALSE))
+  }, error = function(e) "contenu_inconnu")
 }
 
 # ==============================================================================
@@ -859,7 +920,11 @@ indicateur_w1_reseau <- function(units,
     # Proximity bonus: parcels near watercourses benefit from water table influence
     # Decreases linearly from proximity_ref at 0m to 0 at proximity_m
     if (total_length_m == 0 && proximity_m > 0) {
-      min_dist <- as.numeric(min(sf::st_distance(units[i, ], watercourses)))
+      # Couche fournie mais vide (aucun cours d'eau dans l'emprise) : pas de
+      # distance a calculer, W1 = 0.
+      min_dist <- if (nrow(watercourses)) {
+        as.numeric(min(sf::st_distance(units[i, ], watercourses)))
+      } else Inf
       if (min_dist < proximity_m) {
         proximity_bonus <- (1 - min_dist / proximity_m) * proximity_ref
       } else {

@@ -17,7 +17,7 @@ character, as read by \code{\link{ifn_charger}}.}
 \value{
 A data.frame with the \code{groupes} columns, \code{espar},
   \code{type} (\code{SCHR}, \code{SCHI}, \code{SCHL}, \code{SCHTL}),
-  \code{numero} (to 0.1), \code{cv} (percent, to 0.1), \code{n_arbres} and
+  \code{numero} (to 0.1, \code{NA} at or below 0), \code{cv} (percent, to 0.1), \code{n_arbres} and
   \code{n_placettes}, and \code{part_houppier} (percent, to 0.1) when
   \code{HTOT} is given.
 }
@@ -31,9 +31,13 @@ data), \eqn{17.5 \le D \le 80} cm with \eqn{D = 100 C13 / \pi}; four
 numbers per tree (\code{\link{numero_tarif_schaeffer}}); per group and
 species, mean weighted by the tree volume and coefficient of variation
 (weighted standard deviation / |mean|, reliability weights). A species is
-kept in a group from 3 trees on. Low-form species (holm oak, downy oak)
-can get a negative number on the slower tariffs: it is kept, as in
-PPtools; the coefficient of variation stays positive.
+kept in a group from 3 trees on. Low-form species (holm oak, willows,
+hawthorn) get a mean number at or below 0 on the slower tariffs (the
+formula has no lower bound: the volume stays positive down to -8). Such a
+number is outside the range of the tariffs and its coefficient of
+variation, relative to a mean near 0, is meaningless: since 2026.11.31
+both are \code{NA} for that type (the row is kept, with \code{n_arbres}
+and \code{part_houppier}); PPtools kept the raw value.
 }
 \details{
 When \code{arbres} has a \code{HTOT} column (total height, m), the

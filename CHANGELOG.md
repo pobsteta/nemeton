@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.31] - 2026-11-15
+
+### Fixed
+- `get_or_compute_twi()`: an empty or mostly-NA TWI is neither cached nor reused (file deleted and recomputed); the cache key includes a DEM content fingerprint.
+- `indicateur_w1_reseau()`: an empty watercourse layer gives 0 without `min(numeric(0))` warnings.
+
+### Changed
+- `calculer_tarifs_schaeffer()` (hence `tarif_schaeffer_local()` and the embedded table): mean tariff number <= 0 published as NA, with its `cv`; 1,590 rows of `ifn_tarif_schaeffer_ser.csv` blanked, format unchanged.
+- Species `29AF` and `68CE` labelled in the embedded tariff table.
+
 ## [2026.11.30] - 2026-11-15
 
 ### Added
