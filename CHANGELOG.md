@@ -13,6 +13,16 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.34\] - 2026-11-16
+
+### Added
+
+- `indicateur_w1_reseau(spring_layer = "water_points")`: springs (BD
+  TOPO `detail_hydrographique`, natures Source / Source captée /
+  Résurgence, in service) count in the proximity bonus; a spring inside
+  the unit gives the full bonus. `water_points` declared in
+  `inst/datasources/FR.json`.
+
 ## \[2026.11.33\] - 2026-11-16
 
 ### Added

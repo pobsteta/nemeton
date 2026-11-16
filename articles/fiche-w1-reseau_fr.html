@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.33.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.34</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -229,8 +229,20 @@ bonus = proximity_ref                             si l'unite est traversee
       = 0                                          sinon
 
 W1 = densite_directe + bonus</code></pre>
+<p><code>d_min</code> est la distance au plus proche <strong>cours d’eau
+ou source</strong> (depuis 2026.11.34) : une source dans l’unité donne
+le bonus plein. Les sources viennent de la couche facultative
+<code>water_points</code> (BD TOPO <code>detail_hydrographique</code>),
+natures <code>Source</code>, <code>Source captée</code> et
+<code>Résurgence</code>, en service. Fontaines, lavoirs et pertes sont
+exclus : ce sont des ouvrages ou des points d’absorption, pas des
+émergences. Une source n’entre pas dans la densité (un point n’a pas de
+longueur), et sans la couche W1 est inchangé. W1 ne voit toujours pas la
+circulation souterraine : sur la côte calcaire (Couchey), seul le Trou
+de Fiat, à 94 m, donne un bonus.</p>
 <p>Défauts : <code>proximity_m = 500</code> m,
-<code>proximity_ref = 50</code>, <code>buffer = 0</code>.</p>
+<code>proximity_ref = 50</code>, <code>buffer = 0</code>,
+<code>spring_layer = "water_points"</code>.</p>
 <p><strong>Exemples chiffrés</strong> :</p>
 <table class="table">
 <thead><tr class="header">
@@ -344,14 +356,12 @@ score</strong>. W1 se comporte, en pratique, comme un indicateur à trois
 états : traversée (100), proche (0–100 selon la distance), éloignée
 (0).</li>
 <li>
-<strong>Sans donnée, W1 rend <code>0</code>, pas
-<code>NA</code>.</strong> L’absence de couche produit un avertissement
-puis <code>rep(0, nrow(units))</code>. C’est l’inverse de la politique
-suivie par B1 et B3, où l’absence rend <code>NA</code> avec ce
-commentaire — « absent input is NOT a measurement ». Ici, un projet sans
-couche hydrographique voit <code>famille_eau</code> tirée vers le bas
-par des zéros fabriqués, sans que rien ne distingue « aucun cours d’eau
-» de « on n’a pas regardé ».</li>
+<strong>Couche absente ou vide : deux réponses différentes</strong>
+(corrigé depuis la rédaction de cette fiche). Une couche hydrographique
+absente rend <code>NA</code> (« on n’a pas regardé »), une couche
+fournie mais vide rend <code>0</code> (« aucun cours d’eau »). Avant,
+l’absence rendait aussi <code>0</code> et tirait
+<code>famille_eau</code> vers le bas par des zéros fabriqués.</li>
 <li>
 <strong>La grandeur brute n’a pas d’unité interprétable.</strong>
 <code>densité + bonus</code> additionne des m/ha et un score sans

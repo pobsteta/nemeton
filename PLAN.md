@@ -426,9 +426,28 @@ une réponse WFS vide est traitée comme un échec. Brief
 forme × tarif lent), libellés 29AF/68CE ajoutés. Réponse
 `vers-marculus/`, copie `vers-nemetonshiny/`. - C1 CHM : simple
 information de l’app, archivée. Version nemetonshiny vérifiée :
-v2026.11.1. **v2026.11.33** (*2026-11-16*, chantier validé et mergé par
-Claude sur délégation de Pascal) : microclimf ne surchauffe plus le
-sous-bois
+v2026.11.1. **v2026.11.34** (*2026-11-16*, délégation de Pascal) : brief
+nemetonmcp « W1 : faire compter les sources ».
+[`indicateur_w1_reseau()`](https://pobsteta.github.io/nemeton/reference/indicateur_w1_reseau.md)
+lit la couche facultative `water_points` (BD TOPO
+`detail_hydrographique`, natures Source, Source captée, Résurgence, en
+service) ; distance au plus proche cours d’eau ou source, bonus plein si
+la source est dans l’UGF, densité inchangée. Natures vérifiées par
+DescribeFeatureType. Couchey : 6 UGF gagnent de 3,5 à 40,6 (Trou de
+Fiat) ; fontaines et lavoir exclus. Brief app : télécharger
+`water_points`. Brief nemetonshiny traité : nemetonshiny **v2026.11.2**
+publiée le 2026-11-15 (`nemetonshiny@ecd41455`, PR \#293 ; cycle dev
+`2026.11.1.9001` → `.9008`, rouvert en `2026.11.2.9000`), plancher
+nemeton \>= 2026.11.30. Consomme les cœurs 2026.11.28 à 2026.11.30 : T4
+vitalité dynamique câblé (essence ESPAR, SER des UGF, statuts traduits,
+accroissement observé / attendu) ; inventaire vidéo au schéma Groma
+1.6.0 (terrain.zip sans QField, alertes avec `detail`, rayon 15 m,
+téléchargement incrémental `etat =`, part `dbh_ruban`). Aussi : import
+Marculus formats 6 à 8, tarifs proposés au niveau forêt seul, synthèse
+qui compte les UGF du projet (`indicateurs_perimes`), W1 = 0 sur réponse
+BD TOPO vide. Version nemetonshiny vérifiée : v2026.11.2.
+**v2026.11.33** (*2026-11-16*, chantier validé et mergé par Claude sur
+délégation de Pascal) : microclimf ne surchauffe plus le sous-bois
 ([`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)).
 Causes isolées une à une sur Couchey : hauteur du couvert moyennée à
 l’agrégation (cause principale ; une forêt de 20 m uniforme donne 28 °C,
