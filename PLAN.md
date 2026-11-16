@@ -374,6 +374,12 @@ v2026.11.1.
   `vers-marculus/`, copie `vers-nemetonshiny/`.
 - C1 CHM : simple information de l'app, archivée.
 Version nemetonshiny vérifiée : v2026.11.1.
+**v2026.11.36** (*2026-11-16*) : brief aigora-nemeton « corpus : choix
+des essences ». Sept documents au manifeste (81 → 88), licences confirmées
+par Pascal ; six PDF en texte intégral sous `data-raw/references/`
+(gitignorés), le guide Baugeois-Maine en référence seule (404). Ingestion
+dans la base partagée à lancer (`data-raw/fill_corpus_prod.sh`,
+incrémental). Version nemetonshiny vérifiée : v2026.11.2.
 **v2026.11.35** (*2026-11-16*, voie (b) choisie par Pascal) : brief app
 « T4 : 34 UGF sur 63 sans essence » (libellés BD Forêt de groupe).
 `resoudre_espar_bdforet(libelle, ser)` : un groupe prend l'essence
