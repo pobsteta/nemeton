@@ -440,8 +440,11 @@ autres points : `tmax_tol_c` n’est pas en cause, c’est microclimf qui
 surchauffe (sous couvert, 43,7 °C en 2023 contre 37,5 °C en air libre
 ERA5, jusqu’à 59 °C), probablement à cause des paramètres de végétation
 repris de l’exemple microclimf (végétation basse) ; `d_tmax` négatif en
-découle. Correction microclimf : prochaine étape. Version nemetonshiny
-vérifiée : v2026.11.1. nemetonshiny **v2026.11.1** publiée
+découle. Correction microclimf : prochaine étape. Publiée (PR \#657),
+cycle dev rouvert en `2026.11.32.9000`. Briefs de retour :
+`vers-nemetonmcp/2026-11-16-reponse-nemeton-regen-froid-hiver.md`,
+`vers-nemetonshiny/2026-11-16-s1-s2-couche-vide-livre.md`. Version
+nemetonshiny vérifiée : v2026.11.2. nemetonshiny **v2026.11.1** publiée
 (`nemetonshiny@eaa47428`, PR \#280 ; cycle dev `2026.10.18.9001` →
 `.9018`, rouvert en `2026.11.1.9000`). Pilotage par IA (VICTOR, AIGORA
 via nemetonmcp) : erreurs MCP classées, jeton de confirmation des
