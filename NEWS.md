@@ -1,3 +1,26 @@
+# nemeton 2026.11.35 (2026-11-16)
+
+## Nouveautés
+
+- **Libellés BD Forêt de groupe résolus en code ESPAR** (brief nemetonshiny,
+  T4 : 34 UGF sur 63 sans essence à Couchey ; voie retenue par Pascal : la
+  convention vit dans le cœur). Nouvelle fonction
+  `resoudre_espar_bdforet(libelle, ser = NULL)`.
+  - Un libellé de groupe (« Chênes décidus », « Pin laricio, pin noir »,
+    « Sapin, épicéa », « Mélèze », « Peuplier », « Chênes sempervirents »,
+    « Pin à crochets, pin cembro ») prend l'essence **majoritaire en volume
+    à l'hectare de l'IFN** dans la SER de l'UGF, à défaut sa GRECO, à défaut
+    la France (`ifn_volume_essence_ser.csv`). Table des groupes :
+    `inst/extdata/bdforet_essence_espar.csv`.
+  - Les libellés génériques (Feuillus, Conifères, Mixte, Pins mélangés,
+    NC, NR…) rendent NA : aucun code n'est deviné. Un libellé hors table
+    passe par `resoudre_espar()`.
+  - « Sapin, épicéa » donne le sapin (61) en France, comme la convention
+    que l'app posait jusqu'ici ; elle peut la retirer.
+  - Couchey (SER C20) : « Chênes décidus » → chêne sessile (03, 316
+    analogues T4), « Pin laricio, pin noir » → pin noir d'Autriche (54, 37
+    analogues). Sans la SER, le laricio de Corse (53CO) n'en aurait que 4.
+
 # nemeton 2026.11.34 (2026-11-16)
 
 ## Nouveautés
