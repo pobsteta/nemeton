@@ -478,6 +478,47 @@ test_that(".rsen_micro_cache_key changes with extent, reqhgt, mois_ete, point an
   expect_false(any(autres == base))
 })
 
+test_that(".rsen_micro_cache_key changes with the canopy height and foliage", {
+  skip_if_not_installed("terra")
+  dtm <- terra::rast(nrows = 5, ncols = 5, xmin = 0, xmax = 50, ymin = 0, ymax = 50,
+                     crs = "EPSG:2154"); terra::values(dtm) <- 1
+  cst <- function(v) { r <- dtm; terra::values(r) <- v; r }
+  veg <- c(list(pai = cst(3), hgt = cst(20)),
+           lapply(nemeton:::.rsen_vegp_foret("melange"), cst))
+  base <- nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 2, 48, veg$pai, "lidar",
+                                          veg = veg)
+  # Sans végétation (ancien appel) : clé différente -> les caches d'avant
+  # 2026.11.33 (hauteur moyenne, feuillage de l'exemple) ne sont pas relus.
+  expect_false(identical(
+    nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 2, 48, veg$pai, "lidar"), base))
+  v2 <- veg; v2$hgt <- cst(12)
+  v3 <- veg; v3$clump <- cst(0.7)
+  expect_false(identical(nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 2, 48,
+    veg$pai, "lidar", veg = v2), base))
+  expect_false(identical(nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 2, 48,
+    veg$pai, "lidar", veg = v3), base))
+  # Le PAI seul garde sa propre empreinte (pas comptée deux fois).
+  expect_identical(nemeton:::.rsen_micro_cache_key(dtm, 0.5, 6:8, 2, 48, veg$pai,
+    "lidar", veg = veg), base)
+})
+
+test_that(".rsen_vegp_foret gives closed-canopy forest foliage from vegpfromhab", {
+  for (tf in c("melange", "feuillus", "resineux")) {
+    v <- nemeton:::.rsen_vegp_foret(tf)
+    expect_setequal(names(v), c("x", "gsmax", "leafr", "clump", "leafd", "leaft"))
+    expect_equal(v$clump, 0)
+  }
+  expect_equal(nemeton:::.rsen_vegp_foret("feuillus")$x, 1.2)
+  expect_error(nemeton:::.rsen_vegp_foret("lande"))
+})
+
+test_that("regen_sensibilite rejects an unknown type_foret", {
+  u <- sf::st_sf(id = 1, geometry = sf::st_sfc(
+    sf::st_polygon(list(rbind(c(0, 0), c(10, 0), c(10, 10), c(0, 10), c(0, 0)))),
+    crs = 2154))
+  expect_error(regen_sensibilite(u, type_foret = "lande"), "should be one of")
+})
+
 test_that(".rsen_traiter_annee does not reuse a cache built for other summer months", {
   skip_if_not_installed("terra")
   skip_if_not_installed("microclimf")

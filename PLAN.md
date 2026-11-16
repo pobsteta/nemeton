@@ -374,6 +374,19 @@ v2026.11.1.
   `vers-marculus/`, copie `vers-nemetonshiny/`.
 - C1 CHM : simple information de l'app, archivée.
 Version nemetonshiny vérifiée : v2026.11.1.
+**v2026.11.33** (*2026-11-16*, chantier validé et mergé par Claude sur
+délégation de Pascal) : microclimf ne surchauffe plus le sous-bois
+(`regen_sensibilite()`). Causes isolées une à une sur Couchey : hauteur du
+couvert moyennée à l'agrégation (cause principale ; une forêt de 20 m
+uniforme donne 28 °C, sous l'air), feuillage de l'exemple `vegp` (lande,
+`clump` 0,7), jour mensuel choisi sur la feuille du modèle ponctuel et non
+sur l'air. Corrigé : hauteur au maximum, feuillage `vegpfromhab()`
+(`type_foret`), jour le plus chaud en air libre, clé de cache étendue.
+Couchey : canicule 2022 de 37,9 à 32,4 °C (air 36,6), 2023 de 43,4 à 36,3.
+Le facteur limitant des essences devient la sécheresse du sol. Reste
+ouvert : `d_tmax` négatif (une année par catégorie ; 9 juillet 2023 simulé
+au-dessus de l'air). Plugin `imperatrice` activé dans `.claude/settings.json`
+(demande de Pascal). Version nemetonshiny vérifiée : v2026.11.2.
 **v2026.11.32** : brief app « S1 et S2 : une couche routes ou bâti vide est
 une mesure ». S1/S2 rendent `max_dist` sur une couche vide, N1 note 100 le
 terme vide ; `NULL` reste NA. Vérifiés sans changement : A2 proxy, W1, W2.
