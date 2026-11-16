@@ -249,3 +249,16 @@ test_that("load_eobs_source reports a reduce failure with its message", {
   expect_identical(seen[[length(seen)]]$reason, "reduce_error")
   expect_match(seen[[length(seen)]]$message, "No E-OBS summer layers")
 })
+
+test_that("tn with the min reducer gives the annual minimum (2026.11.32)", {
+  skip_if_not_installed("terra")
+  jours <- seq(as.Date("2003-01-01"), as.Date("2003-12-31"), by = "day")
+  r <- terra::rast(nrows = 2, ncols = 2, xmin = 0, xmax = 0.2, ymin = 45,
+                   ymax = 45.2, crs = "EPSG:4326", nlyrs = length(jours))
+  v <- rep(3, length(jours)); v[40] <- -14
+  terra::values(r) <- matrix(rep(v, each = 4), nrow = 4)
+  terra::time(r) <- jours
+  out <- load_eobs_source(NULL, var = "tn", months = 1:12, reducer = "min", nc = r)
+  expect_equal(names(out), "2003")
+  expect_equal(unique(terra::values(out)[, 1]), -14)
+})

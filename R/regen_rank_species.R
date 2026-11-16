@@ -9,6 +9,9 @@
 #   C. Ombre (OPTIONNELLE) — densité de couvert par UGF (cover_col, ou lai_col
 #      converti par Beer-Lambert) vs shade_tol de l'essence. Omise si absente, et
 #      shade_tol sert alors de départage déterministe.
+# Filtre éliminatoire « froid d'hiver » (2026.11.32, brief nemetonmcp) : une
+# essence dont frost_winter_min_c est plus chaud que le minimum décennal de la
+# station (`tmin_decennale`, regen_tmin_decennale()) n'est pas classée.
 # Déterministe (aucun aléa), NA-safe (station manquante → suitability NA, rank NA).
 
 # Poids par défaut des 3 axes (renormalisés sur les axes présents).
@@ -59,7 +62,8 @@
 .regen_rank_pool <- function(units, species_pool, region, include_atlas) {
   eu <- tryCatch(european_species_tolerances(), error = function(e) NULL)
   need <- c("code", "label", "type", "tmax_tol_c", "vpd_tol_kpa", "drought_tol",
-            "shade_tol", "frost_late", "confidence", "invasif")
+            "shade_tol", "frost_late", "frost_winter_min_c", "confidence",
+            "invasif")
   ensure_traits <- function(df) {
     if (is.null(df) || !nrow(df)) return(df)
     if (!"label" %in% names(df) && "species_fr" %in% names(df)) df$label <- df$species_fr
@@ -134,7 +138,12 @@
   w <- c(weights[["chaleur_secheresse"]], weights[["gel"]], weights[["ombre"]])
   suit <- .regen_row_mean(axes, w)                         # moyenne renormalisée sur axes présents
   pen <- cbind(chaleur = p_heat, secheresse = p_sech, gel = p_frost, ombre = p_shade)
-  list(suitability = round(suit, 1), limiting_factor = .rank_limiting(pen))
+
+  # Froid d'hiver, éliminatoire : la station descend plus bas que ce que
+  # l'essence supporte. Sans donnée (station ou trait), pas d'exclusion.
+  froid <- col("tmin_decennale") < as.numeric(sp$frost_winter_min_c %||% NA)
+  list(suitability = round(suit, 1), limiting_factor = .rank_limiting(pen),
+       exclu_froid = froid %in% TRUE)
 }
 
 # Ordonne par UGF (suitability desc, départage confidence puis shade_tol puis
@@ -147,12 +156,17 @@
   long$.sh[is.na(long$.sh)] <- -Inf
   parts <- split(long, long$ug_id)
   out <- lapply(parts, function(df) {
-    ok <- df[is.finite(df$suitability), , drop = FALSE]
+    ok <- df[is.finite(df$suitability) & !df$exclu_froid, , drop = FALSE]
     if (nrow(ok) == 0L) {
+      # Toutes les essences notées sont exclues par le froid : le dire, plutôt
+      # qu'un « pas de donnée ».
+      tout_froid <- any(is.finite(df$suitability)) &&
+        all(df$exclu_froid[is.finite(df$suitability)])
       one <- df[1, , drop = FALSE]
       one$rank <- NA_integer_; one$species_code <- NA_character_
       one$label <- NA_character_; one$type <- NA_character_
-      one$suitability <- NA_real_; one$limiting_factor <- NA_character_
+      one$suitability <- NA_real_
+      one$limiting_factor <- if (tout_froid) "froid_hiver" else NA_character_
       one$confidence <- NA_character_; one$invasif <- NA
       return(one)
     }
@@ -204,9 +218,16 @@
 #'   no density input is supplied the axis is omitted (the score renormalises over
 #'   the present axes) and `shade_tol` breaks ranking ties instead.
 #'
+#' Winter cold is an **eliminatory filter**, not an axis (since 2026.11.32):
+#' when `units` carries `tmin_decennale` (ten-year minimum, °C, from
+#' [regen_tmin_decennale()]), a species whose `frost_winter_min_c` is warmer is
+#' not ranked in that unit. Without `tmin_decennale`, or for a species without
+#' `frost_winter_min_c`, nothing is excluded.
+#'
 #' @param units An `sf` carrying the station columns produced by the regeneration
 #'   engines (`tmax_moyenne`, `d_tmax`, `vpd_canicule`, `rew_min`, and `R7` or
-#'   `r7_gel_days` for the frost axis).
+#'   `r7_gel_days` for the frost axis), and optionally `tmin_decennale` for the
+#'   winter-cold filter.
 #' @param species_pool `NULL` (default → [regen_species_choices()] for `units`), a
 #'   character vector of species codes, or a `data.frame` of candidate traits.
 #'   Missing trait columns (e.g. `frost_late`) are joined from
@@ -232,13 +253,17 @@
 #' @return A long `data.frame`, one row per `(unit × rank)`: `ug_id`, `rank`,
 #'   `species_code`, `label`, `type`, `suitability` (0-100), `limiting_factor`
 #'   (`"chaleur"`/`"secheresse"`/`"gel"`/`"ombre"`, or `NA` when unconstrained),
-#'   `confidence`, `invasif`. Units with no station data yield a single `rank = NA`
-#'   row (no fabricated recommendation). An empty pool yields a 0-row frame.
-#'   The chosen axis weights are attached as `attr(, "weights")`.
+#'   `confidence` (confidence in the species traits, not in the station
+#'   data), `invasif`. Units with no station data yield a single `rank = NA`
+#'   row (no fabricated recommendation); when every scored species is excluded
+#'   by winter cold, that row has `limiting_factor = "froid_hiver"`. An empty
+#'   pool yields a 0-row frame. The chosen axis weights are attached as
+#'   `attr(, "weights")`, and the excluded `(ug_id, species_code)` pairs as
+#'   `attr(, "exclus_froid")`.
 #' @section Lifecycle:
 #' Experimental: may change in any release, without deprecation (spec 057).
 #'
-#' @seealso `regen_rank_to_wide()`, [indice_priorite_regen()],
+#' @seealso `regen_rank_to_wide()`, [regen_tmin_decennale()], [indice_priorite_regen()],
 #'   [regen_species_choices()], [european_species_tolerances()]
 #' @examples
 #' \dontrun{
@@ -278,6 +303,7 @@ regen_rank_species <- function(units, species_pool = NULL, top_n = 3,
       label = as.character(sp$label %||% sp$code),
       type = as.character(sp$type %||% NA),
       suitability = sc$suitability, limiting_factor = sc$limiting_factor,
+      exclu_froid = sc$exclu_froid,
       confidence = as.character(sp$confidence %||% NA),
       shade_tol = suppressWarnings(as.numeric(sp$shade_tol %||% NA)),
       invasif = isTRUE(as.logical(sp$invasif)),
@@ -286,6 +312,9 @@ regen_rank_species <- function(units, species_pool = NULL, top_n = 3,
   long <- do.call(rbind, scored)
   ranked <- .regen_rank_topn(long, top_n)
   attr(ranked, "weights") <- w
+  ex <- long[long$exclu_froid, c("ug_id", "species_code"), drop = FALSE]
+  rownames(ex) <- NULL
+  attr(ranked, "exclus_froid") <- ex
   ranked
 }
 

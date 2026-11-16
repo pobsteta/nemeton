@@ -138,3 +138,76 @@ test_that("regen_rank_species resolves frost_late from the EU table for code poo
   # chêne (frost_late=3) mieux classé que hêtre (frost_late=1) sur UGF gélive
   expect_equal(ranked$species_code[1], "quercus_robur")
 })
+
+# --- Filtre éliminatoire « froid d'hiver » (2026.11.32, brief nemetonmcp) ---
+
+.rk_pool_froid <- function() {
+  p <- .rk_pool()[1:2, ]
+  p$frost_winter_min_c <- c(-12, -30)   # chêne vert gélif, sapin rustique
+  p
+}
+
+test_that("winter cold excludes a species whose frost_winter_min_c is warmer than the station", {
+  u <- .rk_units()
+  u$tmin_decennale <- c(-15, -10)
+  ranked <- regen_rank_species(u, species_pool = .rk_pool_froid(), top_n = 2)
+  # A (-15 °C) : chêne vert (-12) exclu, seul le sapin reste.
+  expect_identical(ranked$species_code[ranked$ug_id == "A"], "sapin")
+  # B (-10 °C) : les deux passent.
+  expect_setequal(ranked$species_code[ranked$ug_id == "B"], c("chene_vert", "sapin"))
+  ex <- attr(ranked, "exclus_froid")
+  expect_identical(ex$ug_id, "A")
+  expect_identical(ex$species_code, "chene_vert")
+})
+
+test_that("without tmin_decennale, or without the trait, nothing is excluded", {
+  ranked <- regen_rank_species(.rk_units(), species_pool = .rk_pool_froid(), top_n = 2)
+  expect_equal(nrow(ranked), 4L)
+  expect_equal(nrow(attr(ranked, "exclus_froid")), 0L)
+
+  u <- .rk_units(); u$tmin_decennale <- c(-40, -40)
+  p <- .rk_pool_froid(); p$frost_winter_min_c <- NA_real_
+  expect_equal(nrow(regen_rank_species(u, species_pool = p, top_n = 2)), 4L)
+})
+
+test_that("a unit where every species is excluded says froid_hiver", {
+  u <- .rk_units(); u$tmin_decennale <- c(-35, -10)
+  ranked <- regen_rank_species(u, species_pool = .rk_pool_froid(), top_n = 2)
+  a <- ranked[ranked$ug_id == "A", ]
+  expect_equal(nrow(a), 1L)
+  expect_true(is.na(a$rank))
+  expect_identical(a$limiting_factor, "froid_hiver")
+})
+
+test_that("regen_tmin_decennale takes a quantile of the annual minima of a dated tn raster", {
+  skip_if_not_installed("terra")
+  # Deux années complètes sur une grille 0.1° autour de Dijon ; minimum
+  # annuel -12 puis -8 -> décile 0.1 (type 7) = -11.6, médiane -10, min -12.
+  jours <- seq(as.Date("2001-01-01"), as.Date("2002-12-31"), by = "day")
+  r <- terra::rast(nrows = 5, ncols = 5, xmin = 4.8, xmax = 5.3,
+                   ymin = 47.1, ymax = 47.6, crs = "EPSG:4326",
+                   nlyrs = length(jours))
+  v <- rep(5, length(jours))
+  v[jours == as.Date("2001-01-15")] <- -12
+  v[jours == as.Date("2002-02-03")] <- -8
+  terra::values(r) <- matrix(rep(v, each = 25), nrow = 25)
+  terra::time(r) <- jours
+  u <- sf::st_sf(ug_id = "A", geometry = sf::st_sfc(
+    sf::st_buffer(sf::st_point(c(5.05, 47.35)), 0.005), crs = 4326))
+  out <- regen_tmin_decennale(u, tn = r, years = 2001:2002)
+  expect_equal(out$tmin_decennale, -11.6)
+  expect_equal(out$tmin_decennale_n_annees, 2L)
+  expect_equal(regen_tmin_decennale(u, tn = r, years = 2001:2002,
+                                    prob = 0.5)$tmin_decennale, -10)
+  expect_equal(regen_tmin_decennale(u, tn = r, years = 2001:2002,
+                                    prob = 0)$tmin_decennale, -12)
+  expect_error(regen_tmin_decennale(u, tn = r, prob = 2), "prob")
+})
+
+test_that("regen_tmin_decennale degrades to NA when E-OBS is unavailable", {
+  u <- sf::st_sf(ug_id = "A", geometry = sf::st_sfc(
+    sf::st_buffer(sf::st_point(c(5.05, 47.35)), 0.005), crs = 4326))
+  out <- suppressWarnings(regen_tmin_decennale(u, source = "none"))
+  expect_true(is.na(out$tmin_decennale))
+  expect_equal(out$tmin_decennale_n_annees, 0L)
+})

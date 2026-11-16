@@ -22,7 +22,8 @@ regen_rank_species(
 \arguments{
 \item{units}{An \code{sf} carrying the station columns produced by the regeneration
 engines (\code{tmax_moyenne}, \code{d_tmax}, \code{vpd_canicule}, \code{rew_min}, and \code{R7} or
-\code{r7_gel_days} for the frost axis).}
+\code{r7_gel_days} for the frost axis), and optionally \code{tmin_decennale} for the
+winter-cold filter.}
 
 \item{species_pool}{\code{NULL} (default → \code{\link{regen_species_choices}} for \code{units}),
 a character vector of species codes, or a \code{data.frame} of candidate traits.
@@ -59,9 +60,13 @@ takes precedence. Both \code{NULL} → shade axis omitted.}
 A long \code{data.frame}, one row per \code{(unit × rank)}: \code{ug_id}, \code{rank},
 \code{species_code}, \code{label}, \code{type}, \code{suitability} (0-100), \code{limiting_factor}
 (\code{"chaleur"}/\code{"secheresse"}/\code{"gel"}/\code{"ombre"}, or \code{NA} when unconstrained),
-\code{confidence}, \code{invasif}. Units with no station data yield a single \code{rank = NA}
-row (no fabricated recommendation). An empty pool yields a 0-row frame.
-The chosen axis weights are attached as \code{attr(, "weights")}.
+\code{confidence} (confidence in the species traits, not in the station
+data), \code{invasif}. Units with no station data yield a single \code{rank = NA}
+row (no fabricated recommendation); when every scored species is excluded
+by winter cold, that row has \code{limiting_factor = "froid_hiver"}. An empty
+pool yields a 0-row frame. The chosen axis weights are attached as
+\code{attr(, "weights")}, and the excluded \code{(ug_id, species_code)} pairs as
+\code{attr(, "exclus_froid")}.
 }
 \description{
 Deterministic ecological suitability ranking of tree species for regeneration,
@@ -86,6 +91,12 @@ converted with a Beer-Lambert \code{1 - exp(-k·LAI)}) crossed with \code{shade_
 no density input is supplied the axis is omitted (the score renormalises over
 the present axes) and \code{shade_tol} breaks ranking ties instead.
 }
+
+Winter cold is an \strong{eliminatory filter}, not an axis (since 2026.11.32):
+when \code{units} carries \code{tmin_decennale} (ten-year minimum, °C, from
+\code{\link[=regen_tmin_decennale]{regen_tmin_decennale()}}), a species whose \code{frost_winter_min_c} is warmer is
+not ranked in that unit. Without \code{tmin_decennale}, or for a species without
+\code{frost_winter_min_c}, nothing is excluded.
 }
 \section{Lifecycle}{
 
@@ -100,6 +111,6 @@ Experimental: may change in any release, without deprecation (spec 057).
 }
 }
 \seealso{
-\code{regen_rank_to_wide()}, \code{\link{indice_priorite_regen}},
+\code{regen_rank_to_wide()}, \code{\link{regen_tmin_decennale}}, \code{\link{indice_priorite_regen}},
 \code{\link{regen_species_choices}}, \code{\link{european_species_tolerances}}
 }

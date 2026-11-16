@@ -34,7 +34,8 @@ NULL
 #'   extent, so features just outside the DEM are no longer ignored. Distances
 #'   are exact up to `max_dist` and censored at `max_dist` beyond (a unit
 #'   with no feature within `max_dist` gets `max_dist`, i.e. "at least
-#'   `max_dist`"); with no feature at all, the indicator is `NA`.
+#'   `max_dist`"). An empty layer (0 features: the source answered, nothing
+#'   there) is a measurement and also gives `max_dist` (since 2026.11.32).
 #'
 #' @return sf object with added column: S1 (mean distance to nearest road in metres)
 #'
@@ -48,7 +49,8 @@ NULL
 #'   \item Extract mean distance per spatial unit
 #' }
 #'
-#' Returns NA when DEM or roads are unavailable.
+#' Returns NA when the roads layer is missing (`NULL`), or when the DEM is
+#' missing and the layer is not empty.
 #'
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
@@ -96,13 +98,27 @@ indicateur_s1_routes <- function(units,
   result <- units
 
   # Fallback: no DEM or no roads → NA
-  if (is.null(dem) || is.null(roads) || nrow(roads) == 0) {
+  .check_max_dist(max_dist)
+
+  # Couche presente mais vide (le WFS a repondu, 0 objet) : l'absence est une
+  # mesure, l'entite la plus proche est au-dela de la zone interrogee. Meme
+  # censure a `max_dist` que pour une couche sans entite dans la fenetre ;
+  # le MNT n'est pas necessaire (since 2026.11.32).
+  if (!is.null(roads) && inherits(roads, "sf") && nrow(roads) == 0L) {
+    cli::cli_alert_info(
+      "S1: roads layer is empty, distance censored at {max_dist} m"
+    )
+    result$S1 <- rep(as.numeric(max_dist), nrow(units))
+    return(result)
+  }
+
+  # Couche absente (NULL, echec du telechargement) ou pas de MNT : NA.
+  if (is.null(dem) || is.null(roads)) {
     cli::cli_alert_warning("S1: DEM or roads unavailable, returning NA")
     result$S1 <- rep(NA_real_, nrow(units))
     return(result)
   }
 
-  .check_max_dist(max_dist)
   result$S1 <- .distance_moyenne_entites(units, roads, dem,
                                                      max_dist, "S1")
 
@@ -135,7 +151,8 @@ indicateur_s1_routes <- function(units,
 #'   extent, so features just outside the DEM are no longer ignored. Distances
 #'   are exact up to `max_dist` and censored at `max_dist` beyond (a unit
 #'   with no feature within `max_dist` gets `max_dist`, i.e. "at least
-#'   `max_dist`"); with no feature at all, the indicator is `NA`.
+#'   `max_dist`"). An empty layer (0 features: the source answered, nothing
+#'   there) is a measurement and also gives `max_dist` (since 2026.11.32).
 #'
 #' @return sf object with added column: S2 (mean distance to nearest building in metres)
 #'
@@ -149,7 +166,8 @@ indicateur_s1_routes <- function(units,
 #'   \item Extract mean distance per spatial unit
 #' }
 #'
-#' Returns NA when DEM or buildings are unavailable.
+#' Returns NA when the buildings layer is missing (`NULL`), or when the DEM is
+#' missing and the layer is not empty.
 #'
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
@@ -196,13 +214,27 @@ indicateur_s2_bati <- function(units,
   result <- units
 
   # Fallback: no DEM or no buildings → NA
-  if (is.null(dem) || is.null(buildings) || nrow(buildings) == 0) {
+  .check_max_dist(max_dist)
+
+  # Couche presente mais vide (le WFS a repondu, 0 objet) : l'absence est une
+  # mesure, l'entite la plus proche est au-dela de la zone interrogee. Meme
+  # censure a `max_dist` que pour une couche sans entite dans la fenetre ;
+  # le MNT n'est pas necessaire (since 2026.11.32).
+  if (!is.null(buildings) && inherits(buildings, "sf") && nrow(buildings) == 0L) {
+    cli::cli_alert_info(
+      "S2: buildings layer is empty, distance censored at {max_dist} m"
+    )
+    result$S2 <- rep(as.numeric(max_dist), nrow(units))
+    return(result)
+  }
+
+  # Couche absente (NULL, echec du telechargement) ou pas de MNT : NA.
+  if (is.null(dem) || is.null(buildings)) {
     cli::cli_alert_warning("S2: DEM or buildings unavailable, returning NA")
     result$S2 <- rep(NA_real_, nrow(units))
     return(result)
   }
 
-  .check_max_dist(max_dist)
   result$S2 <- .distance_moyenne_entites(units, buildings, dem,
                                                      max_dist, "S2")
 
@@ -222,7 +254,7 @@ indicateur_s2_bati <- function(units,
 # sature de toute facon a 2000 m). Une couche non vide sans entite dans la
 # fenetre dit que l'entite la plus proche est a plus de `max_dist` : valeur
 # censuree a `max_dist` (et non NA, qui ferait passer un score certain de 0
-# pour une donnee manquante). Une couche vide est traitee en amont (NA).
+# pour une donnee manquante). Une couche vide est traitee en amont (censuree a `max_dist`).
 .distance_moyenne_entites <- function(units, entites, dem, max_dist, code) {
   crs_d <- terra::crs(dem)
   units_d <- sf::st_transform(as_pure_sf(units), crs_d)

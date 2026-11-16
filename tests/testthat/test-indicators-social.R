@@ -110,7 +110,7 @@ test_that("indicateur_s1_routes (S1) returns NA without roads", {
   expect_true(is.na(result$S1[1]))
 })
 
-test_that("indicateur_s1_routes (S1) returns NA with empty roads (0 rows)", {
+test_that("indicateur_s1_routes (S1) censors an empty roads layer (0 rows) at max_dist", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
@@ -139,7 +139,8 @@ test_that("indicateur_s1_routes (S1) returns NA with empty roads (0 rows)", {
 
   expect_s3_class(result, "sf")
   expect_true("S1" %in% names(result))
-  expect_true(is.na(result$S1[1]))
+  # Couche vide = mesure (2026.11.32) : distance censuree a max_dist.
+  expect_equal(result$S1[1], 2000)
 })
 
 test_that("indicateur_s1_routes validates input types", {
@@ -470,7 +471,7 @@ test_that("indicateur_s2_bati (S2) returns NA without buildings", {
   expect_true(is.na(result$S2[1]))
 })
 
-test_that("indicateur_s2_bati (S2) returns NA with empty buildings (0 rows)", {
+test_that("indicateur_s2_bati (S2) censors an empty buildings layer (0 rows) at max_dist", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
   skip_if_not_installed("terra")
@@ -503,7 +504,8 @@ test_that("indicateur_s2_bati (S2) returns NA with empty buildings (0 rows)", {
 
   expect_s3_class(result, "sf")
   expect_true("S2" %in% names(result))
-  expect_true(is.na(result$S2[1]))
+  # Couche vide = mesure (2026.11.32) : distance censuree a max_dist.
+  expect_equal(result$S2[1], 2000)
 })
 
 test_that("indicateur_s2_bati validates input", {

@@ -29,7 +29,8 @@ Each distance is scored \code{min(100, d / 20)} (2 km or more = 100). Until
 1.0.0 a third "urban" term (weight 0.25) had no data layer: its distance
 was a constant 2000 m, adding 25 points to every unit. It was removed
 (spec 056), so N1 now spans the full 0-100 range. N1 is NA when the roads
-or the buildings layer is missing.
+or the buildings layer is missing (\code{NULL}); an empty layer (0 features)
+is a measurement and scores 100 (since 2026.11.32).
 }
 \description{
 Calculates distance to infrastructure (roads, buildings) as a measure of

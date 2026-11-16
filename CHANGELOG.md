@@ -10,6 +10,17 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.32] - 2026-11-15
+
+### Added
+- `regen_tmin_decennale()`: ten-year minimum temperature (10th percentile of the annual absolute minima, E-OBS TN 1991-2020, `prob`) per unit, KNMI full-period file by default.
+- `regen_rank_species()`: eliminatory winter-cold filter (`tmin_decennale < frost_winter_min_c`), `attr(, "exclus_froid")`, `limiting_factor = "froid_hiver"` when every species is excluded.
+- `load_eobs_source()`: `var = "tn"`, `reducer = "min"`.
+
+### Fixed
+- `indicateur_s1_routes()`, `indicateur_s2_bati()`: an empty layer (0 rows) gives `max_dist` instead of `NA`, DEM not required; `NULL` still gives `NA`.
+- `indicateur_n1_distance()`: an empty roads or buildings layer scores 100 for its term instead of making N1 `NA`.
+
 ## [2026.11.31] - 2026-11-15
 
 ### Fixed

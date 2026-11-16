@@ -57,8 +57,35 @@ Décision : pas de densité de canopée fiable par UGF dans le contrat station
 Sans entrée de densité, l'axe est **omis** (moyenne renormalisée sur A+B) et
 `shade_tol` sert de **départage déterministe** du classement.
 
+### 3.c bis — Froid d'hiver (FILTRE éliminatoire, 2026.11.32)
+
+Brief nemetonmcp 2026-11-15 : à Couchey (Côte-d'Or), Pin d'Alep, Pin brutia et
+Pin des Canaries sortaient en tête, car rien n'utilisait `frost_winter_min_c`.
+Décision Pascal 2026-11-15 (source E-OBS TN), grandeur arrêtée le 2026-11-16 :
+
+- **Entrée station** : `tmin_decennale` = **minimum décennal**, 10ᵉ percentile
+  (`prob = 0.1`, quantile type 7) des minimums absolus annuels de E-OBS TN sur
+  **1991-2020** : « un hiver sur dix descend à ». La moyenne des minimums
+  (grandeur des zones de rusticité USDA, retenue d'abord) effaçait les hivers
+  rares qui tuent une plantation : à Couchey, moyenne −10,1 °C (Pin d'Alep,
+  seuil −12, gardé), décennal −13,2 °C (exclu), minimum absolu −17,6 °C (2009,
+  trop dépendant d'un seul hiver). Posée par
+  `regen_tmin_decennale(units)` : fichier quotidien complet KNMI (public, cache
+  machine) par défaut, ou blocs CDS, ou `tn =` injecté. Maille 0,1° sous un
+  point de l'UGF : climat local, pas la cuvette à gel.
+- **Règle** : `tmin_decennale < frost_winter_min_c` → l'essence n'est **pas
+  classée** dans l'UGF (filtre, pas un axe : une essence qui gèle ne se
+  compense pas par la chaleur ou l'ombre). Sans `tmin_decennale` ou sans trait,
+  aucune exclusion.
+- Sortie : `attr(, "exclus_froid")` (`ug_id`, `species_code`) ; une UGF dont
+  toutes les essences notées sont exclues donne une ligne `rank = NA`,
+  `limiting_factor = "froid_hiver"`.
+
 ### 3.d — Confiance & exclusions
 - `exclude_invasive = TRUE` retire les `invasif`.
+- `confidence` = confiance dans les **traits de l'essence**, pas dans les
+  données de la station (le brief du 2026-11-15 l'a lue comme une robustesse
+  du gel tardif sur 2 printemps : ce n'en est pas une).
 - `confidence` **propagée** en sortie (jamais fondue dans le score — l'app/IA doit
   pouvoir signaler une reco à confiance faible, cohérent φ/NDP ADR-011).
 

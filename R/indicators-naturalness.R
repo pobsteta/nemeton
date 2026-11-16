@@ -30,7 +30,8 @@ NULL
 #'   1.0.0 a third "urban" term (weight 0.25) had no data layer: its distance
 #'   was a constant 2000 m, adding 25 points to every unit. It was removed
 #'   (spec 056), so N1 now spans the full 0-100 range. N1 is NA when the roads
-#'   or the buildings layer is missing.
+#'   or the buildings layer is missing (`NULL`); an empty layer (0 features)
+#'   is a measurement and scores 100 (since 2026.11.32).
 #'
 #' @section Lifecycle:
 #' Stable: covered by the 1.0 API contract (spec 057).
@@ -58,6 +59,10 @@ indicateur_n1_distance <- function(units,
     roads <- sf::st_transform(roads, sf::st_crs(units))
     roads <- sf::st_make_valid(roads)
     dist_routes <- as.numeric(sf::st_distance(centroids, sf::st_union(roads)))
+  } else if (.couche_vide(roads)) {
+    # Couche presente mais vide : aucune route dans la zone interrogee, la
+    # distance est au-dela de la saturation (2000 m) -> score 100.
+    dist_routes <- rep(Inf, nrow(units))
   } else {
     # « default like tuto 04 » : une distance inventee, qui produit un N1
     # d'apparence normale. Sans couche, la distance n'est pas connue.
@@ -69,6 +74,8 @@ indicateur_n1_distance <- function(units,
     buildings <- sf::st_transform(buildings, sf::st_crs(units))
     buildings <- sf::st_make_valid(buildings)
     dist_batiments <- as.numeric(sf::st_distance(centroids, sf::st_union(buildings)))
+  } else if (.couche_vide(buildings)) {
+    dist_batiments <- rep(Inf, nrow(units))
   } else {
     dist_batiments <- rep(NA_real_, nrow(units))
   }
@@ -83,7 +90,8 @@ indicateur_n1_distance <- function(units,
   # les UGF (N1 jamais sous 25). Retire en 1.0.0 (spec 056, decision
   # 2026-10-06) : N1 = (N1_ancien - 25) / 0,75. S'il arrive un jour une couche
   # de zones urbaines, le terme reviendra avec une vraie distance. Une couche
-  # routes ou bati manquante laisse N1 a NA (NA propage par la somme).
+  # routes ou bati manquante (NULL) laisse N1 a NA (NA propage par la
+  # somme) ; une couche vide (0 objet) est une mesure (since 2026.11.32).
   result$N1 <- (0.40 * N1_routes + 0.35 * N1_batiments) / 0.75
 
   cli::cli_alert_success("Calculated N1: Infrastructure distance (0-100)")
@@ -441,4 +449,10 @@ build_foret_ancienne_mask <- function(source,
   }
 
   cli::cli_abort("{.arg source} must be an sf/sfc object or a terra SpatRaster.")
+}
+
+# Couche vectorielle presente mais sans objet (le WFS a repondu, 0 entite) :
+# l'absence est alors une mesure, a distinguer de NULL (couche manquante).
+.couche_vide <- function(x) {
+  inherits(x, "sf") && nrow(x) == 0L
 }
