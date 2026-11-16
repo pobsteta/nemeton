@@ -374,6 +374,14 @@ v2026.11.1.
   `vers-marculus/`, copie `vers-nemetonshiny/`.
 - C1 CHM : simple information de l'app, archivée.
 Version nemetonshiny vérifiée : v2026.11.1.
+**v2026.11.35** (*2026-11-16*, voie (b) choisie par Pascal) : brief app
+« T4 : 34 UGF sur 63 sans essence » (libellés BD Forêt de groupe).
+`resoudre_espar_bdforet(libelle, ser)` : un groupe prend l'essence
+majoritaire en volume IFN de la SER, puis GRECO, puis France ; génériques
+NA. Couchey C20 : chênes décidus → 03, laricio/noir → 54. Brief app :
+appeler la fonction avec la SER et retirer la règle « Sapin, épicéa » → 61.
+2026.11.34 publiée, cycle dev `2026.11.34.9000` (PR #662). Version
+nemetonshiny vérifiée : v2026.11.2.
 **v2026.11.34** (*2026-11-16*, délégation de Pascal) : brief nemetonmcp
 « W1 : faire compter les sources ». `indicateur_w1_reseau()` lit la couche
 facultative `water_points` (BD TOPO `detail_hydrographique`, natures Source,
