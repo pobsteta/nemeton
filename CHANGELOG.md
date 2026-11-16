@@ -10,7 +10,7 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
-## [2026.11.32] - 2026-11-15
+## [2026.11.32] - 2026-11-16
 
 ### Added
 - `regen_tmin_decennale()`: ten-year minimum temperature (10th percentile of the annual absolute minima, E-OBS TN 1991-2020, `prob`) per unit, KNMI full-period file by default.
