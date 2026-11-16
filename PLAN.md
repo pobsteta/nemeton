@@ -386,7 +386,10 @@ Couchey : canicule 2022 de 37,9 à 32,4 °C (air 36,6), 2023 de 43,4 à 36,3.
 Le facteur limitant des essences devient la sécheresse du sol. Reste
 ouvert : `d_tmax` négatif (une année par catégorie ; 9 juillet 2023 simulé
 au-dessus de l'air). Plugin `imperatrice` activé dans `.claude/settings.json`
-(demande de Pascal). Version nemetonshiny vérifiée : v2026.11.2.
+(demande de Pascal). Publiée (PR #659), cycle dev rouvert en
+`2026.11.33.9000`. Briefs : `vers-nemetonmcp/2026-11-16-reponse-nemeton-microclimf-surchauffe.md`,
+`vers-nemetonshiny/2026-11-16-microclimf-surchauffe-corrigee.md`. Version
+nemetonshiny vérifiée : v2026.11.2.
 **v2026.11.32** : brief app « S1 et S2 : une couche routes ou bâti vide est
 une mesure ». S1/S2 rendent `max_dist` sur une couche vide, N1 note 100 le
 terme vide ; `NULL` reste NA. Vérifiés sans changement : A2 proxy, W1, W2.
