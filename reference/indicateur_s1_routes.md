@@ -55,7 +55,8 @@ indicateur_s1_routes(
   features just outside the DEM are no longer ignored. Distances are
   exact up to `max_dist` and censored at `max_dist` beyond (a unit with
   no feature within `max_dist` gets `max_dist`, i.e. "at least
-  `max_dist`"); with no feature at all, the indicator is `NA`.
+  `max_dist`"). An empty layer (0 features: the source answered, nothing
+  there) is a measurement and also gives `max_dist` (since 2026.11.32).
 
 ## Value
 
@@ -75,7 +76,8 @@ metres)
 
 - Extract mean distance per spatial unit
 
-Returns NA when DEM or roads are unavailable.
+Returns NA when the roads layer is missing (`NULL`), or when the DEM is
+missing and the layer is not empty.
 
 ## Lifecycle
 

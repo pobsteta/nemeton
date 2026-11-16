@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.31.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.32</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,6 +117,29 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.32" id="nemeton-20261132-2026-11-16">nemeton 2026.11.32 (2026-11-16)<a class="anchor" aria-label="anchor" href="#nemeton-20261132-2026-11-16"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-32">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-32"></a></h3>
+<ul><li>
+<strong>Froid d’hiver dans le classement des essences.</strong> À Couchey (Côte-d’Or), <code><a href="../reference/regen_rank_species.html">regen_rank_species()</a></code> plaçait le Pin d’Alep, le Pin brutia et le Pin des Canaries en tête : rien n’utilisait <code>frost_winter_min_c</code>.
+<ul><li>
+<code><a href="../reference/regen_rank_species.html">regen_rank_species()</a></code> n’y classe plus une essence dont <code>frost_winter_min_c</code> est plus chaud que le froid de la station (<code>tmin_decennale</code>). C’est un filtre, pas un axe : une essence qui gèle ne se rattrape pas sur la chaleur ou l’ombre. Les paires exclues sont dans <code>attr(, "exclus_froid")</code>. Une UGF où tout est exclu a une ligne <code>rank = NA</code> avec <code>limiting_factor = "froid_hiver"</code>. Sans <code>tmin_decennale</code>, rien ne change.</li>
+<li>Nouvelle fonction <code>regen_tmin_decennale(units)</code> : minimum décennal, le froid qu’atteint un hiver sur dix (10ᵉ percentile des minimums absolus annuels d’E-OBS TN sur 1991-2020, réglable par <code>prob</code>). À Couchey : −13,2 °C, qui exclut le Pin d’Alep, quand la moyenne (−10,1 °C) le gardait. Lue dans le fichier quotidien complet de KNMI (public, mis en cache machine), ou dans les blocs CDS, ou dans un <code>tn =</code> fourni.</li>
+<li>
+<code><a href="../reference/load_eobs_source.html">load_eobs_source()</a></code> accepte <code>var = "tn"</code> et <code>reducer = "min"</code>.</li>
+</ul></li>
+</ul></div>
+<div class="section level3">
+<h3 id="corrections-2026-11-32">Corrections<a class="anchor" aria-label="anchor" href="#corrections-2026-11-32"></a></h3>
+<ul><li>
+<strong>Une couche routes ou bâti vide est une mesure.</strong> Depuis sa version 2026.11.1.9007, l’app passe une couche vide (<code>sf</code> à 0 ligne) quand le WFS BD TOPO répond sans objet, et <code>NULL</code> en cas d’échec. Une forêt sans route ni bâti dans l’emprise recevait pourtant « non mesuré » :
+<ul><li>S1 et S2 rendent <code>max_dist</code> (2 000 m par défaut), comme une couche sans entité dans la fenêtre de recherche, et le MNT n’est plus nécessaire dans ce cas ;</li>
+<li>N1 note 100 le terme routes ou bâti dont la couche est vide ;</li>
+<li>une couche absente (<code>NULL</code>) donne toujours <code>NA</code>. A2 (méthode proxy), W1 et W2 traitaient déjà une couche vide comme une mesure.</li>
+</ul></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.31" id="nemeton-20261131-2026-11-15">nemeton 2026.11.31 (2026-11-15)<a class="anchor" aria-label="anchor" href="#nemeton-20261131-2026-11-15"></a></h2>
 <div class="section level3">

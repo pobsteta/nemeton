@@ -29,7 +29,7 @@ as ERA5). Not runnable in CI; validated on real data. Degrades to NULL.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.31.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.32</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -181,7 +181,8 @@ as ERA5). Not runnable in CI; validated on real data. Degrades to <code>NULL</co
 
 <dt id="arg-var">var<a class="anchor" aria-label="anchor" href="#arg-var"></a></dt>
 <dd><p>E-OBS variable: <code>"tx"</code> (max temperature, default), <code>"tg"</code>
-(mean temperature) or <code>"rr"</code> (precipitation).</p></dd>
+(mean temperature), <code>"tn"</code> (min temperature, since 2026.11.32) or
+<code>"rr"</code> (precipitation).</p></dd>
 
 
 <dt id="arg-years">years<a class="anchor" aria-label="anchor" href="#arg-years"></a></dt>
@@ -200,7 +201,8 @@ requires <code>nc</code>.</p></dd>
 
 <dt id="arg-reducer">reducer<a class="anchor" aria-label="anchor" href="#arg-reducer"></a></dt>
 <dd><p>Temporal reducer over the summer days: default <code>"mean"</code> for
-<code>tx</code>/<code>tg</code>, <code>"sum"</code> for <code>rr</code>. Also <code>"max"</code>, <code>"median"</code>.</p></dd>
+<code>tx</code>/<code>tg</code>/<code>tn</code>, <code>"sum"</code> for <code>rr</code>. Also <code>"max"</code>, <code>"min"</code>,
+<code>"median"</code>.</p></dd>
 
 
 <dt id="arg-nc">nc<a class="anchor" aria-label="anchor" href="#arg-nc"></a></dt>

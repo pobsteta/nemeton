@@ -983,6 +983,9 @@ Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.
 - [`regen_rank_species()`](https://pobsteta.github.io/nemeton/reference/regen_rank_species.md)
   : Rank the top-N regeneration species per management unit
 
+- [`regen_tmin_decennale()`](https://pobsteta.github.io/nemeton/reference/regen_tmin_decennale.md)
+  : Station winter cold (ten-year minimum) from E-OBS
+
 - [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md)
   : Microclimate exposure per unit — microclimf engine (spec 027 L1)
 

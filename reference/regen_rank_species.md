@@ -27,6 +27,14 @@ Axes:
   omitted (the score renormalises over the present axes) and `shade_tol`
   breaks ranking ties instead.
 
+Winter cold is an **eliminatory filter**, not an axis (since
+2026.11.32): when `units` carries `tmin_decennale` (ten-year minimum,
+°C, from
+[`regen_tmin_decennale()`](https://pobsteta.github.io/nemeton/reference/regen_tmin_decennale.md)),
+a species whose `frost_winter_min_c` is warmer is not ranked in that
+unit. Without `tmin_decennale`, or for a species without
+`frost_winter_min_c`, nothing is excluded.
+
 ## Usage
 
 ``` r
@@ -52,7 +60,8 @@ regen_rank_species(
 
   An `sf` carrying the station columns produced by the regeneration
   engines (`tmax_moyenne`, `d_tmax`, `vpd_canicule`, `rew_min`, and `R7`
-  or `r7_gel_days` for the frost axis).
+  or `r7_gel_days` for the frost axis), and optionally `tmin_decennale`
+  for the winter-cold filter.
 
 - species_pool:
 
@@ -112,10 +121,13 @@ regen_rank_species(
 A long `data.frame`, one row per `(unit × rank)`: `ug_id`, `rank`,
 `species_code`, `label`, `type`, `suitability` (0-100),
 `limiting_factor` (`"chaleur"`/`"secheresse"`/`"gel"`/`"ombre"`, or `NA`
-when unconstrained), `confidence`, `invasif`. Units with no station data
-yield a single `rank = NA` row (no fabricated recommendation). An empty
-pool yields a 0-row frame. The chosen axis weights are attached as
-`attr(, "weights")`.
+when unconstrained), `confidence` (confidence in the species traits, not
+in the station data), `invasif`. Units with no station data yield a
+single `rank = NA` row (no fabricated recommendation); when every scored
+species is excluded by winter cold, that row has
+`limiting_factor = "froid_hiver"`. An empty pool yields a 0-row frame.
+The chosen axis weights are attached as `attr(, "weights")`, and the
+excluded `(ug_id, species_code)` pairs as `attr(, "exclus_froid")`.
 
 ## Lifecycle
 
@@ -124,6 +136,7 @@ Experimental: may change in any release, without deprecation (spec 057).
 ## See also
 
 `regen_rank_to_wide()`,
+[`regen_tmin_decennale`](https://pobsteta.github.io/nemeton/reference/regen_tmin_decennale.md),
 [`indice_priorite_regen`](https://pobsteta.github.io/nemeton/reference/indice_priorite_regen.md),
 [`regen_species_choices`](https://pobsteta.github.io/nemeton/reference/regen_species_choices.md),
 [`european_species_tolerances`](https://pobsteta.github.io/nemeton/reference/european_species_tolerances.md)

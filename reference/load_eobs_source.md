@@ -45,7 +45,8 @@ load_eobs_source(
 - var:
 
   E-OBS variable: `"tx"` (max temperature, default), `"tg"` (mean
-  temperature) or `"rr"` (precipitation).
+  temperature), `"tn"` (min temperature, since 2026.11.32) or `"rr"`
+  (precipitation).
 
 - years:
 
@@ -63,8 +64,8 @@ load_eobs_source(
 
 - reducer:
 
-  Temporal reducer over the summer days: default `"mean"` for `tx`/`tg`,
-  `"sum"` for `rr`. Also `"max"`, `"median"`.
+  Temporal reducer over the summer days: default `"mean"` for
+  `tx`/`tg`/`tn`, `"sum"` for `rr`. Also `"max"`, `"min"`, `"median"`.
 
 - nc:
 

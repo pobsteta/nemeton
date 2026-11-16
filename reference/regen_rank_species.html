@@ -19,7 +19,12 @@ converted with a Beer-Lambert 1 - exp(-k·LAI)) crossed with shade_tol. When
 no density input is supplied the axis is omitted (the score renormalises over
 the present axes) and shade_tol breaks ranking ties instead.
 
-"><meta property="og:description" content="Deterministic ecological suitability ranking of tree species for regeneration,
+
+Winter cold is an eliminatory filter, not an axis (since 2026.11.32):
+when units carries tmin_decennale (ten-year minimum, °C, from
+regen_tmin_decennale()), a species whose frost_winter_min_c is warmer is
+not ranked in that unit. Without tmin_decennale, or for a species without
+frost_winter_min_c, nothing is excluded."><meta property="og:description" content="Deterministic ecological suitability ranking of tree species for regeneration,
 per management unit (UGF). For each (unit × species) it aggregates up to three
 0-100 sub-scores (high = well suited) and returns the top_n species per unit
 (spec 039). This is the deterministic core; an LLM narrative layer lives in
@@ -39,7 +44,12 @@ converted with a Beer-Lambert 1 - exp(-k·LAI)) crossed with shade_tol. When
 no density input is supplied the axis is omitted (the score renormalises over
 the present axes) and shade_tol breaks ranking ties instead.
 
-"><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
+
+Winter cold is an eliminatory filter, not an axis (since 2026.11.32):
+when units carries tmin_decennale (ten-year minimum, °C, from
+regen_tmin_decennale()), a species whose frost_winter_min_c is warmer is
+not ranked in that unit. Without tmin_decennale, or for a species without
+frost_winter_min_c, nothing is excluded."><meta property="og:image" content="https://pobsteta.github.io/nemeton/logo.svg"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -47,7 +57,7 @@ the present axes) and shade_tol breaks ranking ties instead.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.31.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.32</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -177,7 +187,12 @@ late-flushing oak is not).</p></li>
 converted with a Beer-Lambert <code>1 - exp(-k·LAI)</code>) crossed with <code>shade_tol</code>. When
 no density input is supplied the axis is omitted (the score renormalises over
 the present axes) and <code>shade_tol</code> breaks ranking ties instead.</p></li>
-</ul></div>
+</ul><p>Winter cold is an <strong>eliminatory filter</strong>, not an axis (since 2026.11.32):
+when <code>units</code> carries <code>tmin_decennale</code> (ten-year minimum, °C, from
+<code><a href="regen_tmin_decennale.html">regen_tmin_decennale()</a></code>), a species whose <code>frost_winter_min_c</code> is warmer is
+not ranked in that unit. Without <code>tmin_decennale</code>, or for a species without
+<code>frost_winter_min_c</code>, nothing is excluded.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
@@ -204,7 +219,8 @@ the present axes) and <code>shade_tol</code> breaks ranking ties instead.</p></l
 <dl><dt id="arg-units">units<a class="anchor" aria-label="anchor" href="#arg-units"></a></dt>
 <dd><p>An <code>sf</code> carrying the station columns produced by the regeneration
 engines (<code>tmax_moyenne</code>, <code>d_tmax</code>, <code>vpd_canicule</code>, <code>rew_min</code>, and <code>R7</code> or
-<code>r7_gel_days</code> for the frost axis).</p></dd>
+<code>r7_gel_days</code> for the frost axis), and optionally <code>tmin_decennale</code> for the
+winter-cold filter.</p></dd>
 
 
 <dt id="arg-species-pool">species_pool<a class="anchor" aria-label="anchor" href="#arg-species-pool"></a></dt>
@@ -263,9 +279,13 @@ takes precedence. Both <code>NULL</code> → shade axis omitted.</p></dd>
     <p>A long <code>data.frame</code>, one row per <code>(unit × rank)</code>: <code>ug_id</code>, <code>rank</code>,
 <code>species_code</code>, <code>label</code>, <code>type</code>, <code>suitability</code> (0-100), <code>limiting_factor</code>
 (<code>"chaleur"</code>/<code>"secheresse"</code>/<code>"gel"</code>/<code>"ombre"</code>, or <code>NA</code> when unconstrained),
-<code>confidence</code>, <code>invasif</code>. Units with no station data yield a single <code>rank = NA</code>
-row (no fabricated recommendation). An empty pool yields a 0-row frame.
-The chosen axis weights are attached as <code>attr(, "weights")</code>.</p>
+<code>confidence</code> (confidence in the species traits, not in the station
+data), <code>invasif</code>. Units with no station data yield a single <code>rank = NA</code>
+row (no fabricated recommendation); when every scored species is excluded
+by winter cold, that row has <code>limiting_factor = "froid_hiver"</code>. An empty
+pool yields a 0-row frame. The chosen axis weights are attached as
+<code>attr(, "weights")</code>, and the excluded <code>(ug_id, species_code)</code> pairs as
+<code>attr(, "exclus_froid")</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
@@ -275,7 +295,7 @@ The chosen axis weights are attached as <code>attr(, "weights")</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code>regen_rank_to_wide()</code>, <code><a href="indice_priorite_regen.html">indice_priorite_regen</a></code>,
+    <div class="dont-index"><p><code>regen_rank_to_wide()</code>, <code><a href="regen_tmin_decennale.html">regen_tmin_decennale</a></code>, <code><a href="indice_priorite_regen.html">indice_priorite_regen</a></code>,
 <code><a href="regen_species_choices.html">regen_species_choices</a></code>, <code><a href="european_species_tolerances.html">european_species_tolerances</a></code></p></div>
     </div>
 

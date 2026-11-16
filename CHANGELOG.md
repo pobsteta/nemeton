@@ -13,6 +13,31 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.32\] - 2026-11-16
+
+### Added
+
+- [`regen_tmin_decennale()`](https://pobsteta.github.io/nemeton/reference/regen_tmin_decennale.md):
+  ten-year minimum temperature (10th percentile of the annual absolute
+  minima, E-OBS TN 1991-2020, `prob`) per unit, KNMI full-period file by
+  default.
+- [`regen_rank_species()`](https://pobsteta.github.io/nemeton/reference/regen_rank_species.md):
+  eliminatory winter-cold filter
+  (`tmin_decennale < frost_winter_min_c`), `attr(, "exclus_froid")`,
+  `limiting_factor = "froid_hiver"` when every species is excluded.
+- [`load_eobs_source()`](https://pobsteta.github.io/nemeton/reference/load_eobs_source.md):
+  `var = "tn"`, `reducer = "min"`.
+
+### Fixed
+
+- [`indicateur_s1_routes()`](https://pobsteta.github.io/nemeton/reference/indicateur_s1_routes.md),
+  [`indicateur_s2_bati()`](https://pobsteta.github.io/nemeton/reference/indicateur_s2_bati.md):
+  an empty layer (0 rows) gives `max_dist` instead of `NA`, DEM not
+  required; `NULL` still gives `NA`.
+- [`indicateur_n1_distance()`](https://pobsteta.github.io/nemeton/reference/indicateur_n1_distance.md):
+  an empty roads or buildings layer scores 100 for its term instead of
+  making N1 `NA`.
+
 ## \[2026.11.31\] - 2026-11-15
 
 ### Fixed

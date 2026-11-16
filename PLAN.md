@@ -426,7 +426,22 @@ une réponse WFS vide est traitée comme un échec. Brief
 forme × tarif lent), libellés 29AF/68CE ajoutés. Réponse
 `vers-marculus/`, copie `vers-nemetonshiny/`. - C1 CHM : simple
 information de l’app, archivée. Version nemetonshiny vérifiée :
-v2026.11.1. nemetonshiny **v2026.11.1** publiée
+v2026.11.1. **v2026.11.32** : brief app « S1 et S2 : une couche routes
+ou bâti vide est une mesure ». S1/S2 rendent `max_dist` sur une couche
+vide, N1 note 100 le terme vide ; `NULL` reste NA. Vérifiés sans
+changement : A2 proxy, W1, W2. Brief regen_rank_species (nemetonmcp,
+Couchey) : filtre éliminatoire « froid d’hiver »
+([`regen_tmin_decennale()`](https://pobsteta.github.io/nemeton/reference/regen_tmin_decennale.md),
+E-OBS TN 1991-2020, validé par Pascal). Grandeur : minimum décennal (10ᵉ
+percentile des minimums annuels, choix de Pascal le 2026-11-16) ; à
+Couchey −13,2 °C contre −10,1 °C en moyenne, 8 hivers sur 30 sous −12 °C
+: Pin d’Alep et Pin brutia exclus, Pin parasol (−14) gardé. Analyse des
+autres points : `tmax_tol_c` n’est pas en cause, c’est microclimf qui
+surchauffe (sous couvert, 43,7 °C en 2023 contre 37,5 °C en air libre
+ERA5, jusqu’à 59 °C), probablement à cause des paramètres de végétation
+repris de l’exemple microclimf (végétation basse) ; `d_tmax` négatif en
+découle. Correction microclimf : prochaine étape. Version nemetonshiny
+vérifiée : v2026.11.1. nemetonshiny **v2026.11.1** publiée
 (`nemetonshiny@eaa47428`, PR \#280 ; cycle dev `2026.10.18.9001` →
 `.9018`, rouvert en `2026.11.1.9000`). Pilotage par IA (VICTOR, AIGORA
 via nemetonmcp) : erreurs MCP classées, jeton de confirmation des

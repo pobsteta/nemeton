@@ -15,7 +15,7 @@ sum to 1: N1 = (0.40 * roads + 0.35 * buildings) / 0.75."><meta property="og:ima
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.31.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.32</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -174,7 +174,8 @@ Each distance is scored <code>min(100, d / 20)</code> (2 km or more = 100). Unti
 1.0.0 a third "urban" term (weight 0.25) had no data layer: its distance
 was a constant 2000 m, adding 25 points to every unit. It was removed
 (spec 056), so N1 now spans the full 0-100 range. N1 is NA when the roads
-or the buildings layer is missing.</p>
+or the buildings layer is missing (<code>NULL</code>); an empty layer (0 features)
+is a measurement and scores 100 (since 2026.11.32).</p>
     </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>
