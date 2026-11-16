@@ -1,0 +1,2 @@
+# niveau rapide ; suite complète en CI (ADR 0001 de nemetonplateforme, amendement du 2026-11-16)
+Rscript -e 'devtools::test(stop_on_failure = TRUE, reporter = "summary", perl = TRUE, filter = "^(?!(visualization|zero-ou-na|indicators-(air|biodiversity|core|families|landscape|risk|water))$)(ndp|normalization|family|indicator|analysis|species-config|nemeton-class|contrat|site-index)")'
