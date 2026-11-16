@@ -10,7 +10,8 @@ indicateur_w1_reseau(
   watercourse_layer = "water_network",
   buffer = 0,
   proximity_m = 500,
-  proximity_ref = 50
+  proximity_ref = 50,
+  spring_layer = "water_points"
 )
 }
 \arguments{
@@ -25,6 +26,9 @@ indicateur_w1_reseau(
 \item{proximity_m}{Numeric. Maximum distance (m) for proximity bonus. Default 500.}
 
 \item{proximity_ref}{Numeric. Equivalent density bonus (m/ha) at distance 0. Default 50.}
+
+\item{spring_layer}{Character. Name of the optional spring point layer in
+\code{layers} (default \code{"water_points"}). Absent layer: surface network only.}
 }
 \value{
 The input \code{units} (same class, rows and order) with an added numeric column \code{W1}: network density (m/ha). NA for every unit when
@@ -36,6 +40,17 @@ Calculates stream/river network length density within or near forest parcels.
 Includes a proximity bonus for parcels near watercourses (within 500m)
 that are not directly crossed, reflecting the hydrological influence of
 nearby streams on water table and microclimate.
+
+Since 2026.11.34, springs count in the proximity bonus (surface network
+\strong{and emergences}): when \code{layers} holds a point layer \code{spring_layer} (BD
+TOPO \code{detail_hydrographique}), a unit not crossed by a watercourse takes its
+distance to the nearest watercourse \strong{or spring}, and a spring inside the
+unit gives the full bonus. Only emergences are kept (\code{nature} in \code{Source},
+\verb{Source captée}, \code{Résurgence}, and \code{etat_de_l_objet} "En service" when the
+column exists): fountains, wash-houses and sinkholes are works or
+absorption points. Springs never add to the density (a point has no
+length), and an absent spring layer leaves W1 unchanged. W1 still does not
+see underground flow (karst).
 }
 \section{Lifecycle}{
 
