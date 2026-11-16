@@ -121,7 +121,7 @@ test_that("indicateur_n1_distance always writes its code column (no column_name,
   expect_true("N1" %in% names(result))
 })
 
-test_that("indicateur_n1_distance (N1) handles empty roads sf (0 rows)", {
+test_that("indicateur_n1_distance (N1) scores an empty roads layer as remote", {
   skip_if_not_installed("terra")
 
   skip_if_not_installed("sf")
@@ -159,12 +159,14 @@ test_that("indicateur_n1_distance (N1) handles empty roads sf (0 rows)", {
 
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
-  # 40 % du poids de N1 vient des routes : sans elles, le composite serait une
-  # moyenne entre du mesure (le bati) et de l'invente.
-  expect_true(is.na(result$N1[1]))
+  # Couche vide = mesure (2026.11.32) : aucune route dans la zone, terme
+  # routes sature a 100. NULL (couche manquante) reste NA.
+  d_b <- as.numeric(sf::st_distance(sf::st_centroid(sf::st_geometry(test_units)),
+                                    sf::st_geometry(buildings)))[1]
+  expect_equal(result$N1[1], (0.40 * 100 + 0.35 * min(100, d_b / 20)) / 0.75)
 })
 
-test_that("indicateur_n1_distance (N1) handles empty buildings sf (0 rows)", {
+test_that("indicateur_n1_distance (N1) scores an empty buildings layer as remote", {
   skip_if_not_installed("terra")
   skip_if_not_installed("sf")
 
@@ -199,8 +201,10 @@ test_that("indicateur_n1_distance (N1) handles empty buildings sf (0 rows)", {
 
   expect_s3_class(result, "sf")
   expect_true("N1" %in% names(result))
-  # Symetrique du cas precedent : 35 % du poids manque.
-  expect_true(is.na(result$N1[1]))
+  # Symetrique du cas precedent : terme bati sature a 100.
+  d_r <- as.numeric(sf::st_distance(sf::st_centroid(sf::st_geometry(test_units)),
+                                    sf::st_geometry(roads)))[1]
+  expect_equal(result$N1[1], (0.40 * min(100, d_r / 20) + 0.35 * 100) / 0.75)
 })
 
 test_that("indicateur_n1_distance (N1) handles non-sf roads/buildings (ignored)", {

@@ -17,8 +17,9 @@
     var,
     tx = list(cds = "maximum_temperature",  reducer = "mean"),
     tg = list(cds = "mean_temperature",     reducer = "mean"),
+    tn = list(cds = "minimum_temperature",  reducer = "mean"),
     rr = list(cds = "precipitation_amount", reducer = "sum"),
-    cli::cli_abort("Unknown E-OBS {.arg var} {.val {var}}; use \"tx\", \"tg\" or \"rr\".")
+    cli::cli_abort("Unknown E-OBS {.arg var} {.val {var}}; use \"tx\", \"tg\", \"tn\" or \"rr\".")
   )
 }
 
@@ -42,7 +43,8 @@
   if (!inherits(daily, "SpatRaster")) {
     cli::cli_abort("{.arg daily} must be a {.cls SpatRaster} of daily E-OBS values.")
   }
-  fun <- switch(reducer, mean = "mean", sum = "sum", max = "max", median = "median",
+  fun <- switch(reducer, mean = "mean", sum = "sum", max = "max", min = "min",
+                median = "median",
                 cli::cli_abort("Unknown {.arg reducer} {.val {reducer}}."))
   if (!is.null(aoi)) {
     if (!inherits(aoi, c("sf", "sfc"))) {
@@ -251,14 +253,15 @@
 #'
 #' @param aoi An `sf`/`sfc` of the management units (their union crops E-OBS).
 #' @param var E-OBS variable: `"tx"` (max temperature, default), `"tg"` (mean
-#'   temperature) or `"rr"` (precipitation).
+#'   temperature), `"tn"` (min temperature, since 2026.11.32) or `"rr"`
+#'   (precipitation).
 #' @param years Optional integer years to keep (default: all years present).
 #' @param months Summer months to reduce over (default `6:8`, JJA). A year
 #'   with less than 90% of the days of these months is dropped with a warning.
 #' @param source `"cds"` for the automatic Copernicus download, anything else
 #'   requires `nc`.
 #' @param reducer Temporal reducer over the summer days: default `"mean"` for
-#'   `tx`/`tg`, `"sum"` for `rr`. Also `"max"`, `"median"`.
+#'   `tx`/`tg`/`tn`, `"sum"` for `rr`. Also `"max"`, `"min"`, `"median"`.
 #' @param nc A daily E-OBS netCDF path (or a dated `SpatRaster`) to use instead
 #'   of the CDS download.
 #' @param cache_dir Persistent directory for the CDS download / unzip. Defaults

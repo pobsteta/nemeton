@@ -24,7 +24,8 @@ load_eobs_source(
 \item{aoi}{An \pkg{sf}/\pkg{sfc} of the management units (their union crops E-OBS).}
 
 \item{var}{E-OBS variable: \code{"tx"} (max temperature, default), \code{"tg"}
-(mean temperature) or \code{"rr"} (precipitation).}
+(mean temperature), \code{"tn"} (min temperature, since 2026.11.32) or
+\code{"rr"} (precipitation).}
 
 \item{years}{Optional integer years to keep (default: all years present).}
 
@@ -35,7 +36,8 @@ with less than 90\% of the days of these months is dropped with a warning.}
 requires \code{nc}.}
 
 \item{reducer}{Temporal reducer over the summer days: default \code{"mean"} for
-\code{tx}/\code{tg}, \code{"sum"} for \code{rr}. Also \code{"max"}, \code{"median"}.}
+\code{tx}/\code{tg}/\code{tn}, \code{"sum"} for \code{rr}. Also \code{"max"}, \code{"min"},
+\code{"median"}.}
 
 \item{nc}{A daily E-OBS netCDF path (or a dated \code{SpatRaster}) to use instead
 of the CDS download.}

@@ -739,6 +739,7 @@ reference:
     - regeneration_tolerances
     - european_species_tolerances
     - regen_rank_species
+    - regen_tmin_decennale
     - regen_sensibilite
     - regen_bilan_hydrique
     - build_biljou_soil

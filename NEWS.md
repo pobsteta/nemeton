@@ -1,3 +1,39 @@
+# nemeton 2026.11.32 (2026-11-16)
+
+## Nouveautés
+
+- **Froid d'hiver dans le classement des essences.** À Couchey (Côte-d'Or),
+  `regen_rank_species()` plaçait le Pin d'Alep, le Pin brutia et le Pin des
+  Canaries en tête : rien n'utilisait `frost_winter_min_c`.
+  - `regen_rank_species()` n'y classe plus une essence dont
+    `frost_winter_min_c` est plus chaud que le froid de la station
+    (`tmin_decennale`). C'est un filtre, pas un axe : une essence qui gèle ne
+    se rattrape pas sur la chaleur ou l'ombre. Les paires exclues sont dans
+    `attr(, "exclus_froid")`. Une UGF où tout est exclu a une ligne
+    `rank = NA` avec `limiting_factor = "froid_hiver"`. Sans
+    `tmin_decennale`, rien ne change.
+  - Nouvelle fonction `regen_tmin_decennale(units)` : minimum décennal, le
+    froid qu'atteint un hiver sur dix (10ᵉ percentile des minimums absolus
+    annuels d'E-OBS TN sur 1991-2020, réglable par `prob`). À Couchey :
+    −13,2 °C, qui exclut le Pin d'Alep, quand la moyenne (−10,1 °C) le
+    gardait. Lue dans le fichier quotidien complet de KNMI (public, mis
+    en cache machine), ou dans les blocs CDS, ou dans un `tn =` fourni.
+  - `load_eobs_source()` accepte `var = "tn"` et `reducer = "min"`.
+
+## Corrections
+
+- **Une couche routes ou bâti vide est une mesure.** Depuis sa version
+  2026.11.1.9007, l'app passe une couche vide (`sf` à 0 ligne) quand le WFS
+  BD TOPO répond sans objet, et `NULL` en cas d'échec. Une forêt sans route
+  ni bâti dans l'emprise recevait pourtant « non mesuré » :
+  - S1 et S2 rendent `max_dist` (2 000 m par défaut), comme une couche sans
+    entité dans la fenêtre de recherche, et le MNT n'est plus nécessaire
+    dans ce cas ;
+  - N1 note 100 le terme routes ou bâti dont la couche est vide ;
+  - une couche absente (`NULL`) donne toujours `NA`.
+  A2 (méthode proxy), W1 et W2 traitaient déjà une couche vide comme une
+  mesure.
+
 # nemeton 2026.11.31 (2026-11-15)
 
 ## Corrections

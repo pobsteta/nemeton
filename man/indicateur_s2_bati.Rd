@@ -39,7 +39,8 @@ working grid covers the units' extent widened by \code{max_dist}, not the DEM
 extent, so features just outside the DEM are no longer ignored. Distances
 are exact up to \code{max_dist} and censored at \code{max_dist} beyond (a unit
 with no feature within \code{max_dist} gets \code{max_dist}, i.e. "at least
-\code{max_dist}"); with no feature at all, the indicator is \code{NA}.}
+\code{max_dist}"). An empty layer (0 features: the source answered, nothing
+there) is a measurement and also gives \code{max_dist} (since 2026.11.32).}
 }
 \value{
 sf object with added column: S2 (mean distance to nearest building in metres)
@@ -58,7 +59,8 @@ nearest building, using rasterized building data and \code{terra::distance()}.
   \item Extract mean distance per spatial unit
 }
 
-Returns NA when DEM or buildings are unavailable.
+Returns NA when the buildings layer is missing (\code{NULL}), or when the DEM is
+missing and the layer is not empty.
 }
 \section{Lifecycle}{
 
