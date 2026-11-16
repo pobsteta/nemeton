@@ -379,7 +379,9 @@ des essences ». Sept documents au manifeste (81 → 88), licences confirmées
 par Pascal ; six PDF en texte intégral sous `data-raw/references/`
 (gitignorés), le guide Baugeois-Maine en référence seule (404). Ingestion
 dans la base partagée à lancer (`data-raw/fill_corpus_prod.sh`,
-incrémental). Version nemetonshiny vérifiée : v2026.11.2.
+incrémental). Publiée (PR #665), cycle dev `2026.11.36.9000`. Brief de
+retour : `vers-nemetonmcp/2026-11-16-reponse-nemeton-corpus-choix-essences.md`.
+`vers-nemeton/` vide. Version nemetonshiny vérifiée : v2026.11.2.
 **v2026.11.35** (*2026-11-16*, voie (b) choisie par Pascal) : brief app
 « T4 : 34 UGF sur 63 sans essence » (libellés BD Forêt de groupe).
 `resoudre_espar_bdforet(libelle, ser)` : un groupe prend l'essence
