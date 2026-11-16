@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.34.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.35</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,6 +117,19 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.35" id="nemeton-20261135-2026-11-16">nemeton 2026.11.35 (2026-11-16)<a class="anchor" aria-label="anchor" href="#nemeton-20261135-2026-11-16"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-35">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-35"></a></h3>
+<ul><li>
+<strong>Libellés BD Forêt de groupe résolus en code ESPAR</strong> (brief nemetonshiny, T4 : 34 UGF sur 63 sans essence à Couchey ; voie retenue par Pascal : la convention vit dans le cœur). Nouvelle fonction <code>resoudre_espar_bdforet(libelle, ser = NULL)</code>.
+<ul><li>Un libellé de groupe (« Chênes décidus », « Pin laricio, pin noir », « Sapin, épicéa », « Mélèze », « Peuplier », « Chênes sempervirents », « Pin à crochets, pin cembro ») prend l’essence <strong>majoritaire en volume à l’hectare de l’IFN</strong> dans la SER de l’UGF, à défaut sa GRECO, à défaut la France (<code>ifn_volume_essence_ser.csv</code>). Table des groupes : <code>inst/extdata/bdforet_essence_espar.csv</code>.</li>
+<li>Les libellés génériques (Feuillus, Conifères, Mixte, Pins mélangés, NC, NR…) rendent NA : aucun code n’est deviné. Un libellé hors table passe par <code><a href="../reference/resoudre_espar.html">resoudre_espar()</a></code>.</li>
+<li>« Sapin, épicéa » donne le sapin (61) en France, comme la convention que l’app posait jusqu’ici ; elle peut la retirer.</li>
+<li>Couchey (SER C20) : « Chênes décidus » → chêne sessile (03, 316 analogues T4), « Pin laricio, pin noir » → pin noir d’Autriche (54, 37 analogues). Sans la SER, le laricio de Corse (53CO) n’en aurait que 4.</li>
+</ul></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.34" id="nemeton-20261134-2026-11-16">nemeton 2026.11.34 (2026-11-16)<a class="anchor" aria-label="anchor" href="#nemeton-20261134-2026-11-16"></a></h2>
 <div class="section level3">

@@ -447,6 +447,9 @@ atteint
 
   Resolve any species code to the IFN `espar` code
 
+- [`resoudre_espar_bdforet()`](https://pobsteta.github.io/nemeton/reference/resoudre_espar_bdforet.md)
+  : ESPAR code of a BD Forêt essence label
+
 - [`infradensite_espar()`](https://pobsteta.github.io/nemeton/reference/infradensite_espar.md)
   : Basic wood density (infradensity) of IFN species
 

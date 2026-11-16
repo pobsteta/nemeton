@@ -13,6 +13,16 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.35\] - 2026-11-16
+
+### Added
+
+- [`resoudre_espar_bdforet()`](https://pobsteta.github.io/nemeton/reference/resoudre_espar_bdforet.md):
+  ESPAR code of a BD Forêt v2 essence label; group labels take the IFN
+  majority species (volume per hectare) of the SER, then GRECO, then
+  France; generic labels give NA. Group table
+  `inst/extdata/bdforet_essence_espar.csv`.
+
 ## \[2026.11.34\] - 2026-11-16
 
 ### Added
