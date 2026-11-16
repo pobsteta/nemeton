@@ -25,6 +25,7 @@ regen_sensibilite(
   pai_cache = NULL,
   pai_ncores = NULL,
   micro_max_cells = NULL,
+  type_foret = "melange",
   cache_dir = NULL,
   era5_cache_dir = NULL,
   progress_callback = NULL,
@@ -118,6 +119,16 @@ regen_sensibilite(
   and only per-unit means are used, so coarsening is harmless for the
   sensitivity ranking. `NULL` (default) uses
   `getOption("nemeton.micro_max_cells", 5e4)`.
+
+- type_foret:
+
+  Foliage parameters given to microclimf: `"melange"` (default, mixed
+  forest), `"feuillus"` (deciduous broadleaf) or `"resineux"` (evergreen
+  needleleaf), from
+  [`microclimf::vegpfromhab()`](https://rdrr.io/pkg/microclimf/man/vegpfromhab.html)
+  habitats 5, 4 and 1, with `clump = 0`. Since 2026.11.33; before, the
+  parameters of the `microclimf::vegp` example (low heathland) were used
+  and overheated the understorey.
 
 - cache_dir:
 

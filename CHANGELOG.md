@@ -13,6 +13,23 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.33\] - 2026-11-16
+
+### Added
+
+- `regen_sensibilite(type_foret =)`: forest foliage parameters for
+  microclimf (`"melange"`, `"feuillus"`, `"resineux"`, from
+  [`microclimf::vegpfromhab()`](https://rdrr.io/pkg/microclimf/man/vegpfromhab.html),
+  `clump = 0`).
+
+### Fixed
+
+- [`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md):
+  understorey overheating — canopy height aggregated by maximum instead
+  of mean, forest foliage instead of the `microclimf::vegp` heathland
+  example, monthly day chosen on free-air Tmax; microclimate cache key
+  now includes vegetation and day choice.
+
 ## \[2026.11.32\] - 2026-11-16
 
 ### Added

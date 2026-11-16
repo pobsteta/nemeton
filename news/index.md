@@ -1,5 +1,42 @@
 # Changelog
 
+## nemeton 2026.11.33 (2026-11-16)
+
+### Corrections
+
+- **microclimf ne surchauffe plus le sous-bois**
+  ([`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md),
+  brief nemetonmcp sur Couchey). La Tmax sous couvert dépassait l’air
+  libre de 5 à 7 °C (jusqu’à 59 °C), ce qui faisait perdre toutes les
+  essences tempérées sur l’axe chaleur de
+  [`regen_rank_species()`](https://pobsteta.github.io/nemeton/reference/regen_rank_species.md).
+  Trois causes :
+  - la hauteur du couvert était **moyennée** à l’agrégation de la grille
+    : trouées et houppiers mêlés, une forêt de 15 à 20 m passait à 8-11
+    m, et microclimf surchauffe une végétation basse (51 °C à 0,5 m sous
+    2 m de couvert). Elle est désormais prise au **sommet** (maximum) ;
+    la densité reste portée par le PAI ;
+  - le feuillage venait du jeu d’exemple `microclimf::vegp` (lande
+    basse, `clump` ≈ 0,7 : 70 % du rayonnement passait par les trouées).
+    Il vient désormais de
+    [`microclimf::vegpfromhab()`](https://rdrr.io/pkg/microclimf/man/vegpfromhab.html)
+    pour une forêt, `clump = 0`, choisi par le nouvel argument
+    `type_foret` (`"melange"` par défaut, `"feuillus"`, `"resineux"`) ;
+  - le jour retenu chaque mois était celui où la feuille du modèle
+    ponctuel est la plus chaude, souvent un jour sans vent bien moins
+    chaud en air libre. C’est désormais le jour le plus chaud **en air
+    libre**.
+- Couchey (63 UGF), Tmax sous couvert moyenne par UGF : année
+  caniculaire 2022 de 37,9 à 32,4 °C (air libre 36,6), année moyenne
+  2023 de 43,4 à 36,3 °C. Le facteur limitant des essences n’est plus la
+  chaleur mais la sécheresse du sol (BILJOU).
+- Les caches microclimat d’avant ne sont plus relus : leur clé inclut
+  maintenant la végétation (hauteur, feuillage) et le choix du jour.
+  Relancer l’analyse reGénération des projets recalcule la sensibilité.
+- Limite connue : `d_tmax` reste négatif à Couchey. Avec une seule année
+  par catégorie, il compare deux journées, et microclimf simule le 9
+  juillet 2023 (vent faible) 2,4 °C au-dessus de l’air libre.
+
 ## nemeton 2026.11.32 (2026-11-16)
 
 ### Nouveautés

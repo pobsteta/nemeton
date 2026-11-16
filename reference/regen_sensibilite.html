@@ -15,7 +15,7 @@ indice_priorite_regen."><meta property="og:image" content="https://pobsteta.gith
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.32.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.33</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -152,6 +152,7 @@ Produces the §7 exposure columns consumed by
 <span>  pai_cache <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pai_ncores <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  micro_max_cells <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  type_foret <span class="op">=</span> <span class="st">"melange"</span>,</span>
 <span>  cache_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  era5_cache_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -240,6 +241,15 @@ stays <code>&lt;= micro_max_cells</code> before microclimf runs; the <strong>cac
 (<code>pai_cache</code>) stays at fine <code>res</code>. The microclimate signal is smooth and
 only per-unit means are used, so coarsening is harmless for the sensitivity
 ranking. <code>NULL</code> (default) uses <code>getOption("nemeton.micro_max_cells", 5e4)</code>.</p></dd>
+
+
+<dt id="arg-type-foret">type_foret<a class="anchor" aria-label="anchor" href="#arg-type-foret"></a></dt>
+<dd><p>Foliage parameters given to microclimf: <code>"melange"</code>
+(default, mixed forest), <code>"feuillus"</code> (deciduous broadleaf) or
+<code>"resineux"</code> (evergreen needleleaf), from <code><a href="https://rdrr.io/pkg/microclimf/man/vegpfromhab.html" class="external-link">microclimf::vegpfromhab()</a></code>
+habitats 5, 4 and 1, with <code>clump = 0</code>. Since 2026.11.33; before, the
+parameters of the <code>microclimf::vegp</code> example (low heathland) were used and
+overheated the understorey.</p></dd>
 
 
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.32.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.33</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,6 +117,21 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.33" id="nemeton-20261133-2026-11-16">nemeton 2026.11.33 (2026-11-16)<a class="anchor" aria-label="anchor" href="#nemeton-20261133-2026-11-16"></a></h2>
+<div class="section level3">
+<h3 id="corrections-2026-11-33">Corrections<a class="anchor" aria-label="anchor" href="#corrections-2026-11-33"></a></h3>
+<ul><li>
+<strong>microclimf ne surchauffe plus le sous-bois</strong> (<code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code>, brief nemetonmcp sur Couchey). La Tmax sous couvert dépassait l’air libre de 5 à 7 °C (jusqu’à 59 °C), ce qui faisait perdre toutes les essences tempérées sur l’axe chaleur de <code><a href="../reference/regen_rank_species.html">regen_rank_species()</a></code>. Trois causes :
+<ul><li>la hauteur du couvert était <strong>moyennée</strong> à l’agrégation de la grille : trouées et houppiers mêlés, une forêt de 15 à 20 m passait à 8-11 m, et microclimf surchauffe une végétation basse (51 °C à 0,5 m sous 2 m de couvert). Elle est désormais prise au <strong>sommet</strong> (maximum) ; la densité reste portée par le PAI ;</li>
+<li>le feuillage venait du jeu d’exemple <code>microclimf::vegp</code> (lande basse, <code>clump</code> ≈ 0,7 : 70 % du rayonnement passait par les trouées). Il vient désormais de <code><a href="https://rdrr.io/pkg/microclimf/man/vegpfromhab.html" class="external-link">microclimf::vegpfromhab()</a></code> pour une forêt, <code>clump = 0</code>, choisi par le nouvel argument <code>type_foret</code> (<code>"melange"</code> par défaut, <code>"feuillus"</code>, <code>"resineux"</code>) ;</li>
+<li>le jour retenu chaque mois était celui où la feuille du modèle ponctuel est la plus chaude, souvent un jour sans vent bien moins chaud en air libre. C’est désormais le jour le plus chaud <strong>en air libre</strong>.</li>
+</ul></li>
+<li>Couchey (63 UGF), Tmax sous couvert moyenne par UGF : année caniculaire 2022 de 37,9 à 32,4 °C (air libre 36,6), année moyenne 2023 de 43,4 à 36,3 °C. Le facteur limitant des essences n’est plus la chaleur mais la sécheresse du sol (BILJOU).</li>
+<li>Les caches microclimat d’avant ne sont plus relus : leur clé inclut maintenant la végétation (hauteur, feuillage) et le choix du jour. Relancer l’analyse reGénération des projets recalcule la sensibilité.</li>
+<li>Limite connue : <code>d_tmax</code> reste négatif à Couchey. Avec une seule année par catégorie, il compare deux journées, et microclimf simule le 9 juillet 2023 (vent faible) 2,4 °C au-dessus de l’air libre.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.32" id="nemeton-20261132-2026-11-16">nemeton 2026.11.32 (2026-11-16)<a class="anchor" aria-label="anchor" href="#nemeton-20261132-2026-11-16"></a></h2>
 <div class="section level3">
