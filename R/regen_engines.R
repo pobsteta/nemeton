@@ -866,7 +866,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 # (lon/lat) et source du PAI (provenance + empreinte de ses valeurs ; un PAI
 # relu du cache `pai.tif` vaut un PAI LiDAR).
 .rsen_micro_cache_key <- function(dtm, reqhgt, mois_ete, lon, lat,
-                                  pai = NULL, pai_source = NA) {
+                                  pai = NULL, pai_source = NA, veg = NULL) {
   pai_empreinte <- if (inherits(pai, "SpatRaster")) {
     round(unlist(terra::global(pai[[1]], c("mean", "sd"), na.rm = TRUE)), 4)
   } else NA_real_
@@ -879,7 +879,42 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     mois_ete = sort(unique(as.integer(mois_ete))),
     lonlat   = round(c(lon, lat), 4),
     pai_src  = src,
-    pai      = unname(pai_empreinte))), 1, 12)
+    pai      = unname(pai_empreinte),
+    # Depuis 2026.11.33 : empreinte de la végétation hors PAI (hauteur du
+    # couvert, feuillage). Les caches d'avant (hauteur moyenne, feuillage de
+    # l'exemple, surchauffés) ne sont plus relus.
+    veg      = .rsen_veg_empreinte(veg),
+    jour     = "tmax_air")), 1, 12)
+}
+
+# Empreinte de la végétation microclimf hors PAI : moyenne et écart-type de
+# chaque couche (hgt, x, gsmax, leafr, clump, leafd, leaft). NULL -> NA (helpers).
+.rsen_veg_empreinte <- function(veg) {
+  if (!is.list(veg)) return(NA_real_)
+  nms <- sort(setdiff(names(veg), "pai"))
+  unlist(lapply(nms, function(nm) {
+    x <- veg[[nm]]
+    if (inherits(x, "PackedSpatRaster")) x <- terra::unwrap(x)
+    if (inherits(x, "SpatRaster")) {
+      round(unlist(terra::global(x[[1]], c("mean", "sd"), na.rm = TRUE)), 4)
+    } else round(as.numeric(x)[1], 4)
+  }), use.names = FALSE)
+}
+
+# Feuillage de forêt pour microclimf, valeurs de microclimf::vegpfromhab()
+# (microclimf 2.0.0) par habitat MODIS : 5 forêt mélangée, 4 feuillus
+# caducifoliés, 1 résineux sempervirents. clump = 0 : défaut de vegpfromhab
+# (clump0 = TRUE), couvert fermé ; les trouées sont portées par le PAI.
+.RSEN_VEGP_FORET <- list(
+  melange  = list(x = 0.8, gsmax = 0.0895, leafr = 0.28, clump = 0, leafd = 0.04,
+                  leaft = 0.14),
+  feuillus = list(x = 1.2, gsmax = 0.1047, leafr = 0.30, clump = 0, leafd = 0.07,
+                  leaft = 0.15),
+  resineux = list(x = 0.4, gsmax = 0.1397, leafr = 0.25, clump = 0, leafd = 0.01,
+                  leaft = 0.125)
+)
+.rsen_vegp_foret <- function(type_foret = "melange") {
+  .RSEN_VEGP_FORET[[match.arg(type_foret, names(.RSEN_VEGP_FORET))]]
 }
 
 # Chemins des caches microclimat (T°max, VPD) d'une année.
@@ -887,7 +922,8 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
                                        mois_ete, cache_dir, pai_source = NA) {
   cle <- .rsen_micro_cache_key(dtm, reqhgt, mois_ete, lon, lat,
                                pai = if (is.list(veg)) veg$pai else NULL,
-                               pai_source = pai_source)
+                               pai_source = pai_source,
+                               veg = if (is.list(veg)) veg else NULL)
   c(tmax = file.path(cache_dir, sprintf("cache_%d_%s_tmax.tif", annee, cle)),
     vpd  = file.path(cache_dir, sprintf("cache_%d_%s_vpd.tif", annee, cle)))
 }
@@ -907,7 +943,17 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
                               emit = emit, category = category)
   microclimf::checkinputs(meteo, veg, soil, dtm)
   mp  <- microclimf::runpointmodel(meteo, reqhgt, dtm, veg, soil)
-  mp  <- microclimf::subsetpointmodel(mp, tstep = "month", what = "tmax")
+  # Jour retenu par mois = le plus chaud EN AIR LIBRE (forçage), pas celui où
+  # la feuille du modèle ponctuel est la plus chaude (défaut `Tc = dfo$Tc`) :
+  # la catégorie « canicule » est définie sur l'air (E-OBS), et le défaut
+  # retenait des jours sans vent simulés plus chauds que l'air (Couchey, août
+  # 2023 : 27,6 °C d'air pour un maximum mensuel de 33,5). Depuis 2026.11.33.
+  tair <- mp$weather$temp
+  mp  <- if (is.numeric(tair) && length(tair) == NROW(mp$dfo)) {
+    microclimf::subsetpointmodel(mp, tstep = "month", what = "tmax", Tc = tair)
+  } else {
+    microclimf::subsetpointmodel(mp, tstep = "month", what = "tmax")
+  }
   # Horodatage des pas retenus. microclimf 2.x ne peuple plus `out$tme` (renvoyé
   # VIDE) et ne pose pas `terra::time()` sur la sortie → la seule source fiable
   # des mois est le modèle ponctuel sous-échantillonné : `mp$weather$obs_time`
@@ -1018,6 +1064,12 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #'   stays at fine `res`. The microclimate signal is smooth and only per-unit
 #'   means are used, so coarsening is harmless for the sensitivity ranking.
 #'   `NULL` (default) uses `getOption("nemeton.micro_max_cells", 5e4)`.
+#' @param type_foret Foliage parameters given to microclimf: `"melange"`
+#'   (default, mixed forest), `"feuillus"` (deciduous broadleaf) or
+#'   `"resineux"` (evergreen needleleaf), from [microclimf::vegpfromhab()]
+#'   habitats 5, 4 and 1, with `clump = 0`. Since 2026.11.33; before, the
+#'   parameters of the `microclimf::vegp` example (low heathland) were used and
+#'   overheated the understorey.
 #' @param cache_dir Directory for the ERA5 `.nc` and per-year microclimate `.tif`
 #'   caches. `NULL` (default) uses a session temp dir; pass a persistent path to
 #'   reuse expensive runs. Microclimate `.tif` caches are keyed by year AND a
@@ -1060,9 +1112,11 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
                               mois_ete = 6:8, res = 2, tampon = 150,
                               reqhgt = 0.5, k = 0.5, pai = NULL, pai_cache = NULL,
                               pai_ncores = NULL, micro_max_cells = NULL,
-                              cache_dir = NULL, era5_cache_dir = NULL,
+                              type_foret = "melange", cache_dir = NULL,
+                              era5_cache_dir = NULL,
                               progress_callback = NULL, precomputed = NULL, ...) {
   validate_sf(units)
+  type_foret <- match.arg(type_foret, names(.RSEN_VEGP_FORET))
   # Budget cellules de la grille microclimf (borne mémoire, cf. bloc plus bas).
   # NULL -> option `nemeton.micro_max_cells` sinon 5e4 (sûr même sur 8 Go).
   if (is.null(micro_max_cells))
@@ -1122,7 +1176,10 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   f <- max(1, round(res / terra::res(mnt_r)[1]))
   if (f > 1) {
     mnt_r <- terra::aggregate(mnt_r, f, fun = "mean", na.rm = TRUE)
-    mnh_r <- terra::aggregate(mnh_r, f, fun = "mean", na.rm = TRUE)
+    # Hauteur du COUVERT = sommet (max), pas la moyenne : la densité est portée
+    # par le PAI ; une moyenne mêlant trouées et houppiers rabaisse la forêt en
+    # végétation basse, que microclimf surchauffe (Couchey 2026-11-16).
+    mnh_r <- terra::aggregate(mnh_r, f, fun = "max", na.rm = TRUE)
   }
   mnh_r <- terra::resample(mnh_r, mnt_r)
   dtm <- mnt_r; names(dtm) <- "dtm"
@@ -1173,7 +1230,7 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   fac <- .rsen_micro_agg_factor(dtm, micro_max_cells)
   if (fac > 1L) {
     dtm <- terra::aggregate(dtm, fac, fun = "mean", na.rm = TRUE)
-    hgt <- terra::aggregate(hgt, fac, fun = "mean", na.rm = TRUE)
+    hgt <- terra::aggregate(hgt, fac, fun = "max", na.rm = TRUE)   # sommet, cf. plus haut
     pai <- terra::resample(pai, dtm, method = "bilinear")
     names(dtm) <- "dtm"; names(hgt) <- "hgt"; names(pai) <- "pai"
   }
@@ -1183,7 +1240,12 @@ regen_sensibilite <- function(units, mnt = NULL, mnh = NULL, las = NULL,
   utils::data("vegp", package = "microclimf", envir = e)
   utils::data("soilc", package = "microclimf", envir = e)
   veg <- e$vegp
+  # Paramètres de feuillage d'une FORÊT (microclimf::vegpfromhab), pas ceux du
+  # jeu d'exemple `vegp` (lande basse : clump ~0,7, laissait passer ~70 % du
+  # rayonnement par les trouées). Seule la classe de `vegp` est reprise.
   for (nm in names(veg)) if (!nm %in% c("hgt", "pai")) veg[[nm]] <- .rsen_vers_grille(veg[[nm]], dtm)
+  vf <- .rsen_vegp_foret(type_foret)
+  for (nm in names(vf)) { r <- dtm; terra::values(r) <- vf[[nm]]; names(r) <- nm; veg[[nm]] <- r }
   veg$hgt <- hgt; veg$pai <- pai
   soil <- e$soilc
   for (nm in names(soil)) soil[[nm]] <- .rsen_vers_grille(soil[[nm]], dtm)

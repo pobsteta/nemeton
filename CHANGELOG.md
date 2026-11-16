@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.33] - 2026-11-16
+
+### Added
+- `regen_sensibilite(type_foret =)`: forest foliage parameters for microclimf (`"melange"`, `"feuillus"`, `"resineux"`, from `microclimf::vegpfromhab()`, `clump = 0`).
+
+### Fixed
+- `regen_sensibilite()`: understorey overheating — canopy height aggregated by maximum instead of mean, forest foliage instead of the `microclimf::vegp` heathland example, monthly day chosen on free-air Tmax; microclimate cache key now includes vegetation and day choice.
+
 ## [2026.11.32] - 2026-11-16
 
 ### Added

@@ -20,6 +20,7 @@ regen_sensibilite(
   pai_cache = NULL,
   pai_ncores = NULL,
   micro_max_cells = NULL,
+  type_foret = "melange",
   cache_dir = NULL,
   era5_cache_dir = NULL,
   progress_callback = NULL,
@@ -79,6 +80,13 @@ stays \code{<= micro_max_cells} before microclimf runs; the \strong{cached} PAI
 (\code{pai_cache}) stays at fine \code{res}. The microclimate signal is smooth and
 only per-unit means are used, so coarsening is harmless for the sensitivity
 ranking. \code{NULL} (default) uses \code{getOption("nemeton.micro_max_cells", 5e4)}.}
+
+\item{type_foret}{Foliage parameters given to microclimf: \code{"melange"}
+(default, mixed forest), \code{"feuillus"} (deciduous broadleaf) or
+\code{"resineux"} (evergreen needleleaf), from \code{\link[microclimf:vegpfromhab]{microclimf::vegpfromhab()}}
+habitats 5, 4 and 1, with \code{clump = 0}. Since 2026.11.33; before, the
+parameters of the \code{microclimf::vegp} example (low heathland) were used and
+overheated the understorey.}
 
 \item{cache_dir}{Directory for the ERA5 \code{.nc} and per-year microclimate
 \code{.tif} caches. \code{NULL} (default) uses a session temp dir; pass a
