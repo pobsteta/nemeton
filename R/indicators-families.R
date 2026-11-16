@@ -821,12 +821,25 @@ indicateur_c2_ndvi <- function(units,
 #' that are not directly crossed, reflecting the hydrological influence of
 #' nearby streams on water table and microclimate.
 #'
+#' Since 2026.11.34, springs count in the proximity bonus (surface network
+#' **and emergences**): when `layers` holds a point layer `spring_layer` (BD
+#' TOPO `detail_hydrographique`), a unit not crossed by a watercourse takes its
+#' distance to the nearest watercourse **or spring**, and a spring inside the
+#' unit gives the full bonus. Only emergences are kept (`nature` in `Source`,
+#' `Source captée`, `Résurgence`, and `etat_de_l_objet` "En service" when the
+#' column exists): fountains, wash-houses and sinkholes are works or
+#' absorption points. Springs never add to the density (a point has no
+#' length), and an absent spring layer leaves W1 unchanged. W1 still does not
+#' see underground flow (karst).
+#'
 #' @param units nemeton_units object
 #' @param layers nemeton_layers object containing watercourse vector layer
 #' @param watercourse_layer Character. Name of watercourse layer in layers object
 #' @param buffer Numeric. Buffer distance (meters) for proximity analysis. Default 0.
 #' @param proximity_m Numeric. Maximum distance (m) for proximity bonus. Default 500.
 #' @param proximity_ref Numeric. Equivalent density bonus (m/ha) at distance 0. Default 50.
+#' @param spring_layer Character. Name of the optional spring point layer in
+#'   `layers` (default `"water_points"`). Absent layer: surface network only.
 #'
 #' @return The input \code{units} (same class, rows and order) with an added numeric column \code{W1}: network density (m/ha). NA for every unit when
 #'   the watercourse layer is missing (no measurement); a supplied but empty
@@ -846,14 +859,16 @@ indicateur_w1_reseau <- function(units,
                                     watercourse_layer = "water_network",
                                     buffer = 0,
                                     proximity_m = 500,
-                                    proximity_ref = 50) {
+                                    proximity_ref = 50,
+                                    spring_layer = "water_points") {
   .indicateur_resultat(units, "W1", .w1_reseau_valeur(
     units = units,
     layers = layers,
     watercourse_layer = watercourse_layer,
     buffer = buffer,
     proximity_m = proximity_m,
-    proximity_ref = proximity_ref
+    proximity_ref = proximity_ref,
+    spring_layer = spring_layer
   ))
 }
 
@@ -864,7 +879,8 @@ indicateur_w1_reseau <- function(units,
                                     watercourse_layer = "water_network",
                                     buffer = 0,
                                     proximity_m = 500,
-                                    proximity_ref = 50) {
+                                    proximity_ref = 50,
+                                    spring_layer = "water_points") {
   # Validate inputs
   if (!inherits(units, "sf")) {
     cli::cli_abort("units must be an sf object")
@@ -888,6 +904,11 @@ indicateur_w1_reseau <- function(units,
   if (!sf::st_crs(units) == sf::st_crs(watercourses)) {
     watercourses <- sf::st_transform(watercourses, sf::st_crs(units))
   }
+
+  # Émergences (brief nemetonmcp 2026-11-16, Couchey : côte calcaire sans
+  # réseau de surface mais avec des sources). Couche facultative : absente ou
+  # NULL -> W1 inchangé ; elles ne comptent que dans le bonus de proximité.
+  springs <- .w1_sources(resolve_vector_layer(layers, spring_layer), units)
 
   # Calculate density for each unit
   density <- numeric(nrow(units))
@@ -925,6 +946,12 @@ indicateur_w1_reseau <- function(units,
       min_dist <- if (nrow(watercourses)) {
         as.numeric(min(sf::st_distance(units[i, ], watercourses)))
       } else Inf
+      # Distance à la source la plus proche (0 si une source est dans l'UGF :
+      # bonus plein, comme un cours d'eau qui la traverse).
+      if (!is.null(springs) && nrow(springs)) {
+        min_dist <- min(min_dist,
+                        as.numeric(min(sf::st_distance(units[i, ], springs))))
+      }
       if (min_dist < proximity_m) {
         proximity_bonus <- (1 - min_dist / proximity_m) * proximity_ref
       } else {
@@ -942,6 +969,27 @@ indicateur_w1_reseau <- function(units,
   msg_info("indicateur_w1_reseau")
 
   density
+}
+
+# Natures BD TOPO `detail_hydrographique` retenues comme émergences (W1).
+.W1_NATURES_SOURCES <- c("Source", "Source capt\u00e9e", "R\u00e9surgence")
+
+# Sources retenues pour W1 : points, natures d'émergence, en service ; CRS des
+# unités. NULL si la couche est absente ; 0 ligne si rien n'est retenu. Une
+# couche sans colonne `nature` (sources relevées sur le terrain) est gardée
+# telle quelle.
+.w1_sources <- function(x, units) {
+  if (is.null(x) || !inherits(x, "sf")) return(NULL)
+  if ("nature" %in% names(x)) {
+    x <- x[x$nature %in% .W1_NATURES_SOURCES, ]
+  }
+  if ("etat_de_l_objet" %in% names(x)) {
+    etat <- x$etat_de_l_objet
+    x <- x[is.na(etat) | etat == "En service", ]
+  }
+  if (!nrow(x)) return(x)
+  if (!sf::st_crs(x) == sf::st_crs(units)) x <- sf::st_transform(x, sf::st_crs(units))
+  x
 }
 
 #' Wetland Coverage (W2)

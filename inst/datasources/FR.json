@@ -94,6 +94,11 @@
       "typename": "BDTOPO_V3:troncon_hydrographique",
       "description": "BD TOPO - Réseau hydrographique"
     },
+    "water_points": {
+      "service": "ign_wfs",
+      "typename": "BDTOPO_V3:detail_hydrographique",
+      "description": "BD TOPO - Détails hydrographiques (sources, résurgences ; W1)"
+    },
     "water_surfaces": {
       "service": "ign_wfs",
       "typename": "BDTOPO_V3:surface_hydrographique",

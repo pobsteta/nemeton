@@ -131,7 +131,7 @@ test_that("FR config has all expected layers", {
   skip_if_not_installed("terra")
   config <- get_country_config("FR")
   expected_layers <- c("dem", "ortho_irc", "bdforet", "roads",
-                        "water_network", "water_surfaces", "buildings",
+                        "water_network", "water_points", "water_surfaces", "buildings",
                         "protected_areas", "lidar_mnh", "lidar_mnt", "lidar_copc")
   for (layer in expected_layers) {
     expect_true(layer %in% names(config$layers),

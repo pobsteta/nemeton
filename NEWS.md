@@ -1,3 +1,24 @@
+# nemeton 2026.11.34 (2026-11-16)
+
+## Nouveautés
+
+- **W1 : les sources comptent dans le bonus de proximité** (brief
+  nemetonmcp, demandé par Pascal). À Couchey, sur la côte calcaire, le
+  réseau de surface se réduit à un tronçon à 800 m et W1 valait 0 partout.
+  - `indicateur_w1_reseau()` lit une couche facultative de points
+    `spring_layer = "water_points"` (BD TOPO `detail_hydrographique`, déclarée
+    dans `inst/datasources/FR.json`). Une UGF non traversée prend sa distance
+    au plus proche cours d'eau **ou source** ; une source dans l'UGF donne le
+    bonus plein.
+  - Seules les émergences comptent : `Source`, `Source captée`, `Résurgence`,
+    en service. Fontaines, lavoirs et pertes sont exclus.
+  - Les sources n'entrent pas dans la densité, et sans la couche W1 ne
+    change pas. Un réseau hydrographique absent reste NA.
+  - Couchey : le Trou de Fiat donne un bonus à 6 UGF (de 3,5 à 40,6) ; les
+    deux fontaines et le lavoir sont écartés.
+- Fiche W1 : calcul avec les sources, et piège « couche absente » mis à jour
+  (NA depuis la correction de la famille Eau).
+
 # nemeton 2026.11.33 (2026-11-16)
 
 ## Corrections
