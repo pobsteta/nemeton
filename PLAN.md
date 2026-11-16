@@ -426,14 +426,20 @@ une réponse WFS vide est traitée comme un échec. Brief
 forme × tarif lent), libellés 29AF/68CE ajoutés. Réponse
 `vers-marculus/`, copie `vers-nemetonshiny/`. - C1 CHM : simple
 information de l’app, archivée. Version nemetonshiny vérifiée :
-v2026.11.1. **v2026.11.35** (*2026-11-16*, voie (b) choisie par Pascal)
-: brief app « T4 : 34 UGF sur 63 sans essence » (libellés BD Forêt de
-groupe). `resoudre_espar_bdforet(libelle, ser)` : un groupe prend
-l’essence majoritaire en volume IFN de la SER, puis GRECO, puis France ;
-génériques NA. Couchey C20 : chênes décidus → 03, laricio/noir → 54.
-Brief app : appeler la fonction avec la SER et retirer la règle « Sapin,
-épicéa » → 61. 2026.11.34 publiée, cycle dev `2026.11.34.9000` (PR
-\#662). 2026.11.35 publiée (PR \#663), cycle dev `2026.11.35.9000`.
+v2026.11.1. **v2026.11.36** (*2026-11-16*) : brief aigora-nemeton «
+corpus : choix des essences ». Sept documents au manifeste (81 → 88),
+licences confirmées par Pascal ; six PDF en texte intégral sous
+`data-raw/references/` (gitignorés), le guide Baugeois-Maine en
+référence seule (404). Ingestion dans la base partagée à lancer
+(`data-raw/fill_corpus_prod.sh`, incrémental). Version nemetonshiny
+vérifiée : v2026.11.2. **v2026.11.35** (*2026-11-16*, voie (b) choisie
+par Pascal) : brief app « T4 : 34 UGF sur 63 sans essence » (libellés BD
+Forêt de groupe). `resoudre_espar_bdforet(libelle, ser)` : un groupe
+prend l’essence majoritaire en volume IFN de la SER, puis GRECO, puis
+France ; génériques NA. Couchey C20 : chênes décidus → 03, laricio/noir
+→ 54. Brief app : appeler la fonction avec la SER et retirer la règle «
+Sapin, épicéa » → 61. 2026.11.34 publiée, cycle dev `2026.11.34.9000`
+(PR \#662). 2026.11.35 publiée (PR \#663), cycle dev `2026.11.35.9000`.
 Brief de retour :
 `vers-nemetonshiny/2026-11-16-t4-libelles-bdforet-reponse.md`. Version
 nemetonshiny vérifiée : v2026.11.2. **v2026.11.34** (*2026-11-16*,
