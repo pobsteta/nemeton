@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.36] - 2026-11-16
+
+### Added
+- Knowledge corpus manifest: 7 documents on species choice under climate change (MFR BFC 2026 order, ClimEssences, IKS/BioClimSol, Aleppo pine sheet, Vaud 2024 guide, Baugeois-Maine 2025 stations guide as reference only); 81 → 88 rows.
+
 ## [2026.11.35] - 2026-11-16
 
 ### Added

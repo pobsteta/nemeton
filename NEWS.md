@@ -1,3 +1,22 @@
+# nemeton 2026.11.36 (2026-11-16)
+
+## Nouveautés
+
+- **Corpus de connaissances : choix des essences face au climat** (brief
+  aigora-nemeton ; licences confirmées par Pascal). Sept documents ajoutés au
+  manifeste `knowledge_corpus_v1.csv` (81 → 88) :
+  - l'arrêté régional MFR Bourgogne-Franche-Comté du 6 juillet 2026
+    (essences et provenances éligibles aux aides de l'État) ;
+  - ClimEssences (RMT AFORCE), la comparaison IKS / BioClimSol (DRAAF ARA)
+    et la présentation de BioClimSol (CNPF) ;
+  - la fiche Pin d'Alep du ministère de l'Agriculture ;
+  - le guide « choix des essences avec les changements climatiques » du
+    canton de Vaud (2024) ;
+  - le guide des stations Baugeois-Maine blanc 2025, en référence seule
+    (PDF introuvable).
+  - Six sont ingérés en texte intégral (PDF vérifiés, couche texte
+    présente). L'ingestion dans la base partagée reste à lancer.
+
 # nemeton 2026.11.35 (2026-11-16)
 
 ## Nouveautés
