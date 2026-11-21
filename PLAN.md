@@ -54,6 +54,7 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 25 | Table des sondes « Ce que les modèles voient » ([`probe_indicator()`](https://pobsteta.github.io/nemeton/reference/probe_indicator.md)) | cœur **2026.11.3** | `nemetonshiny` | **Ouvert avant le code** (2026-11-06). Vue triée par R², lecture `voit` / `partiel` / `angle_mort`, marqueur `source_commune` |
 | 26 | B5 stratification verticale : colonnes `B5`, `b5_status` (4 statuts), `b5_s1`…`b5_s5` (profil vertical), `b5_densite` ; couche carte ; badge de dimensionnement drone (`simulate_density_sensitivity()$conclusion`) | cœur **2026.11.5** / **2026.11.6** | `nemetonshiny` | Ouvert le 2026-11-06, préavis `specs/067-forpt-lidar-latent/brief-nemetonshiny.md`. Libellés, sens et `doc_url` viennent de [`indicator_labels()`](https://pobsteta.github.io/nemeton/reference/indicator_labels.md) : rien à forker |
 | 27 | Effets de la gestion ([`effet_gestion()`](https://pobsteta.github.io/nemeton/reference/effet_gestion.md)) : table par famille (effet moyen, intervalle, statut `calcule` / `recouvrement_insuffisant` / `trop_peu_unites`) dans la synthèse ; à citer comme résultat du projet | cœur **2026.11.8** | `nemetonshiny`, `aigora` | Ouvert le 2026-11-06, préavis `specs/068-trajectoires-finn/brief-nemetonshiny.md` |
+| 28 | Desserte BD TOPO : `acquire_desserte()` plante dès que l’emprise dépasse une tuile WFS de 2 km (types de colonnes différents entre tuiles, `as.Date("14791")`) ; l’app affiche « Vérifiez la connexion réseau » sans le vrai message | diagnostic cœur du 2026-11-21 (aucun code cœur) | `foretaccess` puis `nemetonshiny` | Ouvert le 2026-11-21 (projet « Parc de la colombière »). Briefs `vers-foretaccess/2026-11-21-rbind-tuiles-wfs-types.md` et `vers-nemetonshiny/2026-11-21-desserte-detail-erreur.md`. À refermer quand le pipeline passe sur `20261121_083914_gwsa` |
 
 **Les n° 20 à 24 sont ouverts le 2026-11-05 avant toute ligne de code**
 (specs 064 et 065, brief « modèles de fondation »), pour que la leçon
@@ -513,6 +514,36 @@ surcouche du Plan de validation par moteur. Plan d’actions : fiches PDF
 par UGF. ADR 0003 de l’app acceptée (pilotage par IA ouvert à tous, tout
 client MCP, avertissement). Aucune release cœur requise (brief
 `2026-11-15-plan-nemetonshiny-v2026.11.1`).
+
+### 2026-11-21
+
+**Diagnostic, aucune release cœur.** Projet « Parc de la colombière »
+(`20261121_083914_gwsa`, Dijon), run `run_20261121124423_ysto` : l’étape
+`desserte` échoue (« Échec de l’acquisition de la desserte existante
+(IGN BD TOPO). Vérifiez la connexion réseau. »), `desserte_typage` suit
+en cascade. **Ce n’est pas le réseau.** Les couches BD TOPO des
+indicateurs (bâti 1 666, routes 533, eau) sont en cache, et
+l’accessibilité (marge 250 m) a acquis la même desserte BD TOPO à
+08:59. - **Cause** : `foretaccess` 2.6.0, `.rbind_features`
+(`R/acquire-ign.R:89`). Avec la marge de 1000 m, l’emprise fait environ
+2,85 km et `.fetch_wfs` la découpe en 4 tuiles de 2 km.
+[`happign::get_wfs`](https://paul-carteron.github.io/happign/reference/get_wfs.html)
+(0.3.8) rend `date_de_confirmation` en `Date` dans deux tuiles et en
+texte de nombres de jours (`"14791"`) dans les deux autres, et
+`restriction_de_poids_total` tantôt en texte, tantôt en nombre. Le
+`rbind` lit `as.Date("14791")` et plante :
+`character string is not in a standard unambiguous format`. Toute
+emprise de plus d’une tuile est touchée. Reproduit hors de l’app avec
+`foretaccess::acquire_desserte()`. - **Côté app** :
+`service_desserte.R:1161` rend le vrai message (`detail`), mais
+`mod_desserte.R` ne passe que `i18n$t(reason)` au rapport du pipeline,
+et ce libellé accuse le réseau. - **Briefs** :
+`vers-foretaccess/2026-11-21-rbind-tuiles-wfs-types.md` (aligner les
+types des colonnes communes avant le `rbind`, test sans réseau, signaler
+les tuiles perdues sans bruit par `.fetch_wfs`) et
+`vers-nemetonshiny/2026-11-21-desserte-detail-erreur.md` (faire remonter
+`detail` dans le rapport du pipeline, retirer « Vérifiez la connexion
+réseau », plancher `foretaccess`). Écart n° 28 ouvert.
 
 ### 2026-11-14 (suite)
 
