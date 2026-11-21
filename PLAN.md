@@ -7,8 +7,8 @@ CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25).
 chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
-> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.11.1**
-> (release du 2026-11-15), relevée le 2026-11-15.
+> merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.11.2**
+> (release du 2026-11-15), relevée le 2026-11-21.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
