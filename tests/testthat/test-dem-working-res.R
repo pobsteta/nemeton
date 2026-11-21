@@ -154,7 +154,7 @@ test_that("R2 bounds its working grid before deriving terrain layers", {
     )
   )
   dem <- make_dem(res = 1)
-  terra::values(dem) <- as.numeric(terra::init(dem, "y")[] / 10)
+  terra::values(dem) <- as.numeric(terra::yFromCell(dem, seq_len(terra::ncell(dem))) / 10)
 
   res <- indicateur_r2_tempete(units, dem = dem, dem_target_res = 10)
   expect_true("R2" %in% names(res))
@@ -209,7 +209,7 @@ test_that("R3 computes without ever resampling the TWI", {
     )
   )
   dem <- make_dem(res = 0.5)
-  terra::values(dem) <- as.numeric(terra::init(dem, "y")[]) / 10
+  terra::values(dem) <- as.numeric(terra::yFromCell(dem, seq_len(terra::ncell(dem)))) / 10
 
   # Le moyen le plus direct de rendre le test non-vacant : toute entrée dans la
   # branche `resample` fait échouer le calcul.
