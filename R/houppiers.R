@@ -187,8 +187,9 @@
 #'     \item{`x_sommet`, `y_sommet`}{apex position, in the CRS of the CHM
 #'       (metres): the centre of the CHM cell holding `h_max`, inside the
 #'       crown polygon. On equal heights, the first cell in raster order
-#'       (northernmost, then westernmost) wins. Absent for
-#'       `usage = "couvert"` (no CHM, no apex).}
+#'       (northernmost, then westernmost) wins. With `usage = "couvert"`,
+#'       present only when a `chm` is given (still no `h_max`); absent
+#'       without a CHM, as there is no height to locate.}
 #'   }
 #'   Zero crowns yields a zero-row `sf` with those columns, not `NULL`: the
 #'   caller writes an empty layer rather than a missing one.

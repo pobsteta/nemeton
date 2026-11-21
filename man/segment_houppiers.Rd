@@ -99,8 +99,9 @@ An \code{sf} of POLYGON, one row per crown, with:
 \item{\code{x_sommet}, \code{y_sommet}}{apex position, in the CRS of the CHM
 (metres): the centre of the CHM cell holding \code{h_max}, inside the
 crown polygon. On equal heights, the first cell in raster order
-(northernmost, then westernmost) wins. Absent for
-\code{usage = "couvert"} (no CHM, no apex).}
+(northernmost, then westernmost) wins. With \code{usage = "couvert"},
+present only when a \code{chm} is given (still no \code{h_max}); absent
+without a CHM, as there is no height to locate.}
 }
 Zero crowns yields a zero-row \code{sf} with those columns, not \code{NULL}: the
 caller writes an empty layer rather than a missing one.

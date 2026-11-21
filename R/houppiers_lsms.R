@@ -293,6 +293,15 @@ lsms_budget_pixels <- function(budget_s, spatialr = .LSMS_DEFAUTS$spatialr) {
       surface_m2  = as.numeric(sf::st_area(segs)),
       geometry    = sf::st_geometry(segs)
     )
+    # Sommet : seulement si un CHM est fourni (pixel de sa hauteur maximale,
+    # comme `martelage`) ; sans CHM il n'y a pas de hauteur a localiser, et on
+    # n'invente pas un « sommet » (point interieur) que Groma lirait comme tel.
+    if (!is.null(chm)) {
+      sommets <- .houppier_sommets(segs, chm)
+      out$x_sommet <- sommets$x
+      out$y_sommet <- sommets$y
+      out <- out[, c("houppier_id", "surface_m2", "x_sommet", "y_sommet")]
+    }
   }
   sf::st_agr(out) <- "constant"
   .houppier_flag(out, degenere)

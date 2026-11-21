@@ -201,7 +201,7 @@ test_that("cvat : Byte, DEFLATE, nodata 0 déclaré, NA -> 0, hors [0, 1] ramen�
   })
 })
 
-test_that("cvat : une valeur hors [0, 1] ne se confond pas avec une valeur dans [0, 1]", {
+test_that("cvat : une valeur hors [0, 1] est ramenée à la borne (-0,5 comme 0, 1,7 comme 1)", {
   skip_if_terra_write_broken()
   withr::with_tempdir({
     dir.create("rasters")
@@ -228,8 +228,9 @@ test_that("cvat Byte de nemetonshiny : marqueur NA retiré avant le rééchantil
   skip_if_terra_write_broken()
   withr::with_tempdir({
     dir.create("rasters")
-    # grille 2 m, valeurs de relief 100, zone NA (255) au milieu
-    r <- terra::rast(terra::ext(925000, 925100, 6700000, 6700100), resolution = 2, crs = "EPSG:2154")
+    # grille 2 m DÉCALÉE d'1 m en x par rapport à la grille de sortie (qui
+    # s'aligne sur les multiples de 2 m) ; relief 100, zone NA (255) au milieu
+    r <- terra::rast(terra::ext(925001, 925101, 6700000, 6700100), resolution = 2, crs = "EPSG:2154")
     m <- matrix(100L, nrow = 50, ncol = 50)
     m[20:30, 20:30] <- 255L
     terra::values(r) <- as.vector(t(m))
@@ -456,4 +457,32 @@ test_that("projet 1.6.0 (sans sommets) et 1.7.0 restent lisibles par nemeton", {
     r <- suppressWarnings(importer_inventaire_video(file.path("x", "inventaire_video.gpkg")))
     expect_s3_class(r$placettes, "sf")
   })
+})
+
+test_that("sommet LSMS « couvert » : pixel du CHM s'il est fourni, absent sans CHM", {
+  skip_if_not(nzchar(nemeton:::.lsms_otb_dir()), "needs an OTB installation")
+  skip_if_not_installed("terra")
+  chm <- terra::rast(nrows = 20, ncols = 20, xmin = 0, xmax = 10, ymin = 0, ymax = 10,
+                     crs = "EPSG:2154")
+  terra::values(chm) <- 8
+  chm[3, 4] <- 20
+  chm[15, 15] <- 18
+  testthat::local_mocked_bindings(
+    .lsms_executer = function(image_path, sortie_shp, ...) {
+      sq <- function(x0, y0, x1, y1) sf::st_polygon(list(rbind(
+        c(x0, y0), c(x1, y0), c(x1, y1), c(x0, y1), c(x0, y0))))
+      sf::st_write(sf::st_sf(DN = 1:2, geometry = sf::st_sfc(
+        sq(0, 5, 5, 10), sq(5, 0, 10, 5), crs = 2154)), sortie_shp, quiet = TRUE)
+    },
+    .package = "nemeton")
+  h <- segment_houppiers(chm, image = chm, algorithme = "lsms", usage = "couvert", budget_s = 0)
+  expect_false("h_max" %in% names(h))
+  expect_true(all(c("x_sommet", "y_sommet") %in% names(h)))
+  pts <- sf::st_as_sf(sf::st_drop_geometry(h), coords = c("x_sommet", "y_sommet"), crs = 2154)
+  expect_true(all(diag(sf::st_within(pts, h, sparse = FALSE))))
+  expect_setequal(paste(h$x_sommet, h$y_sommet), c("1.75 8.75", "7.25 2.75"))
+  # sans CHM : pas de hauteur, donc pas de sommet
+  h0 <- segment_houppiers(chm = NULL, image = chm, algorithme = "lsms", usage = "couvert",
+                          budget_s = 0)
+  expect_false(any(c("h_max", "x_sommet", "y_sommet") %in% names(h0)))
 })
