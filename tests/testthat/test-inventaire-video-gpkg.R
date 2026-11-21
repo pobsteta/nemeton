@@ -27,7 +27,7 @@ test_that("schema_inventaire_video lit le schéma partagé", {
   s <- schema_inventaire_video()
   expect_setequal(names(s), c("placettes", "centres_mesures", "cibles", "arbres",
                               "detections", "houppiers", "parcelles", "ugf", "projet"))
-  expect_equal(attr(s, "version"), "1.6.0")
+  expect_equal(attr(s, "version"), "1.7.0")
   for (couche in c("parcelles", "ugf", "projet")) {
     expect_true(attr(s[[couche]], "lecture_seule"))
   }
@@ -174,8 +174,10 @@ test_that("creer_projet_inventaire_video produit un GeoPackage utilisable par Gr
     expect_identical(xml2::xml_attr(grp, "checked"),
                      c("Qt::Checked", "Qt::Unchecked", "Qt::Checked"))
     expect_identical(xml2::xml_attr(grp, "expanded"), c("1", "0", "0"))
-    expect_setequal(xml2::xml_attr(xml2::xml_find_all(grp[[2]], "layer-tree-layer"), "name"),
-                    c("P1_mnt", "P1_mnh", "P2_mnt", "P2_mnh"))
+    noms_raster <- xml2::xml_attr(xml2::xml_find_all(grp[[2]], "layer-tree-layer"), "name")
+    expect_true(all(c("P1_mnt", "P1_mnh", "P2_mnt", "P2_mnh") %in% noms_raster))
+    # schéma 1.7.0 : dalles MNT de la forêt dans le même groupe replié
+    expect_true(all(grepl("^(P[12]_mn[th]|mnt_[0-9]{4}_[0-9]{4})$", noms_raster)))
     expect_length(xml2::xml_find_all(doc, "/qgis/layer-tree-group/layer-tree-layer"), 0)
 
     # Dossier ouvrable à côté du .qgz : mêmes fichiers, chemins ./ résolus.

@@ -184,6 +184,12 @@
 #'     \item{`houppier_id`}{integer, 1..n, ordered by decreasing `h_max`.}
 #'     \item{`h_max`}{apex height in metres — the canonical Marculus name.}
 #'     \item{`surface_m2`}{crown area in square metres.}
+#'     \item{`x_sommet`, `y_sommet`}{apex position, in the CRS of the CHM
+#'       (metres): the centre of the CHM cell holding `h_max`, inside the
+#'       crown polygon. On equal heights, the first cell in raster order
+#'       (northernmost, then westernmost) wins. With `usage = "couvert"`,
+#'       present only when a `chm` is given (still no `h_max`); absent
+#'       without a CHM, as there is no height to locate.}
 #'   }
 #'   Zero crowns yields a zero-row `sf` with those columns, not `NULL`: the
 #'   caller writes an empty layer rather than a missing one.
@@ -460,10 +466,13 @@ segment_houppiers <- function(chm        = NULL,
   }
 
   polys <- polys[order(-polys$h_max), , drop = FALSE]
+  sommets <- .houppier_sommets(polys, chm)
   out <- sf::st_sf(
     houppier_id = seq_len(nrow(polys)),
     h_max       = as.numeric(polys$h_max),
     surface_m2  = as.numeric(sf::st_area(polys)),
+    x_sommet    = sommets$x,
+    y_sommet    = sommets$y,
     geometry    = sf::st_geometry(polys)
   )
   sf::st_agr(out) <- "constant"
@@ -528,6 +537,39 @@ segment_houppiers <- function(chm        = NULL,
     houppier_id = integer(0),
     h_max       = numeric(0),
     surface_m2  = numeric(0),
+    x_sommet    = numeric(0),
+    y_sommet    = numeric(0),
     geometry    = sf::st_sfc(crs = sf::st_crs(terra::crs(chm)))
   )
+}
+
+
+# Sommet de chaque houppier : centre de la cellule du CHM qui porte `h_max`
+# (le maximum zonal), donc a l'interieur du polygone (terra::extract retient
+# les cellules dont le centre est dans le polygone). Egalite de hauteur : la
+# premiere cellule dans l'ordre du raster (la plus au nord, puis la plus a
+# l'ouest). Un segment trop petit pour contenir un centre de cellule retombe
+# sur un point garanti a l'interieur du polygone.
+.houppier_sommets <- function(polys, chm) {
+  n <- nrow(polys)
+  x <- y <- rep(NA_real_, n)
+  if (n) {
+    ex <- terra::extract(chm, terra::vect(sf::st_transform(sf::st_geometry(polys),
+                                                           terra::crs(chm))),
+                         cells = TRUE, ID = TRUE)
+    ex <- ex[!is.na(ex[[2L]]), , drop = FALSE]
+    ex <- ex[order(ex$ID, -ex[[2L]], ex$cell), , drop = FALSE]
+    ex <- ex[!duplicated(ex$ID), , drop = FALSE]
+    xy <- terra::xyFromCell(chm, ex$cell)
+    x[ex$ID] <- xy[, 1L]
+    y[ex$ID] <- xy[, 2L]
+    manque <- which(is.na(x))
+    if (length(manque)) {
+      pt <- sf::st_coordinates(suppressWarnings(
+        sf::st_point_on_surface(sf::st_geometry(polys)[manque])))
+      x[manque] <- pt[, 1L]
+      y[manque] <- pt[, 2L]
+    }
+  }
+  list(x = x, y = y)
 }

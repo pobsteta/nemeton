@@ -1367,7 +1367,8 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #' are never modified. \code{convergence_deg} (meridian convergence at the
 #' planned point) is computed; \code{pente_pct}, \code{exposition} and
 #' \code{recouvrement_pct} are filled from the DTM/CHM when empty. Crowns come
-#' from \code{\link{segment_houppiers}} over the plot plus \code{marge_m}.
+#' from \code{\link{segment_houppiers}} over the whole forest extent (see
+#' section \dQuote{Forest-wide data}), not only around the plots.
 #'
 #' @param placettes sf POINT of the sampling plan (\code{plot_id} required).
 #' @param plot_ids Optional character vector: plots to include.
@@ -1394,8 +1395,19 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #'   merged by \code{ug_id}, attributes from \code{data/ugs.json}). Without
 #'   it, or when a source cannot be read (warning), those tables are created
 #'   empty.
-#' @param marge_m Margin around the plot for rasters and crowns (m). Default
-#'   10.
+#' @param marge_m Margin around the plot for the per-plot rasters (m), and
+#'   around the plots in the forest extent when there is neither \code{ugf}
+#'   nor \code{parcelles}. Default 10.
+#' @param cvat_path Optional path of a CVAT relief raster (as computed by
+#'   nemetonshiny with \code{foretaccess::vat_combined()}). When given, it is
+#'   cropped to the forest extent and written as \code{rasters/cvat.tif}
+#'   (Byte, 2 m, EPSG:2154, DEFLATE; \code{1 + round(v * 254)} for a relief
+#'   \code{v} in \eqn{[0, 1]}, \code{0} = nodata; a float value outside
+#'   \eqn{[0, 1]} is clamped, \code{NA} gives \code{0}). A Byte input (the
+#'   8-bit CVAT of nemetonshiny, \code{v = b / 255}) is rescaled the same way,
+#'   its value \code{255} being foretaccess' marker for \code{NA} and giving
+#'   \code{0}. Reprojected when not in EPSG:2154. \code{NULL} (default): no
+#'   \code{cvat.tif}. A missing or unreadable file only raises a warning.
 #' @param output_dir Destination directory.
 #' @param project_name File name of the \code{.qgz} (\code{^[A-Za-z0-9_-]+$}).
 #'   Default \code{"inventaire_video"}.
@@ -1417,6 +1429,24 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #'   replaced like the \code{.qgz} (\code{overwrite}), edits made in it
 #'   included.
 #'
+#' @section Forest-wide data (schema 1.7.0):
+#' The forest extent is the union of the \code{ugf} plus 50 m (else of the
+#' \code{parcelles} plus 50 m, else the plots plus \code{rayon_m +
+#' marge_m}); it always also covers every plot plus \code{rayon_m +
+#' marge_m}, so that a plot planned outside the \code{ugf} keeps its data.
+#' On that extent the function writes 1 km DTM tiles
+#' \code{rasters/mnt_<x>_<y>.tif} (south-west corner in km, 4 digits; 0.5 m,
+#' same format as the per-plot rasters, nodata outside the extent or the
+#' LiDAR; no CHM tile), segments the crowns (\code{\link{segment_houppiers}},
+#' tile by tile, a crown kept by the tile that holds its apex) and writes
+#' them to \code{houppiers} with \code{x_sommet} / \code{y_sommet}.
+#' A crown touching the buffer (\code{rayon_m + marge_m}) of one or several
+#' plots is written once per plot touched, with that \code{plot_id} (as before
+#' schema 1.7.0); a crown touching none is written once with \code{plot_id}
+#' \code{NULL}. \code{houppier_id} identifies the crown: the rows of a crown
+#' shared by two plots carry the same \code{houppier_id}. Tiles and \code{cvat.tif} (legend group "Rasters des placettes") are in the
+#' \code{.qgz} and in the project folder.
+#'
 #' @section Lifecycle:
 #' Experimental (spec 061).
 #'
@@ -1427,7 +1457,7 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
                                           declinaison_deg = NULL,
                                           avec_lidar = TRUE, dem = NULL, chm = NULL,
                                           project_path = NULL, marge_m = 10,
-                                          output_dir, project_name = "inventaire_video",
+                                          cvat_path = NULL, output_dir, project_name = "inventaire_video",
                                           region = "BFC", lang = "fr", overwrite = TRUE) {
   unite_azimut <- match.arg(unite_azimut)
   if (!inherits(placettes, "sf")) cli::cli_abort("{.arg placettes} must be an sf object.")
@@ -1472,7 +1502,13 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   placettes$convergence_deg <- .convergence_lambert93(placettes)
   placettes$etat_traitement <- "a_faire"
 
-  # MNT / MNH : découpe par placette, houppiers, topographie.
+  # Tables de la carte et de la liste des projets de Groma (schéma 1.2.0) :
+  # lues avant le LiDAR, car l'emprise de la forêt en dépend.
+  sources <- .iv_sources_projet(project_path, placettes)
+  emprise <- .iv_emprise(placettes, sources, rayon_m, marge_m)
+
+  # MNT / MNH : découpe par placette, topographie ; puis dalles MNT et
+  # houppiers sur toute l'emprise (schéma 1.7.0).
   houppiers <- NULL
   rasters <- character(0)
   if (isTRUE(avec_lidar)) {
@@ -1497,15 +1533,6 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
         f <- file.path("rasters", paste0(pid, "_mnh.tif"))
         .iv_ecrire_tif(mnh_k, file.path(stage, f))
         rasters <- c(rasters, f)
-        h <- tryCatch(segment_houppiers(mnh_k, aoi = sf::st_sf(geometry = zone)),
-                      error = function(e) {
-                        cli::cli_warn("Crown segmentation failed for {.val {pid}}: {conditionMessage(e)}")
-                        NULL
-                      })
-        if (!is.null(h) && nrow(h)) {
-          h$plot_id <- pid
-          houppiers <- rbind(houppiers, h[, c("plot_id", "houppier_id", "h_max", "surface_m2")])
-        }
       }
       topo <- .iv_topographie(mnt_k, mnh_k, centre, rayon_m)
       for (col in names(topo)) {
@@ -1513,10 +1540,18 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
         if (is.na(placettes[[col]][k])) placettes[[col]][k] <- topo[[col]]
       }
     }
+    if (!is.null(dem)) {
+      rasters <- c(rasters, .iv_ecrire_dalles_mnt(dem, emprise, stage))
+    }
+    if (!is.null(chm)) {
+      houppiers <- .iv_houppiers_emprise(chm, emprise, placettes, rayon_m + marge_m)
+    }
+  }
+  if (!is.null(cvat_path)) {
+    f <- .iv_ecrire_cvat(cvat_path, emprise, stage)
+    if (!is.null(f)) rasters <- c(rasters, f)
   }
 
-  # Tables de la carte et de la liste des projets de Groma (schéma 1.2.0).
-  sources <- .iv_sources_projet(project_path, placettes)
 
   # Écriture des couches (géométrie `geom`, fid `fid`, index selon schéma).
   for (couche in names(schema)) {
@@ -1530,6 +1565,7 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
     .iv_ecrire_couche(x, gpkg, couche, attr(champs, "index_spatial"))
   }
   .iv_poser_declencheurs(gpkg)
+  .iv_poser_index_btree(gpkg)
 
   bbox <- tryCatch(sf::st_bbox(sf::st_buffer(placettes, rayon_m + marge_m)),
                    error = function(e) NULL)
@@ -1539,6 +1575,199 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   invisible(qgz_path)
 }
 
+
+# ---- Données de toute la forêt (schéma 1.7.0) -------------------------
+
+# Emprise de la forêt (sfc, EPSG:2154) : union des `ugf` + 50 m, sinon des
+# `parcelles` + 50 m, sinon placettes + marge_m. Toujours élargie aux zones des
+# placettes (rayon + marge) : une placette prévue hors des `ugf` garde ses
+# données (choix prudent, cas limite 4).
+.iv_emprise <- function(placettes, sources, rayon_m, marge_m) {
+  zones <- sf::st_union(sf::st_buffer(sf::st_geometry(placettes), rayon_m + marge_m))
+  base <- NULL
+  for (nom in c("ugf", "parcelles")) {
+    x <- sources[[nom]]
+    if (inherits(x, "sf") && nrow(x)) {
+      g <- tryCatch(sf::st_union(sf::st_buffer(sf::st_make_valid(
+        sf::st_transform(sf::st_geometry(x), 2154)), 50)), error = function(e) NULL)
+      if (!is.null(g)) { base <- g; break }
+    }
+  }
+  sf::st_union(c(sf::st_geometry(zones), base))
+}
+
+# Dalles de 1 km qui touchent l'emprise par l'intérieur (une emprise qui
+# s'arrête pile sur une limite de kilomètre n'écrit pas la dalle voisine) :
+# data.frame x, y (coin sud-ouest, km).
+.iv_dalles_km <- function(emprise) {
+  bb <- sf::st_bbox(emprise)
+  xs <- seq(floor(bb[["xmin"]] / 1000), ceiling(bb[["xmax"]] / 1000) - 1)
+  ys <- seq(floor(bb[["ymin"]] / 1000), ceiling(bb[["ymax"]] / 1000) - 1)
+  g <- expand.grid(x = xs, y = ys)
+  carres <- sf::st_sfc(lapply(seq_len(nrow(g)), function(i) {
+    sf::st_polygon(list(rbind(c(g$x[i], g$y[i]), c(g$x[i] + 1, g$y[i]),
+                              c(g$x[i] + 1, g$y[i] + 1), c(g$x[i], g$y[i] + 1),
+                              c(g$x[i], g$y[i])) * 1000))
+  }), crs = 2154)
+  dedans <- lengths(sf::st_relate(carres, emprise, pattern = "2********")) > 0
+  g[dedans, , drop = FALSE]
+}
+
+# Raster 2154 (une bande) depuis un SpatRaster ou un chemin.
+.iv_raster_2154 <- function(r) {
+  if (!inherits(r, "SpatRaster")) r <- terra::rast(r)
+  r <- r[[1]]
+  if (!terra::same.crs(r, "EPSG:2154")) r <- terra::project(r, "EPSG:2154")
+  r
+}
+
+# `r` rééchantillonné sur la grille `gabarit` (bilinéaire par défaut) ; nodata
+# là où `r` ne couvre pas (cas limite 7), sans erreur.
+.iv_sur_gabarit <- function(r, gabarit, methode = "bilinear") {
+  e <- terra::ext(gabarit)
+  inter <- tryCatch(terra::intersect(terra::ext(r), e), error = function(err) NULL)
+  if (is.null(inter)) {
+    out <- terra::rast(gabarit)
+    terra::values(out) <- NA_real_
+    return(out)
+  }
+  terra::resample(terra::crop(r, e, snap = "out"), gabarit, method = methode)
+}
+
+# Dalles MNT de 1 km (2 000 x 2 000 pixels), `rasters/mnt_<x>_<y>.tif`, à plat ;
+# nodata hors de l'emprise et hors du LiDAR. Rend les chemins relatifs.
+.iv_ecrire_dalles_mnt <- function(dem, emprise, stage) {
+  dem <- .iv_raster_2154(dem)
+  dalles <- .iv_dalles_km(emprise)
+  v_emprise <- terra::vect(sf::st_sf(geometry = emprise))
+  out <- character(nrow(dalles))
+  for (i in seq_len(nrow(dalles))) {
+    x <- dalles$x[i]; y <- dalles$y[i]
+    gabarit <- terra::rast(terra::ext(x * 1000, (x + 1) * 1000, y * 1000, (y + 1) * 1000),
+                           resolution = 0.5, crs = "EPSG:2154")
+    r <- terra::mask(.iv_sur_gabarit(dem, gabarit), v_emprise)
+    f <- file.path("rasters", sprintf("mnt_%04d_%04d.tif", x, y))
+    .iv_ecrire_tif(r, file.path(stage, f))
+    out[i] <- f
+  }
+  out
+}
+
+# Houppiers de toute l'emprise : segmentation dalle par dalle (le MNH n'est
+# jamais écrit ; la mémoire reste bornée par la dalle + une marge), un houppier
+# appartenant à la dalle qui contient son sommet. `plot_id` : première
+# placette dont la zone (rayon + marge) touche le houppier, sinon NA.
+.iv_houppiers_emprise <- function(chm, emprise, placettes, zone_m) {
+  chm <- .iv_raster_2154(chm)
+  dalles <- .iv_dalles_km(emprise)
+  marge <- 15  # 3 * ws, valeur par défaut de segment_houppiers()
+  tous <- list()
+  for (i in seq_len(nrow(dalles))) {
+    x0 <- dalles$x[i] * 1000; y0 <- dalles$y[i] * 1000
+    zone <- sf::st_sfc(sf::st_polygon(list(rbind(
+      c(x0 - marge, y0 - marge), c(x0 + 1000 + marge, y0 - marge),
+      c(x0 + 1000 + marge, y0 + 1000 + marge), c(x0 - marge, y0 + 1000 + marge),
+      c(x0 - marge, y0 - marge)))), crs = 2154)
+    zone <- sf::st_intersection(zone, sf::st_buffer(emprise, marge))
+    if (!length(zone) || all(sf::st_is_empty(zone))) next
+    mnh <- tryCatch(.iv_decouper(chm, zone), error = function(e) NULL)
+    if (is.null(mnh) || all(is.na(terra::values(mnh)))) next
+    h <- tryCatch(segment_houppiers(mnh, aoi = sf::st_sf(geometry = zone), emprise = "decoupe"),
+                  error = function(e) {
+                    cli::cli_warn("Crown segmentation failed for tile {x0 / 1000}_{y0 / 1000}: {conditionMessage(e)}")
+                    NULL
+                  })
+    if (is.null(h) || !nrow(h)) next
+    garde <- h$x_sommet >= x0 & h$x_sommet < x0 + 1000 &
+      h$y_sommet >= y0 & h$y_sommet < y0 + 1000
+    h <- h[garde, , drop = FALSE]
+    if (nrow(h)) tous[[length(tous) + 1L]] <- h
+  }
+  if (!length(tous)) return(NULL)
+  h <- do.call(rbind, lapply(tous, function(t) {
+    t[, c("h_max", "surface_m2", "x_sommet", "y_sommet")]
+  }))
+  h <- sf::st_transform(h, 2154)
+  # Seuls les houppiers qui touchent l'emprise sont gardés (la marge de
+  # segmentation ne doit pas en ajouter hors de la forêt).
+  h <- sf::st_filter(h, emprise, .predicate = sf::st_intersects)
+  if (!nrow(h)) return(NULL)
+  h <- h[order(-h$h_max), , drop = FALSE]
+  h$houppier_id <- seq_len(nrow(h))
+  # Règle de `main` : une ligne par placette touchée (le houppier partagé garde
+  # son houppier_id) ; une seule ligne, plot_id NA, hors de toute placette.
+  zones <- sf::st_buffer(sf::st_geometry(placettes), zone_m)
+  touche <- sf::st_intersects(sf::st_geometry(h), zones)
+  idx <- unlist(lapply(seq_along(touche), function(i) rep(i, max(1L, length(touche[[i]])))))
+  pid <- unlist(lapply(touche, function(j) {
+    if (length(j)) as.character(placettes$plot_id[j]) else NA_character_
+  }))
+  h <- h[idx, , drop = FALSE]
+  h$plot_id <- pid
+  rownames(h) <- NULL
+  h[, c("plot_id", "houppier_id", "h_max", "surface_m2", "x_sommet", "y_sommet")]
+}
+
+# `rasters/cvat.tif` : Byte, 2 m, EPSG:2154, DEFLATE, 0 = nodata. Rend le chemin
+# relatif, ou NULL (avertissement) si le fichier est absent ou illisible.
+.iv_ecrire_cvat <- function(cvat_path, emprise, stage) {
+  tryCatch({
+    if (!is.character(cvat_path) || length(cvat_path) != 1L || !file.exists(cvat_path)) {
+      stop("file not found")
+    }
+    r <- terra::rast(cvat_path)[[1]]
+    octet <- terra::datatype(r) %in% "INT1U"
+    methode <- "bilinear"
+    if (octet) {
+      # Le marqueur NA (255) sort AVANT tout rééchantillonnage : interpolé, il
+      # fabriquerait des valeurs intermédiaires en bordure des zones NA. Les
+      # niveaux 0-254 restent interpolés au plus proche voisin (pas de
+      # mélange non plus entre deux niveaux de gris).
+      r <- terra::ifel(r >= 255, NA, r)
+      methode <- "near"
+    }
+    if (!terra::same.crs(r, "EPSG:2154")) r <- terra::project(r, "EPSG:2154", method = methode)
+    v_emprise <- terra::vect(sf::st_sf(geometry = emprise))
+    e <- terra::ext(v_emprise)
+    gabarit <- terra::rast(terra::ext(floor(terra::xmin(e) / 2) * 2, ceiling(terra::xmax(e) / 2) * 2,
+                                      floor(terra::ymin(e) / 2) * 2, ceiling(terra::ymax(e) / 2) * 2),
+                           resolution = 2, crs = "EPSG:2154")
+    v <- terra::mask(.iv_sur_gabarit(r, gabarit, methode), v_emprise)
+    val <- terra::values(v, mat = FALSE)
+    if (octet) val <- val / 255
+    val <- pmin(pmax(val, 0), 1)
+    b <- 1 + round(val * 254)
+    b[is.na(b)] <- 0
+    out <- terra::rast(v)
+    terra::values(out) <- b
+    names(out) <- "cvat"
+    f <- file.path("rasters", "cvat.tif")
+    terra::writeRaster(out, file.path(stage, f), overwrite = TRUE, datatype = "INT1U",
+                       NAflag = 0, gdal = c("COMPRESS=DEFLATE"))
+    f
+  }, error = function(e) {
+    cli::cli_warn("{.arg cvat_path} not usable ({conditionMessage(e)}): no {.file cvat.tif} written.")
+    NULL
+  })
+}
+
+# Index B-tree déclarés par le schéma (`index_btree`), p. ex. houppiers
+# (x_sommet, y_sommet) : le téléphone n'a pas R*Tree et filtre par BETWEEN.
+.iv_poser_index_btree <- function(gpkg) {
+  brut <- .iv_schema_brut()
+  con <- DBI::dbConnect(RSQLite::SQLite(), gpkg)
+  on.exit(DBI::dbDisconnect(con), add = TRUE)
+  for (couche in brut$couches) {
+    for (cols in couche$index_btree) {
+      cols <- unlist(cols)
+      DBI::dbExecute(con, sprintf(
+        'CREATE INDEX IF NOT EXISTS "idx_%s_%s" ON "%s" (%s)', couche$nom,
+        paste(cols, collapse = "_"), couche$nom,
+        paste0('"', cols, '"', collapse = ", ")))
+    }
+  }
+  invisible(gpkg)
+}
 
 # ---- Intégration ------------------------------------------------------
 

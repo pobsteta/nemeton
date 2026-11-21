@@ -128,6 +128,18 @@ parcellaire de Dabo et un projet hors France ; `embedding_regress()` et la
 vignette `embeddings-alphaearth_fr.Rmd`. Spec 065 : premier remplissage du
 catalogue par Pascal.
 
+**Journal** — *2026-11-21* (mission 037, schéma Groma **1.7.0**) :
+`creer_projet_inventaire_video()` écrit dalles MNT de 1 km
+(`rasters/mnt_{x}_{y}.tif`), `cvat.tif` (argument `cvat_path`) et houppiers sur
+toute la forêt, avec `x_sommet` / `y_sommet` (`segment_houppiers()`). Choix
+tranchés (délégation du 2026-11-18) : emprise toujours élargie aux placettes
++ rayon + marge ; `cvat_path` illisible = avertissement sans `cvat.tif` ;
+dalles et `cvat.tif` dans le groupe de légende « Rasters des placettes »
+(pas de 4e groupe : le plugin Groma attend 3 groupes) ; segmentation dalle par
+dalle (mémoire bornée), houppier retenu par la dalle de son sommet ; le CVAT de
+nemetonshiny est un Byte 0-255 (255 = NA) et non un flottant [0, 1] : les deux
+sont acceptés. Pas de release ; `DESCRIPTION` reste en `.9000`.
+
 **Journal** — *2026-11-07* : tags `v2026.11.3` et `v2026.11.8` posés (relance
 `gh run rerun --failed` des runs 42181439133 et 42209277959, réussie au 2e
 essai). Spec 067 : licence des poids ForPT = **aucune déclarée** (D-6 :
