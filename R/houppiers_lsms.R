@@ -273,10 +273,13 @@ lsms_budget_pixels <- function(budget_s, spatialr = .LSMS_DEFAUTS$spatialr) {
 
   if (identical(usage, "martelage")) {
     segs <- segs[order(-segs$h_max), , drop = FALSE]
+    sommets <- .houppier_sommets(segs, chm)
     out <- sf::st_sf(
       houppier_id = seq_len(nrow(segs)),
       h_max       = as.numeric(segs$h_max),
       surface_m2  = as.numeric(sf::st_area(segs)),
+      x_sommet    = sommets$x,
+      y_sommet    = sommets$y,
       geometry    = sf::st_geometry(segs)
     )
   } else {
@@ -301,7 +304,8 @@ lsms_budget_pixels <- function(budget_s, spatialr = .LSMS_DEFAUTS$spatialr) {
   geom <- sf::st_sfc(crs = sf::st_crs(terra::crs(image)))
   if (identical(usage, "martelage")) {
     sf::st_sf(houppier_id = integer(0), h_max = numeric(0),
-              surface_m2 = numeric(0), geometry = geom)
+              surface_m2 = numeric(0), x_sommet = numeric(0),
+              y_sommet = numeric(0), geometry = geom)
   } else {
     sf::st_sf(houppier_id = integer(0), surface_m2 = numeric(0), geometry = geom)
   }
