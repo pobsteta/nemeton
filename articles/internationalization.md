@@ -260,11 +260,11 @@ de rapports multilingues
 sessionInfo()
 #> R version 4.6.2 (2026-10-29)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.5 LTS
+#> Running under: Ubuntu 26.04.1 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
-#> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+#> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.32.so;  LAPACK version 3.12.0
 #> 
 #> locale:
 #>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
@@ -282,14 +282,14 @@ sessionInfo()
 #> [1] nemeton_2026.11.36.9000
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] terra_1.9-50       cli_3.6.6          knitr_1.52         rlang_1.3.0       
-#>  [5] xfun_0.62          KernSmooth_2.23-27 otel_0.2.0         DBI_1.3.0         
-#>  [9] textshaping_1.0.5  sf_1.1-3           jsonlite_2.0.0     glue_1.8.1        
-#> [13] e1071_1.7-17       htmltools_0.5.9    ragg_1.5.2         sass_0.4.10       
+#>  [1] terra_1.9-60       cli_3.6.6          knitr_1.52         rlang_1.3.0       
+#>  [5] xfun_0.62          KernSmooth_2.23-27 otel_0.3.0         DBI_1.3.0         
+#>  [9] textshaping_1.1.0  sf_1.1-3           jsonlite_2.0.0     glue_1.8.1        
+#> [13] e1071_1.7-17       htmltools_0.5.9    ragg_1.5.2         sass_0.5.0        
 #> [17] rmarkdown_2.32     grid_4.6.2         classInt_0.4-11    evaluate_1.0.5    
 #> [21] jquerylib_0.1.4    fastmap_1.2.0      yaml_2.3.12        lifecycle_1.0.5   
 #> [25] compiler_4.6.2     codetools_0.2-20   fs_2.1.0           Rcpp_1.1.2        
-#> [29] htmlwidgets_1.6.4  systemfonts_1.3.2  digest_0.6.39      R6_2.6.1          
+#> [29] htmlwidgets_1.6.4  systemfonts_1.3.3  digest_0.6.39      R6_2.6.1          
 #> [33] class_7.3-24       bslib_0.12.0       proxy_0.4-29       tools_4.6.2       
 #> [37] units_1.0-1        pkgdown_2.2.1      cachem_1.1.0       desc_1.4.3
 ```

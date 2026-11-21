@@ -43,7 +43,7 @@ Experimental (spec 061).
 
 ``` r
 library(sf)
-#> Linking to GEOS 3.12.1, GDAL 3.8.4, PROJ 9.4.0; sf_use_s2() is TRUE
+#> Linking to GEOS 3.14.1, GDAL 3.12.2, PROJ 9.7.1; sf_use_s2() is TRUE
 crowns <- st_sf(houppier_id = 1:2, h_max = c(24.5, 31),
                 geometry = st_sfc(st_buffer(st_point(c(0, 0)), 3),
                                   st_buffer(st_point(c(4, 0)), 3)))

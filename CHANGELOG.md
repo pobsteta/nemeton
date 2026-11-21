@@ -4385,7 +4385,7 @@ préexistants » documented in v0.43.2.
 ### Changed
 
 - Tour optimisation now uses
-  [`TSP::solve_TSP()`](https://rdrr.io/pkg/TSP/man/solve_TSP.html)
+  [`TSP::solve_TSP()`](https://michael.hahsler.net/TSP/reference/solve_TSP.html)
   (nearest_insertion + 2-opt) — same recipe as tutorial 09-sampling.
   Hand-rolled fallback kept when the `TSP` package is not installed.
   `TSP (>= 1.2.0)` added to `Suggests`.

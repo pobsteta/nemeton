@@ -429,11 +429,11 @@ ggplot(change_data, aes(x = C1_rate, y = B1_rate)) +
 sessionInfo()
 #> R version 4.6.2 (2026-10-29)
 #> Platform: x86_64-pc-linux-gnu
-#> Running under: Ubuntu 24.04.5 LTS
+#> Running under: Ubuntu 26.04.1 LTS
 #> 
 #> Matrix products: default
 #> BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 
-#> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0
+#> LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.32.so;  LAPACK version 3.12.0
 #> 
 #> locale:
 #>  [1] LC_CTYPE=C.UTF-8       LC_NUMERIC=C           LC_TIME=C.UTF-8       
@@ -448,23 +448,23 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] sf_1.1-3                dplyr_1.2.1             ggplot2_4.0.3          
+#> [1] sf_1.1-3                dplyr_1.2.1             ggplot2_4.0.4          
 #> [4] nemeton_2026.11.36.9000
 #> 
 #> loaded via a namespace (and not attached):
-#>  [1] utf8_1.2.6         sass_0.4.10        generics_0.1.4     tidyr_1.3.2       
+#>  [1] utf8_1.2.6         sass_0.5.0         generics_0.1.4     tidyr_1.3.2       
 #>  [5] class_7.3-24       KernSmooth_2.23-27 digest_0.6.39      magrittr_2.0.5    
 #>  [9] evaluate_1.0.5     grid_4.6.2         RColorBrewer_1.1-3 fastmap_1.2.0     
 #> [13] jsonlite_2.0.0     e1071_1.7-17       DBI_1.3.0          purrr_1.2.2       
-#> [17] viridisLite_0.4.3  scales_1.4.0       codetools_0.2-20   textshaping_1.0.5 
+#> [17] viridisLite_0.4.3  scales_1.4.0       codetools_0.2-20   textshaping_1.1.0 
 #> [21] jquerylib_0.1.4    cli_3.6.6          rlang_1.3.0        units_1.0-1       
-#> [25] withr_3.0.3        cachem_1.1.0       yaml_2.3.12        otel_0.2.0        
+#> [25] withr_3.0.3        cachem_1.1.0       yaml_2.3.12        otel_0.3.0        
 #> [29] tools_4.6.2        vctrs_0.7.3        R6_2.6.1           proxy_0.4-29      
 #> [33] lifecycle_1.0.5    classInt_0.4-11    fs_2.1.0           htmlwidgets_1.6.4 
 #> [37] ragg_1.5.2         pkgconfig_2.0.3    desc_1.4.3         pkgdown_2.2.1     
-#> [41] terra_1.9-50       bslib_0.12.0       pillar_1.11.1      gtable_0.3.6      
-#> [45] glue_1.8.1         Rcpp_1.1.2         systemfonts_1.3.2  xfun_0.62         
+#> [41] terra_1.9-60       bslib_0.12.0       pillar_1.11.1      gtable_0.3.6      
+#> [45] glue_1.8.1         Rcpp_1.1.2         systemfonts_1.3.3  xfun_0.62         
 #> [49] tibble_3.3.1       tidyselect_1.2.1   knitr_1.52         farver_2.1.2      
 #> [53] htmltools_0.5.9    labeling_0.4.3     rmarkdown_2.32     compiler_4.6.2    
-#> [57] S7_0.2.2
+#> [57] S7_1.0.0
 ```
