@@ -115,16 +115,6 @@ jobs:
           Rscript -e 'd <- read.dcf("DESCRIPTION"); f <- intersect(c("Depends", "Imports", "LinkingTo", "Suggests", "Remotes", "Additional_repositories"), colnames(d)); writeLines(as.character(d[1, f]), file.path(Sys.getenv("RUNNER_TEMP"), "deps-fingerprint"))'
           echo "hash=$(sha256sum "$RUNNER_TEMP/deps-fingerprint" | cut -c1-16)" >> "$GITHUB_OUTPUT"
 
-      - name: Cache des paquets R
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ${{ runner.temp }}/Library/*
-            !${{ runner.temp }}/Library/pak
-            !${{ runner.temp }}/Library/_cache
-          key: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-deps${{ steps.deps.outputs.hash }}-v1
-          restore-keys: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-deps
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -143,6 +133,33 @@ jobs:
             libpng-dev \
             libtiff5-dev \
             libjpeg-dev
+
+      # Empreinte des bibliotheques systeme compilees dans les paquets R
+      # (incident du 2026-11-21, mission 038) : l'image `ubuntu-latest` a
+      # change de GDAL (libgdal.so.34) alors que le cache gardait des .so
+      # `sf`/`terra` lies a l'ancienne -> « libgdal.so.34 introuvable » sur
+      # toutes les PR. La clef du cache porte donc les versions apt de
+      # GDAL/GEOS/PROJ, lues APRES l'installation des dependances systeme
+      # (d'ou l'ordre : apt, empreinte, cache). Pas `ImageVersion` : il
+      # change chaque semaine et viderait le cache pour rien. Le prefixe
+      # de `restore-keys` contient aussi cette empreinte : un repli ne
+      # peut pas ramener un cache d'une autre GDAL.
+      - name: Empreinte des bibliotheques systeme (GDAL/GEOS/PROJ)
+        id: syslibs
+        run: |
+          v=$(dpkg-query -W -f='${Package}=${Version};' libgdal-dev libgeos-dev libproj-dev)
+          echo "libs: $v"
+          echo "sig=$(echo "$v" | sha256sum | cut -c1-12)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache des paquets R
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ runner.temp }}/Library/*
+            !${{ runner.temp }}/Library/pak
+            !${{ runner.temp }}/Library/_cache
+          key: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-sys${{ steps.syslibs.outputs.sig }}-deps${{ steps.deps.outputs.hash }}-v2
+          restore-keys: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-sys${{ steps.syslibs.outputs.sig }}-deps
 
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
@@ -243,16 +260,6 @@ jobs:
           Rscript -e 'd <- read.dcf("DESCRIPTION"); f <- intersect(c("Depends", "Imports", "LinkingTo", "Suggests", "Remotes", "Additional_repositories"), colnames(d)); writeLines(as.character(d[1, f]), file.path(Sys.getenv("RUNNER_TEMP"), "deps-fingerprint"))'
           echo "hash=$(sha256sum "$RUNNER_TEMP/deps-fingerprint" | cut -c1-16)" >> "$GITHUB_OUTPUT"
 
-      - name: Cache des paquets R
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ${{ runner.temp }}/Library/*
-            !${{ runner.temp }}/Library/pak
-            !${{ runner.temp }}/Library/_cache
-          key: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-deps${{ steps.deps.outputs.hash }}-v1
-          restore-keys: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-deps
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -261,6 +268,33 @@ jobs:
             libssl-dev libcurl4-openssl-dev libxml2-dev \
             libfontconfig1-dev libharfbuzz-dev libfribidi-dev \
             libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
+
+      # Empreinte des bibliotheques systeme compilees dans les paquets R
+      # (incident du 2026-11-21, mission 038) : l'image `ubuntu-latest` a
+      # change de GDAL (libgdal.so.34) alors que le cache gardait des .so
+      # `sf`/`terra` lies a l'ancienne -> « libgdal.so.34 introuvable » sur
+      # toutes les PR. La clef du cache porte donc les versions apt de
+      # GDAL/GEOS/PROJ, lues APRES l'installation des dependances systeme
+      # (d'ou l'ordre : apt, empreinte, cache). Pas `ImageVersion` : il
+      # change chaque semaine et viderait le cache pour rien. Le prefixe
+      # de `restore-keys` contient aussi cette empreinte : un repli ne
+      # peut pas ramener un cache d'une autre GDAL.
+      - name: Empreinte des bibliotheques systeme (GDAL/GEOS/PROJ)
+        id: syslibs
+        run: |
+          v=$(dpkg-query -W -f='${Package}=${Version};' libgdal-dev libgeos-dev libproj-dev)
+          echo "libs: $v"
+          echo "sig=$(echo "$v" | sha256sum | cut -c1-12)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache des paquets R
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ runner.temp }}/Library/*
+            !${{ runner.temp }}/Library/pak
+            !${{ runner.temp }}/Library/_cache
+          key: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-sys${{ steps.syslibs.outputs.sig }}-deps${{ steps.deps.outputs.hash }}-v2
+          restore-keys: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-sys${{ steps.syslibs.outputs.sig }}-deps
 
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
@@ -343,16 +377,6 @@ jobs:
           Rscript -e 'd <- read.dcf("DESCRIPTION"); f <- intersect(c("Depends", "Imports", "LinkingTo", "Suggests", "Remotes", "Additional_repositories"), colnames(d)); writeLines(as.character(d[1, f]), file.path(Sys.getenv("RUNNER_TEMP"), "deps-fingerprint"))'
           echo "hash=$(sha256sum "$RUNNER_TEMP/deps-fingerprint" | cut -c1-16)" >> "$GITHUB_OUTPUT"
 
-      - name: Cache des paquets R
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: |
-            ${{ runner.temp }}/Library/*
-            !${{ runner.temp }}/Library/pak
-            !${{ runner.temp }}/Library/_cache
-          key: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-deps${{ steps.deps.outputs.hash }}-v1
-          restore-keys: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-deps
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -361,6 +385,33 @@ jobs:
             libssl-dev libcurl4-openssl-dev libxml2-dev \
             libfontconfig1-dev libharfbuzz-dev libfribidi-dev \
             libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
+
+      # Empreinte des bibliotheques systeme compilees dans les paquets R
+      # (incident du 2026-11-21, mission 038) : l'image `ubuntu-latest` a
+      # change de GDAL (libgdal.so.34) alors que le cache gardait des .so
+      # `sf`/`terra` lies a l'ancienne -> « libgdal.so.34 introuvable » sur
+      # toutes les PR. La clef du cache porte donc les versions apt de
+      # GDAL/GEOS/PROJ, lues APRES l'installation des dependances systeme
+      # (d'ou l'ordre : apt, empreinte, cache). Pas `ImageVersion` : il
+      # change chaque semaine et viderait le cache pour rien. Le prefixe
+      # de `restore-keys` contient aussi cette empreinte : un repli ne
+      # peut pas ramener un cache d'une autre GDAL.
+      - name: Empreinte des bibliotheques systeme (GDAL/GEOS/PROJ)
+        id: syslibs
+        run: |
+          v=$(dpkg-query -W -f='${Package}=${Version};' libgdal-dev libgeos-dev libproj-dev)
+          echo "libs: $v"
+          echo "sig=$(echo "$v" | sha256sum | cut -c1-12)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache des paquets R
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ runner.temp }}/Library/*
+            !${{ runner.temp }}/Library/pak
+            !${{ runner.temp }}/Library/_cache
+          key: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-sys${{ steps.syslibs.outputs.sig }}-deps${{ steps.deps.outputs.hash }}-v2
+          restore-keys: ${{ runner.os }}-R${{ steps.setup-r.outputs.installed-r-version }}-sys${{ steps.syslibs.outputs.sig }}-deps
 
       - name: Install R dependencies
         uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
