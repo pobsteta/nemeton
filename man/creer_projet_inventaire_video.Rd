@@ -122,7 +122,8 @@ The planned position and the sampling-design columns of \code{placettes}
 are never modified. \code{convergence_deg} (meridian convergence at the
 planned point) is computed; \code{pente_pct}, \code{exposition} and
 \code{recouvrement_pct} are filled from the DTM/CHM when empty. Crowns come
-from \code{\link{segment_houppiers}} over the plot plus \code{marge_m}.
+from \code{\link{segment_houppiers}} over the whole forest extent (see
+section \dQuote{Forest-wide data}), not only around the plots.
 }
 \section{Forest-wide data (schema 1.7.0)}{
 
@@ -136,9 +137,11 @@ same format as the per-plot rasters, nodata outside the extent or the
 LiDAR; no CHM tile), segments the crowns (\code{\link{segment_houppiers}},
 tile by tile, a crown kept by the tile that holds its apex) and writes
 them to \code{houppiers} with \code{x_sommet} / \code{y_sommet}.
-\code{plot_id} is set for a crown touching the buffer
-(\code{rayon_m + marge_m}) of a plot (the first one in plot order when
-several), \code{NA} otherwise. Tiles and \code{cvat.tif} (legend group "Rasters des placettes") are in the
+A crown touching the buffer (\code{rayon_m + marge_m}) of one or several
+plots is written once per plot touched, with that \code{plot_id} (as before
+schema 1.7.0); a crown touching none is written once with \code{plot_id}
+\code{NULL}. \code{houppier_id} identifies the crown: the rows of a crown
+shared by two plots carry the same \code{houppier_id}. Tiles and \code{cvat.tif} (legend group "Rasters des placettes") are in the
 \code{.qgz} and in the project folder.
 }
 

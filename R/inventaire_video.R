@@ -1367,7 +1367,8 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #' are never modified. \code{convergence_deg} (meridian convergence at the
 #' planned point) is computed; \code{pente_pct}, \code{exposition} and
 #' \code{recouvrement_pct} are filled from the DTM/CHM when empty. Crowns come
-#' from \code{\link{segment_houppiers}} over the plot plus \code{marge_m}.
+#' from \code{\link{segment_houppiers}} over the whole forest extent (see
+#' section \dQuote{Forest-wide data}), not only around the plots.
 #'
 #' @param placettes sf POINT of the sampling plan (\code{plot_id} required).
 #' @param plot_ids Optional character vector: plots to include.
@@ -1439,9 +1440,11 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #' LiDAR; no CHM tile), segments the crowns (\code{\link{segment_houppiers}},
 #' tile by tile, a crown kept by the tile that holds its apex) and writes
 #' them to \code{houppiers} with \code{x_sommet} / \code{y_sommet}.
-#' \code{plot_id} is set for a crown touching the buffer
-#' (\code{rayon_m + marge_m}) of a plot (the first one in plot order when
-#' several), \code{NA} otherwise. Tiles and \code{cvat.tif} (legend group "Rasters des placettes") are in the
+#' A crown touching the buffer (\code{rayon_m + marge_m}) of one or several
+#' plots is written once per plot touched, with that \code{plot_id} (as before
+#' schema 1.7.0); a crown touching none is written once with \code{plot_id}
+#' \code{NULL}. \code{houppier_id} identifies the crown: the rows of a crown
+#' shared by two plots carry the same \code{houppier_id}. Tiles and \code{cvat.tif} (legend group "Rasters des placettes") are in the
 #' \code{.qgz} and in the project folder.
 #'
 #' @section Lifecycle:
@@ -1618,9 +1621,9 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   r
 }
 
-# `r` rééchantillonné (bilinéaire) sur la grille `gabarit` ; nodata là où `r`
-# ne couvre pas (cas limite 7), sans erreur.
-.iv_sur_gabarit <- function(r, gabarit) {
+# `r` rééchantillonné sur la grille `gabarit` (bilinéaire par défaut) ; nodata
+# là où `r` ne couvre pas (cas limite 7), sans erreur.
+.iv_sur_gabarit <- function(r, gabarit, methode = "bilinear") {
   e <- terra::ext(gabarit)
   inter <- tryCatch(terra::intersect(terra::ext(r), e), error = function(err) NULL)
   if (is.null(inter)) {
@@ -1628,7 +1631,7 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
     terra::values(out) <- NA_real_
     return(out)
   }
-  terra::resample(terra::crop(r, e, snap = "out"), gabarit, method = "bilinear")
+  terra::resample(terra::crop(r, e, snap = "out"), gabarit, method = methode)
 }
 
 # Dalles MNT de 1 km (2 000 x 2 000 pixels), `rasters/mnt_<x>_<y>.tif`, à plat ;
@@ -1691,11 +1694,17 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   if (!nrow(h)) return(NULL)
   h <- h[order(-h$h_max), , drop = FALSE]
   h$houppier_id <- seq_len(nrow(h))
+  # Règle de `main` : une ligne par placette touchée (le houppier partagé garde
+  # son houppier_id) ; une seule ligne, plot_id NA, hors de toute placette.
   zones <- sf::st_buffer(sf::st_geometry(placettes), zone_m)
   touche <- sf::st_intersects(sf::st_geometry(h), zones)
-  h$plot_id <- vapply(touche, function(j) {
-    if (length(j)) as.character(placettes$plot_id[min(j)]) else NA_character_
-  }, character(1))
+  idx <- unlist(lapply(seq_along(touche), function(i) rep(i, max(1L, length(touche[[i]])))))
+  pid <- unlist(lapply(touche, function(j) {
+    if (length(j)) as.character(placettes$plot_id[j]) else NA_character_
+  }))
+  h <- h[idx, , drop = FALSE]
+  h$plot_id <- pid
+  rownames(h) <- NULL
   h[, c("plot_id", "houppier_id", "h_max", "surface_m2", "x_sommet", "y_sommet")]
 }
 
@@ -1708,18 +1717,24 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
     }
     r <- terra::rast(cvat_path)[[1]]
     octet <- terra::datatype(r) %in% "INT1U"
-    if (!terra::same.crs(r, "EPSG:2154")) r <- terra::project(r, "EPSG:2154")
+    methode <- "bilinear"
+    if (octet) {
+      # Le marqueur NA (255) sort AVANT tout rééchantillonnage : interpolé, il
+      # fabriquerait des valeurs intermédiaires en bordure des zones NA. Les
+      # niveaux 0-254 restent interpolés au plus proche voisin (pas de
+      # mélange non plus entre deux niveaux de gris).
+      r <- terra::ifel(r >= 255, NA, r)
+      methode <- "near"
+    }
+    if (!terra::same.crs(r, "EPSG:2154")) r <- terra::project(r, "EPSG:2154", method = methode)
     v_emprise <- terra::vect(sf::st_sf(geometry = emprise))
     e <- terra::ext(v_emprise)
     gabarit <- terra::rast(terra::ext(floor(terra::xmin(e) / 2) * 2, ceiling(terra::xmax(e) / 2) * 2,
                                       floor(terra::ymin(e) / 2) * 2, ceiling(terra::ymax(e) / 2) * 2),
                            resolution = 2, crs = "EPSG:2154")
-    v <- terra::mask(.iv_sur_gabarit(r, gabarit), v_emprise)
+    v <- terra::mask(.iv_sur_gabarit(r, gabarit, methode), v_emprise)
     val <- terra::values(v, mat = FALSE)
-    if (octet) {
-      val[!is.na(val) & val >= 255] <- NA_real_   # 255 = marqueur NA de foretaccess
-      val <- val / 255
-    }
+    if (octet) val <- val / 255
     val <- pmin(pmax(val, 0), 1)
     b <- 1 + round(val * 254)
     b[is.na(b)] <- 0
@@ -1728,7 +1743,7 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
     names(out) <- "cvat"
     f <- file.path("rasters", "cvat.tif")
     terra::writeRaster(out, file.path(stage, f), overwrite = TRUE, datatype = "INT1U",
-                       NAflag = NA, gdal = c("COMPRESS=DEFLATE"))
+                       NAflag = 0, gdal = c("COMPRESS=DEFLATE"))
     f
   }, error = function(e) {
     cli::cli_warn("{.arg cvat_path} not usable ({conditionMessage(e)}): no {.file cvat.tif} written.")
