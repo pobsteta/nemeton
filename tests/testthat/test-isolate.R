@@ -1,3 +1,13 @@
+# L'enfant plafonné fait `loadNamespace("nemeton")` dans un Rscript neuf : il lui
+# faut le paquet INSTALLÉ. Sous `devtools::test()` (job CI `tests`, load_all
+# seul) il n'y en a pas -> « exit 1 » muet. Le cas était masqué tant que
+# systemd-run était absent du runner (test sauté) ; l'image Ubuntu 26.04 l'a
+# rendu disponible (mission 038, 2026-11-21). R-CMD-check et covr installent.
+skip_si_nemeton_non_installe <- function() {
+  skip_if(pkgload::is_dev_package("nemeton"),
+          "l'enfant a besoin de nemeton installé (load_all seul)")
+}
+
 test_that(".progress_file_writer writes the app's two files", {
   skip_if_not_installed("jsonlite")
   withr::with_tempdir({
@@ -92,6 +102,7 @@ test_that("run_memory_capped runs a function from another package and seeds opti
 
 test_that("run_memory_capped runs the function in a child and returns its value", {
   skip_on_cran()
+  skip_si_nemeton_non_installe()
   skip_if_not_installed("processx")
   skip_if(is.null(.reconfort_systemd_run()), "systemd-run unavailable")
 
@@ -145,6 +156,7 @@ test_that("the memory ceiling kills the child, and only the child", {
 
 test_that("the child's progress is replayed into the parent's callback", {
   skip_on_cran()
+  skip_si_nemeton_non_installe()
   skip_if_not_installed("processx")
   skip_if(is.null(.reconfort_systemd_run()), "systemd-run unavailable")
 
@@ -260,6 +272,7 @@ test_that("the exchange dir is private and unpredictable, db_url never on disk",
 
 test_that("the real child script reads db_url from the environment and drops it", {
   skip_on_cran()
+  skip_si_nemeton_non_installe()
   skip_if_not_installed("processx")
   skip_if_not_installed("RSQLite")
   # `Sys.getenv` ne prend pas `con` : la variable doit être retirée AVANT

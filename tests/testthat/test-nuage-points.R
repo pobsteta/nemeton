@@ -164,7 +164,7 @@ test_that("photogrammetry: external DTM, vertical shift found and removed", {
   .np_nuage(file.path(couches, "drone_nuage"), decalage = 2, sous_couvert = FALSE)
   gabarit <- terra::rast(xmin = -10, xmax = 70, ymin = -10, ymax = 70, res = 1,
                          crs = "EPSG:2154")
-  mnt_ext <- terra::init(gabarit, "x") * 0.1 + 100
+  mnt_ext <- terra::setValues(gabarit, terra::xFromCell(gabarit, seq_len(terra::ncell(gabarit)))) * 0.1 + 100
   mnh_ref <- terra::rasterize(
     terra::buffer(terra::vect(cbind(c(15, 30, 45), c(15, 40, 25)), crs = "EPSG:2154"), 3),
     gabarit, field = 15, background = 0)

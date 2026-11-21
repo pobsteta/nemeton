@@ -147,9 +147,9 @@ test_that("regen_sensibilite engine emits regen_expo:pai then :complete", {
   # Grille synthétique EPSG:2154 couvrant l'emprise tamponnée des unités.
   tmpl <- terra::rast(xmin = -200, xmax = 260, ymin = -200, ymax = 260,
                       resolution = 10, crs = "EPSG:2154")
-  mnt <- terra::init(tmpl, fun = function(n) seq_len(n))   # relief factice
-  mnh <- terra::init(tmpl, fun = 12)                       # hauteur canopée
-  pai <- terra::init(tmpl, fun = 3)                        # PAI/LAI fourni -> pas de lasR
+  mnt <- terra::setValues(tmpl, seq_len(terra::ncell(tmpl)))   # relief factice
+  mnh <- terra::setValues(tmpl, 12)                       # hauteur canopée
+  pai <- terra::setValues(tmpl, 3)                        # PAI/LAI fourni -> pas de lasR
   # Mock l'acquisition annuelle : rasters calés sur le `dtm` (via ...), afin que
   # l'agrégation `.micro_extract` tombe juste ; facteur canicule pour un signal.
   testthat::local_mocked_bindings(
@@ -181,8 +181,8 @@ test_that("regen_sensibilite caches the LiDAR PAI (miss writes, hit reuses)", {
   u <- .re_units(3)
   tmpl <- terra::rast(xmin = -200, xmax = 260, ymin = -200, ymax = 260,
                       resolution = 10, crs = "EPSG:2154")
-  mnt <- terra::init(tmpl, fun = function(n) seq_len(n))
-  mnh <- terra::init(tmpl, fun = 12)
+  mnt <- terra::setValues(tmpl, seq_len(terra::ncell(tmpl)))
+  mnh <- terra::setValues(tmpl, 12)
   pai_cache <- withr::local_tempfile(fileext = ".tif")
   # Mock ERA5 (dtm-calé) et pai_depuis_nuage (compteur d'appels + raster aligné).
   calls <- 0L
@@ -1145,9 +1145,9 @@ test_that("regen_sensibilite sends ERA5 to era5_cache_dir, only for uncached yea
   u <- .re_units(3)
   tmpl <- terra::rast(xmin = -200, xmax = 260, ymin = -200, ymax = 260,
                       resolution = 10, crs = "EPSG:2154")
-  mnt <- terra::init(tmpl, fun = function(n) seq_len(n))
-  mnh <- terra::init(tmpl, fun = 12)
-  pai <- terra::init(tmpl, fun = 3)
+  mnt <- terra::setValues(tmpl, seq_len(terra::ncell(tmpl)))
+  mnh <- terra::setValues(tmpl, 12)
+  pai <- terra::setValues(tmpl, 3)
   cd <- withr::local_tempdir(); e5 <- withr::local_tempdir()
   vu <- new.env()
   testthat::local_mocked_bindings(
