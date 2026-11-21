@@ -110,11 +110,11 @@ test_that("max_slope constraint reduces the candidate frame", {
 
   zone <- make_zone()
   # Slope gradient: steep on the west (x < 900500), gentle on the east.
-  # Using init(fun="x") avoids row/col-ordering pitfalls in values<-.
+  # xFromCell() sur les numéros de cellule évite les pièges d ordre ligne/colonne de values<-.
   slope <- terra::rast(xmin = 899900, xmax = 901100,
                        ymin = 6499900, ymax = 6501100,
                        resolution = 10, crs = "EPSG:2154")
-  xs <- terra::init(slope, fun = "x")
+  xs <- terra::setValues(slope, terra::xFromCell(slope, seq_len(terra::ncell(slope))))
   slope[] <- ifelse(terra::values(xs) < 900500, 45, 5)
 
   res <- create_sampling_plan(zone, n_base = 30, n_over = 0,
@@ -179,7 +179,7 @@ test_that("a slope raster in another CRS is aligned, one without overlap warns",
   slope <- terra::rast(xmin = 899900, xmax = 901100,
                        ymin = 6499900, ymax = 6501100,
                        resolution = 10, crs = "EPSG:2154")
-  xs <- terra::init(slope, fun = "x")
+  xs <- terra::setValues(slope, terra::xFromCell(slope, seq_len(terra::ncell(slope))))
   slope[] <- ifelse(terra::values(xs) < 900500, 45, 5)
   slope_3857 <- terra::project(slope, "EPSG:3857", method = "near")
 
