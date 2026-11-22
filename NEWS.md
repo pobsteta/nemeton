@@ -1,3 +1,29 @@
+# nemeton 2026.11.37 (2026-11-22)
+
+## Nouveautés
+
+- **Inventaire vidéo, schéma 1.7.0 : relief, MNT et houppiers sur toute la
+  forêt** (brief groma du 2026-11-20, révisé ; mission 037). Une placette
+  déplacée sur le terrain garde son calage au sol et son contrôle
+  d'orientation dans Groma.
+  - `creer_projet_inventaire_video()` calcule l'emprise de la forêt (union
+    des `ugf` + 50 m, sinon des `parcelles` + 50 m, sinon placettes +
+    `marge_m` ; toujours élargie aux placettes + `rayon_m` + `marge_m`),
+    écrit des dalles MNT de 1 km `rasters/mnt_{x}_{y}.tif` (à plat, coin
+    sud-ouest en km sur 4 chiffres, 2 000 × 2 000 pixels, nodata hors emprise
+    et hors LiDAR, aucune dalle MNH), segmente les houppiers sur toute
+    l'emprise (`plot_id` vide hors placette) et range dalles et `cvat.tif`
+    dans le `.qgz` et dans le dossier du projet.
+  - Nouvel argument `cvat_path = NULL` : le CVAT de nemetonshiny est découpé
+    sur l'emprise et écrit en `rasters/cvat.tif` (Byte, 2 m, EPSG:2154,
+    `1 + round(v * 254)`, 0 = nodata). Fichier absent ou illisible :
+    avertissement, projet écrit sans `cvat.tif`.
+  - `segment_houppiers()` renvoie `x_sommet` et `y_sommet` (centre du pixel du
+    `h_max`, à l'intérieur du polygone ; à égalité, la cellule la plus au
+    nord puis à l'ouest). Index B-tree sur ces colonnes dans le GeoPackage.
+  - `inventaire_video.schema.json` passe en 1.7.0 (additif : un projet 1.6.0
+    reste lisible).
+
 # nemeton 2026.11.36 (2026-11-16)
 
 ## Nouveautés

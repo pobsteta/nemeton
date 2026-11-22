@@ -10,6 +10,16 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.37] - 2026-11-22
+
+### Added
+- `creer_projet_inventaire_video(cvat_path = NULL)`: the nemetonshiny CVAT (Byte 0-255 or float [0, 1]) is clipped to the forest extent and written as `rasters/cvat.tif` (Byte, 2 m, EPSG:2154, nodata 0).
+- Inventory video project over the whole forest: 1 km DTM tiles `rasters/mnt_{x}_{y}.tif`, crowns segmented over the whole extent, B-tree index on the crown apex.
+- `segment_houppiers()` returns `x_sommet` / `y_sommet` (centre of the `h_max` pixel, inside the polygon).
+
+### Changed
+- `inventaire_video.schema.json` 1.7.0 (additive, 1.6.0 projects stay readable); `houppier_id` now identifies the crown across the forest (same id on both rows of a crown shared by two plots).
+
 ## [2026.11.36] - 2026-11-16
 
 ### Added

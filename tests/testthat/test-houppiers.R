@@ -27,7 +27,7 @@ test_that("une couronne par arbre, avec la hauteur de son apex", {
 
   expect_s3_class(h, "sf")
   expect_identical(as.character(unique(sf::st_geometry_type(h))), "POLYGON")
-  expect_identical(names(h), c("houppier_id", "h_max", "surface_m2", "geometry"))
+  expect_identical(names(h), c("houppier_id", "h_max", "surface_m2", "x_sommet", "y_sommet", "geometry"))
   expect_equal(nrow(h), 3L)
 
   # Les trois hauteurs sont retrouvees. L'agregation par max introduit un
@@ -51,7 +51,7 @@ test_that("le contrat aval est tenu : rien hors de 1-70 m ne sort", {
   # Zero houppier reste un `sf` avec les bonnes colonnes : l'app ecrit une
   # couche VIDE, pas une couche manquante.
   expect_s3_class(h, "sf")
-  expect_identical(names(h), c("houppier_id", "h_max", "surface_m2", "geometry"))
+  expect_identical(names(h), c("houppier_id", "h_max", "surface_m2", "x_sommet", "y_sommet", "geometry"))
 
   # Et par defaut, aucune valeur ne sort de la plage.
   h2 <- segment_houppiers(.mnh_synthetique(c(25, 18)), ws = 4, hmin = 3)
@@ -142,7 +142,7 @@ test_that("les trois algorithmes rendent la meme forme de sortie", {
   for (a in c("dalponte", "silva", "watershed")) {
     h <- segment_houppiers(mnh, ws = 4, hmin = 3, algorithme = a)
     expect_true(inherits(h, "sf"), info = a)
-    expect_identical(names(h), c("houppier_id", "h_max", "surface_m2", "geometry"),
+    expect_identical(names(h), c("houppier_id", "h_max", "surface_m2", "x_sommet", "y_sommet", "geometry"),
                      info = a)
     expect_true(all(h$h_max >= 1 & h$h_max <= 70), info = a)
   }

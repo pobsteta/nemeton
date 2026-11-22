@@ -16,6 +16,7 @@ creer_projet_inventaire_video(
   chm = NULL,
   project_path = NULL,
   marge_m = 10,
+  cvat_path = NULL,
   output_dir,
   project_name = "inventaire_video",
   region = "BFC",
@@ -58,8 +59,20 @@ merged by \code{ug_id}, attributes from \code{data/ugs.json}). Without
 it, or when a source cannot be read (warning), those tables are created
 empty.}
 
-\item{marge_m}{Margin around the plot for rasters and crowns (m). Default
-10.}
+\item{marge_m}{Margin around the plot for the per-plot rasters (m), and
+around the plots in the forest extent when there is neither \code{ugf}
+nor \code{parcelles}. Default 10.}
+
+\item{cvat_path}{Optional path of a CVAT relief raster (as computed by
+nemetonshiny with \code{foretaccess::vat_combined()}). When given, it is
+cropped to the forest extent and written as \code{rasters/cvat.tif}
+(Byte, 2 m, EPSG:2154, DEFLATE; \code{1 + round(v * 254)} for a relief
+\code{v} in \eqn{[0, 1]}, \code{0} = nodata; a float value outside
+\eqn{[0, 1]} is clamped, \code{NA} gives \code{0}). A Byte input (the
+8-bit CVAT of nemetonshiny, \code{v = b / 255}) is rescaled the same way,
+its value \code{255} being foretaccess' marker for \code{NA} and giving
+\code{0}. Reprojected when not in EPSG:2154. \code{NULL} (default): no
+\code{cvat.tif}. A missing or unreadable file only raises a warning.}
 
 \item{output_dir}{Destination directory.}
 
@@ -109,8 +122,29 @@ The planned position and the sampling-design columns of \code{placettes}
 are never modified. \code{convergence_deg} (meridian convergence at the
 planned point) is computed; \code{pente_pct}, \code{exposition} and
 \code{recouvrement_pct} are filled from the DTM/CHM when empty. Crowns come
-from \code{\link{segment_houppiers}} over the plot plus \code{marge_m}.
+from \code{\link{segment_houppiers}} over the whole forest extent (see
+section \dQuote{Forest-wide data}), not only around the plots.
 }
+\section{Forest-wide data (schema 1.7.0)}{
+
+The forest extent is the union of the \code{ugf} plus 50 m (else of the
+\code{parcelles} plus 50 m, else the plots plus \code{rayon_m +
+marge_m}); it always also covers every plot plus \code{rayon_m +
+marge_m}, so that a plot planned outside the \code{ugf} keeps its data.
+On that extent the function writes 1 km DTM tiles
+\code{rasters/mnt_<x>_<y>.tif} (south-west corner in km, 4 digits; 0.5 m,
+same format as the per-plot rasters, nodata outside the extent or the
+LiDAR; no CHM tile), segments the crowns (\code{\link{segment_houppiers}},
+tile by tile, a crown kept by the tile that holds its apex) and writes
+them to \code{houppiers} with \code{x_sommet} / \code{y_sommet}.
+A crown touching the buffer (\code{rayon_m + marge_m}) of one or several
+plots is written once per plot touched, with that \code{plot_id} (as before
+schema 1.7.0); a crown touching none is written once with \code{plot_id}
+\code{NULL}. \code{houppier_id} identifies the crown: the rows of a crown
+shared by two plots carry the same \code{houppier_id}. Tiles and \code{cvat.tif} (legend group "Rasters des placettes") are in the
+\code{.qgz} and in the project folder.
+}
+
 \section{Lifecycle}{
 
 Experimental (spec 061).

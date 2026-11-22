@@ -1,6 +1,6 @@
 {
   "nom": "inventaire_video",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "crs": 2154,
   "description": "Schéma du GeoPackage inventaire_video.gpkg produit par nemeton (sous-onglet Terrain > Inventaire vidéo) et complété sur le terrain par QField (saisie) et Groma (détections). Source unique : Python (groma), Kotlin (application Groma) et brief nemeton.",
   "domaines": {
@@ -139,12 +139,15 @@
       "geometrie": "POLYGON",
       "index_spatial": true,
       "lecture_seule": true,
-      "remarque": "Sortie de nemeton::segment_houppiers() autour de chaque placette.",
+      "index_btree": [["x_sommet", "y_sommet"]],
+      "remarque": "Sortie de nemeton::segment_houppiers() sur toute l'emprise de la forêt (schéma 1.7.0 ; avant, autour de chaque placette). plot_id renseigné quand le houppier touche une placette prévue, sinon NULL. x_sommet et y_sommet : sommet du houppier (centre du pixel du MNH où se trouve h_max), Lambert-93 en mètres, à l'intérieur du polygone. Index B-tree sur (x_sommet, y_sommet) : le téléphone n'a pas le module R*Tree et filtre par BETWEEN.",
       "colonnes": [
         {"nom": "plot_id", "type": "TEXT"},
         {"nom": "houppier_id", "type": "INTEGER", "requis": true},
         {"nom": "h_max", "type": "REAL"},
-        {"nom": "surface_m2", "type": "REAL"}
+        {"nom": "surface_m2", "type": "REAL"},
+        {"nom": "x_sommet", "type": "REAL", "requis": true},
+        {"nom": "y_sommet", "type": "REAL", "requis": true}
       ]
     },
     {
@@ -206,8 +209,17 @@
     "marge_m": 10,
     "chemins": {
       "mnt": "rasters/{plot_id}_mnt.tif",
-      "mnh": "rasters/{plot_id}_mnh.tif"
-    }
+      "mnh": "rasters/{plot_id}_mnh.tif",
+      "mnt_dalle": "rasters/mnt_{x}_{y}.tif",
+      "cvat": "rasters/cvat.tif"
+    },
+    "emprise": "union des ugf + 50 m ; sans ugf, des parcelles + 50 m ; sans parcelles, placettes + marge_m. Toujours élargie aux placettes + rayon_m + marge_m.",
+    "dalles_mnt": {
+      "taille_m": 1000,
+      "resolution_m": 0.5,
+      "remarque": "x et y : coin sud-ouest en km Lambert-93, sur 4 chiffres. Dalles alignées sur le kilomètre, seules celles qui touchent l'emprise sont écrites ; pixels hors emprise ou hors LiDAR = nodata. Pas de dalles MNH."
+    },
+    "cvat_format": "GeoTIFF Byte, une bande, 2 m, EPSG:2154, DEFLATE ; valeurs 1 à 255 = 1 + round(v * 254) pour un relief v dans [0, 1] ; 0 = nodata"
   },
   "declencheurs": "core/src/groma/donnees/declencheurs.sql"
 }

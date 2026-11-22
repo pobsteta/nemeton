@@ -73,7 +73,7 @@ test_that("new trees from the server get dbh_source = estime", {
 
 test_that("schema 1.6.0: read-only targets and tape diameter, labels, no spatial index", {
   s <- schema_inventaire_video()
-  expect_equal(attr(s, "version"), "1.6.0")
+  expect_equal(attr(s, "version"), "1.7.0")
   expect_true(attr(s$cibles, "lecture_seule"))
   for (couche in c("centres_mesures", "cibles")) expect_false(attr(s[[couche]], "index_spatial"))
   dom <- attr(s, "domaines")
