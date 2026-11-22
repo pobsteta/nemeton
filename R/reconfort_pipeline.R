@@ -1208,7 +1208,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     if (!keep_workdir && .reconfort_workdir_removable(workdir, cache_dir)) {
       unlink(workdir, recursive = TRUE)
     }
-    cli::cli_abort(c("RECONFORT dieback run failed.", x = conditionMessage(e)),
+    cli::cli_abort(c("RECONFORT dieback run failed.", x = "{conditionMessage(e)}"),
                    parent = e)
   })
 

@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.11.2** (release du 2026-11-15), relevée le 2026-11-21.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.11.2** (release du 2026-11-15), relevée le 2026-11-22.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -473,6 +473,27 @@ cette strate », surcouche du Plan de validation par moteur. Plan d'actions :
 fiches PDF par UGF. ADR 0003 de l'app acceptée (pilotage par IA ouvert à
 tous, tout client MCP, avertissement). Aucune release cœur requise (brief
 `2026-11-15-plan-nemetonshiny-v2026.11.1`).
+
+### 2026-11-22 — v2026.11.38 : moteurs plafonnés orphelins
+
+**Constat.** Relance du « Tout calculer » sur la Colombière
+(`run_20261122095434_xumf`) : desserte `ok`, `desserte_typage` « rien à
+typer » (écart n° 28 vérifié en réel), puis `regeneration` figée en
+`era5_lot` au mois 2 sur 24. Quatre moteurs `run_regeneration_engine` vivaient
+sur le projet, trois depuis 15 à 24 h (deux rattachés à systemd après la mort
+de leur worker, un tenu par un worker encore bloqué dessus). Trois jobs ERA5
+restaient `accepted` au CDS, aucun ne démarrant. Les trois orphelins ont été
+arrêtés à la main (`systemctl --user stop`).
+**Cœur (cette release).** `run_memory_capped()` supervise l'enfant (il meurt
+avec son parent, vérifié en réel par `kill -9`), pose un marqueur
+(`marker_path`), et deux fonctions exportées `capped_run_alive()` /
+`stop_memory_capped()` le lisent ; le lot ERA5 journalise ses jobs CDS et purge
+ceux des moteurs morts. Correction annexe : `load_eobs_source()` plantait sur un
+message CDS à accolades (« Could not parse cli `{}` »), d'où `regen_annees`
+sauté.
+**App.** Brief `vers-nemetonshiny/2026-11-22-regen-moteurs-orphelins.md` :
+marqueur par projet, arrêt du moteur précédent au lancement, à l'annulation du
+pipeline et en fin de session ; plancher `nemeton (>= 2026.11.38)`.
 
 ### 2026-11-21
 

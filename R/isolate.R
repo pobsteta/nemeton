@@ -162,6 +162,11 @@
 #' exit — but **uncapped**, with a warning. Without a cgroup, an overshoot is
 #' once again the whole scope's problem.
 #'
+#' The child is always started **supervised** (`processx` `supervise = TRUE`):
+#' should the calling process die without cleaning up (worker killed, app
+#' restarted), the child is terminated with it instead of running on, orphaned,
+#' for hours (four engines on one project, 2026-11-22).
+#'
 #' @param fun Name of the function to run, in `package` (character). May be
 #'   internal (not exported).
 #' @param args Named list of arguments. Must be serialisable: no connections,
@@ -200,6 +205,13 @@
 #'   2026-09-03). Give a path and the output is kept whatever becomes of the
 #'   child; the failure message then cites the file and quotes its last lines.
 #'   Takes precedence over `quiet`.
+#' @param marker_path Path of a JSON *run marker*. When given, it is written
+#'   (atomically) as soon as the child starts — `unit` (the systemd scope, or
+#'   `NA`), `pid`, `parent_pid`, `fun`, `package`, `started` — and removed when
+#'   this call returns. Another process can then ask whether that run is still
+#'   alive ([capped_run_alive()]) or stop it ([stop_memory_capped()]), e.g. an
+#'   app that must not start a second engine on a project whose first one still
+#'   runs. Default (`NULL`): no marker.
 #'
 #' @return Whatever `fun` returned.
 #'
@@ -223,7 +235,8 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
                               db_url = NULL, options = NULL,
                               progress_path = NULL, progress_callback = NULL,
                               memory_max = NULL, poll_ms = 500L,
-                              quiet = FALSE, log_path = NULL) {
+                              quiet = FALSE, log_path = NULL,
+                              marker_path = NULL) {
   if (!is.character(fun) || length(fun) != 1L || !nzchar(fun)) {
     cli::cli_abort("{.arg fun} must be the name of a function in {.arg package}.")
   }
@@ -239,6 +252,10 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
   if (!is.null(log_path) &&
       (!is.character(log_path) || length(log_path) != 1L || !nzchar(log_path))) {
     cli::cli_abort("{.arg log_path} must be a single non-empty path, or NULL.")
+  }
+  if (!is.null(marker_path) &&
+      (!is.character(marker_path) || length(marker_path) != 1L || !nzchar(marker_path))) {
+    cli::cli_abort("{.arg marker_path} must be a single non-empty path, or NULL.")
   }
   if (!requireNamespace("processx", quietly = TRUE)) {
     cli::cli_abort(c(
@@ -347,13 +364,18 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
     dir.create(dirname(log_path), recursive = TRUE, showWarnings = FALSE)
     px <- processx::process$new(cmd$command, cmd$args,
                                 stdout = log_path, stderr = "2>&1",
-                                env = child_env)
+                                env = child_env, supervise = TRUE)
   } else {
     std <- if (quiet) NULL else ""
     px <- processx::process$new(cmd$command, cmd$args, stdout = std, stderr = std,
-                                env = child_env)
+                                env = child_env, supervise = TRUE)
   }
   on.exit(if (px$is_alive()) px$kill(), add = TRUE)
+  if (!is.null(marker_path)) {
+    .capped_marker_write(marker_path, unit = cmd$unit, pid = px$get_pid(),
+                         fun = fun, package = package)
+    on.exit(.capped_marker_release(marker_path, px$get_pid()), add = TRUE)
+  }
 
   seen <- 0L
   repeat {

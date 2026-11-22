@@ -1170,3 +1170,66 @@ test_that("regen_sensibilite sends ERA5 to era5_cache_dir, only for uncached yea
                     annees_canic = 2022L, cache_dir = cd)
   expect_equal(vu$cache, cd)
 })
+
+# --- Journal des jobs CDS (2026-11-22 : jobs orphelins en file pendant des heures)
+
+.acces_journal <- function(attente) {
+  f <- .acces_factice(attente)
+  f$purges <- character(0)
+  f$acces$url <- function(h) paste0("https://cds.test/jobs/", h$target)
+  f$acces$purger <- function(url) { f$purges <- c(f$purges, url); TRUE }
+  f
+}
+
+test_that("le lot purge les jobs laisses en file par un moteur mort", {
+  skip_on_os("windows")
+  skip_if_not_installed("processx")
+  req <- .rsen_req_factice(2023L, n = 2L)
+  cd <- withr::local_tempdir()
+  taches <- nemeton:::.rsen_era5_taches(req, cd, 2023L)
+  jd <- nemeton:::.rsen_era5_journal_dir(cd)
+  dir.create(jd)
+  mort <- processx::process$new("true"); mort$wait(5000)
+  writeLines(c("https://cds.test/jobs/a", "https://cds.test/jobs/b"),
+             file.path(jd, paste0(mort$get_pid(), ".txt")))
+  # Un moteur vivant (ce processus-ci, vu d'un autre pid) n'est jamais purge.
+  vivant <- processx::process$new("sleep", "30")
+  on.exit(vivant$kill(), add = TRUE)
+  writeLines("https://cds.test/jobs/c", file.path(jd, paste0(vivant$get_pid(), ".txt")))
+
+  attente <- stats::setNames(as.list(rep(1L, 2)), vapply(req, `[[`, "", "target"))
+  f <- .acces_journal(attente)
+  nemeton:::.rsen_era5_lot(taches, cd, acces = f$acces, pause = function(s) NULL)
+  expect_setequal(f$purges, c("https://cds.test/jobs/a", "https://cds.test/jobs/b"))
+  expect_false(file.exists(file.path(jd, paste0(mort$get_pid(), ".txt"))))
+  expect_true(file.exists(file.path(jd, paste0(vivant$get_pid(), ".txt"))))
+  # Lot termine : notre propre journal est vide, donc absent.
+  expect_false(file.exists(file.path(jd, paste0(Sys.getpid(), ".txt"))))
+})
+
+test_that("le lot journalise ses jobs actifs et les libere s'il est interrompu", {
+  req <- .rsen_req_factice(2023L, n = 3L)
+  cd <- withr::local_tempdir()
+  taches <- nemeton:::.rsen_era5_taches(req, cd, 2023L)
+  attente <- stats::setNames(as.list(rep(5L, 3)), vapply(req, `[[`, "", "target"))
+  f <- .acces_journal(attente)
+  journal <- file.path(nemeton:::.rsen_era5_journal_dir(cd), paste0(Sys.getpid(), ".txt"))
+  vu <- NULL
+  expect_error(nemeton:::.rsen_era5_lot(
+    taches, cd, acces = f$acces, max_simultanees = 3L,
+    pause = function(s) { vu <<- readLines(journal); stop("interrompu") }),
+    "interrompu")
+  expect_setequal(vu, paste0("https://cds.test/jobs/", vapply(req, `[[`, "", "target")))
+  expect_equal(f$actives, 0L)                 # les trois jobs ont ete liberes
+  expect_false(file.exists(journal))
+})
+
+test_that("un acces sans url ni purger garde l'ancien comportement", {
+  req <- .rsen_req_factice(2023L, n = 2L)
+  cd <- withr::local_tempdir()
+  taches <- nemeton:::.rsen_era5_taches(req, cd, 2023L)
+  attente <- stats::setNames(as.list(rep(1L, 2)), vapply(req, `[[`, "", "target"))
+  f <- .acces_factice(attente)
+  nemeton:::.rsen_era5_lot(taches, cd, acces = f$acces, pause = function(s) NULL)
+  expect_false(dir.exists(nemeton:::.rsen_era5_journal_dir(cd)))
+})

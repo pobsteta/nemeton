@@ -15,7 +15,8 @@ run_memory_capped(
   memory_max = NULL,
   poll_ms = 500L,
   quiet = FALSE,
-  log_path = NULL
+  log_path = NULL,
+  marker_path = NULL
 )
 }
 \arguments{
@@ -67,6 +68,14 @@ bucket and a 20-hour failure leaves no message at all (incident Couchey,
 2026-09-03). Give a path and the output is kept whatever becomes of the
 child; the failure message then cites the file and quotes its last lines.
 Takes precedence over \code{quiet}.}
+
+\item{marker_path}{Path of a JSON \emph{run marker}. When given, it is written
+(atomically) as soon as the child starts — \code{unit} (the systemd scope, or
+\code{NA}), \code{pid}, \code{parent_pid}, \code{fun}, \code{package}, \code{started} — and removed when
+this call returns. Another process can then ask whether that run is still
+alive (\code{\link[=capped_run_alive]{capped_run_alive()}}) or stop it (\code{\link[=stop_memory_capped]{stop_memory_capped()}}), e.g. an
+app that must not start a second engine on a project whose first one still
+runs. Default (\code{NULL}): no marker.}
 }
 \value{
 Whatever \code{fun} returned.
@@ -105,6 +114,11 @@ Without \code{systemd-run} (non-Linux, container with no user bus, CI) the work
 still runs in a child process — whose memory at least returns to the OS on
 exit — but \strong{uncapped}, with a warning. Without a cgroup, an overshoot is
 once again the whole scope's problem.
+
+The child is always started \strong{supervised} (\code{processx} \code{supervise = TRUE}):
+should the calling process die without cleaning up (worker killed, app
+restarted), the child is terminated with it instead of running on, orphaned,
+for hours (four engines on one project, 2026-11-22).
 }
 \section{Lifecycle}{
 
