@@ -13,7 +13,7 @@ load_eobs_source(
   reducer = NULL,
   nc = NULL,
   cache_dir = NULL,
-  version = "30.0e",
+  version = "34.0e",
   resolution = "0.1deg",
   period = NULL,
   progress_callback = NULL,
@@ -42,15 +42,21 @@ requires \code{nc}.}
 \item{nc}{A daily E-OBS netCDF path (or a dated \code{SpatRaster}) to use instead
 of the CDS download.}
 
-\item{cache_dir}{Directory for the CDS download / unzip (default \code{tempdir()}).}
+\item{cache_dir}{Persistent directory for the CDS download / unzip. Defaults
+to \code{file.path(get_global_cache_dir(), "eobs")} so a given series (variable
+× version × resolution) is downloaded \strong{once} and reused on later calls
+(cache-hit, no network). Pass a project-scoped path to isolate it.}
 
-\item{version, resolution}{E-OBS product version (default \code{"30.0e"}; dots are
-normalised to the CDS underscore form, e.g. \code{30_0e}) and grid
-resolution (default \code{"0.1deg"}) for the CDS request.}
+\item{version, resolution}{E-OBS product version (default \code{"34.0e"}; dots are
+normalised to the CDS underscore form, e.g. \code{34_0e}) and grid resolution
+(default \code{"0.1deg"}) for the CDS request. Since November 2026 the CDS
+delivers the \strong{whole series} (1950 onwards) in one file per variable —
+about 4.3 GB at 0.1°, 0.8 GB at 0.25° — and requires a licence type:
+\code{open_data_licence} from version 34.0e, \code{restricted_research_licence}
+(to accept once on the CDS) for versions 28.0e to 33.0e.}
 
-\item{period}{Optional explicit CDS period block (e.g. \code{"2011_2024"});
-inferred from \code{years} when \code{NULL}; years spanning several CDS blocks
-are downloaded block by block and merged.}
+\item{period}{Ignored since 2026.11.39: the CDS no longer splits E-OBS into
+period blocks. A non-\code{NULL} value warns once per session.}
 
 \item{progress_callback}{Optional function called at each step with a
 \code{list(current = <key>, ...)} payload (monitoring pattern). Keys:

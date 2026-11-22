@@ -36,7 +36,7 @@ climate context; \code{"cds"} downloads the Copernicus CDS blocks covering
 \item{cache_dir}{Directory of the downloaded files (default: the shared
 machine cache, \code{file.path(get_global_cache_dir(), "eobs")}).}
 
-\item{version}{E-OBS version (default \code{"33.0e"} for KNMI, \code{"30.0e"} for the
+\item{version}{E-OBS version (default \code{"33.0e"} for KNMI, \code{"34.0e"} for the
 CDS).}
 
 \item{progress_callback}{Optional progress callback (see

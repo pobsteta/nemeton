@@ -1261,7 +1261,7 @@
         "service": "Copernicus / ECA&D E-OBS",
         "cds_dataset": "insitu-gridded-observations-europe",
         "product_type": "ensemble_mean",
-        "default_version": "30.0e",
+        "default_version": "34.0e",
         "default_resolution": "0.1deg",
         "note": "Downloaded with ecmwfr (same CDS key as ERA5) by load_eobs_source(source = \"cds\"); the dataset licence must be accepted once on the CDS. A test checks these values against the loader constants."
       },
