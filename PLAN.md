@@ -8,7 +8,7 @@ chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
 > **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque
 > merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.11.2**
-> (release du 2026-11-15), relevée le 2026-11-21.
+> (release du 2026-11-15), relevée le 2026-11-22.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton`
 > (cœur métier). Les épaississements portés côté app (`nemetonshiny`)
@@ -537,6 +537,34 @@ surcouche du Plan de validation par moteur. Plan d’actions : fiches PDF
 par UGF. ADR 0003 de l’app acceptée (pilotage par IA ouvert à tous, tout
 client MCP, avertissement). Aucune release cœur requise (brief
 `2026-11-15-plan-nemetonshiny-v2026.11.1`).
+
+### 2026-11-22 — v2026.11.38 : moteurs plafonnés orphelins
+
+**Constat.** Relance du « Tout calculer » sur la Colombière
+(`run_20261122095434_xumf`) : desserte `ok`, `desserte_typage` « rien à
+typer » (écart n° 28 vérifié en réel), puis `regeneration` figée en
+`era5_lot` au mois 2 sur 24. Quatre moteurs `run_regeneration_engine`
+vivaient sur le projet, trois depuis 15 à 24 h (deux rattachés à systemd
+après la mort de leur worker, un tenu par un worker encore bloqué
+dessus). Trois jobs ERA5 restaient `accepted` au CDS, aucun ne
+démarrant. Les trois orphelins ont été arrêtés à la main
+(`systemctl --user stop`). **Cœur (cette release).**
+[`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
+supervise l’enfant (il meurt avec son parent, vérifié en réel par
+`kill -9`), pose un marqueur (`marker_path`), et deux fonctions
+exportées
+[`capped_run_alive()`](https://pobsteta.github.io/nemeton/reference/capped_run_alive.md)
+/
+[`stop_memory_capped()`](https://pobsteta.github.io/nemeton/reference/stop_memory_capped.md)
+le lisent ; le lot ERA5 journalise ses jobs CDS et purge ceux des
+moteurs morts. Correction annexe :
+[`load_eobs_source()`](https://pobsteta.github.io/nemeton/reference/load_eobs_source.md)
+plantait sur un message CDS à accolades (« Could not parse cli
+[`{}`](https://rdrr.io/r/base/Paren.html) »), d’où `regen_annees` sauté.
+**App.** Brief `vers-nemetonshiny/2026-11-22-regen-moteurs-orphelins.md`
+: marqueur par projet, arrêt du moteur précédent au lancement, à
+l’annulation du pipeline et en fin de session ; plancher
+`nemeton (>= 2026.11.38)`.
 
 ### 2026-11-21
 

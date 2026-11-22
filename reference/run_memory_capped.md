@@ -32,7 +32,8 @@ run_memory_capped(
   memory_max = NULL,
   poll_ms = 500L,
   quiet = FALSE,
-  log_path = NULL
+  log_path = NULL,
+  marker_path = NULL
 )
 ```
 
@@ -112,6 +113,18 @@ run_memory_capped(
   cites the file and quotes its last lines. Takes precedence over
   `quiet`.
 
+- marker_path:
+
+  Path of a JSON *run marker*. When given, it is written (atomically) as
+  soon as the child starts — `unit` (the systemd scope, or `NA`), `pid`,
+  `parent_pid`, `fun`, `package`, `started` — and removed when this call
+  returns. Another process can then ask whether that run is still alive
+  ([`capped_run_alive()`](https://pobsteta.github.io/nemeton/reference/capped_run_alive.md))
+  or stop it
+  ([`stop_memory_capped()`](https://pobsteta.github.io/nemeton/reference/stop_memory_capped.md)),
+  e.g. an app that must not start a second engine on a project whose
+  first one still runs. Default (`NULL`): no marker.
+
 ## Value
 
 Whatever `fun` returned.
@@ -137,6 +150,12 @@ Without `systemd-run` (non-Linux, container with no user bus, CI) the
 work still runs in a child process — whose memory at least returns to
 the OS on exit — but **uncapped**, with a warning. Without a cgroup, an
 overshoot is once again the whole scope's problem.
+
+The child is always started **supervised** (`processx`
+`supervise = TRUE`): should the calling process die without cleaning up
+(worker killed, app restarted), the child is terminated with it instead
+of running on, orphaned, for hours (four engines on one project,
+2026-11-22).
 
 ## Lifecycle
 

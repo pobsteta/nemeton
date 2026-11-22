@@ -31,7 +31,7 @@ already caps the Python subprocess it spawns."><meta property="og:image" content
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.37.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.38</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -171,7 +171,8 @@ already caps the Python subprocess it spawns.</p>
 <span>  memory_max <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  poll_ms <span class="op">=</span> <span class="fl">500L</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  log_path <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  log_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  marker_path <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -249,6 +250,16 @@ bucket and a 20-hour failure leaves no message at all (incident Couchey,
 child; the failure message then cites the file and quotes its last lines.
 Takes precedence over <code>quiet</code>.</p></dd>
 
+
+<dt id="arg-marker-path">marker_path<a class="anchor" aria-label="anchor" href="#arg-marker-path"></a></dt>
+<dd><p>Path of a JSON <em>run marker</em>. When given, it is written
+(atomically) as soon as the child starts — <code>unit</code> (the systemd scope, or
+<code>NA</code>), <code>pid</code>, <code>parent_pid</code>, <code>fun</code>, <code>package</code>, <code>started</code> — and removed when
+this call returns. Another process can then ask whether that run is still
+alive (<code><a href="capped_run_alive.html">capped_run_alive()</a></code>) or stop it (<code><a href="stop_memory_capped.html">stop_memory_capped()</a></code>), e.g. an
+app that must not start a second engine on a project whose first one still
+runs. Default (<code>NULL</code>): no marker.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -269,6 +280,10 @@ side effects of their callback, such as push notifications.</p></li>
 still runs in a child process — whose memory at least returns to the OS on
 exit — but <strong>uncapped</strong>, with a warning. Without a cgroup, an overshoot is
 once again the whole scope's problem.</p>
+<p>The child is always started <strong>supervised</strong> (<code>processx</code> <code>supervise = TRUE</code>):
+should the calling process die without cleaning up (worker killed, app
+restarted), the child is terminated with it instead of running on, orphaned,
+for hours (four engines on one project, 2026-11-22).</p>
     </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>

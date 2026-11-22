@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.37.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.38</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,6 +117,26 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.38" id="nemeton-20261138-2026-11-22">nemeton 2026.11.38 (2026-11-22)<a class="anchor" aria-label="anchor" href="#nemeton-20261138-2026-11-22"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-38">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-38"></a></h3>
+<ul><li>
+<strong>Un moteur plafonné ne survit plus à son parent, et se laisse retrouver</strong> (2026-11-22, Parc de la Colombière : quatre moteurs reGénération vivaient en même temps sur le même projet, trois depuis 15 à 24 h pour des runs abandonnés, et bloquaient l’étape <code>regeneration</code> du « Tout calculer »).
+<ul><li>
+<code><a href="../reference/run_memory_capped.html">run_memory_capped()</a></code> lance l’enfant supervisé (<code>processx</code> <code>supervise = TRUE</code>) : si le processus appelant meurt (worker tué, app redémarrée), l’enfant meurt avec lui. Vérifié en réel : <code>kill -9</code> du parent, scope <code>inactive</code> dans la foulée.</li>
+<li>Nouvel argument <code>marker_path = NULL</code> : un marqueur JSON (scope systemd, pid de l’enfant et du parent, fonction, heure de départ) est posé au lancement et retiré au retour, seulement par le run qui l’a posé.</li>
+<li>Nouvelles fonctions <code><a href="../reference/capped_run_alive.html">capped_run_alive()</a></code> (le run nommé par le marqueur vit-il encore ? un marqueur périmé est effacé) et <code><a href="../reference/stop_memory_capped.html">stop_memory_capped()</a></code> (<code>systemctl --user stop</code> du scope, repli <code>SIGTERM</code>/<code>SIGKILL</code>). L’app s’en sert pour ne jamais garder deux moteurs sur un projet (brief nemetonshiny du 2026-11-22).</li>
+</ul></li>
+<li>
+<strong>Le lot ERA5 ne laisse plus de jobs orphelins dans la file du CDS.</strong> Chaque moteur tient les URLs de ses jobs actifs dans <code>&lt;cache&gt;/era5_jobs/&lt;pid&gt;.txt</code> ; au démarrage d’un lot, les jobs des moteurs morts sont supprimés du CDS (ceux d’un moteur vivant ne sont jamais touchés), et une sortie R anormale libère les jobs en cours.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="corrections-2026-11-38">Corrections<a class="anchor" aria-label="anchor" href="#corrections-2026-11-38"></a></h3>
+<ul><li>
+<code><a href="../reference/load_eobs_source.html">load_eobs_source()</a></code> : un message du CDS contenant des accolades (la requête renvoyée en dict Python) faisait planter l’avertissement (« Could not parse cli <code><a href="https://rdrr.io/r/base/Paren.html" class="external-link">{}</a></code> ») au lieu de le rapporter ; l’app perdait la détection automatique des années reGénération (<code>regen_annees</code> sauté). Même défaut, même correction pour les avertissements WFS SER, ONF, cadastre et l’échec RECONFORT.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.37" id="nemeton-20261137-2026-11-22">nemeton 2026.11.37 (2026-11-22)<a class="anchor" aria-label="anchor" href="#nemeton-20261137-2026-11-22"></a></h2>
 <div class="section level3">

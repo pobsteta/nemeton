@@ -517,6 +517,10 @@ Acquisition des couches publiques (WMS/WFS, COG, STAC, CDS)
   : Extract augmentation flags from a detect_ndp() result
 - [`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
   : Run a heavy pipeline in a memory-capped child process
+- [`capped_run_alive()`](https://pobsteta.github.io/nemeton/reference/capped_run_alive.md)
+  : Is a capped run still alive?
+- [`stop_memory_capped()`](https://pobsteta.github.io/nemeton/reference/stop_memory_capped.md)
+  : Stop a capped run
 - [`format_duration()`](https://pobsteta.github.io/nemeton/reference/format_duration.md)
   : Format a duration as hours, then minutes, then seconds
 

@@ -13,6 +13,33 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.38\] - 2026-11-22
+
+### Added
+
+- `run_memory_capped(marker_path = NULL)`: JSON run marker (scope, pid,
+  parent pid, function, start time), removed on return by the run that
+  wrote it.
+- [`capped_run_alive()`](https://pobsteta.github.io/nemeton/reference/capped_run_alive.md)
+  and
+  [`stop_memory_capped()`](https://pobsteta.github.io/nemeton/reference/stop_memory_capped.md):
+  ask whether a marked capped run is still alive, and stop it.
+- ERA5 batch: per-process journal of queued CDS jobs
+  (`<cache>/era5_jobs/<pid>.txt`); jobs left by dead engines are deleted
+  from the CDS queue at the next batch.
+
+### Changed
+
+- [`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
+  starts the child supervised (`processx` `supervise = TRUE`): it dies
+  with its caller instead of running on orphaned.
+
+### Fixed
+
+- [`load_eobs_source()`](https://pobsteta.github.io/nemeton/reference/load_eobs_source.md)
+  and four other warnings/errors: an upstream message containing braces
+  is reported verbatim instead of being parsed by cli.
+
 ## \[2026.11.37\] - 2026-11-22
 
 ### Added
