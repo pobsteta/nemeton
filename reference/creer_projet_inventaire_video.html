@@ -23,7 +23,7 @@ like create_qgis_project."><meta property="og:image" content="https://pobsteta.g
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.36.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.37</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -160,6 +160,7 @@ like <code><a href="create_qgis_project.html">create_qgis_project</a></code>.</p
 <span>  chm <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  project_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  marge_m <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  cvat_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">output_dir</span>,</span>
 <span>  project_name <span class="op">=</span> <span class="st">"inventaire_video"</span>,</span>
 <span>  region <span class="op">=</span> <span class="st">"BFC"</span>,</span>
@@ -225,8 +226,22 @@ empty.</p></dd>
 
 
 <dt id="arg-marge-m">marge_m<a class="anchor" aria-label="anchor" href="#arg-marge-m"></a></dt>
-<dd><p>Margin around the plot for rasters and crowns (m). Default
-10.</p></dd>
+<dd><p>Margin around the plot for the per-plot rasters (m), and
+around the plots in the forest extent when there is neither <code>ugf</code>
+nor <code>parcelles</code>. Default 10.</p></dd>
+
+
+<dt id="arg-cvat-path">cvat_path<a class="anchor" aria-label="anchor" href="#arg-cvat-path"></a></dt>
+<dd><p>Optional path of a CVAT relief raster (as computed by
+nemetonshiny with <code>foretaccess::vat_combined()</code>). When given, it is
+cropped to the forest extent and written as <code>rasters/cvat.tif</code>
+(Byte, 2 m, EPSG:2154, DEFLATE; <code>1 + round(v * 254)</code> for a relief
+<code>v</code> in \([0, 1]\), <code>0</code> = nodata; a float value outside
+\([0, 1]\) is clamped, <code>NA</code> gives <code>0</code>). A Byte input (the
+8-bit CVAT of nemetonshiny, <code>v = b / 255</code>) is rescaled the same way,
+its value <code>255</code> being foretaccess' marker for <code>NA</code> and giving
+<code>0</code>. Reprojected when not in EPSG:2154. <code>NULL</code> (default): no
+<code>cvat.tif</code>. A missing or unreadable file only raises a warning.</p></dd>
 
 
 <dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>
@@ -275,7 +290,29 @@ without any spatial function.</p>
 are never modified. <code>convergence_deg</code> (meridian convergence at the
 planned point) is computed; <code>pente_pct</code>, <code>exposition</code> and
 <code>recouvrement_pct</code> are filled from the DTM/CHM when empty. Crowns come
-from <code><a href="segment_houppiers.html">segment_houppiers</a></code> over the plot plus <code>marge_m</code>.</p>
+from <code><a href="segment_houppiers.html">segment_houppiers</a></code> over the whole forest extent (see
+section “Forest-wide data”), not only around the plots.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="forest-wide-data-schema-">Forest-wide data (schema 1.7.0)<a class="anchor" aria-label="anchor" href="#forest-wide-data-schema-"></a></h2>
+
+
+<p>The forest extent is the union of the <code>ugf</code> plus 50 m (else of the
+<code>parcelles</code> plus 50 m, else the plots plus <code>rayon_m +
+marge_m</code>); it always also covers every plot plus <code>rayon_m +
+marge_m</code>, so that a plot planned outside the <code>ugf</code> keeps its data.
+On that extent the function writes 1 km DTM tiles
+<code>rasters/mnt_&lt;x&gt;_&lt;y&gt;.tif</code> (south-west corner in km, 4 digits; 0.5 m,
+same format as the per-plot rasters, nodata outside the extent or the
+LiDAR; no CHM tile), segments the crowns (<code><a href="segment_houppiers.html">segment_houppiers</a></code>,
+tile by tile, a crown kept by the tile that holds its apex) and writes
+them to <code>houppiers</code> with <code>x_sommet</code> / <code>y_sommet</code>.
+A crown touching the buffer (<code>rayon_m + marge_m</code>) of one or several
+plots is written once per plot touched, with that <code>plot_id</code> (as before
+schema 1.7.0); a crown touching none is written once with <code>plot_id</code>
+<code>NULL</code>. <code>houppier_id</code> identifies the crown: the rows of a crown
+shared by two plots carry the same <code>houppier_id</code>. Tiles and <code>cvat.tif</code> (legend group "Rasters des placettes") are in the
+<code>.qgz</code> and in the project folder.</p>
     </div>
     <div class="section level2">
     <h2 id="lifecycle">Lifecycle<a class="anchor" aria-label="anchor" href="#lifecycle"></a></h2>

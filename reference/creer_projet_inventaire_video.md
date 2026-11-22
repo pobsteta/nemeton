@@ -25,6 +25,7 @@ creer_projet_inventaire_video(
   chm = NULL,
   project_path = NULL,
   marge_m = 10,
+  cvat_path = NULL,
   output_dir,
   project_name = "inventaire_video",
   region = "BFC",
@@ -87,7 +88,22 @@ creer_projet_inventaire_video(
 
 - marge_m:
 
-  Margin around the plot for rasters and crowns (m). Default 10.
+  Margin around the plot for the per-plot rasters (m), and around the
+  plots in the forest extent when there is neither `ugf` nor
+  `parcelles`. Default 10.
+
+- cvat_path:
+
+  Optional path of a CVAT relief raster (as computed by nemetonshiny
+  with `foretaccess::vat_combined()`). When given, it is cropped to the
+  forest extent and written as `rasters/cvat.tif` (Byte, 2 m, EPSG:2154,
+  DEFLATE; `1 + round(v * 254)` for a relief `v` in \\\[0, 1\]\\, `0` =
+  nodata; a float value outside \\\[0, 1\]\\ is clamped, `NA` gives
+  `0`). A Byte input (the 8-bit CVAT of nemetonshiny, `v = b / 255`) is
+  rescaled the same way, its value `255` being foretaccess' marker for
+  `NA` and giving `0`. Reprojected when not in EPSG:2154. `NULL`
+  (default): no `cvat.tif`. A missing or unreadable file only raises a
+  warning.
 
 - output_dir:
 
@@ -134,7 +150,27 @@ never modified. `convergence_deg` (meridian convergence at the planned
 point) is computed; `pente_pct`, `exposition` and `recouvrement_pct` are
 filled from the DTM/CHM when empty. Crowns come from
 [`segment_houppiers`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md)
-over the plot plus `marge_m`.
+over the whole forest extent (see section “Forest-wide data”), not only
+around the plots.
+
+## Forest-wide data (schema 1.7.0)
+
+The forest extent is the union of the `ugf` plus 50 m (else of the
+`parcelles` plus 50 m, else the plots plus `rayon_m + marge_m`); it
+always also covers every plot plus `rayon_m + marge_m`, so that a plot
+planned outside the `ugf` keeps its data. On that extent the function
+writes 1 km DTM tiles `rasters/mnt_<x>_<y>.tif` (south-west corner in
+km, 4 digits; 0.5 m, same format as the per-plot rasters, nodata outside
+the extent or the LiDAR; no CHM tile), segments the crowns
+([`segment_houppiers`](https://pobsteta.github.io/nemeton/reference/segment_houppiers.md),
+tile by tile, a crown kept by the tile that holds its apex) and writes
+them to `houppiers` with `x_sommet` / `y_sommet`. A crown touching the
+buffer (`rayon_m + marge_m`) of one or several plots is written once per
+plot touched, with that `plot_id` (as before schema 1.7.0); a crown
+touching none is written once with `plot_id` `NULL`. `houppier_id`
+identifies the crown: the rows of a crown shared by two plots carry the
+same `houppier_id`. Tiles and `cvat.tif` (legend group "Rasters des
+placettes") are in the `.qgz` and in the project folder.
 
 ## Lifecycle
 

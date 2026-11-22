@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.36.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.37</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,6 +117,22 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.37" id="nemeton-20261137-2026-11-22">nemeton 2026.11.37 (2026-11-22)<a class="anchor" aria-label="anchor" href="#nemeton-20261137-2026-11-22"></a></h2>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-37">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-37"></a></h3>
+<ul><li>
+<strong>Inventaire vidéo, schéma 1.7.0 : relief, MNT et houppiers sur toute la forêt</strong> (brief groma du 2026-11-20, révisé ; mission 037). Une placette déplacée sur le terrain garde son calage au sol et son contrôle d’orientation dans Groma.
+<ul><li>
+<code><a href="../reference/creer_projet_inventaire_video.html">creer_projet_inventaire_video()</a></code> calcule l’emprise de la forêt (union des <code>ugf</code> + 50 m, sinon des <code>parcelles</code> + 50 m, sinon placettes + <code>marge_m</code> ; toujours élargie aux placettes + <code>rayon_m</code> + <code>marge_m</code>), écrit des dalles MNT de 1 km <code>rasters/mnt_{x}_{y}.tif</code> (à plat, coin sud-ouest en km sur 4 chiffres, 2 000 × 2 000 pixels, nodata hors emprise et hors LiDAR, aucune dalle MNH), segmente les houppiers sur toute l’emprise (<code>plot_id</code> vide hors placette) et range dalles et <code>cvat.tif</code> dans le <code>.qgz</code> et dans le dossier du projet.</li>
+<li>Nouvel argument <code>cvat_path = NULL</code> : le CVAT de nemetonshiny est découpé sur l’emprise et écrit en <code>rasters/cvat.tif</code> (Byte, 2 m, EPSG:2154, <code>1 + round(v * 254)</code>, 0 = nodata). Fichier absent ou illisible : avertissement, projet écrit sans <code>cvat.tif</code>.</li>
+<li>
+<code><a href="../reference/segment_houppiers.html">segment_houppiers()</a></code> renvoie <code>x_sommet</code> et <code>y_sommet</code> (centre du pixel du <code>h_max</code>, à l’intérieur du polygone ; à égalité, la cellule la plus au nord puis à l’ouest). Index B-tree sur ces colonnes dans le GeoPackage.</li>
+<li>
+<code>inventaire_video.schema.json</code> passe en 1.7.0 (additif : un projet 1.6.0 reste lisible).</li>
+</ul></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.36" id="nemeton-20261136-2026-11-16">nemeton 2026.11.36 (2026-11-16)<a class="anchor" aria-label="anchor" href="#nemeton-20261136-2026-11-16"></a></h2>
 <div class="section level3">
