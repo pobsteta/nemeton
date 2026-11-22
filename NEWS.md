@@ -1,4 +1,4 @@
-# nemeton (development version)
+# nemeton 2026.11.37 (2026-11-22)
 
 ## Nouveautés
 

@@ -140,6 +140,13 @@ dalles et `cvat.tif` dans le groupe de légende « Rasters des placettes »
 dalle (mémoire bornée), houppier retenu par la dalle de son sommet ; le CVAT de
 nemetonshiny est un Byte 0-255 (255 = NA) et non un flottant [0, 1] : les deux
 sont acceptés. Pas de release ; `DESCRIPTION` reste en `.9000`.
+*2026-11-22* : **v2026.11.37** publiée (PR n° 668, `main` fusionné dans la
+branche), à la demande de Pascal : elle débloque le brief app
+`vers-nemetonshiny/2026-11-20-cvat-path-inventaire-video.md`, qui attendait
+`cvat_path` dans une version publiée du cœur. `codecov/patch` en échec, non
+bloquant (couverture des lignes ajoutées). Reste : `renvoyer_inventaire_video()`
+(dalles et `cvat.tif` au renvoi), taille du `.qgz` sur une vraie forêt. Version
+nemetonshiny vérifiée : v2026.11.2.
 
 **Journal** — *2026-11-07* : tags `v2026.11.3` et `v2026.11.8` posés (relance
 `gh run rerun --failed` des runs 42181439133 et 42209277959, réussie au 2e
