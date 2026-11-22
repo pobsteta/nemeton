@@ -564,7 +564,76 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     liberer = function(h) {
       if (is.environment(h)) try(h$delete(), silent = TRUE)
       invisible(NULL)
+    },
+    # Journal des jobs (voir `.rsen_era5_journal_purger()`) : l'URL d'un job
+    # suffit à le retirer de la file du compte, sans son handle.
+    url = function(h) {
+      if (!is.environment(h)) return(NA_character_)
+      tryCatch(as.character(h$get_url())[1L], error = function(e) NA_character_)
+    },
+    purger = function(url) {
+      tryCatch({
+        httr2::request(url) |>
+          httr2::req_method("DELETE") |>
+          httr2::req_headers(`PRIVATE-TOKEN` = ecmwfr::wf_get_key()) |>
+          httr2::req_error(is_error = function(resp) FALSE) |>
+          httr2::req_perform()
+        TRUE
+      }, error = function(e) FALSE)
     })
+}
+
+# --- Journal des jobs CDS en file ------------------------------------------
+#
+# Un moteur arrêté de l'extérieur (scope stoppé, worker tué, SIGTERM) n'exécute
+# pas ses `on.exit` : ses requêtes restent `accepted` dans la file du compte CDS,
+# qui n'en accepte que quelques-unes à la fois, et le run suivant attend
+# derrière elles. Constaté le 2026-11-22 sur la Colombière : trois jobs ERA5
+# orphelins, en file depuis 1 à 5 h, pour des moteurs déjà morts.
+#
+# Chaque processus tient donc la liste des URLs de ses jobs actifs dans
+# `<cache_dir>/era5_jobs/<pid>.txt`. Au démarrage d'un lot, les fichiers des
+# processus MORTS sont purgés (DELETE de chaque job) ; ceux d'un processus vivant
+# ne sont jamais touchés, pour ne pas retirer la file d'un moteur qui tourne.
+
+.rsen_era5_journal_dir <- function(cache_dir) file.path(cache_dir, "era5_jobs")
+
+# Vivant ? `kill(pid, 0)` sous Unix. Ailleurs, `pskill()` TUERAIT le processus
+# quel que soit le signal : on répond « vivant », donc on ne purge jamais.
+.rsen_pid_vivant <- function(pid) {
+  pid <- suppressWarnings(as.integer(pid))
+  if (length(pid) != 1L || is.na(pid) || pid <= 0L) return(FALSE)
+  if (!identical(.Platform$OS.type, "unix")) return(TRUE)
+  isTRUE(tools::pskill(pid, signal = 0L))
+}
+
+.rsen_era5_journal_purger <- function(cache_dir, acces) {
+  if (!is.function(acces$purger)) return(invisible(0L))
+  d <- .rsen_era5_journal_dir(cache_dir)
+  fichiers <- list.files(d, pattern = "^[0-9]+\\.txt$", full.names = TRUE)
+  n <- 0L
+  for (f in fichiers) {
+    pid <- sub("\\.txt$", "", basename(f))
+    if (identical(pid, as.character(Sys.getpid())) || .rsen_pid_vivant(pid)) next
+    urls <- tryCatch(readLines(f, warn = FALSE), error = function(e) character())
+    for (u in urls[nzchar(urls)]) {
+      if (isTRUE(acces$purger(u))) n <- n + 1L
+    }
+    unlink(f)
+  }
+  invisible(n)
+}
+
+.rsen_era5_journal_ecrire <- function(cache_dir, urls) {
+  f <- file.path(.rsen_era5_journal_dir(cache_dir), paste0(Sys.getpid(), ".txt"))
+  urls <- urls[!is.na(urls) & nzchar(urls)]
+  if (!length(urls)) {
+    unlink(f)
+  } else {
+    tryCatch(.atomic_write(f, function(tmp) writeLines(urls, tmp)),
+             error = function(e) NULL)
+  }
+  invisible(f)
 }
 
 # Accès synchrone : une fonction `requete(list(req_k), cache_dir)` qui télécharge
@@ -626,6 +695,20 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   actifs   <- integer(0)
   t_num <- function() as.numeric(maintenant())
 
+  # Jobs laissés en file par un moteur mort, puis journal de nos propres jobs.
+  # Une sortie R anormale (erreur, interruption) les libère ici ; un arrêt
+  # brutal, que `on.exit` ne voit pas, est rattrapé par le lot suivant.
+  journal <- is.function(acces$url)
+  if (journal) .rsen_era5_journal_purger(cache_dir, acces)
+  noter <- function() {
+    if (journal) .rsen_era5_journal_ecrire(
+      cache_dir, vapply(actifs, function(i) acces$url(handles[[i]]), ""))
+  }
+  on.exit({
+    for (i in actifs) try(acces$liberer(handles[[i]]), silent = TRUE)
+    if (journal) .rsen_era5_journal_ecrire(cache_dir, character())
+  }, add = TRUE)
+
   plafond_eff <- plafond
   limite_depuis <- rep(NA_real_, n)
   echouer <- function(i, e) {
@@ -665,6 +748,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
       handles[i] <- list(h)
       soumis_a[i] <- t_num()
       actifs <- c(actifs, i)
+      noter()
     }
     # Suivi des requêtes actives.
     for (i in actifs) {
@@ -693,6 +777,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
           basename(taches[[i]]$nc))))
       }
     }
+    noter()
     if (length(file_att) || length(actifs)) pause(intervalle)
   }
 

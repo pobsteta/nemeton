@@ -262,3 +262,18 @@ test_that("tn with the min reducer gives the annual minimum (2026.11.32)", {
   expect_equal(names(out), "2003")
   expect_equal(unique(terra::values(out)[, 1]), -14)
 })
+
+test_that("an upstream message with braces is reported, not parsed by cli", {
+  # 2026-11-22 : le CDS renvoie la requête en dict Python (« {'grid_resolution':
+  # '0_1deg', … } ») ; passé brut à cli, il levait « Could not parse cli `{}` »
+  # au lieu de l'avertissement, et l'app perdait la détection des années.
+  skip_if_not_installed("terra")
+  local_mocked_bindings(.eobs_cds_fetch = function(...)
+    stop("CDS said {'grid_resolution': '0_1deg', 'period': 'full'}"))
+  w <- NULL
+  out <- withCallingHandlers(
+    load_eobs_source(aoi = NULL, var = "tx", years = 2022L, source = "cds"),
+    warning = function(x) { w <<- conditionMessage(x); invokeRestart("muffleWarning") })
+  expect_null(out)
+  expect_match(w, "'grid_resolution': '0_1deg'", fixed = TRUE)
+})

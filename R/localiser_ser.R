@@ -28,7 +28,7 @@
   status <- tryCatch(
     suppressWarnings(utils::download.file(url, dest, mode = "wb", quiet = TRUE)),
     error = function(e) {
-      cli::cli_warn(c("SER WFS request failed.", i = conditionMessage(e)))
+      cli::cli_warn(c("SER WFS request failed.", i = "{conditionMessage(e)}"))
       -1L
     }
   )

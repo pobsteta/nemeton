@@ -503,7 +503,7 @@ load_parcelles_personnes_morales <- function(insee, fichier = NULL,
     happign::get_wfs(onf_union, "CADASTRALPARCELS.PARCELLAIRE_EXPRESS:parcelle",
                      predicate = happign::intersects(), verbose = FALSE),
     error = function(e) {
-      cli::cli_warn(c("Cadastral WFS fetch failed.", i = conditionMessage(e)))
+      cli::cli_warn(c("Cadastral WFS fetch failed.", i = "{conditionMessage(e)}"))
       NULL
     })
   if (is.null(pci) || !inherits(pci, "sf")) return(NULL)

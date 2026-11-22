@@ -1,3 +1,38 @@
+# nemeton 2026.11.38 (2026-11-22)
+
+## Nouveautés
+
+- **Un moteur plafonné ne survit plus à son parent, et se laisse retrouver**
+  (2026-11-22, Parc de la Colombière : quatre moteurs reGénération vivaient en
+  même temps sur le même projet, trois depuis 15 à 24 h pour des runs
+  abandonnés, et bloquaient l'étape `regeneration` du « Tout calculer »).
+  - `run_memory_capped()` lance l'enfant supervisé (`processx`
+    `supervise = TRUE`) : si le processus appelant meurt (worker tué, app
+    redémarrée), l'enfant meurt avec lui. Vérifié en réel : `kill -9` du
+    parent, scope `inactive` dans la foulée.
+  - Nouvel argument `marker_path = NULL` : un marqueur JSON (scope systemd,
+    pid de l'enfant et du parent, fonction, heure de départ) est posé au
+    lancement et retiré au retour, seulement par le run qui l'a posé.
+  - Nouvelles fonctions `capped_run_alive()` (le run nommé par le marqueur
+    vit-il encore ? un marqueur périmé est effacé) et `stop_memory_capped()`
+    (`systemctl --user stop` du scope, repli `SIGTERM`/`SIGKILL`). L'app s'en
+    sert pour ne jamais garder deux moteurs sur un projet (brief
+    nemetonshiny du 2026-11-22).
+- **Le lot ERA5 ne laisse plus de jobs orphelins dans la file du CDS.**
+  Chaque moteur tient les URLs de ses jobs actifs dans
+  `<cache>/era5_jobs/<pid>.txt` ; au démarrage d'un lot, les jobs des
+  moteurs morts sont supprimés du CDS (ceux d'un moteur vivant ne sont jamais
+  touchés), et une sortie R anormale libère les jobs en cours.
+
+## Corrections
+
+- `load_eobs_source()` : un message du CDS contenant des accolades (la
+  requête renvoyée en dict Python) faisait planter l'avertissement
+  (« Could not parse cli `{}` ») au lieu de le rapporter ; l'app perdait la
+  détection automatique des années reGénération (`regen_annees` sauté). Même
+  défaut, même correction pour les avertissements WFS SER, ONF, cadastre et
+  l'échec RECONFORT.
+
 # nemeton 2026.11.37 (2026-11-22)
 
 ## Nouveautés

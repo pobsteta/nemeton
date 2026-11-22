@@ -311,7 +311,7 @@ load_eobs_source <- function(aoi, var = "tx", years = NULL, months = 6:8,
   # dans un avertissement ET dans le payload `eobs:unavailable` (`message`).
   echec <- function(reason, e) {
     msg <- conditionMessage(e)
-    cli::cli_warn(c("E-OBS {.val {var}} unavailable ({reason}).", x = msg))
+    cli::cli_warn(c("E-OBS {.val {var}} unavailable ({reason}).", x = "{msg}"))
     emit(list(current = "eobs:unavailable", reason = reason, message = msg))
     NULL
   }
