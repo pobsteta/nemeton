@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.38.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.39</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,6 +117,23 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.39" id="nemeton-20261139-2026-11-22">nemeton 2026.11.39 (2026-11-22)<a class="anchor" aria-label="anchor" href="#nemeton-20261139-2026-11-22"></a></h2>
+<div class="section level3">
+<h3 id="corrections-2026-11-39">Corrections<a class="anchor" aria-label="anchor" href="#corrections-2026-11-39"></a></h3>
+<ul><li>
+<strong>E-OBS : nouveau format du CDS</strong> (constaté le 2026-11-22). Toutes les requêtes E-OBS échouaient en « invalid request » : le CDS a retiré le champ <code>period</code> du jeu <code>insitu-gridded-observations-europe</code> et exige désormais un <code>licence_type</code>. Chaque requête livre maintenant <strong>la série complète depuis 1950</strong> dans un seul netCDF par variable (4,34 Go à 0,1°, 0,83 Go à 0,25°, mesuré).
+<ul><li>
+<code><a href="../reference/load_eobs_source.html">load_eobs_source()</a></code> ne transmet plus <code>period</code>, déclare la licence (<code>open_data_licence</code> à partir de la version 34.0e, <code>restricted_research_licence</code> avant) et passe par défaut à la version <strong>34.0e</strong> (seule version en licence ouverte). Un seul fichier en cache par variable × version × résolution.</li>
+<li>L’argument <code>period</code> est conservé mais ignoré, avec un avertissement une fois par session.</li>
+<li>
+<code>.eobs_summer_by_year()</code> choisit les étés demandés <strong>avant</strong> le découpage sur l’emprise : sur ~27 000 couches journalières, découper d’abord lisait des Go pour rien.</li>
+<li>
+<code>regen_tmin_decennale(source = "cds")</code> et <code>inst/datasources/FR.json</code> passent aussi à 34.0e.</li>
+<li>Nouvel accesseur <code><a href="../reference/eobs_cached_file.html">eobs_cached_file()</a></code> : chemin de la série en cache (cache global par défaut), pour que l’app partage un seul téléchargement entre projets au lieu de reconstruire les noms de fichiers.</li>
+</ul></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.38" id="nemeton-20261138-2026-11-22">nemeton 2026.11.38 (2026-11-22)<a class="anchor" aria-label="anchor" href="#nemeton-20261138-2026-11-22"></a></h2>
 <div class="section level3">

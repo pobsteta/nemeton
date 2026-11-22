@@ -486,6 +486,8 @@ Acquisition des couches publiques (WMS/WFS, COG, STAC, CDS)
 - [`load_eobs_source()`](https://pobsteta.github.io/nemeton/reference/load_eobs_source.md)
   : Acquire E-OBS per-year summer fields (Tmax / precipitation) for an
   AOI
+- [`eobs_cached_file()`](https://pobsteta.github.io/nemeton/reference/eobs_cached_file.md)
+  : Path of the cached E-OBS daily series
 - [`load_foret_ancienne_source()`](https://pobsteta.github.io/nemeton/reference/load_foret_ancienne_source.md)
   : Acquire the IGN historical-forest (~1850 état-major) layer for an
   AOI

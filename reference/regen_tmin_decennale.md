@@ -68,7 +68,7 @@ regen_tmin_decennale(
 
 - version:
 
-  E-OBS version (default `"33.0e"` for KNMI, `"30.0e"` for the CDS).
+  E-OBS version (default `"33.0e"` for KNMI, `"34.0e"` for the CDS).
 
 - progress_callback:
 

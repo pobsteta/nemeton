@@ -13,6 +13,26 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.39\] - 2026-11-22
+
+### Added
+
+- [`eobs_cached_file()`](https://pobsteta.github.io/nemeton/reference/eobs_cached_file.md):
+  path of the cached E-OBS series (global cache by default), or `NULL`.
+
+### Fixed
+
+- E-OBS CDS requests: no `period` field any more (the CDS rejects it),
+  `licence_type` sent (`open_data_licence` from 34.0e), default version
+  34.0e; one cached whole-series file per variable × version ×
+  resolution.
+- `.eobs_summer_by_year()` subsets the requested summers before cropping
+  to the AOI.
+
+### Deprecated
+
+- `load_eobs_source(period =)`: ignored, warns once per session.
+
 ## \[2026.11.38\] - 2026-11-22
 
 ### Added

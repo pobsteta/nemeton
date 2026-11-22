@@ -29,7 +29,7 @@ as ERA5). Not runnable in CI; validated on real data. Degrades to NULL.
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.38.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.39</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -163,7 +163,7 @@ as ERA5). Not runnable in CI; validated on real data. Degrades to <code>NULL</co
 <span>  reducer <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  nc <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cache_dir <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  version <span class="op">=</span> <span class="st">"30.0e"</span>,</span>
+<span>  version <span class="op">=</span> <span class="st">"34.0e"</span>,</span>
 <span>  resolution <span class="op">=</span> <span class="st">"0.1deg"</span>,</span>
 <span>  period <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -211,19 +211,25 @@ of the CDS download.</p></dd>
 
 
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>
-<dd><p>Directory for the CDS download / unzip (default <code><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempdir()</a></code>).</p></dd>
+<dd><p>Persistent directory for the CDS download / unzip. Defaults
+to <code>file.path(get_global_cache_dir(), "eobs")</code> so a given series (variable
+× version × resolution) is downloaded <strong>once</strong> and reused on later calls
+(cache-hit, no network). Pass a project-scoped path to isolate it.</p></dd>
 
 
 <dt id="arg-version-resolution">version, resolution<a class="anchor" aria-label="anchor" href="#arg-version-resolution"></a></dt>
-<dd><p>E-OBS product version (default <code>"30.0e"</code>; dots are
-normalised to the CDS underscore form, e.g. <code>30_0e</code>) and grid
-resolution (default <code>"0.1deg"</code>) for the CDS request.</p></dd>
+<dd><p>E-OBS product version (default <code>"34.0e"</code>; dots are
+normalised to the CDS underscore form, e.g. <code>34_0e</code>) and grid resolution
+(default <code>"0.1deg"</code>) for the CDS request. Since November 2026 the CDS
+delivers the <strong>whole series</strong> (1950 onwards) in one file per variable —
+about 4.3 GB at 0.1°, 0.8 GB at 0.25° — and requires a licence type:
+<code>open_data_licence</code> from version 34.0e, <code>restricted_research_licence</code>
+(to accept once on the CDS) for versions 28.0e to 33.0e.</p></dd>
 
 
 <dt id="arg-period">period<a class="anchor" aria-label="anchor" href="#arg-period"></a></dt>
-<dd><p>Optional explicit CDS period block (e.g. <code>"2011_2024"</code>);
-inferred from <code>years</code> when <code>NULL</code>; years spanning several CDS blocks
-are downloaded block by block and merged.</p></dd>
+<dd><p>Ignored since 2026.11.39: the CDS no longer splits E-OBS into
+period blocks. A non-<code>NULL</code> value warns once per session.</p></dd>
 
 
 <dt id="arg-progress-callback">progress_callback<a class="anchor" aria-label="anchor" href="#arg-progress-callback"></a></dt>
