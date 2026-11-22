@@ -467,6 +467,7 @@ reference:
     - load_theia_source
     - charger_forms_t_hauteurs
     - load_eobs_source
+    - eobs_cached_file
     - load_foret_ancienne_source
     - load_onf_parcelles_source
     - load_insee_population_source

@@ -46,13 +46,8 @@
   fun <- switch(reducer, mean = "mean", sum = "sum", max = "max", min = "min",
                 median = "median",
                 cli::cli_abort("Unknown {.arg reducer} {.val {reducer}}."))
-  if (!is.null(aoi)) {
-    if (!inherits(aoi, c("sf", "sfc"))) {
-      cli::cli_abort("{.arg aoi} must be an {.cls sf}/{.cls sfc}.")
-    }
-    av <- terra::vect(sf::st_transform(
-      sf::st_union(sf::st_geometry(aoi)), terra::crs(daily)))
-    daily <- terra::mask(terra::crop(daily, av, snap = "out"), av)
+  if (!is.null(aoi) && !inherits(aoi, c("sf", "sfc"))) {
+    cli::cli_abort("{.arg aoi} must be an {.cls sf}/{.cls sfc}.")
   }
   tt <- terra::time(daily)
   if (length(tt) == 0L || all(is.na(tt))) {
@@ -65,6 +60,19 @@
   mo <- as.integer(format(dates, "%m"))
   keep_m <- mo %in% months
   ys <- if (is.null(years)) sort(unique(yr[keep_m])) else sort(unique(as.integer(years)))
+  # Dates d'abord, emprise ensuite : le CDS livre la série complète (~27 000
+  # couches depuis 1950). Découper toute la pile avant d'en garder les étés
+  # demandés lirait des Go pour rien.
+  sel <- which(keep_m & yr %in% ys)
+  if (length(sel) && length(sel) < terra::nlyr(daily)) {
+    daily <- daily[[sel]]
+    dates <- dates[sel]; yr <- yr[sel]; mo <- mo[sel]; keep_m <- keep_m[sel]
+  }
+  if (!is.null(aoi)) {
+    av <- terra::vect(sf::st_transform(
+      sf::st_union(sf::st_geometry(aoi)), terra::crs(daily)))
+    daily <- terra::mask(terra::crop(daily, av, snap = "out"), av)
+  }
   incompletes <- character(0)
   layers <- lapply(ys, function(y) {
     idx <- which(keep_m & yr == y)
@@ -95,71 +103,73 @@
 }
 
 # Téléchargement CDS (voie A). Non jouable en CI ; validé sur données réelles.
-# Renvoie le(s) chemin(s) netCDF — un par bloc CDS couvert par `years` — ou
-# ÉCHOUE avec un message explicite (audit 1.0 : chaque échec devenait un NULL
-# muet, cf. l'incident « E-OBS indisponible » de juillet 2026). C'est
-# load_eobs_source() qui transforme l'erreur en avertissement + payload
-# `eobs:unavailable`.
+# Renvoie le chemin du netCDF ou ÉCHOUE avec un message explicite (audit 1.0 :
+# chaque échec devenait un NULL muet, cf. l'incident « E-OBS indisponible » de
+# juillet 2026). C'est load_eobs_source() qui transforme l'erreur en
+# avertissement + payload `eobs:unavailable`.
+#
+# Depuis novembre 2026, le CDS ne découpe plus E-OBS en blocs d'années : le
+# champ `period` a disparu du formulaire (toute requête qui le porte est
+# « invalid request »), chaque requête livre la série complète depuis 1950
+# (4,34 Go à 0,1° pour une variable, 0,83 Go à 0,25°, mesuré le 2026-11-22), et
+# un champ `licence_type` est exigé. Un seul fichier par variable × version ×
+# résolution, téléchargé une fois dans le cache global. `years` et `period` ne
+# servent plus à la requête (gardés pour la signature).
 .eobs_cds_fetch <- function(cds_var, years, cache_dir, version, resolution,
                             period = NULL, emit = NULL) {
   if (is.null(emit)) emit <- function(payload) NULL
   if (!requireNamespace("ecmwfr", quietly = TRUE)) {
     cli::cli_abort("The CDS download needs the {.pkg ecmwfr} package.")
   }
-  # Cache PERSISTANT par défaut (les blocs E-OBS pèsent plusieurs Go — on ne
+  # Cache PERSISTANT par défaut (plusieurs Go par variable — on ne
   # re-télécharge pas à chaque analyse). L'app peut passer un cache_dir projet.
   if (is.null(cache_dir)) cache_dir <- file.path(get_global_cache_dir(), "eobs")
   if (!dir.exists(cache_dir)) {
     dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
   }
-  if (is.null(period)) {
-    if (is.null(years)) {
-      cli::cli_abort(c(
-        "Cannot infer the E-OBS CDS period block without {.arg years}.",
-        i = "Pass {.arg years} or an explicit {.arg period}."))
-    }
-    # Années à cheval sur plusieurs blocs CDS : un bloc par tranche, fusionnés
-    # à la lecture (terra::rast() sur plusieurs fichiers de même grille).
-    period <- .eobs_cds_periods(as.integer(years))
-    if (length(period) > 1L) {
-      cli::cli_inform(c(
-        "i" = "E-OBS: requested years span {length(period)} CDS blocks ({.val {period}}); downloading and merging them."))
-    }
-  }
-  vapply(period, function(p)
-    .eobs_cds_fetch_block(cds_var, p, cache_dir, version, resolution, emit),
-    character(1), USE.NAMES = FALSE)
+  .eobs_cds_fetch_block(cds_var, .EOBS_CDS_SERIE, cache_dir, version, resolution, emit)
 }
 
-# Un bloc CDS (variable × période × version × résolution) -> chemin netCDF.
+# Étiquette de cache de la série complète (il n'y a plus de bloc d'années).
+.EOBS_CDS_SERIE <- "1950-present"
+
+# Licence à déclarer : le CDS n'accepte `open_data_licence` qu'à partir de la
+# version 34.0e ; les versions 28.0e à 33.0e exigent la licence de recherche
+# (`restricted_research_licence`), à accepter sur le compte CDS.
+.eobs_licence <- function(version) {
+  num <- suppressWarnings(as.numeric(sub("^v?([0-9]+).*$", "\\1", version)))
+  if (!is.na(num) && num >= 34) "open_data_licence" else "restricted_research_licence"
+}
+
+# La série CDS (variable × version × résolution) -> chemin netCDF.
 .eobs_cds_fetch_block <- function(cds_var, period, cache_dir, version,
                                   resolution, emit) {
-  # Cache-hit : le bloc a déjà été téléchargé -> on réutilise sans réseau.
+  # Cache-hit : la série a déjà été téléchargée -> on réutilise sans réseau.
   nc_cache <- .eobs_cache_file(cds_var, period, version, resolution, cache_dir)
   if (file.exists(nc_cache)) {
     emit(list(current = "eobs:cache_hit", file = basename(nc_cache)))
     return(nc_cache)
   }
-  # Le CDS attend les valeurs d'enum avec des underscores (`30_0e`, `0_1deg`),
-  # pas des points — on tolère la forme humaine `30.0e` / `0.1deg` en entrée.
+  # Le CDS attend les valeurs d'enum avec des underscores (`34_0e`, `0_1deg`),
+  # pas des points — on tolère la forme humaine `34.0e` / `0.1deg` en entrée.
   req <- list(
     dataset_short_name = .EOBS_CDS_DATASET,
     product_type    = "ensemble_mean",
     variable        = cds_var,
     grid_resolution = gsub("\\.", "_", resolution),
-    period          = period,
     version         = gsub("\\.", "_", version),
+    licence_type    = .eobs_licence(version),
     format          = "zip",
     target          = paste0(tools::file_path_sans_ext(basename(nc_cache)), ".zip"))
   emit(list(current = "eobs:cds_request", variable = cds_var,
-            period = period, version = version, resolution = resolution))
+            version = version, resolution = resolution))
   zip <- tryCatch(
     ecmwfr::wf_request(request = req, path = cache_dir, transfer = TRUE),
     error = function(e) cli::cli_abort(
-      "CDS request failed for E-OBS {.val {cds_var}} {.val {period}}: {conditionMessage(e)}",
+      "CDS request failed for E-OBS {.val {cds_var}} v{version}: {conditionMessage(e)}",
       parent = e))
   if (is.null(zip) || !file.exists(zip)) {
-    cli::cli_abort("CDS request for E-OBS {.val {cds_var}} {.val {period}} returned no file.")
+    cli::cli_abort("CDS request for E-OBS {.val {cds_var}} v{version} returned no file.")
   }
   emit(list(current = "eobs:cds_download_done", file = basename(zip)))
   emit(list(current = "eobs:unzip"))
@@ -184,56 +194,40 @@
   nc
 }
 
-# Blocs CDS E-OBS (tranches pluriannuelles livrées par le CDS).
-.EOBS_CDS_BLOCKS <- list(c(1950, 1964), c(1965, 1979), c(1980, 1994),
-                         c(1995, 2010), c(2011, 2100))
-
-# Libellé CDS d'un bloc pour des années qu'il contient. Bloc ouvert
-# (« courant ») : la borne haute suit l'année demandée la plus récente au lieu
-# d'un plafond figé — la valeur d'enum `2011_<max>` doit correspondre à la
-# couverture de la `version` E-OBS choisie (best-effort). Blocs clos : borne
-# réelle.
-.eobs_block_label <- function(b, years) {
-  hi <- if (b[2] >= 2100) max(years) else b[2]
-  sprintf("%d_%d", b[1], hi)
-}
-
-# Tous les blocs CDS couvrant `years`, dans l'ordre chronologique (audit 1.0 :
-# des années à cheval sur deux blocs renvoyaient NULL sans message).
-.eobs_cds_periods <- function(years) {
-  years <- sort(unique(as.integer(years)))
-  out <- character(0)
-  couvert <- logical(length(years))
-  for (b in .EOBS_CDS_BLOCKS) {
-    dans <- years >= b[1] & years <= b[2]
-    if (any(dans)) {
-      out <- c(out, .eobs_block_label(b, years[dans]))
-      couvert <- couvert | dans
-    }
-  }
-  if (!all(couvert)) {
-    cli::cli_abort("E-OBS covers 1950 onwards; years {.val {years[!couvert]}} are out of range.")
-  }
-  out
-}
-
-# Bloc pluriannuel E-OBS couvrant les années demandées (les fichiers CDS sont
-# livrés par tranches). Renvoie NULL si les années débordent d'un seul bloc —
-# voir .eobs_cds_periods() pour le cas à cheval, géré par .eobs_cds_fetch().
-.eobs_cds_period <- function(years) {
-  years <- as.integer(years)
-  for (b in .EOBS_CDS_BLOCKS) {
-    if (all(years >= b[1] & years <= b[2])) return(.eobs_block_label(b, years))
-  }
-  NULL
-}
-
-# Nom de cache déterministe pour un bloc E-OBS (variable × période × version ×
-# résolution) : permet le cache-hit et évite les collisions entre requêtes.
+# Nom de cache déterministe (variable × série × version × résolution) : permet
+# le cache-hit et évite les collisions entre requêtes.
 .eobs_cache_file <- function(cds_var, period, version, resolution, cache_dir) {
   tag <- gsub("[^A-Za-z0-9]+", "-",
               sprintf("%s_%s_v%s_%s", cds_var, period, version, resolution))
   file.path(cache_dir, paste0("eobs_", tag, ".nc"))
+}
+
+#' Path of the cached E-OBS daily series
+#'
+#' Where [load_eobs_source()] (`source = "cds"`) keeps the downloaded E-OBS
+#' series of one variable, and whether it is there. Since November 2026 the CDS
+#' delivers the whole series (1950 onwards) in a single netCDF per variable
+#' (about 4.3 GB at 0.1°), so callers should share one cache — the default,
+#' under [get_global_cache_dir()] — instead of downloading it once per project.
+#'
+#' @param var E-OBS variable: `"tx"`, `"tg"`, `"tn"` or `"rr"`.
+#' @param version,resolution As in [load_eobs_source()].
+#' @param cache_dir As in [load_eobs_source()]; `NULL` (default) is the global
+#'   E-OBS cache.
+#'
+#' @return The netCDF path when the series is cached, otherwise `NULL`.
+#'
+#' @section Lifecycle:
+#' Experimental.
+#'
+#' @seealso [load_eobs_source()]
+#' @export
+eobs_cached_file <- function(var = "tx", version = "34.0e", resolution = "0.1deg",
+                             cache_dir = NULL) {
+  spec <- .eobs_var_spec(var)
+  if (is.null(cache_dir)) cache_dir <- file.path(get_global_cache_dir(), "eobs")
+  f <- .eobs_cache_file(spec$cds, .EOBS_CDS_SERIE, version, resolution, cache_dir)
+  if (file.exists(f)) f else NULL
 }
 
 #' Acquire E-OBS per-year summer fields (Tmax / precipitation) for an AOI
@@ -265,17 +259,18 @@
 #' @param nc A daily E-OBS netCDF path (or a dated `SpatRaster`) to use instead
 #'   of the CDS download.
 #' @param cache_dir Persistent directory for the CDS download / unzip. Defaults
-#'   to `file.path(get_global_cache_dir(), "eobs")` so a given block (variable ×
-#'   period × version × resolution) is downloaded **once** and reused on later
-#'   calls (cache-hit, no network). Pass a project-scoped path to isolate it.
-#' @param version,resolution E-OBS product version (default `"30.0e"`; dots are
-#'   normalised to the CDS underscore form, e.g. `30_0e`) and grid
-#'   resolution (default `"0.1deg"`) for the CDS request. For years beyond the
-#'   default block bound, pair a recent `version` with the matching `period`.
-#' @param period Optional explicit CDS period block (e.g. `"2011_2024"`);
-#'   inferred from `years` when `NULL`. For the current (open) block the inferred
-#'   upper bound follows the most recent requested year (no fixed ceiling).
-#'   Years spanning several CDS blocks are downloaded block by block and merged.
+#'   to `file.path(get_global_cache_dir(), "eobs")` so a given series (variable
+#'   × version × resolution) is downloaded **once** and reused on later calls
+#'   (cache-hit, no network). Pass a project-scoped path to isolate it.
+#' @param version,resolution E-OBS product version (default `"34.0e"`; dots are
+#'   normalised to the CDS underscore form, e.g. `34_0e`) and grid resolution
+#'   (default `"0.1deg"`) for the CDS request. Since November 2026 the CDS
+#'   delivers the **whole series** (1950 onwards) in one file per variable —
+#'   about 4.3 GB at 0.1°, 0.8 GB at 0.25° — and requires a licence type:
+#'   `open_data_licence` from version 34.0e, `restricted_research_licence`
+#'   (to accept once on the CDS) for versions 28.0e to 33.0e.
+#' @param period Ignored since 2026.11.39: the CDS no longer splits E-OBS into
+#'   period blocks. A non-`NULL` value warns once per session.
 #' @param progress_callback Optional function called at each step with a
 #'   `list(current = <key>, …)` payload (monitoring pattern). Keys:
 #'   `"eobs:cache_hit"`, `"eobs:cds_request"`, `"eobs:cds_download_done"`,
@@ -292,7 +287,7 @@
 #' @export
 load_eobs_source <- function(aoi, var = "tx", years = NULL, months = 6:8,
                              source = "cds", reducer = NULL, nc = NULL,
-                             cache_dir = NULL, version = "30.0e",
+                             cache_dir = NULL, version = "34.0e",
                              resolution = "0.1deg", period = NULL,
                              progress_callback = NULL, ...) {
   # Émetteur de progression : chaque étape publie un payload `list(current=…)`
@@ -307,6 +302,11 @@ load_eobs_source <- function(aoi, var = "tx", years = NULL, months = 6:8,
   }
   spec <- .eobs_var_spec(var)
   if (is.null(reducer)) reducer <- spec$reducer
+  if (!is.null(period)) {
+    rlang::warn(
+      "`period` is ignored: the CDS now delivers the whole E-OBS series in one file.",
+      .frequency = "once", .frequency_id = "nemeton_eobs_period")
+  }
   # Audit 1.0 : un échec n'est plus un NULL muet — le message d'origine part
   # dans un avertissement ET dans le payload `eobs:unavailable` (`message`).
   echec <- function(reason, e) {
@@ -322,11 +322,10 @@ load_eobs_source <- function(aoi, var = "tx", years = NULL, months = 6:8,
     if (inherits(daily, "error")) return(echec("read_error", daily))
   } else if (identical(source, "cds")) {
     f <- tryCatch(.eobs_cds_fetch(spec$cds, years, cache_dir, version,
-                                  resolution, period, emit = emit),
+                                  resolution, emit = emit),
                   error = function(e) e)
     if (inherits(f, "error")) return(echec("cds", f))
     emit(list(current = "eobs:read", source = "cds", var = var))
-    # Plusieurs blocs CDS -> une seule pile quotidienne (même grille).
     daily <- tryCatch(terra::rast(f), error = function(e) e)
     if (inherits(daily, "error")) return(echec("read_error", daily))
   } else {

@@ -474,6 +474,24 @@ fiches PDF par UGF. ADR 0003 de l'app acceptée (pilotage par IA ouvert à
 tous, tout client MCP, avertissement). Aucune release cœur requise (brief
 `2026-11-15-plan-nemetonshiny-v2026.11.1`).
 
+### 2026-11-22 — v2026.11.39 : E-OBS au nouveau format du CDS
+
+**Constat.** Relance de la Colombière (`run_20261122154945_eghc`) sur le cœur
+2026.11.38 : le message d'erreur E-OBS, enfin lisible, montre que **toutes** les
+requêtes E-OBS échouent (« invalid request »). Le CDS a retiré `period` du jeu
+`insitu-gridded-observations-europe` et exige un `licence_type`. Chaque requête
+livre la série complète depuis 1950 : 4,34 Go par variable à 0,1°, 0,83 Go à
+0,25° (mesuré). Les versions 28.0e à 33.0e exigent la licence de recherche ;
+la 34.0e accepte la licence ouverte. 0,1° conservé (décision de Pascal).
+**Cœur (cette release).** Requête sans `period`, avec licence, version 34.0e par
+défaut ; un seul fichier en cache par variable × version × résolution ;
+`period` ignoré avec avertissement ; étés sélectionnés avant le découpage de
+l'emprise ; nouvel accesseur `eobs_cached_file()`.
+**App.** Brief `vers-nemetonshiny/2026-11-22-eobs-nouveau-format-cds.md` : cache
+global au lieu d'un cache par projet (3 × 4,3 Go sinon), accès par
+`eobs_cached_file()`, étapes `regen_eobs_rr/tg` qui ne disent plus `ok` sur un
+échec ; plancher `nemeton (>= 2026.11.39)`.
+
 ### 2026-11-22 — v2026.11.38 : moteurs plafonnés orphelins
 
 **Constat.** Relance du « Tout calculer » sur la Colombière

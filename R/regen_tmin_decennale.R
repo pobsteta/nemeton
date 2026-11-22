@@ -38,7 +38,7 @@
 #'   `years` through [load_eobs_source()]. Ignored when `tn` is given.
 #' @param cache_dir Directory of the downloaded files (default: the shared
 #'   machine cache, `file.path(get_global_cache_dir(), "eobs")`).
-#' @param version E-OBS version (default `"33.0e"` for KNMI, `"30.0e"` for the
+#' @param version E-OBS version (default `"33.0e"` for KNMI, `"34.0e"` for the
 #'   CDS).
 #' @param progress_callback Optional progress callback (see
 #'   [load_eobs_source()]).
@@ -76,7 +76,7 @@ regen_tmin_decennale <- function(units, tn = NULL, years = 1991:2020,
   geom <- sf::st_transform(sf::st_geometry(units), 3035)
   zone <- sf::st_buffer(sf::st_union(geom), 15000)
 
-  if (is.null(version)) version <- if (identical(source, "cds")) "30.0e" else "33.0e"
+  if (is.null(version)) version <- if (identical(source, "cds")) "34.0e" else "33.0e"
   if (is.null(tn) && identical(source, "knmi")) {
     emit <- function(payload) {
       if (!is.null(progress_callback)) progress_callback(payload)

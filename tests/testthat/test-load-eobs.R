@@ -95,17 +95,6 @@ test_that("load_eobs_source rejects an unknown variable", {
                "var")
 })
 
-test_that("E-OBS period block inference covers a within-block year range", {
-  # Bloc courant (ouvert) : la borne haute suit l'année demandée la plus récente
-  # -> plus de plafond figé à 2024 (régression v0.139.0).
-  expect_identical(nemeton:::.eobs_cds_period(2014:2020), "2011_2020")
-  expect_identical(nemeton:::.eobs_cds_period(2015:2025), "2011_2025")
-  expect_identical(nemeton:::.eobs_cds_period(2011:2030), "2011_2030")
-  # Bloc clos : borne réelle, inchangée.
-  expect_identical(nemeton:::.eobs_cds_period(1996:2005), "1995_2010")
-  expect_null(nemeton:::.eobs_cds_period(c(2008, 2015)))   # chevauche 2 blocs
-})
-
 test_that("load_eobs_source output feeds microclimate_detect_years", {
   skip_if_not_installed("terra")
   # 4 ans pour laisser detect_years choisir moyenne vs canicule.
@@ -116,7 +105,7 @@ test_that("load_eobs_source output feeds microclimate_detect_years", {
   expect_true(all(c("year_moyenne", "year_canicule") %in% names(det)))
 })
 
-test_that(".eobs_cds_fetch normalise version/résolution en underscore pour le CDS", {
+test_that(".eobs_cds_fetch envoie la requête de novembre 2026 : sans période, avec licence", {
   skip_if_not_installed("ecmwfr")
   captured <- NULL
   testthat::local_mocked_bindings(
@@ -125,11 +114,32 @@ test_that(".eobs_cds_fetch normalise version/résolution en underscore pour le C
   # wf_request factice ne renvoie rien -> erreur explicite (plus de NULL muet).
   expect_error(nemeton:::.eobs_cds_fetch("maximum_temperature", years = 2022L,
                             cache_dir = withr::local_tempdir(),
-                            version = "30.0e", resolution = "0.1deg"),
+                            version = "34.0e", resolution = "0.1deg"),
                "returned no\\s+file")
-  expect_identical(captured$version, "30_0e")          # point -> underscore
+  expect_identical(captured$version, "34_0e")          # point -> underscore
   expect_identical(captured$grid_resolution, "0_1deg")
-  expect_identical(captured$period, "2011_2022")       # borne haute = année demandée
+  # Le CDS refuse toute requête qui porte encore `period` (« invalid request »).
+  expect_false("period" %in% names(captured))
+  expect_identical(captured$licence_type, "open_data_licence")
+})
+
+test_that("la licence suit la version E-OBS", {
+  expect_identical(nemeton:::.eobs_licence("34.0e"), "open_data_licence")
+  expect_identical(nemeton:::.eobs_licence("35_0e"), "open_data_licence")
+  expect_identical(nemeton:::.eobs_licence("30.0e"), "restricted_research_licence")
+  expect_identical(nemeton:::.eobs_licence("v33.0e"), "restricted_research_licence")
+  expect_identical(nemeton:::.eobs_licence("bizarre"), "restricted_research_licence")
+})
+
+test_that("period est ignoré, avec un avertissement", {
+  skip_if_not_installed("terra")
+  rlang::reset_warning_verbosity("nemeton_eobs_period")
+  local_mocked_bindings(.eobs_cds_fetch = function(...) stop("no CDS"))
+  vus <- character(0)
+  withCallingHandlers(
+    load_eobs_source(aoi = NULL, years = 2018, source = "cds", period = "2011_2024"),
+    warning = function(w) { vus <<- c(vus, conditionMessage(w)); invokeRestart("muffleWarning") })
+  expect_true(any(grepl("`period` is ignored", vus, fixed = TRUE)))
 })
 
 test_that(".eobs_cds_fetch refuses a zip-slip CDS archive (audit 1.0, sécurité)", {
@@ -153,18 +163,17 @@ test_that(".eobs_cds_fetch refuses a zip-slip CDS archive (audit 1.0, sécurité
   expect_error(
     nemeton:::.eobs_cds_fetch("maximum_temperature", years = 2022L,
                               cache_dir = cache_dir,
-                              version = "30.0e", resolution = "0.1deg"),
+                              version = "34.0e", resolution = "0.1deg"),
     "unsafe entry")
   expect_false(file.exists(file.path(root, "evil.nc")))
 })
 
-test_that(".eobs_cds_fetch reuses a cached block without re-downloading", {
+test_that(".eobs_cds_fetch reuses the cached series without re-downloading", {
   skip_if_not_installed("ecmwfr")
   cache_dir <- withr::local_tempdir()
-  # Pré-seed le fichier de cache attendu pour (var × période × version × résolution).
-  period <- nemeton:::.eobs_cds_period(2015:2020)          # "2011_2020"
-  ncf <- nemeton:::.eobs_cache_file("maximum_temperature", period,
-                                    "30.0e", "0.1deg", cache_dir)
+  # Pré-seed le fichier de cache attendu pour (var × série × version × résolution).
+  ncf <- nemeton:::.eobs_cache_file("maximum_temperature", nemeton:::.EOBS_CDS_SERIE,
+                                    "34.0e", "0.1deg", cache_dir)
   writeLines("stub", ncf)
   called <- FALSE
   testthat::local_mocked_bindings(
@@ -172,7 +181,7 @@ test_that(".eobs_cds_fetch reuses a cached block without re-downloading", {
     .package = "ecmwfr")
   out <- nemeton:::.eobs_cds_fetch("maximum_temperature", years = 2015:2020,
                                    cache_dir = cache_dir,
-                                   version = "30.0e", resolution = "0.1deg")
+                                   version = "34.0e", resolution = "0.1deg")
   expect_identical(normalizePath(out), normalizePath(ncf)) # cache-hit renvoyé
   expect_false(called)                                     # AUCUN re-téléchargement
 })
@@ -196,29 +205,6 @@ test_that(".eobs_summer_by_year drops an incomplete summer with a warning", {
   # Que des étés incomplets -> erreur explicite.
   expect_error(suppressWarnings(nemeton:::.eobs_summer_by_year(juin, months = 6:8)),
                "No E-OBS summer layers")
-})
-
-test_that(".eobs_cds_periods splits years across CDS blocks", {
-  expect_identical(nemeton:::.eobs_cds_periods(c(2008, 2015)),
-                   c("1995_2010", "2011_2015"))
-  expect_identical(nemeton:::.eobs_cds_periods(2014:2020), "2011_2020")
-  expect_error(nemeton:::.eobs_cds_periods(1940), "out of range")
-})
-
-test_that(".eobs_cds_fetch fetches every block for years spanning two blocks", {
-  skip_if_not_installed("ecmwfr")
-  cache_dir <- withr::local_tempdir()
-  f1 <- nemeton:::.eobs_cache_file("maximum_temperature", "1995_2010",
-                                   "30.0e", "0.1deg", cache_dir)
-  f2 <- nemeton:::.eobs_cache_file("maximum_temperature", "2011_2015",
-                                   "30.0e", "0.1deg", cache_dir)
-  writeLines("stub", f1); writeLines("stub", f2)
-  expect_message(
-    out <- nemeton:::.eobs_cds_fetch("maximum_temperature", years = c(2008, 2015),
-                                     cache_dir = cache_dir, version = "30.0e",
-                                     resolution = "0.1deg"),
-    "2 CDS blocks")
-  expect_identical(normalizePath(out), normalizePath(c(f1, f2)))
 })
 
 test_that("load_eobs_source keeps the CDS error message in a warning and the payload", {
@@ -276,4 +262,30 @@ test_that("an upstream message with braces is reported, not parsed by cli", {
     warning = function(x) { w <<- conditionMessage(x); invokeRestart("muffleWarning") })
   expect_null(out)
   expect_match(w, "'grid_resolution': '0_1deg'", fixed = TRUE)
+})
+
+test_that("les étés demandés sont choisis avant le découpage de l'emprise", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  # Série longue : seule l'année demandée doit atteindre crop/mask.
+  daily <- .eobs_daily(years = c(2014, 2016, 2018))
+  aoi <- sf::st_as_sfc(sf::st_bbox(c(xmin = 3, ymin = 45, xmax = 4, ymax = 46),
+                                    crs = sf::st_crs(4326)))
+  vu <- NULL
+  local_mocked_bindings(crop = function(x, ...) { vu <<- terra::nlyr(x); x },
+                        .package = "terra")
+  out <- nemeton:::.eobs_summer_by_year(daily, aoi = aoi, years = 2016L)
+  expect_identical(names(out), "2016")
+  expect_equal(vu, 92L)                      # juin-août 2016, pas toute la pile
+})
+
+test_that("eobs_cached_file rend la série en cache, sinon NULL", {
+  cd <- withr::local_tempdir()
+  expect_null(eobs_cached_file("rr", cache_dir = cd))
+  f <- nemeton:::.eobs_cache_file("precipitation_amount", nemeton:::.EOBS_CDS_SERIE,
+                                  "34.0e", "0.1deg", cd)
+  writeLines("stub", f)
+  expect_identical(eobs_cached_file("rr", cache_dir = cd), f)
+  expect_null(eobs_cached_file("rr", version = "30.0e", cache_dir = cd))
+  expect_error(eobs_cached_file("zz", cache_dir = cd), "Unknown E-OBS")
 })

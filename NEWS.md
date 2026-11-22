@@ -1,3 +1,29 @@
+# nemeton 2026.11.39 (2026-11-22)
+
+## Corrections
+
+- **E-OBS : nouveau format du CDS** (constaté le 2026-11-22). Toutes les
+  requêtes E-OBS échouaient en « invalid request » : le CDS a retiré le champ
+  `period` du jeu `insitu-gridded-observations-europe` et exige désormais un
+  `licence_type`. Chaque requête livre maintenant **la série complète depuis
+  1950** dans un seul netCDF par variable (4,34 Go à 0,1°, 0,83 Go à 0,25°,
+  mesuré).
+  - `load_eobs_source()` ne transmet plus `period`, déclare la licence
+    (`open_data_licence` à partir de la version 34.0e,
+    `restricted_research_licence` avant) et passe par défaut à la version
+    **34.0e** (seule version en licence ouverte). Un seul fichier en cache
+    par variable × version × résolution.
+  - L'argument `period` est conservé mais ignoré, avec un avertissement une
+    fois par session.
+  - `.eobs_summer_by_year()` choisit les étés demandés **avant** le découpage
+    sur l'emprise : sur ~27 000 couches journalières, découper d'abord
+    lisait des Go pour rien.
+  - `regen_tmin_decennale(source = "cds")` et `inst/datasources/FR.json`
+    passent aussi à 34.0e.
+  - Nouvel accesseur `eobs_cached_file()` : chemin de la série en cache (cache
+    global par défaut), pour que l'app partage un seul téléchargement entre
+    projets au lieu de reconstruire les noms de fichiers.
+
 # nemeton 2026.11.38 (2026-11-22)
 
 ## Nouveautés
