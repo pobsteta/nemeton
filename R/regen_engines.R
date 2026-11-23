@@ -453,7 +453,10 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     volume <- 0
     for (v in nc$var) {
       dl <- v$varsize
-      z <- ncvar_get(nc, v, start = dl, count = rep(1L, length(dl)))
+      # Variable scalaire (0 dimension : latitude/longitude du jeu CDS
+      # `timeseries`) : `varsize` est vide, on la lit entière (une valeur).
+      z <- if (length(dl) == 0L) ncvar_get(nc, v)
+           else ncvar_get(nc, v, start = dl, count = rep(1L, length(dl)))
       if (length(z) != 1L) return(FALSE)
       taille <- unname(octets[v$prec])
       volume <- volume + prod(as.numeric(dl)) * (if (is.na(taille)) 1 else taille)

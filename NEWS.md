@@ -1,3 +1,12 @@
+# nemeton (development version)
+
+- **fix : ERA5 `timeseries`, le contrôle de cache accepte les NetCDF réels du
+  CDS** (mission 042). `latitude` et `longitude` y sont des variables scalaires
+  (0 dimension) : `.rsen_era5_nc_complet()` les rejetait, le fichier valide était
+  effacé (« Discarding unreadable cache file ») et redemandé en boucle. Une
+  variable à 0 dimension est maintenant lue entière ; fichier tronqué ou
+  variable illisible restent refusés, chemin classique mcera5 inchangé.
+
 # nemeton 2026.11.43 (2026-11-23)
 
 - **ERA5 `timeseries` : une année non close est refusée avant tout appel au CDS**

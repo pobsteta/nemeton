@@ -507,3 +507,83 @@ test_that("règle bissextile unique", {
   expect_identical(nemeton:::.rsen_era5ts_njours(1900L), 365L)
   expect_identical(nemeton:::.rsen_era5ts_njours(2000L), 366L)
 })
+
+# --- Mission 042 : forme réelle de la réponse CDS `timeseries` ---------------
+# NetCDF-4, dimension unique `valid_time`, variables float sur valid_time,
+# `latitude` / `longitude` SCALAIRES (0 dimension). Construit ici, pas copié.
+.ts_fixture_cds <- function(path, times) {
+  skip_if_not_installed("ncdf4")
+  dt <- ncdf4::ncdim_def("valid_time", "seconds since 1970-01-01", as.numeric(times))
+  noms <- c("u10", "v10", "d2m", "t2m", "sp", "ssrd", "strd", "tcc", "tp", "fdir")
+  vals <- list(u10 = 3, v10 = 4, d2m = 278.15, t2m = 283.15, sp = 95000,
+               ssrd = 1.8e6, strd = 1.08e6, tcc = 0.5, tp = 0.001, fdir = 0.9e6)
+  vars <- lapply(noms, function(k) ncdf4::ncvar_def(k, "", list(dt), prec = "float"))
+  vars <- c(vars, list(ncdf4::ncvar_def("latitude", "degrees_north", list(), prec = "double"),
+                       ncdf4::ncvar_def("longitude", "degrees_east", list(), prec = "double")))
+  nc <- ncdf4::nc_create(path, vars, force_v4 = TRUE)
+  for (i in seq_along(noms)) ncdf4::ncvar_put(nc, vars[[i]], rep_len(vals[[noms[i]]], length(times)))
+  ncdf4::ncvar_put(nc, "latitude", 47.25)
+  ncdf4::ncvar_put(nc, "longitude", 5)
+  ncdf4::nc_close(nc)
+  invisible(path)
+}
+
+.tt_annee <- function(annee) as.numeric(seq(as.POSIXct(sprintf("%d-01-01", annee), tz = "UTC"),
+                                            by = "hour", length.out = 8760))
+
+test_that("m042 cas 1 : la forme réelle du CDS est acceptée, couverte et lue", {
+  cd <- withr::local_tempdir()
+  f <- nemeton:::.rsen_era5ts_nom(cd, 5, 47.25, 2018L)
+  .ts_fixture_cds(f, .tt_annee(2018L))
+  expect_true(nemeton:::.rsen_era5_nc_complet(f))
+  expect_true(nemeton:::.rsen_era5_cache_ok(f))
+  expect_true(file.exists(f))                       # pas supprimé
+  expect_true(nemeton:::.rsen_era5ts_en_cache(cd, 5, 47.25, 2018L))
+  d <- nemeton:::.rsen_era5ts_lire_maille(f, 2018L)
+  expect_identical(names(d), .COLS_MICROCLIMF)
+  expect_equal(nrow(d), 8760L)
+  expect_equal(d$temp[1], 10, tolerance = 1e-4)   # float32
+})
+
+test_that("m042 cas 3 : variable scalaire lue entière ; tronqué ou illisible refusé", {
+  f <- withr::local_tempfile(fileext = ".nc")
+  .ts_fixture_cds(f, .tt_annee(2018L))
+  expect_true(nemeton:::.rsen_era5_nc_complet(f))
+  g <- withr::local_tempfile(fileext = ".nc")
+  writeBin(readBin(f, "raw", 300L), g)
+  expect_false(nemeton:::.rsen_era5_nc_complet(g))
+  h <- withr::local_tempfile(fileext = ".nc")
+  writeBin(charToRaw("<html>erreur</html>"), h)
+  expect_false(nemeton:::.rsen_era5_nc_complet(h))
+})
+
+test_that("m042 cas 2 : chaîne complète, 4 envois, aucun fichier écarté", {
+  cd <- withr::local_tempdir()
+  acces <- .acces_ts_faux()
+  acces$extraire <- function(h, req_k, cache_dir)
+    .ts_fixture_cds(file.path(cache_dir, sub("\\.zip$", ".nc", req_k$target)), .tt_annee(2023L))
+  acces$soumettre <- function(req_k, cache_dir) {
+    acces$appels$req[[length(acces$appels$req) + 1L]] <- req_k
+    list(req = req_k, cache = file.path(cache_dir, "x"))
+  }
+  msgs <- character()
+  d <- withCallingHandlers(
+    nemeton:::.rsen_forcage_era5(4.8, 47.3, 2023L, cd, source = "timeseries",
+                                 acces_ts = acces, pause = function(...) NULL),
+    message = function(m) { msgs <<- c(msgs, conditionMessage(m)); invokeRestart("muffleMessage") },
+    warning = function(w) { msgs <<- c(msgs, conditionMessage(w)); invokeRestart("muffleWarning") })
+  expect_s3_class(d, "data.frame")
+  expect_equal(nrow(d), 8760L)
+  expect_length(acces$appels$req, 4L)
+  expect_false(any(grepl("Discarding", msgs)))
+})
+
+test_that("m042 cas 5 : le vrai fichier CDS (hors CI) est accepté et lu", {
+  zp <- path.expand("~/.cache/nemetonplateforme/m042/reponse-cds-reelle-2018.zip")
+  skip_if_not(file.exists(zp), "réponse CDS réelle absente (hors dépôt)")
+  skip_if_not_installed("ncdf4")
+  d <- withr::local_tempdir()
+  nc <- nemeton:::.rsen_era5ts_extraire(zp, file.path(d, "reel.nc"))
+  expect_true(nemeton:::.rsen_era5_nc_complet(nc))
+  expect_equal(nrow(nemeton:::.rsen_era5ts_lire_maille(nc, 2018L)), 8760L)
+})

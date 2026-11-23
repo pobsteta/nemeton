@@ -160,6 +160,16 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-24 — fix ERA5 `timeseries` : cache à variables scalaires (mission 042 de nemetonplateforme)
+
+Essai réel de la Colombière : le CDS livre `latitude`/`longitude` scalaires ;
+`.rsen_era5_nc_complet()` (`start = varsize` vide) rejetait tout fichier. Correctif :
+lecture entière des variables à 0 dimension. Choix : correctif dans le contrôle
+commun (pas un contrôle propre au `timeseries`), strictement plus permissif sur
+un seul cas (0 dimension), signature + taille + lecture conservées ; fixture de
+test construite par `ncdf4` à la forme réelle. Version dev `2026.11.43.9000`, pas
+de release.
+
 ### 2026-11-23 — v2026.11.43 (mission 041 de nemetonplateforme, PR #687)
 
 ERA5 `timeseries` : refus d'une année non close (année en cours, future, ou
