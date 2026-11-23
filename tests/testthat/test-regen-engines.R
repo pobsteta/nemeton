@@ -1130,7 +1130,7 @@ test_that("sonder turns a rejected CDS job into an error instead of waiting", {
   expect_s3_class(e, "rsen_era5_limite")
   expect_true(nemeton:::.rsen_era5_erreur_limite(e))
   h$get_status <- function() "accepted"
-  expect_equal(sonder(h), "en_attente")
+  expect_equal(sonder(h), "en_file")
   local_mocked_bindings(.rsen_era5_raison_cds = function(url) "bad request")
   h$get_status <- function() "failed"
   e <- tryCatch(sonder(h), error = function(e) e)
@@ -1232,4 +1232,113 @@ test_that("un acces sans url ni purger garde l'ancien comportement", {
   f <- .acces_factice(attente)
   nemeton:::.rsen_era5_lot(taches, cd, acces = f$acces, pause = function(s) NULL)
   expect_false(dir.exists(nemeton:::.rsen_era5_journal_dir(cd)))
+})
+
+# --- ERA5 au format du CDS actuel et attente en file (brief 2026-11-23) ------
+
+test_that("ERA5 requests use data_format/download_format, not the legacy format key", {
+  req <- nemeton:::.rsen_era5_cles_cds(list(
+    list(dataset_short_name = "reanalysis-era5-single-levels", format = "netcdf",
+         target = "era5_2018_2018_7.zip")))
+  expect_null(req[[1]]$format)
+  expect_equal(req[[1]]$data_format, "netcdf")
+  expect_equal(req[[1]]$download_format, "zip")
+  expect_equal(req[[1]]$target, "era5_2018_2018_7.zip")
+  skip_if_not_installed("mcera5")
+  vraie <- nemeton:::.rsen_era5_requete_annee(5.05, 47.3, 2018L)
+  expect_length(vraie, 12L)
+  expect_false(any(vapply(vraie, function(r) "format" %in% names(r), TRUE)))
+  expect_true(all(vapply(vraie, `[[`, "", "data_format") == "netcdf"))
+  expect_true(all(vapply(vraie, `[[`, "", "download_format") == "zip"))
+})
+
+# Faux CDS à états : chaque handle déroule `etats` (un état par sondage, le
+# dernier se répète), `"pret"` écrit le .nc.
+.acces_etats <- function(etats) {
+  st <- new.env()
+  st$soumissions <- character(0)
+  st$acces <- list(
+    soumettre = function(req_k, cache_dir) {
+      st$soumissions <- c(st$soumissions, req_k$target)
+      h <- new.env(); h$k <- 0L; h
+    },
+    sonder = function(h) {
+      h$k <- h$k + 1L
+      etats[min(h$k, length(etats))]
+    },
+    extraire = function(h, req_k, cache_dir)
+      .nc_ok(file.path(cache_dir, sub("\\.zip$", ".nc", req_k$target))),
+    liberer = function(h) invisible(NULL))
+  st
+}
+
+test_that("a job still queued at the CDS is never resubmitted for delai_max", {
+  req <- .rsen_req_factice(2018L, n = 1L)
+  cd <- withr::local_tempdir()
+  taches <- nemeton:::.rsen_era5_taches(req, cd, 2018L)
+  # 10 sondages `accepted` (10 x 60 s = 600 s > delai_max = 100), puis prêt.
+  f <- .acces_etats(c(rep("en_file", 10), "pret"))
+  horloge <- 0
+  nemeton:::.rsen_era5_lot(taches, cd, acces = f$acces, max_tries = 1L,
+                           delai_max = 100,
+                           pause = function(s) horloge <<- horloge + 60,
+                           maintenant = function() horloge)
+  expect_length(f$soumissions, 1L)
+  expect_true(nemeton:::.rsen_era5_nc_complet(taches[[1]]$nc))
+})
+
+test_that("a running job is cut delai_max after it STARTED, not after submission", {
+  req <- .rsen_req_factice(2018L, n = 1L)
+  cd <- withr::local_tempdir()
+  taches <- nemeton:::.rsen_era5_taches(req, cd, 2018L)
+  # 5 tours en file (300 s), puis démarré et jamais fini.
+  f <- .acces_etats(c(rep("en_file", 5), "en_cours"))
+  horloge <- 0
+  expect_error(nemeton:::.rsen_era5_lot(
+    taches, cd, acces = f$acces, max_tries = 1L, delai_max = 100,
+    pause = function(s) horloge <<- horloge + 60,
+    maintenant = function() horloge), "still running after 100 s")
+  # Démarré vers 300 s : coupé après 400 s, pas dès 100 s de soumission.
+  expect_gte(horloge, 400)
+  expect_length(f$soumissions, 1L)
+})
+
+test_that("the batch reports how long the oldest job has been queued", {
+  req <- .rsen_req_factice(2018L, n = 2L)
+  cd <- withr::local_tempdir()
+  taches <- nemeton:::.rsen_era5_taches(req, cd, 2018L, "moyenne")
+  f <- .acces_etats(c(rep("en_file", 12), "pret"))
+  horloge <- 0
+  vus <- list()
+  nemeton:::.rsen_era5_lot(taches, cd, acces = f$acces,
+                           emit = function(p) vus[[length(vus) + 1L]] <<- p,
+                           intervalle_attente = 300,
+                           pause = function(s) horloge <<- horloge + 60,
+                           maintenant = function() horloge)
+  att <- Filter(function(p) identical(p$current, "regen_expo:era5_attente"), vus)
+  expect_gte(length(att), 2L)
+  expect_true(all(vapply(att, `[[`, "", "etat_cds") == "accepted"))
+  expect_true(all(diff(vapply(att, `[[`, 0L, "attente_file_s")) > 0))
+  expect_equal(att[[1]]$mois_i, 0L)
+  expect_equal(att[[1]]$mois_n, 2L)
+  # Les événements de mois terminés restent un par mois.
+  mois <- Filter(function(p) identical(p$current, "regen_expo:era5_mois"), vus)
+  expect_equal(vapply(mois, `[[`, 0L, "mois_i"), 1:2)
+})
+
+test_that("sonder maps the CDS accepted/running states", {
+  skip_if_not_installed("ecmwfr")
+  h <- new.env()
+  h$update_status <- function(fail_is_error = TRUE) invisible(h)
+  sonder <- nemeton:::.rsen_era5_acces_cds()$sonder
+  h$get_status <- function() "accepted"
+  expect_equal(sonder(h), "en_file")
+  h$get_status <- function() "running"
+  expect_equal(sonder(h), "en_cours")
+  h$get_status <- function() "successful"
+  h$download <- function() invisible(h)
+  h$is_success <- function() FALSE
+  expect_equal(sonder(h), "en_cours")
+  h$is_success <- function() TRUE
+  expect_equal(sonder(h), "pret")
 })

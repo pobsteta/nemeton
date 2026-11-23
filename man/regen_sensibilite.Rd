@@ -108,7 +108,11 @@ once, when the vegetation-structure PAI is built/read), \code{"regen_expo:microc
 (\code{category}/\code{year}/\code{i}/\code{n}, once per reference year),
 \code{"regen_expo:era5_mois"} (\code{category}/\code{year}/\code{mois_i}/\code{mois_n},
 once per monthly ERA5 file completed, cached ones first; \code{mois_i} counts up
-to \code{mois_n}, the size of the batch) and \code{"regen_expo:complete"}. No-op
+to \code{mois_n}, the size of the batch), \code{"regen_expo:era5_attente"}
+(\code{category}/\code{year}/\code{mois_i}/\code{mois_n}/\code{attente_file_s}/\code{etat_cds},
+every 5 min while ERA5 requests wait at the CDS: \code{attente_file_s} is the age
+in seconds of the oldest active request, \code{etat_cds} its CDS state,
+\code{"accepted"} (queued) or \code{"running"}) and \code{"regen_expo:complete"}. No-op
 when \code{NULL}; never fatal. The monthly ERA5 requests of all years are
 submitted together (at most \code{getOption("nemeton.era5_max_simultanees", 6)}
 at once) so their CDS queue waits overlap.}

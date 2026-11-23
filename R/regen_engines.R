@@ -516,6 +516,8 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #
 # `sonder` lit l'état du job lui-même : ecmwfr 2.0.3 range un job `rejected` ou
 # `dismissed` parmi les requêtes en attente, qui ne se termineraient donc jamais.
+# Il rend `"pret"`, `"en_file"` (CDS `accepted`), `"en_cours"` (`running`, ou
+# fichier pas encore entier) ou `"en_attente"` (état inconnu).
 .rsen_era5_acces_cds <- function() {
   list(
     soumettre = function(req_k, cache_dir) {
@@ -538,8 +540,12 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
       etat <- h$get_status()
       if (identical(etat, "successful")) {
         h$download()
-        return(if (h$is_success()) "pret" else "en_attente")
+        return(if (h$is_success()) "pret" else "en_cours")
       }
+      # `accepted` : en file, pas encore démarré. `running` : traité par le CDS.
+      # Le lot ne coupe jamais le premier (il perdrait sa place dans la file).
+      if (identical(etat, "accepted")) return("en_file")
+      if (identical(etat, "running")) return("en_cours")
       if (length(etat) == 1L && etat %in% c("failed", "rejected", "dismissed", "deleted")) {
         raison <- .rsen_era5_raison_cds(h$get_url())
         classe <- if (grepl(.RSEN_ERA5_MOTIF_LIMITE, raison, ignore.case = TRUE))
@@ -662,13 +668,25 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 # repasse après `attente_limite` s. Les autres continuent ; l'erreur n'est levée qu'à
 # la fin, pour que tous les mois obtenus restent en cache pour la reprise.
 #
+# Délai : `delai_max` ne s'applique PAS à un job encore en file (`en_file`,
+# CDS `accepted`). Le resoumettre le renverrait en queue de file et brûlerait
+# un essai : le 2026-11-22, la file ERA5 du CDS dépassait 4 h par job, et un job
+# de la Colombière a été coupé après 6 h d'attente. Un job démarré (`en_cours`)
+# est coupé `delai_max` après son démarrage ; un état inconnu (`en_attente`),
+# `delai_max` après sa soumission.
+#
 # Progression : un `regen_expo:era5_mois` par mois TERMINÉ (en cache compris,
-# émis d'abord), `mois_i` croissant de 1 à `mois_n` = taille du lot.
+# émis d'abord), `mois_i` croissant de 1 à `mois_n` = taille du lot. Pendant
+# l'attente, un `regen_expo:era5_attente` toutes les `intervalle_attente`
+# secondes : `mois_i` (mois terminés), `mois_n`, `attente_file_s` (ancienneté
+# du plus vieux job actif depuis sa soumission) et `etat_cds` (`"accepted"`,
+# `"running"` ou `NA`) de ce job.
 .rsen_era5_lot <- function(taches, cache_dir, emit = NULL,
                            acces = .rsen_era5_acces_cds(),
                            max_simultanees = NULL, intervalle = 30,
                            max_tries = 3L, base_wait = 15,
                            attente_limite = 60, delai_max = 6 * 3600,
+                           intervalle_attente = 300,
                            pause = Sys.sleep,
                            maintenant = Sys.time) {
   plafond <- .rsen_era5_max_simultanees(max_simultanees)
@@ -690,6 +708,8 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   prochain <- rep(-Inf, n)
   handles  <- vector("list", n)
   soumis_a <- rep(NA_real_, n)
+  demarre_a <- rep(NA_real_, n)
+  etat_job <- rep(NA_character_, n)
   erreurs  <- list()
   file_att <- a_faire
   actifs   <- integer(0)
@@ -711,9 +731,12 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 
   plafond_eff <- plafond
   limite_depuis <- rep(NA_real_, n)
+  dernier_signal <- t_num()
   echouer <- function(i, e) {
     acces$liberer(handles[[i]])
     handles[i] <<- list(NULL)
+    demarre_a[i] <<- NA_real_
+    etat_job[i] <<- NA_character_
     actifs <<- setdiff(actifs, i)
     if (.rsen_era5_erreur_limite(e)) {
       # Limite du CDS : pas un essai perdu. On garde le nombre de requêtes que le
@@ -771,13 +794,34 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
         # Une place se libère : on retente une requête de plus que ce qui passait.
         plafond_eff <- min(plafond, plafond_eff + 1L)
         signaler(taches[[i]])
-      } else if (t_num() - soumis_a[i] > delai_max) {
-        echouer(i, simpleError(sprintf(
-          "ERA5 request still queued after %d s: %s.", as.integer(delai_max),
-          basename(taches[[i]]$nc))))
+      } else {
+        etat_job[i] <- etat
+        if (identical(etat, "en_cours") && is.na(demarre_a[i])) demarre_a[i] <- t_num()
+        # Un job en file garde sa place, sans limite de durée.
+        if (!identical(etat, "en_file")) {
+          depuis <- if (identical(etat, "en_cours")) demarre_a[i] else soumis_a[i]
+          if (t_num() - depuis > delai_max) {
+            echouer(i, simpleError(sprintf(
+              "ERA5 request still %s after %d s: %s.",
+              if (identical(etat, "en_cours")) "running" else "queued",
+              as.integer(delai_max), basename(taches[[i]]$nc))))
+          }
+        }
       }
     }
     noter()
+    if (!is.null(emit) && length(actifs) &&
+        t_num() - dernier_signal >= intervalle_attente) {
+      dernier_signal <- t_num()
+      plus_vieux <- actifs[which.min(soumis_a[actifs])]
+      etat_cds <- unname(c(en_file = "accepted", en_cours = "running")[etat_job[plus_vieux]])
+      emit(list(current = "regen_expo:era5_attente",
+                category = taches[[plus_vieux]]$category,
+                year = taches[[plus_vieux]]$year,
+                mois_i = fait, mois_n = n,
+                attente_file_s = as.integer(t_num() - soumis_a[plus_vieux]),
+                etat_cds = etat_cds))
+    }
     if (length(file_att) || length(actifs)) pause(intervalle)
   }
 
@@ -838,11 +882,27 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   # 12 requêtes MENSUELLES. Chaque mensuel (~9 000 champs) reste SOUS la limite de
   # coût par requête du CDS ; une requête ANNUELLE (~105 000 champs) est rejetée
   # `403 cost limits exceeded / request too large`.
-  mcera5::build_era5_request(
+  .rsen_era5_cles_cds(mcera5::build_era5_request(
     xmin = lon - 0.05, xmax = lon + 0.05, ymin = lat - 0.05, ymax = lat + 0.05,
     start_time = as.POSIXct(sprintf("%d-01-01 00:00", annee), tz = "UTC"),
     end_time   = as.POSIXct(sprintf("%d-12-31 23:00", annee), tz = "UTC"),
-    by_month = TRUE, outfile_name = .rsen_era5_radical(annee, lon, lat))
+    by_month = TRUE, outfile_name = .rsen_era5_radical(annee, lon, lat)))
+}
+
+# Clés du CDS actuel. Le schéma de `reanalysis-era5-single-levels` n'a plus de
+# clé `format` (constaté le 2026-11-23) : il attend `data_format` (grib | netcdf)
+# et `download_format` (zip | unarchived). mcera5 0.4.0 envoie encore
+# `format = "netcdf"`, que le CDS tolère pour l'instant. On pose donc les clés
+# explicites. `zip` est conservé : la livraison est un zip à deux flux
+# (instantané + cumulé), assemblé par `bind_zipped_netcdf`, et la cible `.zip`
+# nomme le cache.
+.rsen_era5_cles_cds <- function(req) {
+  lapply(req, function(r) {
+    r$format <- NULL
+    r$data_format <- "netcdf"
+    r$download_format <- "zip"
+    r
+  })
 }
 
 .rsen_era5_abort_mcera5 <- function(cache_dir) {
@@ -1171,7 +1231,11 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #'   `"regen_expo:era5"` (`category`/`year`/`i`/`n`, once per reference year) and
 #'   `"regen_expo:era5_mois"` (`category`/`year`/`mois_i`/`mois_n`, once per
 #'   monthly ERA5 file completed, cached ones first; `mois_i` counts up to
-#'   `mois_n`, the size of the batch) and `"regen_expo:complete"`. No-op when
+#'   `mois_n`, the size of the batch), `"regen_expo:era5_attente"`
+#'   (`category`/`year`/`mois_i`/`mois_n`/`attente_file_s`/`etat_cds`, every 5 min
+#'   while ERA5 requests wait at the CDS: `attente_file_s` is the age in seconds
+#'   of the oldest active request, `etat_cds` its CDS state, `"accepted"` (queued)
+#'   or `"running"`) and `"regen_expo:complete"`. No-op when
 #'   `NULL`; never fatal. The monthly ERA5 requests of all years are submitted
 #'   together (at most `getOption("nemeton.era5_max_simultanees", 6)` at once)
 #'   so their CDS queue waits overlap.
