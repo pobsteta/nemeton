@@ -17,13 +17,15 @@
 #   (m = (1 - lsm) * 1.285 + 1). Avec lsm = 1 (terre), m = 1 : la correction est
 #   l'identité. Absent du jeu `timeseries`, on pose donc 1 : aucune correction
 #   côtière (différence assumée pour un point littoral).
-# - Horodatage : extract_clim() ne décale pas obs_time (rad_calc lisse les
-#   cumuls autour de l'heure sans la déplacer). Ici les flux du jeu sont déjà
-#   horaires (J m-2 par heure) : aucun décalage, aucune dé-accumulation.
-# - Rayonnement : swdown = ssrd / 3600, lwdown = strd / 3600 ; difrad =
-#   (ssrd - fdir) / 3600 borné à [0, swdown] (fdir est déjà sur le plan
-#   horizontal). Le chemin classique passe par rad_calc (ré-échantillonnage sur
-#   le ciel clair), donc les deux chemins ne coïncident pas au W/m² près.
+# - Horodatage : extract_clim() ne décale pas obs_time, mais rad_calc() recale le
+#   rayonnement d'une demi-heure (valeur instantanée à t). Ici les flux du jeu
+#   sont déjà horaires (J m-2 par heure, moyenne de l'heure) : aucun décalage,
+#   aucune dé-accumulation.
+# - Rayonnement : DIFFÉRENT de mcera5, par décision. swdown = ssrd / 3600, lwdown
+#   = strd / 3600, difrad = (ssrd - fdir) / 3600 borné à [0, swdown], sans
+#   rad_calc. fdir d'ERA5 est mesuré sur un plan horizontal ; mcera5 le traite
+#   comme un direct normal (x sin h) et surestime le diffus (~x2 par ciel clair).
+# - Aucun repli automatique vers le chemin classique (voir `.rsen_era5ts_abort`).
 
 .RSEN_ERA5TS_DATASET <- "reanalysis-era5-single-levels-timeseries"
 .RSEN_ERA5TS_VARS <- c("2m_temperature", "2m_dewpoint_temperature",
@@ -92,9 +94,10 @@
 # Toutes les mailles d'un point et d'une année sont en cache, complètes.
 .rsen_era5ts_en_cache <- function(cache_dir, lon, lat, annee) {
   m <- .rsen_era5ts_mailles(lon, lat)
-  all(vapply(seq_len(nrow(m)), function(k)
-    .rsen_era5_cache_ok(.rsen_era5ts_nom(cache_dir, m$x[k], m$y[k], annee)),
-    logical(1)))
+  all(vapply(seq_len(nrow(m)), function(k) {
+    f <- .rsen_era5ts_nom(cache_dir, m$x[k], m$y[k], annee)
+    .rsen_era5_cache_ok(f) && .rsen_era5ts_couvre(f, annee)
+  }, logical(1)))
 }
 
 # Extraction d'un zip `timeseries` : un seul NetCDF dedans.
@@ -123,13 +126,13 @@
 
 # Lecture d'un NetCDF `timeseries` -> variables horaires d'une maille, converties.
 .rsen_era5ts_lire_maille <- function(nc_path, annee, annee_complete = TRUE) {
+  .rsen_era5ts_exiger_ncdf4()
   nc <- ncdf4::nc_open(nc_path)
   on.exit(ncdf4::nc_close(nc), add = TRUE)
   manquantes <- setdiff(.RSEN_ERA5TS_NC, names(nc$var))
   if (length(manquantes)) {
-    stop(structure(class = c("rsen_era5_echec", "error", "condition"), list(
-      message = sprintf("ERA5 timeseries file lacks variable(s): %s.",
-                        paste(manquantes, collapse = ", ")), call = NULL)))
+    stop(sprintf("file lacks variable(s): %s.", paste(manquantes, collapse = ", ")),
+         call. = FALSE)
   }
   tn <- grep("time", names(nc$dim), value = TRUE)[1L]
   if (is.na(tn)) stop("ERA5 timeseries file has no time dimension.", call. = FALSE)
@@ -177,4 +180,39 @@
     }
   }
   out
+}
+
+# ncdf4 est en Suggests : message clair avant usage.
+.rsen_era5ts_exiger_ncdf4 <- function() {
+  if (!requireNamespace("ncdf4", quietly = TRUE)) {
+    cli::cli_abort(c(
+      "Package {.pkg ncdf4} is required to read ERA5 {.field timeseries} files.",
+      i = "Install it, or set {.code options(nemeton.era5_source = \"classique\")}."),
+      class = "rsen_era5ts_echec")
+  }
+  invisible(TRUE)
+}
+
+# Échec du jeu `timeseries` : jamais de repli automatique (il rouvrirait des
+# heures de file et mélangerait deux diffus).
+.rsen_era5ts_abort <- function(cause) {
+  cli::cli_abort(c(
+    "ERA5 {.field timeseries} forcing failed: {cause}",
+    i = "To use the slower classic monthly path explicitly, set {.code options(nemeton.era5_source = \"classique\")}."),
+    class = "rsen_era5ts_echec")
+}
+
+# Le fichier couvre l'année entière en pas horaires (jours entiers de 24 h).
+.rsen_era5ts_couvre <- function(path, annee) {
+  isTRUE(tryCatch({
+    .rsen_era5ts_exiger_ncdf4()
+    nc <- ncdf4::nc_open(path)
+    on.exit(ncdf4::nc_close(nc), add = TRUE)
+    tn <- grep("time", names(nc$dim), value = TRUE)[1L]
+    td <- nc$dim[[tn]]
+    base <- as.POSIXct(gsub(".*since ", "", td$units), tz = "UTC")
+    t <- base + as.numeric(td$vals) * (if (grepl("hours", td$units)) 3600 else 1)
+    njours <- if (annee %% 4 == 0 && (annee %% 100 != 0 || annee %% 400 == 0)) 366L else 365L
+    sum(format(t, "%Y", tz = "UTC") == as.character(annee)) == 24L * njours
+  }, error = function(e) FALSE))
 }

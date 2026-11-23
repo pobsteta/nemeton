@@ -71,10 +71,6 @@ test_that("cas 4 : aucune valeur négative sur swdown, difrad, lwdown, precip", 
   .ts_fixture(f, .ts_heures(3), list(ssrd = c(-50, 0, 1e6), strd = -10, tp = c(-1e-7, 0, 1e-3)))
   d <- nemeton:::.rsen_era5ts_lire_maille(f, 2023L, annee_complete = FALSE)
   for (cn in c("swdown", "difrad", "lwdown", "precip")) expect_true(all(d[[cn]] >= 0), info = cn)
-  # Le même bornage sert au chemin classique.
-  m <- data.frame(swdown = -1, difrad = -2, lwdown = -3, precip = -4)
-  expect_true(all(suppressMessages(nemeton:::.rsen_clamp_flux(
-    m, cols = c(nemeton:::.RSEN_NONNEG_COLS, "lwdown"))) == 0))
 })
 
 test_that("cas 5 : relhum et vent suivent les formules de mcera5::extract_clim", {
@@ -115,7 +111,8 @@ test_that("cas 7 : 4 mailles voisines, poids = inverse de la distance (focal_dis
   skip_if_not_installed("mcera5")
   skip_if_not_installed("plyr")
   ref <- get("focal_dist", asNamespace("mcera5"))(4.8, 47.3)
-  expect_equal(sort(m$w), sort(ref$inverse_weight))
+  expect_equal(m$x, ref$x); expect_equal(m$y, ref$y)
+  expect_equal(m$w, ref$inverse_weight)
   # Sur la grille : une seule maille.
   expect_equal(nemeton:::.rsen_era5ts_mailles(4.75, 47.25)$w, 1)
 
@@ -212,28 +209,6 @@ test_that("cas 10 : timeseries par défaut, classique par option ou argument", {
   expect_error(nemeton:::.rsen_era5_source("autre"))
 })
 
-test_that("cas 11 : timeseries en échec -> ancien chemin, avec message", {
-  cd <- withr::local_tempdir()
-  echec <- structure(class = c("rsen_era5_echec", "error", "condition"),
-                     list(message = "CDS job failed: boom", call = NULL))
-  acces <- .acces_ts_faux(echec = echec)
-  appele <- NULL
-  ncs <- NULL
-  expect_warning(
-    nemeton:::.rsen_era5_assurer(data.frame(lon = 6, lat = 48), 2019L, cd,
-      source = "timeseries", acces_ts = acces, max_tries = 1L,
-      pause = function(...) NULL,
-      construire = function(lon, lat, annee) .req_mois(annee, 2),
-      requete = function(reqs, cache_dir) {
-        appele <<- TRUE
-        for (r in reqs) .nc_ok(file.path(cache_dir, sub("\\.zip$", ".nc", r$target)))
-      },
-      combiner = function(fichiers, cible) .nc_ok(cible)),
-    "falling back to the classic")
-  expect_true(appele)
-  expect_true(file.exists(nemeton:::.rsen_era5_nom_combine(cd, 2019L, 6, 48)))
-})
-
 test_that("cas 11 bis : un refus pour limite garde le comportement d'attente puis nouvel essai", {
   cd <- withr::local_tempdir()
   limite <- structure(class = c("rsen_era5_limite", "error", "condition"),
@@ -250,6 +225,7 @@ test_that("cas 11 bis : un refus pour limite garde le comportement d'attente pui
     nemeton:::.rsen_era5_assurer(data.frame(lon = 4.75, lat = 47.25), 2023L, cd,
       source = "timeseries", acces_ts = acces, pause = function(...) NULL,
       attente_limite = 0))
+  expect_identical(n, 2L)   # refus pour limite, puis second envoi effectif
   expect_true(nemeton:::.rsen_era5ts_en_cache(cd, 4.75, 47.25, 2023L))
 })
 
@@ -264,4 +240,152 @@ test_that("cas 12 : .rsen_forcage_era5 rend le data.frame microclimf via timeser
   # Jours entiers de 24 h, comme l'exige microclimf::checkinputs().
   expect_equal(as.integer(table(as.Date(d$obs_time))[1]), 24L)
   expect_true(all(d$difrad <= d$swdown))
+})
+
+.an_2023 <- function() as.numeric(seq(as.POSIXct("2023-01-01", tz = "UTC"),
+                                      by = "hour", length.out = 8760))
+
+test_that("cas 7 bis : point plus près de la maille haute, poids maille par maille comme focal_dist", {
+  m <- nemeton:::.rsen_era5ts_mailles(4.9, 47.4)
+  expect_equal(m$x, c(4.75, 4.75, 5, 5)); expect_equal(m$y, c(47.25, 47.5, 47.25, 47.5))
+  expect_equal(sum(m$w), 1)
+  skip_if_not_installed("mcera5"); skip_if_not_installed("plyr")
+  ref <- get("focal_dist", asNamespace("mcera5"))(4.9, 47.4)
+  expect_equal(m$x, ref$x); expect_equal(m$y, ref$y)
+  expect_equal(m$w, ref$inverse_weight)
+})
+
+test_that("cas 11 : chaque cause d'échec du timeseries lève rsen_era5ts_echec, sans repli", {
+  lance <- function(acces, cd) nemeton:::.rsen_era5_assurer(
+    data.frame(lon = 4.75, lat = 47.25), 2023L, cd, source = "timeseries",
+    acces_ts = acces, max_tries = 1L, pause = function(...) NULL)
+  # Job failed/rejected (hors limite).
+  cd <- withr::local_tempdir()
+  echec <- structure(class = c("rsen_era5_echec", "error", "condition"),
+                     list(message = "CDS job failed: boom", call = NULL))
+  e <- expect_error(lance(.acces_ts_faux(echec = echec), cd), class = "rsen_era5ts_echec")
+  expect_match(conditionMessage(e), "classique")
+  expect_match(conditionMessage(e), "boom")
+  expect_length(list.files(cd, pattern = "^era5_[0-9]"), 0L)   # aucun ancien chemin lancé
+  # Variable manquante.
+  cd <- withr::local_tempdir()
+  acces <- .acces_ts_faux()
+  acces$soumettre <- function(req_k, cache_dir) list(req = req_k, cache = cache_dir)
+  acces$extraire <- function(h, req_k, cache_dir)
+    .ts_fixture(file.path(cache_dir, sub("\\.zip$", ".nc", req_k$target)), .an_2023(),
+                sans = "strd")
+  expect_error(nemeton:::.rsen_forcage_era5(4.75, 47.25, 2023L, cd, source = "timeseries",
+                                            acces_ts = acces, pause = function(...) NULL),
+               class = "rsen_era5ts_echec")
+  # Fichier illisible : NetCDF complet mais sans les variables attendues, en cache.
+  cd <- withr::local_tempdir()
+  .nc_ok(nemeton:::.rsen_era5ts_nom(cd, 4.75, 47.25, 2023L))
+  expect_error(nemeton:::.rsen_era5ts_forcage(cd, 4.75, 47.25, 2023L))
+  # Année incomplète livrée par le CDS.
+  cd <- withr::local_tempdir()
+  acces <- .acces_ts_faux()
+  acces$soumettre <- function(req_k, cache_dir) list(req = req_k, cache = cache_dir)
+  acces$extraire <- function(h, req_k, cache_dir)
+    .ts_fixture(file.path(cache_dir, sub("\\.zip$", ".nc", req_k$target)), .an_2023()[1:100])
+  expect_error(lance(acces, cd), class = "rsen_era5ts_echec", regexp = "cover")
+})
+
+test_that("cas 2 bis : un fichier era5ts_ qui ne couvre pas l'année n'est pas un cache", {
+  cd <- withr::local_tempdir()
+  f <- nemeton:::.rsen_era5ts_nom(cd, 4.75, 47.25, 2023L)
+  .ts_fixture(f, .an_2023()[1:100])
+  expect_false(nemeton:::.rsen_era5ts_en_cache(cd, 4.75, 47.25, 2023L))
+  acces <- .acces_ts_faux()
+  acces$soumettre <- function(req_k, cache_dir) {
+    acces$appels$req[[length(acces$appels$req) + 1L]] <- req_k
+    list(req = req_k, cache = cache_dir)
+  }
+  nemeton:::.rsen_era5_assurer(data.frame(lon = 4.75, lat = 47.25), 2023L, cd,
+    source = "timeseries", acces_ts = acces, pause = function(...) NULL)
+  expect_length(acces$appels$req, 1L)   # redemandé
+  expect_true(nemeton:::.rsen_era5ts_en_cache(cd, 4.75, 47.25, 2023L))
+})
+
+test_that("cas 8 (B) : source timeseries, un forçage classique en cache n'est pas relu", {
+  cd <- withr::local_tempdir()
+  .nc_ok(nemeton:::.rsen_era5_nom_combine(cd, 2023L, 4.75, 47.25))
+  acces <- .acces_ts_faux()
+  acces$soumettre <- function(req_k, cache_dir) {
+    acces$appels$req[[length(acces$appels$req) + 1L]] <- req_k
+    list(req = req_k, cache = cache_dir)
+  }
+  d <- nemeton:::.rsen_forcage_era5(4.75, 47.25, 2023L, cd, source = "timeseries",
+                                    acces_ts = acces, pause = function(...) NULL)
+  expect_length(acces$appels$req, 1L)       # le timeseries a été demandé malgré le classique
+  expect_equal(d$temp[1], 10)               # et c'est lui qui est lu
+  expect_true(file.exists(nemeton:::.rsen_era5_nom_combine(cd, 2023L, 4.75, 47.25)))
+  # Source classique : les era5ts_ sont ignorés, le combiné présent suffit.
+  expect_silent(nemeton:::.rsen_era5_assurer(data.frame(lon = 4.75, lat = 47.25), 2023L, cd,
+                                             source = "classique"))
+})
+
+test_that(".rsen_era5ts_extraire lit un zip imitant la réponse CDS", {
+  skip_if(!nzchar(Sys.which("zip")), "zip absent")
+  d <- withr::local_tempdir(); w <- withr::local_tempdir()
+  .ts_fixture(file.path(w, "data_stream-oper.nc"), .an_2023())
+  zp <- file.path(d, "era5ts_4p75_47p25_2023.zip")
+  utils::zip(zp, file.path(w, "data_stream-oper.nc"), flags = "-qj")
+  nc <- file.path(d, "era5ts_4p75_47p25_2023.nc")
+  nemeton:::.rsen_era5ts_extraire(zp, nc)
+  expect_true(nemeton:::.rsen_era5_nc_complet(nc))
+  expect_equal(nrow(nemeton:::.rsen_era5ts_lire_maille(nc, 2023L)), 8760L)
+  # Réponse déjà un NetCDF : simplement renommée.
+  src <- file.path(w, "brut.nc"); .ts_fixture(src, .an_2023()[1:48])
+  cible <- file.path(d, "autre.nc")
+  nemeton:::.rsen_era5ts_extraire(src, cible)
+  expect_true(file.exists(cible))
+  # Zip sans NetCDF.
+  vide <- file.path(w, "a.txt"); writeLines("x", vide)
+  zz <- file.path(d, "vide.zip"); utils::zip(zz, vide, flags = "-qj")
+  expect_error(nemeton:::.rsen_era5ts_extraire(zz, file.path(d, "z.nc")), "no NetCDF")
+})
+
+test_that("cas 14 : au plus 2 requêtes timeseries simultanées par défaut", {
+  cd <- withr::local_tempdir()
+  actifs <- 0L; max_vu <- 0L
+  acces <- .acces_ts_faux()
+  acces$soumettre <- function(req_k, cache_dir) {
+    actifs <<- actifs + 1L; max_vu <<- max(max_vu, actifs)
+    e <- new.env(); e$req <- req_k; e$n <- 0L; e$cache <- cache_dir; e
+  }
+  acces$sonder <- function(h) { h$n <- h$n + 1L; if (h$n < 2L) "en_cours" else "pret" }
+  acces$liberer <- function(h) { if (is.environment(h)) actifs <<- actifs - 1L; invisible(NULL) }
+  nemeton:::.rsen_era5_assurer(data.frame(lon = 4.8, lat = 47.3), 2023L, cd,
+    source = "timeseries", acces_ts = acces, pause = function(...) NULL)
+  expect_equal(max_vu, 2L)
+})
+
+test_that("cas 12 bis : défaut timeseries via .biljou_forcing_era5, attente renommée en biljou:era5_attente", {
+  skip_if_not_installed("mcera5"); skip_if_not_installed("biljouR")
+  withr::local_options(nemeton.era5_source = NULL)
+  cd <- withr::local_tempdir()
+  vus <- character()
+  # Lot simulé : écrit les fichiers et émet un mois puis une attente.
+  testthat::local_mocked_bindings(
+    .rsen_era5_lot = function(taches, cache_dir, emit = NULL, ...) {
+      for (t in taches) .ts_fixture(t$nc, .an_2023())
+      emit(list(current = "regen_expo:era5_mois", category = NA, year = 2023L,
+                mois_i = 1L, mois_n = length(taches)))
+      emit(list(current = "regen_expo:era5_attente", category = NA, year = 2023L,
+                mois_i = 1L, mois_n = length(taches), attente_file_s = 5L, etat_cds = "accepted"))
+      invisible(character(0))
+    })
+  pts <- data.frame(id = 1L, lon = 4.8, lat = 47.3)
+  res <- nemeton:::.biljou_forcing_era5(pts, 2023L, cd, altitude = 300,
+                                        emit = function(p) vus <<- c(vus, p$current))
+  expect_true("biljou:era5_attente" %in% vus)
+  expect_true("biljou:era5_download" %in% vus)
+  expect_false("regen_expo:era5_attente" %in% vus)
+  expect_equal(nrow(res[["1"]]), 365L)
+  expect_length(list.files(cd, pattern = "^era5ts_"), 4L)
+})
+
+test_that("ncdf4 absent : message clair", {
+  testthat::local_mocked_bindings(requireNamespace = function(package, ...) FALSE, .package = "base")
+  expect_error(nemeton:::.rsen_era5ts_exiger_ncdf4(), class = "rsen_era5ts_echec")
 })

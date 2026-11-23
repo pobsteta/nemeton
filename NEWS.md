@@ -10,19 +10,32 @@
   (`load_biljou_forcing(source = "era5")`), qui rendent le même data.frame
   qu'avant (`obs_time`, `temp`, `relhum`, `pres`, `swdown`, `difrad`, `lwdown`,
   `windspeed`, `winddir`, `precip`).
-  - Formules de `mcera5::extract_clim()` : interpolation sur les 4 mailles
-    voisines (poids = inverse de la distance), humidité relative et vent
-    identiques ; flux horaires (`swdown = ssrd/3600`, `lwdown = strd/3600`,
-    `difrad = (ssrd - fdir)/3600` borné à `[0, swdown]`), aucun décalage
-    d'horodatage, flux négatifs ramenés à 0. Masque terre-mer absent du jeu :
-    valeur 1 (correction côtière nulle, comme `extract_clim()` sur terre).
+  - Repris de `mcera5::extract_clim()` : interpolation sur les 4 mailles
+    voisines (poids = inverse de la distance), humidité relative, vent (profil
+    10 m → 2 m) et direction. Masque terre-mer absent du jeu : valeur 1
+    (correction côtière nulle, comme `extract_clim()` sur terre).
+  - **Rayonnement : différent de mcera5, par décision.** `swdown = ssrd/3600`,
+    `lwdown = strd/3600`, `difrad = (ssrd - fdir)/3600` borné à `[0, swdown]`,
+    sans `rad_calc`. `fdir` d'ERA5 est mesuré sur un plan horizontal ; mcera5 le
+    traite comme un direct normal (× sin h) et surestime le diffus d'environ
+    ×2 par ciel clair (177 contre 81 W/m² en moyenne un 21 juin simulé).
+    `rad_calc` recale aussi `swdown` d'une demi-heure (valeur instantanée à t
+    au lieu de la moyenne de l'heure) : aucun décalage ici. Les forçages déjà
+    calculés par le chemin classique ne sont donc pas comparables au W/m² près.
   - Cache : un fichier par maille et par année, `era5ts_<lon>_<lat>_<annee>.nc`,
-    sans collision avec l'ancien `era5_<lon>_<lat>_<annee>*.nc`. Un forçage
-    classique déjà en cache est relu tel quel.
+    sans collision avec l'ancien `era5_<lon>_<lat>_<annee>*.nc`. Les deux caches
+    sont étanches : avec la source `timeseries`, un forçage classique en cache
+    n'est jamais relu (autre diffus) ; il n'est ni effacé ni modifié et reste
+    lu avec la source `classique`. Un fichier `era5ts_` qui ne couvre pas
+    l'année est redemandé.
   - Au plus 2 requêtes simultanées (`options(nemeton.era5_ts_max_simultanees)`),
     même journal `era5_jobs/` (purge des jobs orphelins).
-  - Repli : `timeseries` en échec → ancien chemin mensuel, avec avertissement.
-    `options(nemeton.era5_source = "classique")` force l'ancien chemin.
+  - **Aucun repli automatique** vers le chemin classique (il rouvrirait des
+    heures de file et mélangerait deux diffus). Échec du `timeseries` (job
+    failed/rejected hors limite, fichier illisible, variable manquante, année
+    incomplète) : erreur de classe `rsen_era5ts_echec` qui dit la cause et
+    indique `options(nemeton.era5_source = "classique")`. Un refus pour limite
+    garde son comportement (attente puis nouvel essai).
   - Événements `regen_expo:era5_mois` / `era5_attente` inchangés ; `mois_i` et
     `mois_n` comptent désormais des mailles-années (4 par point et par année)
     sur le chemin `timeseries`.
