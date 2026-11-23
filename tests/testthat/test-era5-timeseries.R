@@ -283,7 +283,8 @@ test_that("cas 11 : chaque cause d'échec du timeseries lève rsen_era5ts_echec,
   acces$soumettre <- function(req_k, cache_dir) list(req = req_k, cache = cache_dir)
   acces$extraire <- function(h, req_k, cache_dir)
     writeLines("pas un NetCDF", file.path(cache_dir, sub("\\.zip$", ".nc", req_k$target)))
-  expect_error(lance(acces, cd), class = "rsen_era5ts_echec")
+  e <- expect_error(lance(acces, cd), class = "rsen_era5ts_echec")
+  expect_match(conditionMessage(e), "incomplete")
   # NetCDF intact mais sans dimension temporelle : illisible comme série, et dit tel.
   cd <- withr::local_tempdir()
   acces$extraire <- function(h, req_k, cache_dir) {
@@ -410,10 +411,9 @@ test_that("ncdf4 absent sur .rsen_era5_assurer : message clair, aucun fichier ef
   f <- nemeton:::.rsen_era5ts_nom(cd, 4.75, 47.25, 2023L)
   .ts_fixture(f, .an_2023()[1:100])
   acces <- .acces_ts_faux()
-  acces$soumettre <- function(req_k, cache_dir) {
-    acces$appels$req[[length(acces$appels$req) + 1L]] <- req_k
-    list(req = req_k, cache = cache_dir)
-  }
+  # Toute requête fait échouer le test (et non le saute : aucune fixture ici).
+  acces$soumettre <- function(req_k, cache_dir) stop("requête soumise")
+  acces$extraire <- function(h, req_k, cache_dir) stop("extraction inattendue")
   testthat::local_mocked_bindings(requireNamespace = function(package, ...) FALSE,
                                   .package = "base")
   e <- expect_error(
