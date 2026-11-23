@@ -468,6 +468,7 @@ reference:
     - charger_forms_t_hauteurs
     - load_eobs_source
     - eobs_cached_file
+    - eobs_last_complete_year
     - load_foret_ancienne_source
     - load_onf_parcelles_source
     - load_insee_population_source

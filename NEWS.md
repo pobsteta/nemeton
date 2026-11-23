@@ -1,3 +1,20 @@
+# nemeton 2026.11.41 (2026-11-23)
+
+## Nouveautés
+
+- **`eobs_last_complete_year()` : la dernière année complète d'une version
+  E-OBS** (brief nemetonshiny du 2026-11-23). L'app bornait sa fenêtre E-OBS
+  sur `annee_courante - 1` ; avec la version 34.0e figée, elle aurait demandé
+  l'été 2026 dès le 2027-01-01 et obtenu un été écarté sans erreur. La fonction
+  rend la dernière année dont les mois demandés (`6:8` par défaut) sont
+  couverts à 90 %, la règle même de `load_eobs_source()`.
+  - Série en cache : dates lues dans le netCDF (`source = "cache"`).
+  - Sinon : table des versions mesurées, 33.0e (fin 2025-12-31) et 34.0e (fin
+    2026-06-30), relevées sur les fichiers le 2026-11-23 (`source = "table"`).
+  - Version inconnue sans cache : `NA` et avertissement.
+  - Attribut `end_date` : dernier jour de la série.
+  - Vérifié sur le cache réel : 34.0e → 2025 (fin 2026-06-30).
+
 # nemeton 2026.11.40 (2026-11-23)
 
 ## Corrections

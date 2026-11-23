@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.41] - 2026-11-23
+
+### Added
+- `eobs_last_complete_year()`: last year whose summer months an E-OBS version covers (cached netCDF dates, else a table of measured versions 33.0e / 34.0e).
+
 ## [2026.11.40] - 2026-11-23
 
 ### Added
