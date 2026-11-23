@@ -1,3 +1,34 @@
+# nemeton (development version)
+
+## Nouveautés
+
+- **Forçage ERA5 horaire par le jeu CDS `reanalysis-era5-single-levels-timeseries`**
+  (brief nemetonshiny du 2026-11-23, mission 039). Le jeu classique passe par la
+  file CDS (~4 h par requête mensuelle, ~48 h pour 24 mois à la Colombière) ; le
+  jeu `timeseries` sert une année en un point en ~2 min. Il devient la source
+  PAR DÉFAUT du forçage de microclimf (`regen_sensibilite()`) et de BILJOU
+  (`load_biljou_forcing(source = "era5")`), qui rendent le même data.frame
+  qu'avant (`obs_time`, `temp`, `relhum`, `pres`, `swdown`, `difrad`, `lwdown`,
+  `windspeed`, `winddir`, `precip`).
+  - Formules de `mcera5::extract_clim()` : interpolation sur les 4 mailles
+    voisines (poids = inverse de la distance), humidité relative et vent
+    identiques ; flux horaires (`swdown = ssrd/3600`, `lwdown = strd/3600`,
+    `difrad = (ssrd - fdir)/3600` borné à `[0, swdown]`), aucun décalage
+    d'horodatage, flux négatifs ramenés à 0. Masque terre-mer absent du jeu :
+    valeur 1 (correction côtière nulle, comme `extract_clim()` sur terre).
+  - Cache : un fichier par maille et par année, `era5ts_<lon>_<lat>_<annee>.nc`,
+    sans collision avec l'ancien `era5_<lon>_<lat>_<annee>*.nc`. Un forçage
+    classique déjà en cache est relu tel quel.
+  - Au plus 2 requêtes simultanées (`options(nemeton.era5_ts_max_simultanees)`),
+    même journal `era5_jobs/` (purge des jobs orphelins).
+  - Repli : `timeseries` en échec → ancien chemin mensuel, avec avertissement.
+    `options(nemeton.era5_source = "classique")` force l'ancien chemin.
+  - Événements `regen_expo:era5_mois` / `era5_attente` inchangés ; `mois_i` et
+    `mois_n` comptent désormais des mailles-années (4 par point et par année)
+    sur le chemin `timeseries`.
+  - Script de comparaison réelle : `tests/manual/era5-timeseries-comparaison.R`
+    (non lancé en CI).
+
 # nemeton 2026.11.41 (2026-11-23)
 
 ## Nouveautés
