@@ -51,7 +51,9 @@ Penman estimate (\code{latitude} defaults to the AOI centroid).}
 \code{"biljou:safran_unit"} (\code{i}/\code{n}/\code{id}),
 \code{"biljou:era5_download"} (\code{i}/\code{n}/\code{id}/\code{year}; while the
 batched ERA5 requests run, \code{i}/\code{n} count the monthly files completed,
-without \code{id}),
+without \code{id}), \code{"biljou:era5_attente"}
+(\code{mois_i}/\code{mois_n}/\code{attente_file_s}/\code{etat_cds}, every 5 min
+while ERA5 requests wait at the CDS),
 \code{"biljou:complete"} (\code{n_units}, \code{missing_ids}),
 \code{"biljou:unavailable"} (\code{reason}, \code{missing_ids}). The app maps these to
 bottom-right notifications during the forcing download. A callback error is

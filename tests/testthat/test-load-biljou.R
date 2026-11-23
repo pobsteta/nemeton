@@ -206,3 +206,24 @@ test_that(".biljou_forcing_era5 does not hand the first unit's ERA5 file to the 
   # Une PET différente par point (température différente) : pas de forçage partagé.
   expect_false(isTRUE(all.equal(out[["1"]]$pet, out[["2"]]$pet)))
 })
+
+test_that(".biljou_forcing_era5 forwards the CDS queue wait as biljou:era5_attente", {
+  skip_if_not_installed("mcera5")
+  vus <- list()
+  local_mocked_bindings(
+    .rsen_era5_assurer = function(sites, annees, cache_dir, emit = NULL, ...) {
+      emit(list(current = "regen_expo:era5_attente", mois_i = 0L, mois_n = 12L,
+                attente_file_s = 600L, etat_cds = "accepted"))
+      emit(list(current = "regen_expo:era5_mois", mois_i = 1L, mois_n = 12L,
+                year = 2018L))
+      stop("stop after the batch")
+    })
+  expect_error(nemeton:::.biljou_forcing_era5(
+    data.frame(id = 1, lon = 5, lat = 47), 2018L, withr::local_tempdir(),
+    emit = function(p) vus[[length(vus) + 1L]] <<- p), "stop after the batch")
+  expect_equal(vus[[1]]$current, "biljou:era5_attente")
+  expect_equal(vus[[1]]$attente_file_s, 600L)
+  expect_equal(vus[[1]]$etat_cds, "accepted")
+  expect_equal(vus[[2]]$current, "biljou:era5_download")
+  expect_equal(vus[[2]]$i, 1L)
+})

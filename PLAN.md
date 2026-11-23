@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.11.2** (release du 2026-11-15), relevée le 2026-11-22.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.11.3** (release du 2026-11-22), relevée le 2026-11-23.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -473,6 +473,25 @@ cette strate », surcouche du Plan de validation par moteur. Plan d'actions :
 fiches PDF par UGF. ADR 0003 de l'app acceptée (pilotage par IA ouvert à
 tous, tout client MCP, avertissement). Aucune release cœur requise (brief
 `2026-11-15-plan-nemetonshiny-v2026.11.1`).
+
+### 2026-11-23 — v2026.11.40 : ERA5 au format du CDS actuel, attente en file
+
+**Constat.** Run Colombière (`run_20261122154945_eghc`, 24 mois ERA5) : la file
+ERA5 du CDS dépasse 4 h par job (créé à 00:39 UTC, démarré à 04:39 UTC le
+2026-11-23). Le lot coupait un job encore en file au bout de 6 h et le
+resoumettait : le job perdait sa place dans la file, et chaque coupure
+consommait un essai. Le schéma du CDS n'a plus de clé `format`. L'ancienne clé
+est encore tolérée, et le zip livré (deux flux, `valid_time`) est bien lu.
+**Cœur (cette release).** Clés `data_format` / `download_format` ; un job
+`accepted` n'est jamais coupé, un job `running` l'est `delai_max` après son
+démarrage ; événement `regen_expo:era5_attente` toutes les 5 min
+(`attente_file_s`, `etat_cds`). Vérification réelle limitée : la requête au
+nouveau format a été acceptée par le CDS le 2026-11-22 (job `8fff09c4`). Le
+téléchargement complet attend que la Colombière libère la file du compte.
+**App.** Brief `vers-nemetonshiny/2026-11-23-era5-textes-et-attente-cds.md` :
+ERA5 et non ERA5-Land dans les textes, durée annoncée réaliste, affichage de
+l'attente ; plancher `nemeton (>= 2026.11.40)` pour ce dernier point. Version
+nemetonshiny vérifiée : v2026.11.3.
 
 ### 2026-11-22 — v2026.11.39 : E-OBS au nouveau format du CDS
 

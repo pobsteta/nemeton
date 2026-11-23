@@ -135,9 +135,16 @@
   # Toutes les requêtes mensuelles (points x années) partent en un lot : leurs
   # attentes dans la file du CDS se chevauchent.
   # Progression du lot sous la clé BILJOU : `i`/`n` y comptent les mois terminés.
-  .rsen_era5_assurer(points, years, cache_dir, emit = function(p)
-    emit(list(current = "biljou:era5_download", i = p$mois_i, n = p$mois_n,
-              year = p$year)))
+  # L'attente en file CDS passe sous `biljou:era5_attente`, mêmes champs que
+  # `regen_expo:era5_attente`.
+  .rsen_era5_assurer(points, years, cache_dir, emit = function(p) {
+    if (identical(p$current, "regen_expo:era5_attente")) {
+      emit(utils::modifyList(p, list(current = "biljou:era5_attente")))
+    } else {
+      emit(list(current = "biljou:era5_download", i = p$mois_i, n = p$mois_n,
+                year = p$year))
+    }
+  })
   out <- lapply(seq_len(n), function(i) {
     p <- points[i, ]
     hourly <- do.call(rbind, lapply(years, function(y) {
@@ -188,7 +195,9 @@
 #'   `list(current = <key>, …)` payload (monitoring pattern). Keys:
 #'   `"biljou:safran_unit"` (`i`/`n`/`id`), `"biljou:era5_download"`
 #'   (`i`/`n`/`id`/`year`; while the batched ERA5 requests run, `i`/`n` count
-#'   the monthly files completed, without `id`), `"biljou:complete"` (`n_units`, `missing_ids`),
+#'   the monthly files completed, without `id`), `"biljou:era5_attente"`
+#'   (`mois_i`/`mois_n`/`attente_file_s`/`etat_cds`, every 5 min while ERA5
+#'   requests wait at the CDS), `"biljou:complete"` (`n_units`, `missing_ids`),
 #'   `"biljou:unavailable"` (`reason`, `missing_ids`). The app maps these to
 #'   bottom-right notifications during the forcing download. A callback error is
 #'   never fatal.
