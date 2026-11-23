@@ -1,5 +1,58 @@
 # Changelog
 
+## nemeton (development version)
+
+### Nouveautés
+
+- **Forçage ERA5 horaire par le jeu CDS
+  `reanalysis-era5-single-levels-timeseries`** (brief nemetonshiny du
+  2026-11-23, mission 039). Le jeu classique passe par la file CDS (~4 h
+  par requête mensuelle, ~48 h pour 24 mois à la Colombière) ; le jeu
+  `timeseries` sert une année en un point en ~2 min. Il devient la
+  source PAR DÉFAUT du forçage de microclimf
+  ([`regen_sensibilite()`](https://pobsteta.github.io/nemeton/reference/regen_sensibilite.md))
+  et de BILJOU (`load_biljou_forcing(source = "era5")`), qui rendent le
+  même data.frame qu’avant (`obs_time`, `temp`, `relhum`, `pres`,
+  `swdown`, `difrad`, `lwdown`, `windspeed`, `winddir`, `precip`).
+  - Repris de
+    [`mcera5::extract_clim()`](https://rdrr.io/pkg/mcera5/man/extract_clim.html)
+    : interpolation sur les 4 mailles voisines (poids = inverse de la
+    distance), humidité relative, vent (profil 10 m → 2 m) et direction.
+    Masque terre-mer absent du jeu : valeur 1 (correction côtière nulle,
+    comme `extract_clim()` sur terre).
+  - **Rayonnement : différent de mcera5, par décision.**
+    `swdown = ssrd/3600`, `lwdown = strd/3600`,
+    `difrad = (ssrd - fdir)/3600` borné à `[0, swdown]`, sans
+    `rad_calc`. `fdir` d’ERA5 est mesuré sur un plan horizontal ; mcera5
+    le traite comme un direct normal (× sin h) et surestime le diffus
+    d’environ ×2 par ciel clair (177 contre 81 W/m² en moyenne un 21
+    juin simulé). `rad_calc` recale aussi `swdown` d’une demi-heure
+    (valeur instantanée à t au lieu de la moyenne de l’heure) : aucun
+    décalage ici. Les forçages déjà calculés par le chemin classique ne
+    sont donc pas comparables au W/m² près.
+  - Cache : un fichier par maille et par année,
+    `era5ts_<lon>_<lat>_<annee>.nc`, sans collision avec l’ancien
+    `era5_<lon>_<lat>_<annee>*.nc`. Les deux caches sont étanches : avec
+    la source `timeseries`, un forçage classique en cache n’est jamais
+    relu (autre diffus) ; il n’est ni effacé ni modifié et reste lu avec
+    la source `classique`. Un fichier `era5ts_` qui ne couvre pas
+    l’année est redemandé.
+  - Au plus 2 requêtes simultanées
+    (`options(nemeton.era5_ts_max_simultanees)`), même journal
+    `era5_jobs/` (purge des jobs orphelins).
+  - **Aucun repli automatique** vers le chemin classique (il rouvrirait
+    des heures de file et mélangerait deux diffus). Échec du
+    `timeseries` (job failed/rejected hors limite, fichier illisible,
+    variable manquante, année incomplète) : erreur de classe
+    `rsen_era5ts_echec` qui dit la cause et indique
+    `options(nemeton.era5_source = "classique")`. Un refus pour limite
+    garde son comportement (attente puis nouvel essai).
+  - Événements `regen_expo:era5_mois` / `era5_attente` inchangés ;
+    `mois_i` et `mois_n` comptent désormais des mailles-années (4 par
+    point et par année) sur le chemin `timeseries`.
+  - Script de comparaison réelle :
+    `tests/manual/era5-timeseries-comparaison.R` (non lancé en CI).
+
 ## nemeton 2026.11.41 (2026-11-23)
 
 ### Nouveautés

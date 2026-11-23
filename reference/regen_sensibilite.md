@@ -155,8 +155,9 @@ regen_sensibilite(
   `"regen_expo:microclimf"` (`category`), `"regen_expo:era5"`
   (`category`/`year`/`i`/`n`, once per reference year),
   `"regen_expo:era5_mois"` (`category`/`year`/`mois_i`/`mois_n`, once
-  per monthly ERA5 file completed, cached ones first; `mois_i` counts up
-  to `mois_n`, the size of the batch), `"regen_expo:era5_attente"`
+  per ERA5 file completed (a month on the classic path, a grid-cell year
+  on the default `timeseries` path), cached ones first; `mois_i` counts
+  up to `mois_n`, the size of the batch), `"regen_expo:era5_attente"`
   (`category`/`year`/`mois_i`/`mois_n`/`attente_file_s`/`etat_cds`,
   every 5 min while ERA5 requests wait at the CDS: `attente_file_s` is
   the age in seconds of the oldest active request, `etat_cds` its CDS
@@ -164,7 +165,13 @@ regen_sensibilite(
   `"regen_expo:complete"`. No-op when `NULL`; never fatal. The monthly
   ERA5 requests of all years are submitted together (at most
   `getOption("nemeton.era5_max_simultanees", 6)` at once) so their CDS
-  queue waits overlap.
+  queue waits overlap. By default (`options(nemeton.era5_source)`,
+  `"timeseries"`) ERA5 comes from the CDS dataset
+  `reanalysis-era5-single-levels-timeseries` (4 neighbouring grid cells
+  per point and year, at most
+  `getOption("nemeton.era5_ts_max_simultanees", 2)` at once, minutes
+  instead of days); on failure it falls back to the monthly path
+  (`"classique"`), also selectable by the option.
 
 - precomputed:
 
