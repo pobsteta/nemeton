@@ -13,6 +13,22 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.40\] - 2026-11-23
+
+### Added
+
+- Progress event `regen_expo:era5_attente` / `biljou:era5_attente`
+  (every 5 min while ERA5 requests wait at the CDS): `mois_i`, `mois_n`,
+  `attente_file_s`, `etat_cds`.
+
+### Fixed
+
+- ERA5 monthly requests send `data_format = "netcdf"` and
+  `download_format = "zip"` instead of the legacy `format` key.
+- The ERA5 batch no longer resubmits a job still queued at the CDS
+  (`accepted`) after `delai_max`; a running job is cut `delai_max` after
+  it started.
+
 ## \[2026.11.39\] - 2026-11-22
 
 ### Added

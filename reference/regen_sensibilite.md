@@ -156,9 +156,13 @@ regen_sensibilite(
   (`category`/`year`/`i`/`n`, once per reference year),
   `"regen_expo:era5_mois"` (`category`/`year`/`mois_i`/`mois_n`, once
   per monthly ERA5 file completed, cached ones first; `mois_i` counts up
-  to `mois_n`, the size of the batch) and `"regen_expo:complete"`. No-op
-  when `NULL`; never fatal. The monthly ERA5 requests of all years are
-  submitted together (at most
+  to `mois_n`, the size of the batch), `"regen_expo:era5_attente"`
+  (`category`/`year`/`mois_i`/`mois_n`/`attente_file_s`/`etat_cds`,
+  every 5 min while ERA5 requests wait at the CDS: `attente_file_s` is
+  the age in seconds of the oldest active request, `etat_cds` its CDS
+  state, `"accepted"` (queued) or `"running"`) and
+  `"regen_expo:complete"`. No-op when `NULL`; never fatal. The monthly
+  ERA5 requests of all years are submitted together (at most
   `getOption("nemeton.era5_max_simultanees", 6)` at once) so their CDS
   queue waits overlap.
 

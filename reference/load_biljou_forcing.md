@@ -96,10 +96,13 @@ load_biljou_forcing(
   `list(current = <key>, ...)` payload (monitoring pattern). Keys:
   `"biljou:safran_unit"` (`i`/`n`/`id`), `"biljou:era5_download"`
   (`i`/`n`/`id`/`year`; while the batched ERA5 requests run, `i`/`n`
-  count the monthly files completed, without `id`), `"biljou:complete"`
-  (`n_units`, `missing_ids`), `"biljou:unavailable"` (`reason`,
-  `missing_ids`). The app maps these to bottom-right notifications
-  during the forcing download. A callback error is never fatal.
+  count the monthly files completed, without `id`),
+  `"biljou:era5_attente"`
+  (`mois_i`/`mois_n`/`attente_file_s`/`etat_cds`, every 5 min while ERA5
+  requests wait at the CDS), `"biljou:complete"` (`n_units`,
+  `missing_ids`), `"biljou:unavailable"` (`reason`, `missing_ids`). The
+  app maps these to bottom-right notifications during the forcing
+  download. A callback error is never fatal.
 
 - ...:
 

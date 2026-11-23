@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.39.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.40</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,6 +117,20 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.40" id="nemeton-20261140-2026-11-23">nemeton 2026.11.40 (2026-11-23)<a class="anchor" aria-label="anchor" href="#nemeton-20261140-2026-11-23"></a></h2>
+<div class="section level3">
+<h3 id="corrections-2026-11-40">Corrections<a class="anchor" aria-label="anchor" href="#corrections-2026-11-40"></a></h3>
+<ul><li>
+<strong>ERA5 : clés du CDS actuel.</strong> Le schéma du jeu <code>reanalysis-era5-single-levels</code> n’a plus de clé <code>format</code>. Il attend <code>data_format</code> et <code>download_format</code>. mcera5 0.4.0 envoie encore <code>format = "netcdf"</code>, que le CDS tolère pour l’instant. Les requêtes mensuelles portent désormais <code>data_format = "netcdf"</code> et <code>download_format = "zip"</code>, sans <code>format</code>. La livraison est inchangée : un zip à deux flux, assemblé comme avant.</li>
+<li>
+<strong>ERA5 : un job en file n’est plus abandonné.</strong> Après <code>delai_max</code> (6 h), le lot resoumettait un job que le CDS n’avait pas encore démarré. Le job repartait en fin de file, et l’abandon comptait comme un essai : au bout de trois, le run échouait. C’est arrivé sur la Colombière le 2026-11-22, avec une file CDS à plus de 4 h par job. Désormais, un job <code>accepted</code> attend sans limite. Un job <code>running</code> est coupé <code>delai_max</code> après son démarrage, et non plus après sa soumission.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="nouveautés-2026-11-40">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-40"></a></h3>
+<ul><li>Nouvel événement de progression <code>regen_expo:era5_attente</code> (<code>biljou:era5_attente</code> côté BILJOU), toutes les 5 min pendant l’attente au CDS. Il porte <code>mois_i</code>, <code>mois_n</code>, <code>attente_file_s</code> (ancienneté du plus vieux job actif) et <code>etat_cds</code> (<code>"accepted"</code> ou <code>"running"</code>). L’app peut ainsi afficher « en file CDS depuis 3 h 40 » au lieu d’un compteur figé.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.39" id="nemeton-20261139-2026-11-22">nemeton 2026.11.39 (2026-11-22)<a class="anchor" aria-label="anchor" href="#nemeton-20261139-2026-11-22"></a></h2>
 <div class="section level3">

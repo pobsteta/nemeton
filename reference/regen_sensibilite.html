@@ -15,7 +15,7 @@ indice_priorite_regen."><meta property="og:image" content="https://pobsteta.gith
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.39.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.40</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -277,7 +277,11 @@ once, when the vegetation-structure PAI is built/read), <code>"regen_expo:microc
 (<code>category</code>/<code>year</code>/<code>i</code>/<code>n</code>, once per reference year),
 <code>"regen_expo:era5_mois"</code> (<code>category</code>/<code>year</code>/<code>mois_i</code>/<code>mois_n</code>,
 once per monthly ERA5 file completed, cached ones first; <code>mois_i</code> counts up
-to <code>mois_n</code>, the size of the batch) and <code>"regen_expo:complete"</code>. No-op
+to <code>mois_n</code>, the size of the batch), <code>"regen_expo:era5_attente"</code>
+(<code>category</code>/<code>year</code>/<code>mois_i</code>/<code>mois_n</code>/<code>attente_file_s</code>/<code>etat_cds</code>,
+every 5 min while ERA5 requests wait at the CDS: <code>attente_file_s</code> is the age
+in seconds of the oldest active request, <code>etat_cds</code> its CDS state,
+<code>"accepted"</code> (queued) or <code>"running"</code>) and <code>"regen_expo:complete"</code>. No-op
 when <code>NULL</code>; never fatal. The monthly ERA5 requests of all years are
 submitted together (at most <code>getOption("nemeton.era5_max_simultanees", 6)</code>
 at once) so their CDS queue waits overlap.</p></dd>

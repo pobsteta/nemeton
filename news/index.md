@@ -1,5 +1,33 @@
 # Changelog
 
+## nemeton 2026.11.40 (2026-11-23)
+
+### Corrections
+
+- **ERA5 : clés du CDS actuel.** Le schéma du jeu
+  `reanalysis-era5-single-levels` n’a plus de clé `format`. Il attend
+  `data_format` et `download_format`. mcera5 0.4.0 envoie encore
+  `format = "netcdf"`, que le CDS tolère pour l’instant. Les requêtes
+  mensuelles portent désormais `data_format = "netcdf"` et
+  `download_format = "zip"`, sans `format`. La livraison est inchangée :
+  un zip à deux flux, assemblé comme avant.
+- **ERA5 : un job en file n’est plus abandonné.** Après `delai_max` (6
+  h), le lot resoumettait un job que le CDS n’avait pas encore démarré.
+  Le job repartait en fin de file, et l’abandon comptait comme un essai
+  : au bout de trois, le run échouait. C’est arrivé sur la Colombière le
+  2026-11-22, avec une file CDS à plus de 4 h par job. Désormais, un job
+  `accepted` attend sans limite. Un job `running` est coupé `delai_max`
+  après son démarrage, et non plus après sa soumission.
+
+### Nouveautés
+
+- Nouvel événement de progression `regen_expo:era5_attente`
+  (`biljou:era5_attente` côté BILJOU), toutes les 5 min pendant
+  l’attente au CDS. Il porte `mois_i`, `mois_n`, `attente_file_s`
+  (ancienneté du plus vieux job actif) et `etat_cds` (`"accepted"` ou
+  `"running"`). L’app peut ainsi afficher « en file CDS depuis 3 h 40 »
+  au lieu d’un compteur figé.
+
 ## nemeton 2026.11.39 (2026-11-22)
 
 ### Corrections
