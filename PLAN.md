@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.11.4** (release du 2026-11-23), relevée le 2026-11-23.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.11.5** (release du 2026-11-23), relevée le 2026-11-23.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -474,6 +474,25 @@ fiches PDF par UGF. ADR 0003 de l'app acceptée (pilotage par IA ouvert à
 tous, tout client MCP, avertissement). Aucune release cœur requise (brief
 `2026-11-15-plan-nemetonshiny-v2026.11.1`).
 
+### 2026-11-23 — nemetonshiny v2026.11.5 (`nemetonshiny@a039535e`, cycle dev 2026.11.4.9001 → .9002)
+
+**Aucune release cœur.** Brief `vers-nemeton/2026-11-23-plan-nemetonshiny-v2026.11.5`.
+PR n° 322. Plancher `nemeton (>= 2026.11.40)`, relu dans `DESCRIPTION:15` au tag.
+Consomme le cœur **2026.11.40** (brief `2026-11-23-era5-textes-et-attente-cds`) :
+- textes « ERA5 » et non ERA5-Land, durée de file CDS annoncée (mission 045,
+  PR n° 320, `ac460fc3`, `.9001`) ;
+- attente en file CDS affichée dans la progression, événements
+  `regen_expo:era5_attente` / `biljou:era5_attente`, sans ntfy (mission 046,
+  PR n° 321, `1fbda17c`, `.9002`).
+**Reste (terrain, Pascal)** : « Tout calculer » sur un projet sans cache ERA5 ;
+le libellé affiche « en file CDS depuis X h YY », croît toutes les 5 min, puis
+passe au mois suivant. Cœur 2026.11.41 (`eobs_last_complete_year()`) en cours
+côté app (mission 047), hors de cette release.
+**Brief en attente** : `vers-nemeton/2026-11-23-era5-timeseries-forcage-microclimf.md`
+(forçage par le jeu CDS « timeseries », ~2 min par année et par point au lieu
+de ~4 h par mois) ; mission confiée par Pascal à l'orchestrateur de
+`nemetonplateforme` (pilotage des missions cœur), pas à cette session.
+
 ### 2026-11-23 — nemetonshiny v2026.11.4 (`nemetonshiny@9c023e41`, cycle dev 2026.11.3.9001 → .9003)
 
 **Aucune release cœur.** Brief `vers-nemeton/2026-11-23-plan-nemetonshiny-v2026.11.4`.
@@ -489,6 +508,7 @@ Consomme :
 `ok`, un seul jeu de `.nc` dans le cache global. Pas encore consommés par
 l'app : 2026.11.40 (attente ERA5, brief `vers-nemetonshiny/2026-11-23-era5-textes-et-attente-cds.md`)
 et 2026.11.41 (brief `vers-nemetonshiny/2026-11-23-eobs-derniere-annee-complete.md`).
+2026.11.40 consommé par nemetonshiny v2026.11.5 (entrée ci-dessus).
 
 ### 2026-11-22 — nemetonshiny v2026.11.3 (`nemetonshiny@1ba3417b`, cycle dev 2026.11.2.9001 → .9012)
 
