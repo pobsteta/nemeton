@@ -941,6 +941,8 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   sites <- unique(data.frame(lon = as.numeric(sites$lon), lat = as.numeric(sites$lat)))
   source <- .rsen_era5_source(source)
   ts <- identical(source, "timeseries")
+  # ncdf4 (Suggests) avant tout effacement de cache ou requête.
+  if (ts) .rsen_era5ts_exiger_ncdf4()
   # Point-années à acquérir selon la source choisie.
   manque <- list()
   for (s in seq_len(nrow(sites))) {
@@ -962,7 +964,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     taches <- taches[!duplicated(vapply(taches, `[[`, "", "nc"))]
     # Un fichier qui ne couvre pas l'année n'est pas un cache : il est redemandé.
     for (t in taches) {
-      if (file.exists(t$nc) && !.rsen_era5ts_couvre(t$nc, t$year)) unlink(t$nc)
+      if (file.exists(t$nc) && !isTRUE(.rsen_era5ts_couvre(t$nc, t$year))) unlink(t$nc)
     }
     acces <- if (is.null(acces_ts)) .rsen_era5_acces_cds() else acces_ts
     # Peu de requêtes à la fois (le CDS rejette un jeu dont la file est pleine).
@@ -972,10 +974,16 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
       .rsen_era5_lot(taches, cache_dir, emit = emit, acces = acces,
                      max_simultanees = plafond, ...),
       error = function(e) .rsen_era5ts_abort(conditionMessage(e)))
-    pas_couvert <- Filter(function(t) !.rsen_era5ts_couvre(t$nc, t$year), taches)
-    if (length(pas_couvert)) {
-      .rsen_era5ts_abort(sprintf("file %s does not cover year %d.",
-                                 basename(pas_couvert[[1]]$nc), pas_couvert[[1]]$year))
+    for (t in taches) {
+      couvre <- .rsen_era5ts_couvre(t$nc, t$year)
+      if (is.na(couvre)) {
+        .rsen_era5ts_abort(sprintf("file %s is unreadable (corrupt or not a NetCDF time series).",
+                                   basename(t$nc)))
+      }
+      if (!couvre) {
+        .rsen_era5ts_abort(sprintf("file %s does not cover year %d.",
+                                   basename(t$nc), t$year))
+      }
     }
     return(invisible(character(0)))
   }

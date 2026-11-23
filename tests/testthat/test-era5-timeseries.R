@@ -277,10 +277,24 @@ test_that("cas 11 : chaque cause d'échec du timeseries lève rsen_era5ts_echec,
   expect_error(nemeton:::.rsen_forcage_era5(4.75, 47.25, 2023L, cd, source = "timeseries",
                                             acces_ts = acces, pause = function(...) NULL),
                class = "rsen_era5ts_echec")
-  # Fichier illisible : NetCDF complet mais sans les variables attendues, en cache.
+  # Fichier corrompu livré par le CDS (octets quelconques).
   cd <- withr::local_tempdir()
-  .nc_ok(nemeton:::.rsen_era5ts_nom(cd, 4.75, 47.25, 2023L))
-  expect_error(nemeton:::.rsen_era5ts_forcage(cd, 4.75, 47.25, 2023L))
+  acces <- .acces_ts_faux()
+  acces$soumettre <- function(req_k, cache_dir) list(req = req_k, cache = cache_dir)
+  acces$extraire <- function(h, req_k, cache_dir)
+    writeLines("pas un NetCDF", file.path(cache_dir, sub("\\.zip$", ".nc", req_k$target)))
+  expect_error(lance(acces, cd), class = "rsen_era5ts_echec")
+  # NetCDF intact mais sans dimension temporelle : illisible comme série, et dit tel.
+  cd <- withr::local_tempdir()
+  acces$extraire <- function(h, req_k, cache_dir) {
+    f <- file.path(cache_dir, sub("\\.zip$", ".nc", req_k$target))
+    dx <- ncdf4::ncdim_def("longitude", "degrees_east", 4.75)
+    v <- ncdf4::ncvar_def("t2m", "K", list(dx), prec = "double")
+    nc <- ncdf4::nc_create(f, list(v)); ncdf4::ncvar_put(nc, v, 285); ncdf4::nc_close(nc)
+  }
+  e <- expect_error(lance(acces, cd), class = "rsen_era5ts_echec")
+  expect_match(conditionMessage(e), "unreadable")
+  expect_false(grepl("does not cover", conditionMessage(e)))
   # Année incomplète livrée par le CDS.
   cd <- withr::local_tempdir()
   acces <- .acces_ts_faux()
@@ -388,4 +402,25 @@ test_that("cas 12 bis : défaut timeseries via .biljou_forcing_era5, attente ren
 test_that("ncdf4 absent : message clair", {
   testthat::local_mocked_bindings(requireNamespace = function(package, ...) FALSE, .package = "base")
   expect_error(nemeton:::.rsen_era5ts_exiger_ncdf4(), class = "rsen_era5ts_echec")
+})
+
+test_that("ncdf4 absent sur .rsen_era5_assurer : message clair, aucun fichier effacé, aucune requête", {
+  cd <- withr::local_tempdir()
+  # Un fichier era5ts_ partiel en cache : ne doit pas être effacé.
+  f <- nemeton:::.rsen_era5ts_nom(cd, 4.75, 47.25, 2023L)
+  .ts_fixture(f, .an_2023()[1:100])
+  acces <- .acces_ts_faux()
+  acces$soumettre <- function(req_k, cache_dir) {
+    acces$appels$req[[length(acces$appels$req) + 1L]] <- req_k
+    list(req = req_k, cache = cache_dir)
+  }
+  testthat::local_mocked_bindings(requireNamespace = function(package, ...) FALSE,
+                                  .package = "base")
+  e <- expect_error(
+    nemeton:::.rsen_era5_assurer(data.frame(lon = 4.75, lat = 47.25), 2023L, cd,
+                                 source = "timeseries", acces_ts = acces),
+    class = "rsen_era5ts_echec")
+  expect_match(conditionMessage(e), "ncdf4")
+  expect_true(file.exists(f))
+  expect_length(acces$appels$req, 0L)
 })

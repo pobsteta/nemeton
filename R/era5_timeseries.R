@@ -96,7 +96,7 @@
   m <- .rsen_era5ts_mailles(lon, lat)
   all(vapply(seq_len(nrow(m)), function(k) {
     f <- .rsen_era5ts_nom(cache_dir, m$x[k], m$y[k], annee)
-    .rsen_era5_cache_ok(f) && .rsen_era5ts_couvre(f, annee)
+    .rsen_era5_cache_ok(f) && isTRUE(.rsen_era5ts_couvre(f, annee))
   }, logical(1)))
 }
 
@@ -204,8 +204,10 @@
 
 # Le fichier couvre l'année entière en pas horaires (jours entiers de 24 h).
 .rsen_era5ts_couvre <- function(path, annee) {
-  isTRUE(tryCatch({
-    .rsen_era5ts_exiger_ncdf4()
+  # ncdf4 absent : erreur claire, jamais confondue avec un fichier illisible.
+  .rsen_era5ts_exiger_ncdf4()
+  # TRUE / FALSE (couverture partielle) ; NA si le fichier est illisible.
+  tryCatch({
     nc <- ncdf4::nc_open(path)
     on.exit(ncdf4::nc_close(nc), add = TRUE)
     tn <- grep("time", names(nc$dim), value = TRUE)[1L]
@@ -214,5 +216,5 @@
     t <- base + as.numeric(td$vals) * (if (grepl("hours", td$units)) 3600 else 1)
     njours <- if (annee %% 4 == 0 && (annee %% 100 != 0 || annee %% 400 == 0)) 366L else 365L
     sum(format(t, "%Y", tz = "UTC") == as.character(annee)) == 24L * njours
-  }, error = function(e) FALSE))
+  }, error = function(e) NA)
 }
