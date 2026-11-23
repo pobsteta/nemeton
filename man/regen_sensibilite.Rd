@@ -107,7 +107,8 @@ once, when the vegetation-structure PAI is built/read), \code{"regen_expo:microc
 (\code{category}), \code{"regen_expo:era5"}
 (\code{category}/\code{year}/\code{i}/\code{n}, once per reference year),
 \code{"regen_expo:era5_mois"} (\code{category}/\code{year}/\code{mois_i}/\code{mois_n},
-once per monthly ERA5 file completed, cached ones first; \code{mois_i} counts up
+once per ERA5 file completed (a month on the classic path, a grid-cell year on the
+default \code{timeseries} path), cached ones first; \code{mois_i} counts up
 to \code{mois_n}, the size of the batch), \code{"regen_expo:era5_attente"}
 (\code{category}/\code{year}/\code{mois_i}/\code{mois_n}/\code{attente_file_s}/\code{etat_cds},
 every 5 min while ERA5 requests wait at the CDS: \code{attente_file_s} is the age
@@ -115,7 +116,12 @@ in seconds of the oldest active request, \code{etat_cds} its CDS state,
 \code{"accepted"} (queued) or \code{"running"}) and \code{"regen_expo:complete"}. No-op
 when \code{NULL}; never fatal. The monthly ERA5 requests of all years are
 submitted together (at most \code{getOption("nemeton.era5_max_simultanees", 6)}
-at once) so their CDS queue waits overlap.}
+at once) so their CDS queue waits overlap. By default
+(\code{options(nemeton.era5_source)}, \code{"timeseries"}) ERA5 comes from the CDS dataset
+\code{reanalysis-era5-single-levels-timeseries} (4 neighbouring grid cells per
+point and year, at most \code{getOption("nemeton.era5_ts_max_simultanees", 2)}
+at once, minutes instead of days); on failure it falls back to the monthly
+path (\code{"classique"}), also selectable by the option.}
 
 \item{precomputed}{Optional per-unit microclimf output (\code{data.frame}/list).}
 

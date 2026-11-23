@@ -558,7 +558,10 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     extraire = function(h, req_k, cache_dir) {
       nc <- file.path(cache_dir, sub("\\.zip$", ".nc", req_k$target))
       recu <- h$get_file()
-      if (grepl("\\.zip$", recu)) {
+      # Jeu `timeseries` : un seul NetCDF dans le zip, pas de fusion mcera5.
+      if (identical(req_k$dataset_short_name, .RSEN_ERA5TS_DATASET)) {
+        .rsen_era5ts_extraire(recu, nc)
+      } else if (grepl("\\.zip$", recu)) {
         # Même fusion que `request_era5()` (variables instantanées + cumuls).
         utils::getFromNamespace("bind_zipped_netcdf", "mcera5")(recu, nc)
       } else if (!identical(normalizePath(recu, mustWork = FALSE),
@@ -911,38 +914,94 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
     i = "Install mcera5 (+ CDS key, and accept the ERA5 licence on the CDS site), or pre-populate {.path {cache_dir}}."))
 }
 
-# Garantit en cache les combinés ERA5 de plusieurs points x années, en UN lot :
-# les requêtes mensuelles manquantes de toutes les années (et de tous les
-# points) partent ensemble. `sites` : data.frame(lon, lat) ; `category` : une
-# valeur par année (ou une seule), reprise dans les événements de progression.
-# `construire` : point d'injection des tests (sans mcera5 ni réseau).
+# Garantit en cache le forçage ERA5 de plusieurs points x années, en UN lot.
+# `sites` : data.frame(lon, lat) ; `category` : une valeur par année (ou une
+# seule), reprise dans les événements de progression.
+#
+# `source` : "timeseries" (défaut, jeu CDS `...-timeseries`, 4 mailles par point
+# et par année, un fichier par maille) ou "classique" (mensuel, mcera5) ; voir
+# `.rsen_era5_source()`. Les deux caches sont étanches : en `timeseries`, un
+# forçage classique en cache est ignoré (il porte un autre diffus) ; en
+# `classique`, les fichiers `era5ts_` sont ignorés. Aucun repli automatique : si
+# le lot `timeseries` échoue (job failed/rejected hors limite, fichier illisible,
+# variable manquante, année incomplète), erreur `rsen_era5ts_echec` qui indique
+# `options(nemeton.era5_source = "classique")`. Un refus pour limite garde son
+# comportement (attente puis nouvel essai, dans le lot). Dans les événements,
+# `mois_i`/`mois_n` comptent les FICHIERS du lot : des mensuels (classique) ou des
+# mailles-années (timeseries). `construire`, `requete`, `combiner` (classique) et
+# `acces_ts` (timeseries) sont les points d'injection des tests.
 .rsen_era5_assurer <- function(sites, annees, cache_dir, emit = NULL,
                                category = NA, max_simultanees = NULL,
                                requete = NULL, combiner = .rsen_era5_combiner,
-                               construire = .rsen_era5_requete_annee, ...) {
+                               construire = .rsen_era5_requete_annee,
+                               source = NULL, acces_ts = NULL, ...) {
   if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
   annees <- as.integer(annees)
   category <- rep_len(category, length(annees))
   sites <- unique(data.frame(lon = as.numeric(sites$lon), lat = as.numeric(sites$lat)))
-  manquants <- list()
-  taches <- list()
+  source <- .rsen_era5_source(source)
+  ts <- identical(source, "timeseries")
+  # ncdf4 (Suggests) avant tout effacement de cache ou requête.
+  if (ts) .rsen_era5ts_exiger_ncdf4()
+  # Point-années à acquérir selon la source choisie.
+  manque <- list()
   for (s in seq_len(nrow(sites))) {
     for (a in seq_along(annees)) {
       lon <- sites$lon[s]; lat <- sites$lat[s]; annee <- annees[a]
-      if (.rsen_era5_cache_ok(.rsen_era5_combined(cache_dir, annee, lon, lat))) next
-      if (identical(construire, .rsen_era5_requete_annee) &&
-          !requireNamespace("mcera5", quietly = TRUE)) {
-        .rsen_era5_abort_mcera5(cache_dir)
-      }
-      t_an <- .rsen_era5_taches(construire(lon, lat, annee), cache_dir, annee,
-                                category[[a]])
-      manquants[[length(manquants) + 1L]] <-
-        list(lon = lon, lat = lat, annee = annee,
-             nc = vapply(t_an, `[[`, "", "nc"))
-      taches <- c(taches, t_an)
+      deja <- if (ts) .rsen_era5ts_en_cache(cache_dir, lon, lat, annee) else
+        .rsen_era5_cache_ok(.rsen_era5_combined(cache_dir, annee, lon, lat))
+      if (deja) next
+      manque[[length(manque) + 1L]] <- list(lon = lon, lat = lat, annee = annee,
+                                            cat = category[[a]])
     }
   }
-  if (!length(taches)) return(invisible(character(0)))
+  if (!length(manque)) return(invisible(character(0)))
+
+  if (ts) {
+    taches <- unlist(lapply(manque, function(m)
+      .rsen_era5ts_taches(m$lon, m$lat, m$annee, cache_dir, m$cat)), recursive = FALSE)
+    # Une même maille peut servir plusieurs points : une seule requête.
+    taches <- taches[!duplicated(vapply(taches, `[[`, "", "nc"))]
+    # Un fichier qui ne couvre pas l'année n'est pas un cache : il est redemandé.
+    for (t in taches) {
+      if (file.exists(t$nc) && !isTRUE(.rsen_era5ts_couvre(t$nc, t$year))) unlink(t$nc)
+    }
+    acces <- if (is.null(acces_ts)) .rsen_era5_acces_cds() else acces_ts
+    # Peu de requêtes à la fois (le CDS rejette un jeu dont la file est pleine).
+    plafond <- if (is.null(max_simultanees))
+      getOption("nemeton.era5_ts_max_simultanees", 2L) else max_simultanees
+    tryCatch(
+      .rsen_era5_lot(taches, cache_dir, emit = emit, acces = acces,
+                     max_simultanees = plafond, ...),
+      error = function(e) .rsen_era5ts_abort(conditionMessage(e)))
+    for (t in taches) {
+      couvre <- .rsen_era5ts_couvre(t$nc, t$year)
+      if (is.na(couvre)) {
+        .rsen_era5ts_abort(sprintf("file %s is unreadable (corrupt or not a NetCDF time series).",
+                                   basename(t$nc)))
+      }
+      if (!couvre) {
+        .rsen_era5ts_abort(sprintf("file %s does not cover year %d.",
+                                   basename(t$nc), t$year))
+      }
+    }
+    return(invisible(character(0)))
+  }
+
+  manquants <- list()
+  taches <- list()
+  for (m in manque) {
+    if (identical(construire, .rsen_era5_requete_annee) &&
+        !requireNamespace("mcera5", quietly = TRUE)) {
+      .rsen_era5_abort_mcera5(cache_dir)
+    }
+    t_an <- .rsen_era5_taches(construire(m$lon, m$lat, m$annee), cache_dir, m$annee,
+                              m$cat)
+    manquants[[length(manquants) + 1L]] <-
+      list(lon = m$lon, lat = m$lat, annee = m$annee,
+           nc = vapply(t_an, `[[`, "", "nc"))
+    taches <- c(taches, t_an)
+  }
   acces <- if (is.null(requete)) .rsen_era5_acces_cds() else .rsen_era5_acces_sync(requete)
   .rsen_era5_lot(taches, cache_dir, emit = emit, acces = acces,
                  max_simultanees = max_simultanees, ...)
@@ -951,12 +1010,23 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
                          combiner = combiner), ""))
 }
 
-# Forçage ERA5 pour une année (téléchargement mcera5 mis en cache).
+# Forçage ERA5 pour une année (mis en cache). Source `timeseries` : toujours les
+# fichiers `era5ts_` (un combiné classique en cache n'est pas relu) ; lecture
+# impossible -> erreur `rsen_era5ts_echec`, sans repli. Source `classique` :
+# combiné mcera5.
 .rsen_forcage_era5 <- function(lon, lat, annee, cache_dir, emit = NULL,
-                               category = NA, max_simultanees = NULL) {
+                               category = NA, max_simultanees = NULL,
+                               source = NULL, acces_ts = NULL, ...) {
+  source <- .rsen_era5_source(source)
   .rsen_era5_assurer(data.frame(lon = lon, lat = lat), annee, cache_dir,
                      emit = emit, category = category,
-                     max_simultanees = max_simultanees)
+                     max_simultanees = max_simultanees, source = source,
+                     acces_ts = acces_ts, ...)
+  if (identical(source, "timeseries")) {
+    meteo <- tryCatch(.rsen_era5ts_forcage(cache_dir, lon, lat, annee),
+                      error = function(e) .rsen_era5ts_abort(conditionMessage(e)))
+    return(.rsen_clamp_flux(meteo, cols = c(.RSEN_NONNEG_COLS, "lwdown")))
+  }
   st  <- as.POSIXct(sprintf("%d-01-01 00:00", annee), tz = "UTC")
   en  <- as.POSIXct(sprintf("%d-12-31 23:00", annee), tz = "UTC")
   # Combiné si trouvé, sinon repli défensif (nom le plus court = le combiné,
@@ -1230,7 +1300,8 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #'   vegetation-structure PAI is built/read), `"regen_expo:microclimf"` (`category`),
 #'   `"regen_expo:era5"` (`category`/`year`/`i`/`n`, once per reference year) and
 #'   `"regen_expo:era5_mois"` (`category`/`year`/`mois_i`/`mois_n`, once per
-#'   monthly ERA5 file completed, cached ones first; `mois_i` counts up to
+#'   ERA5 file completed (a month on the classic path, a grid-cell year on the
+#'   default `timeseries` path), cached ones first; `mois_i` counts up to
 #'   `mois_n`, the size of the batch), `"regen_expo:era5_attente"`
 #'   (`category`/`year`/`mois_i`/`mois_n`/`attente_file_s`/`etat_cds`, every 5 min
 #'   while ERA5 requests wait at the CDS: `attente_file_s` is the age in seconds
@@ -1238,7 +1309,12 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
 #'   or `"running"`) and `"regen_expo:complete"`. No-op when
 #'   `NULL`; never fatal. The monthly ERA5 requests of all years are submitted
 #'   together (at most `getOption("nemeton.era5_max_simultanees", 6)` at once)
-#'   so their CDS queue waits overlap.
+#'   so their CDS queue waits overlap. By default (`options(nemeton.era5_source)`,
+#'   `"timeseries"`) ERA5 comes from the CDS dataset
+#'   `reanalysis-era5-single-levels-timeseries` (4 neighbouring grid cells per
+#'   point and year, at most `getOption("nemeton.era5_ts_max_simultanees", 2)`
+#'   at once, minutes instead of days); on failure it falls back to the monthly
+#'   path (`"classique"`), also selectable by the option.
 #' @param precomputed Optional per-unit microclimf output (`data.frame`/list).
 #' @param ... Reserved (engine parameters).
 #'

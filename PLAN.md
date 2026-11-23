@@ -474,6 +474,16 @@ fiches PDF par UGF. ADR 0003 de l'app acceptée (pilotage par IA ouvert à
 tous, tout client MCP, avertissement). Aucune release cœur requise (brief
 `2026-11-15-plan-nemetonshiny-v2026.11.1`).
 
+### 2026-11-23 — ERA5 `timeseries` par défaut (mission 039, en cours, cycle dev `.9000`)
+
+Brief `vers-nemeton/2026-11-23-era5-timeseries-forcage-microclimf`. Forçage ERA5
+de microclimf et BILJOU par le jeu CDS `reanalysis-era5-single-levels-timeseries`
+(4 mailles voisines, formules de `extract_clim()`), repli sur l'ancien chemin.
+`R/era5_timeseries.R`, `.rsen_era5_assurer()` / `.rsen_forcage_era5()`.
+Aucune release posée par la mission ; brief vers nemetonshiny à la release.
+Restant : comparaison réelle 2024 (`tests/manual/era5-timeseries-comparaison.R`),
+non lancée (pas de forçage classique 2024 en cache sur cette machine).
+
 ### 2026-11-23 — nemetonshiny v2026.11.4 (`nemetonshiny@9c023e41`, cycle dev 2026.11.3.9001 → .9003)
 
 **Aucune release cœur.** Brief `vers-nemeton/2026-11-23-plan-nemetonshiny-v2026.11.4`.
