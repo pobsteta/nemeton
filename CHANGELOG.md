@@ -13,6 +13,26 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.42\] - 2026-11-23
+
+### Changed
+
+- ERA5 hourly forcing (microclimf and BILJOU) now comes by default from
+  the CDS dataset `reanalysis-era5-single-levels-timeseries` (one point,
+  one year per request, minutes instead of hours in the CDS queue); same
+  data.frame as before. The classic monthly path stays available with
+  `options(nemeton.era5_source = "classique")`.
+- Diffuse radiation on the `timeseries` path is `(ssrd - fdir)/3600`
+  (ERA5 `fdir` is horizontal), about half of mcera5’s value under clear
+  sky; no `rad_calc` half-hour shift.
+
+### Added
+
+- Error class `rsen_era5ts_echec` when the `timeseries` path fails (no
+  automatic fallback to the classic path).
+- Separate cache `era5ts_<lon>_<lat>_<year>.nc`; a classic cached
+  forcing is never read with the `timeseries` source.
+
 ## \[2026.11.41\] - 2026-11-23
 
 ### Added

@@ -1,6 +1,6 @@
 # Changelog
 
-## nemeton (development version)
+## nemeton 2026.11.42 (2026-11-23)
 
 ### Nouveautés
 

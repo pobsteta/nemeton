@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.41.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.42</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,9 +118,9 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="nemeton-development-version">nemeton (development version)<a class="anchor" aria-label="anchor" href="#nemeton-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="2026.11.42" id="nemeton-20261142-2026-11-23">nemeton 2026.11.42 (2026-11-23)<a class="anchor" aria-label="anchor" href="#nemeton-20261142-2026-11-23"></a></h2>
 <div class="section level3">
-<h3 id="nouveautés-development-version">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-development-version"></a></h3>
+<h3 id="nouveautés-2026-11-42">Nouveautés<a class="anchor" aria-label="anchor" href="#nouveaut%C3%A9s-2026-11-42"></a></h3>
 <ul><li>
 <strong>Forçage ERA5 horaire par le jeu CDS <code>reanalysis-era5-single-levels-timeseries</code></strong> (brief nemetonshiny du 2026-11-23, mission 039). Le jeu classique passe par la file CDS (~4 h par requête mensuelle, ~48 h pour 24 mois à la Colombière) ; le jeu <code>timeseries</code> sert une année en un point en ~2 min. Il devient la source PAR DÉFAUT du forçage de microclimf (<code><a href="../reference/regen_sensibilite.html">regen_sensibilite()</a></code>) et de BILJOU (<code>load_biljou_forcing(source = "era5")</code>), qui rendent le même data.frame qu’avant (<code>obs_time</code>, <code>temp</code>, <code>relhum</code>, <code>pres</code>, <code>swdown</code>, <code>difrad</code>, <code>lwdown</code>, <code>windspeed</code>, <code>winddir</code>, <code>precip</code>).
 <ul><li>Repris de <code><a href="https://rdrr.io/pkg/mcera5/man/extract_clim.html" class="external-link">mcera5::extract_clim()</a></code> : interpolation sur les 4 mailles voisines (poids = inverse de la distance), humidité relative, vent (profil 10 m → 2 m) et direction. Masque terre-mer absent du jeu : valeur 1 (correction côtière nulle, comme <code>extract_clim()</code> sur terre).</li>
