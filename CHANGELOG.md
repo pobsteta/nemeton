@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.43] - 2026-11-23
+
+### Changed
+- ERA5 `timeseries` path: a year not yet fully covered by ERA5 (current year, future year, or closed less than 5 days ago) is refused with `rsen_era5ts_echec` before any CDS request or cache removal; a missing (`NA`) year too. Classic path unchanged.
+
 ## [2026.11.42] - 2026-11-23
 
 ### Changed

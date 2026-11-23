@@ -1,4 +1,4 @@
-# nemeton (development version)
+# nemeton 2026.11.43 (2026-11-23)
 
 - **ERA5 `timeseries` : une année non close est refusée avant tout appel au CDS**
   (mission 041). Année en cours, année future ou année close depuis moins de

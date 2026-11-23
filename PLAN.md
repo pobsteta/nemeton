@@ -160,14 +160,14 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
-### 2026-11-23 (mission 041)
+### 2026-11-23 — v2026.11.43 (mission 041 de nemetonplateforme, PR #687)
 
 ERA5 `timeseries` : refus d'une année non close (année en cours, future, ou
 écoulée depuis moins de 5 jours = latence CDS) avant toute requête et tout
 effacement de cache, erreur `rsen_era5ts_echec`. Règle bissextile mise en commun
 (`.rsen_era5ts_njours`). Choix : le refus vit dans `.rsen_era5_assurer()` (seul
-point d'entrée du lot, `maintenant` injectable) ; le chemin classique est
-inchangé. Cycle dev `2026.11.42.9000`, pas de release.
+point d'entrée du lot, `instant` injectable) ; le chemin classique est
+inchangé. Publié en 2026.11.43 ; nemetonshiny v2026.11.6 suit (mission 040).
 
 ### 2026-11-08
 
