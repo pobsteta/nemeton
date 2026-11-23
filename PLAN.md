@@ -2,7 +2,7 @@
 
 **Source unique de vérité** pour la séquence des épaississements (E1, E2, …) du **package cœur `nemeton`** et leur état d'avancement. CLAUDE.md ne duplique plus cette table (règle introduite le 2026-04-25). À chaque release cœur, mettre à jour la table ci-dessous + le journal du chantier en cours (cf. *Consignes de release* étape 8 dans CLAUDE.md).
 
-> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.11.3** (release du 2026-11-22), relevée le 2026-11-23.
+> **Version `nemetonshiny` publiée** (vérifiée sur GitHub à chaque merge, `gh release list -R pobsteta/nemetonshiny`) : **v2026.11.4** (release du 2026-11-23), relevée le 2026-11-23.
 
 > **Scope** : ce fichier ne suit que les chantiers du repo `nemeton` (cœur métier). Les épaississements portés côté app (`nemetonshiny`) sont mentionnés pour mémoire mais leur séquence de releases vit dans le PLAN de ce repo-là.
 
@@ -45,7 +45,6 @@ Légende : ✅ livré · 🟨 en cours · ⬜ à venir.
 | 25 | Table des sondes « Ce que les modèles voient » (`probe_indicator()`) | cœur **2026.11.3** | `nemetonshiny` | **Ouvert avant le code** (2026-11-06). Vue triée par R², lecture `voit` / `partiel` / `angle_mort`, marqueur `source_commune` |
 | 26 | B5 stratification verticale : colonnes `B5`, `b5_status` (4 statuts), `b5_s1`…`b5_s5` (profil vertical), `b5_densite` ; couche carte ; badge de dimensionnement drone (`simulate_density_sensitivity()$conclusion`) | cœur **2026.11.5** / **2026.11.6** | `nemetonshiny` | Ouvert le 2026-11-06, préavis `specs/067-forpt-lidar-latent/brief-nemetonshiny.md`. Libellés, sens et `doc_url` viennent de `indicator_labels()` : rien à forker |
 | 27 | Effets de la gestion (`effet_gestion()`) : table par famille (effet moyen, intervalle, statut `calcule` / `recouvrement_insuffisant` / `trop_peu_unites`) dans la synthèse ; à citer comme résultat du projet | cœur **2026.11.8** | `nemetonshiny`, `aigora` | Ouvert le 2026-11-06, préavis `specs/068-trajectoires-finn/brief-nemetonshiny.md` |
-| 28 | Desserte BD TOPO : `acquire_desserte()` plante dès que l'emprise dépasse une tuile WFS de 2 km (types de colonnes différents entre tuiles, `as.Date("14791")`) ; l'app affiche « Vérifiez la connexion réseau » sans le vrai message | diagnostic cœur du 2026-11-21 (aucun code cœur) | `foretaccess` puis `nemetonshiny` | Ouvert le 2026-11-21 (projet « Parc de la colombière »). Briefs `vers-foretaccess/2026-11-21-rbind-tuiles-wfs-types.md` et `vers-nemetonshiny/2026-11-21-desserte-detail-erreur.md`. **foretaccess 2.6.1** (PR n° 167) : types alignés, alerte « N tuiles en échec ». Elle a révélé une erreur IGN passagère (`text/plain` au lieu de XML) qui amputait une tuile sur 4 : brief `2026-11-21-wfs-nouvelles-tentatives.md` → **foretaccess 2.6.2** (PR n° 169, `.retenter()`). Vérifié en réel à 1000 m le 2026-11-21 : 3 essais à **1 447 tronçons** sans alerte (1 084 en 2.6.1, une tuile perdue). **App** : PR n° 308 mergée (vraie erreur dans le rapport du pipeline), plancher `foretaccess (>= 2.6.1)`, pas encore publiée. **Reste** : plancher `>= 2.6.2` côté app, release app, relance du pipeline sur `20261121_083914_gwsa` |
 
 **Les n° 20 à 24 sont ouverts le 2026-11-05 avant toute ligne de code** (specs 064 et 065, brief « modèles de fondation »), pour que la leçon des n° 10 et 11 serve : un écart s'inscrit quand on le prévoit, pas quand on le découvre. **Trois écarts (n° 3, n° 6 résiduel, n° 16), aucun n'appelle plus de correctif dans le cœur.** Les n° 18 (T2) et 19 (`r1_status`) sont refermés par l'app v0.155.0 le 2026-10-05 ; `r1_fallback_reason` reste non transporté, à la demande (le rapport ne cite pas le motif exact). Le n° 13 est refermé le 2026-10-02 (cinq relances RECONFORT propres, table ci-dessous). Les n° 15 et 17 sont refermés par l'app v0.152.1 le 2026-10-02 (table ci-dessous).
 Le n° 3 attend une sortie sur un projet réel portant à la fois un nuage LiDAR
@@ -72,7 +71,7 @@ lecture seule sur `nemetonshiny@5a1afd7c` le 2026-08-22 (détail dans l'entrée
 de journal du 2026-08-22, chantiers A et D) ; le n° 9 sur
 `nemetonshiny@d2442193` le 2026-08-31 ; les n° 7, 8, 10 et 11 sur
 `nemetonshiny@3869ffd8` le 2026-09-23 (plancher `DESCRIPTION:15` :
-`nemeton (>= 0.197.0)`) ; le n° 12 sur `nemetonshiny@69cf0aeb` (tag v0.143.31)
+`nemeton (>= 0.197.0)`) ; le n° 28 sur `nemetonshiny@1ba3417b` (tag v2026.11.3) le 2026-11-23 (plancher `foretaccess (>= 2.6.3)`) ; le n° 12 sur `nemetonshiny@69cf0aeb` (tag v0.143.31)
 le 2026-09-23 (plancher `nemeton (>= 0.198.0)`) ; le n° 14 et la partie app du n° 13 sur
 `nemetonshiny@9b9c4b98` (tag v0.144.2) le 2026-09-23 (plancher `nemeton (>= 0.199.2)`) ; les n° 15 et 17 sur
 `nemetonshiny@546a2d74` (tag v0.152.1) le 2026-10-02 (plancher `nemeton (>= 0.207.0)`) :
@@ -94,6 +93,7 @@ le 2026-09-23 (plancher `nemeton (>= 0.198.0)`) ; le n° 14 et la partie app du 
 | 14 | Houppiers : échec sous plan `future` multi-workers (cœur v0.199.2) | app **v0.144.2** (`9b9c4b98`) | `service_marculus.R:624` — `nemeton::segment_houppiers(chm, aoi = aoi)` dans le processus ; plus de `callr::r()` ni de `st_filter()` d'emprise applicatif ; `st_make_valid()` en 2154 gardé (`.marculus_aoi()`) ; plancher `DESCRIPTION` `nemeton (>= 0.199.2)` |
 | 15 | Covariables de domaine FORMS-T pour la production du massif (cœur v0.206.0) | app **v0.152.1** (`546a2d74`, fix `35ddc536`) | `service_production_ifn.R:369` — `.massif_covariables()` appelle `nemeton::ifn_covariables_domaines(dom, h$height, dem, unite_hauteur = "cm")` (hauteur FORMS-T seule, altitude = MNT du projet) ; ligne 307, `ifn_production_domaines(covariables = cov)`. Rien n'est passé si une covariable manque. Chargement FORMS-T réel non vérifié (403 Theia sur le poste), suivi par le n° 16 |
 | 17 | P2 en mode CHM normalisé contre 40 m (cœur v0.207.0) | app **v0.152.1** (`546a2d74`) | `service_project.R:601-603` — `.indicator_status_col(cc)` puis `normalize_indicator(cc, v, statut = st)`. **En plus du brief** : `service_compute.R:4286-4287` retire le statut d'un calcul précédent (sinon un P2 repassé CHM → IFN gardait `indice_station_m` et ses m³/ha/an étaient notés sur 40) |
+| 28 | Desserte BD TOPO : `acquire_desserte()` plantait dès que l'emprise dépassait une tuile WFS (types de colonnes différents entre tuiles) ; l'app accusait le réseau (diagnostic cœur du 2026-11-21) | `foretaccess` **2.6.1** puis **2.6.2** (tentatives WFS), app **v2026.11.3** (`1ba3417b`) | Plancher `DESCRIPTION:15` : `foretaccess (>= 2.6.3)` ; mission 040 (PR n° 311) : « rien à typer » avant le bloc volume, vrai motif dans le rapport du pipeline ; PR n° 308 : `detail` remonté. Vérifié en réel le 2026-11-22 sur la Colombière (`run_20261122095434_xumf`) : `desserte` `ok`, `desserte_typage` « rien à typer » |
 
 **Ce que l'écart n° 1 aura coûté et rapporté.** Ouvert le 2026-08-15 comme
 « non consommé, et désormais bloquant », il l'était : la copie de la table dans
@@ -473,6 +473,42 @@ cette strate », surcouche du Plan de validation par moteur. Plan d'actions :
 fiches PDF par UGF. ADR 0003 de l'app acceptée (pilotage par IA ouvert à
 tous, tout client MCP, avertissement). Aucune release cœur requise (brief
 `2026-11-15-plan-nemetonshiny-v2026.11.1`).
+
+### 2026-11-23 — nemetonshiny v2026.11.4 (`nemetonshiny@9c023e41`, cycle dev 2026.11.3.9001 → .9003)
+
+**Aucune release cœur.** Brief `vers-nemeton/2026-11-23-plan-nemetonshiny-v2026.11.4`.
+Plancher `nemeton (>= 2026.11.39)`, relu dans `DESCRIPTION:15` au tag.
+Consomme :
+- cœur **2026.11.38** : un seul moteur reGénération vivant par projet
+  (`marker_path`, `capped_run_alive()`, `stop_memory_capped()`), mission 043,
+  PR n° 316, `.9001` ;
+- cœur **2026.11.39** : E-OBS au nouveau format du CDS, cache global lu par
+  `eobs_cached_file()`, mission 044, PR n° 318 (`b2d9117f`), `.9003`.
+**Reste (terrain, Pascal)** : relancer la Colombière et vérifier un seul scope
+`nemeton-run_regeneration_engine-*`, `regen_annees` et `regen_eobs_rr`/`tg`
+`ok`, un seul jeu de `.nc` dans le cache global. Pas encore consommés par
+l'app : 2026.11.40 (attente ERA5, brief `vers-nemetonshiny/2026-11-23-era5-textes-et-attente-cds.md`)
+et 2026.11.41 (brief `vers-nemetonshiny/2026-11-23-eobs-derniere-annee-complete.md`).
+
+### 2026-11-22 — nemetonshiny v2026.11.3 (`nemetonshiny@1ba3417b`, cycle dev 2026.11.2.9001 → .9012)
+
+**Aucune release cœur.** Brief `vers-nemeton/2026-11-22-plan-nemetonshiny-v2026.11.3`
+(traité le 2026-11-23). PR n° 315. Planchers `nemeton (>= 2026.11.37)`,
+`foretaccess (>= 2.6.3)`, relus au tag. Consomme :
+- cœur **2026.11.32** : hiver décennal E-OBS (reGénération), mission 034, `.9002` ;
+- cœur **2026.11.34** : W1 avec les sources `water_points`, mission 035, `.9003` ;
+- cœur **2026.11.35** : T4 par `resoudre_espar_bdforet()`, mission 036, `.9004` ;
+- cœur **2026.11.37** : `cvat_path` passé à `creer_projet_inventaire_video()`,
+  mission 042, PR n° 314, `.9012`.
+**Écart n° 28 refermé** (table des écarts refermés) : « rien à typer » avant le
+bloc volume et vrai motif dans le rapport du pipeline (mission 040, PR n° 311,
+`.9010`), vérifié en réel le 2026-11-22.
+**Brief groma `2026-11-20-relief-cvat-houppiers-foret`** rangé : livré par la
+mission 037 (cœur 2026.11.37). Une seule divergence, voulue : le § 2.3 du brief
+décrit le CVAT de foretaccess en 0-254 (`round(v * 254)`) ; le vrai codage
+(`foretaccess/R/vat_combined.R:78-84`) est `floor(255,9999 · v)` écrêté à 255,
+255 = NA. Le cœur suit le code (`v = b / 255`, puis `1 + round(v * 254)`), et
+accepte aussi un flottant [0, 1] au lieu de le refuser.
 
 ### 2026-11-23 — v2026.11.41 : dernière année complète d'une version E-OBS
 
