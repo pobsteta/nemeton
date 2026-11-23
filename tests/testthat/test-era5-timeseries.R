@@ -424,3 +424,86 @@ test_that("ncdf4 absent sur .rsen_era5_assurer : message clair, aucun fichier ef
   expect_true(file.exists(f))
   expect_length(acces$appels$req, 0L)
 })
+
+# --- Année non close : refus avant toute requête (mission 041) ---------------
+
+.refus_annee <- function(annee, instant) {
+  cd <- withr::local_tempdir(.local_envir = parent.frame())
+  # Fichier partiel sous le nom de l'année DEMANDÉE : sans refus préalable, il
+  # serait effacé puis redemandé.
+  f <- nemeton:::.rsen_era5ts_nom(cd, 4.75, 47.25, annee)
+  .ts_fixture(f, as.numeric(seq(as.POSIXct(sprintf("%d-01-01", annee), tz = "UTC"),
+                                by = "hour", length.out = 100)))
+  acces <- .acces_ts_faux()
+  n <- new.env(); n$soumis <- 0L
+  acces$soumettre <- function(req_k, cache_dir) {
+    n$soumis <- n$soumis + 1L
+    stop("requête soumise")
+  }
+  e <- expect_error(
+    nemeton:::.rsen_era5_assurer(data.frame(lon = 4.75, lat = 47.25), annee, cd,
+                                 source = "timeseries", acces_ts = acces,
+                                 instant = instant),
+    class = "rsen_era5ts_echec")
+  expect_match(conditionMessage(e), "does not yet cover")
+  expect_match(conditionMessage(e), "5 days")
+  expect_true(file.exists(f))                 # cache non effacé
+  expect_identical(n$soumis, 0L)              # aucune requête tentée
+}
+
+test_that("année NA : refus clair de classe rsen_era5ts_echec", {
+  skip_if_not_installed("ncdf4")
+  cd <- withr::local_tempdir()
+  e <- expect_error(
+    nemeton:::.rsen_era5_assurer(data.frame(lon = 4.75, lat = 47.25), NA_integer_, cd,
+                                 source = "timeseries", acces_ts = .acces_ts_faux()),
+    class = "rsen_era5ts_echec")
+  expect_match(conditionMessage(e), "missing")
+})
+
+test_that("cas 4 : année en cours acceptée sur le chemin classique (pas de refus)", {
+  cd <- withr::local_tempdir()
+  an <- as.integer(format(Sys.time(), "%Y", tz = "UTC"))
+  lots <- list()
+  testthat::local_mocked_bindings(
+    .rsen_era5_lot = function(taches, cache_dir, ...) {
+      lots[[length(lots) + 1L]] <<- taches
+      invisible(NULL)
+    },
+    .rsen_era5_fusionner = function(...) "fusion")
+  construire <- function(lon, lat, annee) list(list(target = "x.zip"))
+  expect_no_error(nemeton:::.rsen_era5_assurer(
+    data.frame(lon = 4.75, lat = 47.25), an, cd, source = "classique",
+    construire = construire))
+  expect_length(lots, 1L)     # la requête a été construite et lancée
+})
+
+test_that("année en cours : refus avant toute requête et tout effacement", {
+  skip_if_not_installed("ncdf4")
+  .refus_annee(2026L, as.POSIXct("2026-11-23 12:00:00", tz = "UTC"))
+})
+
+test_that("année tout juste écoulée (< 5 jours) : refus", {
+  skip_if_not_installed("ncdf4")
+  .refus_annee(2025L, as.POSIXct("2026-01-03 00:00:00", tz = "UTC"))
+})
+
+test_that("année future : refus", {
+  skip_if_not_installed("ncdf4")
+  .refus_annee(2030L, as.POSIXct("2026-11-23 12:00:00", tz = "UTC"))
+})
+
+test_that("année close : acceptée (comportement inchangé)", {
+  expect_true(nemeton:::.rsen_era5ts_annee_close(2024L, as.POSIXct("2026-11-23", tz = "UTC")))
+  expect_true(nemeton:::.rsen_era5ts_annee_close(2025L, as.POSIXct("2026-01-06 00:00:00", tz = "UTC")))
+  expect_false(nemeton:::.rsen_era5ts_annee_close(2025L, as.POSIXct("2026-01-05 22:00:00", tz = "UTC")))
+  expect_silent(nemeton:::.rsen_era5ts_exiger_annees_closes(c(2023L, 2024L),
+                as.POSIXct("2026-11-23", tz = "UTC")))
+})
+
+test_that("règle bissextile unique", {
+  expect_identical(nemeton:::.rsen_era5ts_njours(2024L), 366L)
+  expect_identical(nemeton:::.rsen_era5ts_njours(2023L), 365L)
+  expect_identical(nemeton:::.rsen_era5ts_njours(1900L), 365L)
+  expect_identical(nemeton:::.rsen_era5ts_njours(2000L), 366L)
+})

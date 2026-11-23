@@ -934,7 +934,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
                                category = NA, max_simultanees = NULL,
                                requete = NULL, combiner = .rsen_era5_combiner,
                                construire = .rsen_era5_requete_annee,
-                               source = NULL, acces_ts = NULL, ...) {
+                               source = NULL, acces_ts = NULL, instant = Sys.time(), ...) {
   if (!dir.exists(cache_dir)) dir.create(cache_dir, recursive = TRUE)
   annees <- as.integer(annees)
   category <- rep_len(category, length(annees))
@@ -943,6 +943,8 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   ts <- identical(source, "timeseries")
   # ncdf4 (Suggests) avant tout effacement de cache ou requête.
   if (ts) .rsen_era5ts_exiger_ncdf4()
+  # Année en cours ou future : refus avant tout cache/requête (latence ERA5).
+  if (ts) .rsen_era5ts_exiger_annees_closes(annees, instant)
   # Point-années à acquérir selon la source choisie.
   manque <- list()
   for (s in seq_len(nrow(sites))) {

@@ -1,3 +1,12 @@
+# nemeton (development version)
+
+- **ERA5 `timeseries` : une année non close est refusée avant tout appel au CDS**
+  (mission 041). Année en cours, année future ou année close depuis moins de
+  5 jours (latence ERA5) : erreur `rsen_era5ts_echec` dont le message dit
+  qu'ERA5 ne couvre pas encore l'année entière et qu'il faut une année close ;
+  aucune requête, aucun cache effacé. Chemin classique inchangé. La règle
+  bissextile n'est plus écrite qu'une fois (`.rsen_era5ts_njours()`).
+
 # nemeton 2026.11.42 (2026-11-23)
 
 ## Nouveautés

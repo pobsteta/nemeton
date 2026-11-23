@@ -144,7 +144,7 @@
   d <- data.frame(obs_time = t, v)
   d <- d[format(d$obs_time, "%Y", tz = "UTC") == as.character(annee), , drop = FALSE]
   d <- d[order(d$obs_time), , drop = FALSE]
-  njours <- if (annee %% 4 == 0 && (annee %% 100 != 0 || annee %% 400 == 0)) 366L else 365L
+  njours <- .rsen_era5ts_njours(annee)
   if (annee_complete && nrow(d) != 24L * njours) {
     stop(sprintf("ERA5 timeseries %d: %d hourly steps, expected %d.", annee,
                  nrow(d), 24L * njours), call. = FALSE)
@@ -202,6 +202,36 @@
     class = "rsen_era5ts_echec")
 }
 
+# Nombre de jours d'une année (règle bissextile unique).
+.rsen_era5ts_njours <- function(annee) {
+  if (annee %% 4 == 0 && (annee %% 100 != 0 || annee %% 400 == 0)) 366L else 365L
+}
+
+# ERA5 n'est disponible qu'avec ~5 jours de latence : une année n'est entière
+# qu'à partir du 31 décembre 23 h UTC + 5 jours. `maintenant` injectable.
+.RSEN_ERA5TS_LATENCE_JOURS <- 5
+
+.rsen_era5ts_annee_close <- function(annee, maintenant = Sys.time()) {
+  fin <- as.POSIXct(sprintf("%d-12-31 23:00:00", as.integer(annee)), tz = "UTC")
+  as.numeric(maintenant) >= as.numeric(fin) + .RSEN_ERA5TS_LATENCE_JOURS * 86400
+}
+
+# Refus (avant tout appel CDS) d'une année qu'ERA5 ne couvre pas encore entièrement.
+.rsen_era5ts_exiger_annees_closes <- function(annees, maintenant = Sys.time()) {
+  if (!length(annees) || anyNA(annees)) {
+    .rsen_era5ts_abort("the requested year is missing (NA); ask for a closed year.")
+  }
+  ouvertes <- sort(unique(annees[!vapply(annees, .rsen_era5ts_annee_close, NA,
+                                         maintenant = maintenant)]))
+  if (length(ouvertes)) {
+    .rsen_era5ts_abort(sprintf(
+      paste0("ERA5 does not yet cover the whole of year(s) %s (latency of about %d days ",
+             "after 31 December); ask for a closed year."),
+      paste(ouvertes, collapse = ", "), as.integer(.RSEN_ERA5TS_LATENCE_JOURS)))
+  }
+  invisible(TRUE)
+}
+
 # Le fichier couvre l'année entière en pas horaires (jours entiers de 24 h).
 .rsen_era5ts_couvre <- function(path, annee) {
   # ncdf4 absent : erreur claire, jamais confondue avec un fichier illisible.
@@ -214,7 +244,7 @@
     td <- nc$dim[[tn]]
     base <- as.POSIXct(gsub(".*since ", "", td$units), tz = "UTC")
     t <- base + as.numeric(td$vals) * (if (grepl("hours", td$units)) 3600 else 1)
-    njours <- if (annee %% 4 == 0 && (annee %% 100 != 0 || annee %% 400 == 0)) 366L else 365L
+    njours <- .rsen_era5ts_njours(annee)
     sum(format(t, "%Y", tz = "UTC") == as.character(annee)) == 24L * njours
   }, error = function(e) NA)
 }
