@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.42.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.43</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,7 +118,7 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="nemeton-development-version">nemeton (development version)<a class="anchor" aria-label="anchor" href="#nemeton-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="2026.11.43" id="nemeton-20261143-2026-11-23">nemeton 2026.11.43 (2026-11-23)<a class="anchor" aria-label="anchor" href="#nemeton-20261143-2026-11-23"></a></h2>
 <ul><li>
 <strong>ERA5 <code>timeseries</code> : une année non close est refusée avant tout appel au CDS</strong> (mission 041). Année en cours, année future ou année close depuis moins de 5 jours (latence ERA5) : erreur <code>rsen_era5ts_echec</code> dont le message dit qu’ERA5 ne couvre pas encore l’année entière et qu’il faut une année close ; aucune requête, aucun cache effacé. Chemin classique inchangé. La règle bissextile n’est plus écrite qu’une fois (<code>.rsen_era5ts_njours()</code>).</li>
 </ul></div>
