@@ -13,6 +13,14 @@ concise, categorised trail.
 
 ## [Unreleased](https://github.com/pobsteta/nemeton/compare/v0.19.7...HEAD)
 
+## \[2026.11.41\] - 2026-11-23
+
+### Added
+
+- [`eobs_last_complete_year()`](https://pobsteta.github.io/nemeton/reference/eobs_last_complete_year.md):
+  last year whose summer months an E-OBS version covers (cached netCDF
+  dates, else a table of measured versions 33.0e / 34.0e).
+
 ## \[2026.11.40\] - 2026-11-23
 
 ### Added

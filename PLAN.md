@@ -538,6 +538,22 @@ par UGF. ADR 0003 de l’app acceptée (pilotage par IA ouvert à tous, tout
 client MCP, avertissement). Aucune release cœur requise (brief
 `2026-11-15-plan-nemetonshiny-v2026.11.1`).
 
+### 2026-11-23 — v2026.11.41 : dernière année complète d’une version E-OBS
+
+**Constat.** Brief
+`vers-nemeton/2026-11-23-eobs-derniere-annee-version.md` : l’app borne
+sa fenêtre E-OBS sur `annee_courante - 1`, la version 34.0e est figée
+dans le cœur. Mesuré sur le cache : la 34.0e s’arrête au 2026-06-30 (27
+940 couches), la 33.0e au 2025-12-31. Au 2027-01-01, l’été 2026 aurait
+été écarté (incomplet) sans erreur. **Cœur (cette release).**
+`eobs_last_complete_year(version, months)` : dates du netCDF en cache,
+sinon table des versions mesurées ; attributs `end_date` et `source`.
+34.0e → 2025. **App.** Brief
+`vers-nemetonshiny/2026-11-23-eobs-derniere-annee-complete.md` : borner
+la fin de la fenêtre sur
+[`eobs_last_complete_year()`](https://pobsteta.github.io/nemeton/reference/eobs_last_complete_year.md)
+; plancher `nemeton (>= 2026.11.41)`.
+
 ### 2026-11-23 — v2026.11.40 : ERA5 au format du CDS actuel, attente en file
 
 **Constat.** Run Colombière (`run_20261122154945_eghc`, 24 mois ERA5) :
