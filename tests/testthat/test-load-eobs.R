@@ -289,3 +289,47 @@ test_that("eobs_cached_file rend la série en cache, sinon NULL", {
   expect_null(eobs_cached_file("rr", version = "30.0e", cache_dir = cd))
   expect_error(eobs_cached_file("zz", cache_dir = cd), "Unknown E-OBS")
 })
+
+test_that("eobs_last_complete_year lit la table des versions mesurées", {
+  cd <- withr::local_tempdir()                 # cache vide : voie table
+  a34 <- eobs_last_complete_year("34.0e", cache_dir = cd)
+  expect_identical(as.integer(a34), 2025L)     # série arrêtée au 2026-06-30
+  expect_identical(attr(a34, "end_date"), as.Date("2026-06-30"))
+  expect_identical(attr(a34, "source"), "table")
+  # Juin seul est complet en 2026 pour la 34.0e.
+  expect_identical(as.integer(eobs_last_complete_year("34.0e", months = 6L,
+                                                      cache_dir = cd)), 2026L)
+  expect_identical(as.integer(eobs_last_complete_year("v33_0e", cache_dir = cd)),
+                   2025L)
+  expect_warning(inc <- eobs_last_complete_year("99.0e", cache_dir = cd),
+                 "Unknown E-OBS version")
+  expect_true(is.na(inc))
+  expect_error(eobs_last_complete_year(months = 13, cache_dir = cd), "months")
+})
+
+test_that("eobs_last_complete_year lit les dates de la série en cache", {
+  skip_if_not_installed("terra")
+  cd <- withr::local_tempdir()
+  ecrire <- function(fin) {
+    jours <- seq(as.Date("2025-06-01"), as.Date(fin), by = "day")
+    r <- terra::rast(nrows = 2, ncols = 2, nlyrs = length(jours),
+                     xmin = 3, xmax = 4, ymin = 45, ymax = 46, vals = 20)
+    terra::time(r) <- jours
+    f <- nemeton:::.eobs_cache_file("mean_temperature", nemeton:::.EOBS_CDS_SERIE,
+                                    "35.0e", "0.1deg", cd)
+    unlink(f)
+    terra::writeCDF(r, f, varname = "tg", overwrite = TRUE)
+    f
+  }
+  ecrire("2026-08-31")                         # été 2026 complet
+  a <- eobs_last_complete_year("35.0e", cache_dir = cd)
+  expect_identical(as.integer(a), 2026L)
+  expect_identical(attr(a, "source"), "cache")
+  expect_identical(attr(a, "end_date"), as.Date("2026-08-31"))
+  ecrire("2026-08-10")                         # 71 jours sur 92 < 90 %
+  expect_identical(as.integer(eobs_last_complete_year("35.0e", var = "tg",
+                                                      cache_dir = cd)), 2025L)
+  # La variable demandée n'est pas en cache : retour à la table (inconnue ici).
+  expect_warning(eobs_last_complete_year("35.0e", var = "rr", cache_dir = cd),
+                 "Unknown E-OBS version")
+})

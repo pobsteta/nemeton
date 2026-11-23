@@ -230,6 +230,97 @@ eobs_cached_file <- function(var = "tx", version = "34.0e", resolution = "0.1deg
   if (file.exists(f)) f else NULL
 }
 
+# Dernier jour couvert par chaque version E-OBS du CDS, MESURÉ sur les fichiers
+# livrés (terra::time du netCDF), jamais déduit d'une date de publication :
+# 33.0e -> 2025-12-31 (tx, 27 759 couches), 34.0e -> 2026-06-30 (tg, 27 940
+# couches), relevés le 2026-11-23. Ajouter ici une version une fois mesurée.
+.EOBS_VERSION_FIN <- c("33.0e" = "2025-12-31", "34.0e" = "2026-06-30")
+
+# Dernière année dont les mois `months` sont couverts à `min_frac` (même règle
+# que .eobs_summer_by_year(), qui écarte les étés incomplets), étant donné le
+# vecteur des dates présentes.
+.eobs_derniere_annee_complete <- function(dates, months, min_frac) {
+  dates <- unique(as.Date(dates[!is.na(dates)]))
+  dates <- dates[as.integer(format(dates, "%m")) %in% months]
+  if (!length(dates)) return(NA_integer_)
+  yr <- as.integer(format(dates, "%Y"))
+  for (y in sort(unique(yr), decreasing = TRUE)) {
+    if (sum(yr == y) >= min_frac * .eobs_jours_attendus(y, months)) return(y)
+  }
+  NA_integer_
+}
+
+#' Last complete year covered by an E-OBS version
+#'
+#' The last year whose months `months` an E-OBS version covers well enough for
+#' [load_eobs_source()] to keep it (at least `min_frac` of the days; a shorter
+#' summer is dropped there with a warning). Use it to end a window of years on
+#' the data rather than on today's date: version 34.0e ends on 2026-06-30, so
+#' its last complete June–August is 2025 even after 2027-01-01.
+#'
+#' When the series of a variable of this version is in the cache (see
+#' [eobs_cached_file()]), its dates are read from the netCDF (`source =
+#' "cache"`). Otherwise the last day is taken from a table of versions whose
+#' files were measured (`source = "table"`: 33.0e and 34.0e). An unknown version
+#' with nothing cached gives `NA` with a warning.
+#'
+#' @param version E-OBS version, as in [load_eobs_source()] (default `"34.0e"`).
+#' @param months Months that must be covered (default `6:8`, as in
+#'   [load_eobs_source()]).
+#' @param var E-OBS variable to look for in the cache, or `NULL` (default) for
+#'   the first cached one among `"tx"`, `"tg"`, `"tn"`, `"rr"`. All variables of
+#'   one version end on the same day.
+#' @param resolution,cache_dir As in [eobs_cached_file()].
+#' @param min_frac Share of the days of `months` that must be present (default
+#'   `0.9`, the rule of [load_eobs_source()]).
+#'
+#' @return An integer year, or `NA_integer_`, with attributes `end_date` (the
+#'   last day of the series, a `Date`) and `source` (`"cache"`, `"table"` or
+#'   `NA`).
+#'
+#' @section Lifecycle:
+#' Experimental.
+#'
+#' @seealso [load_eobs_source()], [eobs_cached_file()]
+#' @examples
+#' eobs_last_complete_year("34.0e") # 2025: the series stops on 2026-06-30
+#' @export
+eobs_last_complete_year <- function(version = "34.0e", months = 6:8, var = NULL,
+                                    resolution = "0.1deg", cache_dir = NULL,
+                                    min_frac = 0.9) {
+  months <- as.integer(months)
+  if (!length(months) || anyNA(months) || any(months < 1L | months > 12L)) {
+    cli::cli_abort("{.arg months} must be months between 1 and 12.")
+  }
+  rendre <- function(annee, fin, source) {
+    structure(as.integer(annee), end_date = as.Date(fin), source = source)
+  }
+  # 1. La série en cache fait foi : on lit ses dates (lecture des métadonnées
+  #    seulement, quelques secondes même pour 4 Go).
+  vars <- if (is.null(var)) c("tx", "tg", "tn", "rr") else var
+  for (v in vars) {
+    f <- eobs_cached_file(v, version = version, resolution = resolution,
+                          cache_dir = cache_dir)
+    if (is.null(f)) next
+    tt <- tryCatch(as.Date(terra::time(terra::rast(f))), error = function(e) NULL)
+    if (!length(tt) || all(is.na(tt))) next
+    return(rendre(.eobs_derniere_annee_complete(tt, months, min_frac),
+                  max(tt, na.rm = TRUE), "cache"))
+  }
+  # 2. Sinon, la table des versions mesurées.
+  cle <- gsub("_", ".", sub("^v", "", version))
+  if (cle %in% names(.EOBS_VERSION_FIN)) {
+    fin <- as.Date(.EOBS_VERSION_FIN[[cle]])
+    jours <- seq(as.Date("1950-01-01"), fin, by = "day")
+    return(rendre(.eobs_derniere_annee_complete(jours, months, min_frac),
+                  fin, "table"))
+  }
+  cli::cli_warn(c(
+    "Unknown E-OBS version {.val {version}} and no cached series to read.",
+    i = "Download it with {.fun load_eobs_source}, or use a known version: {.val {names(.EOBS_VERSION_FIN)}}."))
+  rendre(NA_integer_, NA, NA_character_)
+}
+
 #' Acquire E-OBS per-year summer fields (Tmax / precipitation) for an AOI
 #'
 #' @description
