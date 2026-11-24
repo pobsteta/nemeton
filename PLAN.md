@@ -189,6 +189,21 @@ pins de Norvège seulement. Branche par défaut de `forptnemeton` et
 100 sites × 100 placettes × 50 ans en 21 s de CPU. Reste l’étape 3
 (calibration sur placettes IFN, D-7).
 
+### 2026-11-24 — étude FAST contre décoloration, script et zone pilote (mission 045 de nemetonplateforme)
+
+- Script `data-raw/etude_fast_decoloration/` (`fonctions.R`, `etude.R`),
+  tests `test-etude-fast-decoloration.R`. Pas de release (étude).
+- Zone pilote passée de bout en bout hors étape FAST (base nemeton
+  absente de la session) : durées dans la PR. FAST et le calcul des 14
+  zones restent à lancer par l’orchestrateur.
+- Choix tranchés (délégation) : 2 zones très touchées + 1 peu touchée
+  par groupe d’essences ; date d’une coupe 20 m = la plus précoce des
+  sous-pixels (≥ 2 coupés) ; horizon principal 24 mois (12/36
+  sensibilité, 46 info 2021) ; FAST sur base SQLite locale, indice NDVI,
+  alerte à surface égale (la classe ≥ 1 couvre ~94 % des pixels) ;
+  alerte FAST 20 m = majorité, égalité = alerte ; dernière coupe connue
+  prise sur toute la région, pas la zone.
+
 ### 2026-11-24 — v2026.11.45 : bandes Sentinel-2 lues par fenêtre (mission 044 de nemetonplateforme, PR \#692)
 
 Essai de la Colombière : l’étape FAST prenait ~4,9 min par scène (189
