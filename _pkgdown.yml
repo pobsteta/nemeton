@@ -628,6 +628,14 @@ reference:
     - embedding_regress
     - probe_indicator
 
+  - subtitle: "Detection de la decoloration du feuillage (mission 046)"
+    desc: >
+      Composites mensuels Sentinel-2, anomalie par pixel avec normale de repli
+      par les voisins, ICD par essence, alerte et niveaux 0 a 4
+    contents:
+    - decoloration_detecter
+    - decoloration_carte_essences
+
   - subtitle: "Itineraires sylvicoles (spec 065)"
     desc: >
       Catalogue d'itineraires source, admissibilite par UGF avec la raison de

@@ -160,6 +160,18 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-24 — décoloration : détection portée dans le cœur (mission 046 de nemetonplateforme)
+
+`R/decoloration.R` : `decoloration_detecter()` + `decoloration_carte_essences()`
+(méthode §§ 3-8 du suivi régional). Normale de repli par les voisins validée par
+Pascal le 2026-11-24 (rayon 300 m, ≥ 20 voisins, décalage propre, origine
+propre/voisins/aucune). Choix de la mission : DESCRIPTION en `.9000`, pas de
+release ; recherche STAC propre à la décoloration (B03/B06/B07/SCL) pour ne pas
+changer les colonnes de `stac_search_s2()` utilisées par FAST. Reste : mission 2
+(coupes, volumes, risque), mission 3 (coupes partielles, IFN) ; comparaison au
+script régional à faire quand `sortie_decoloration/` sera disponible
+(`tests/manual/decoloration-couchey.R`).
+
 ### 2026-11-24 — v2026.11.45 : bandes Sentinel-2 lues par fenêtre (mission 044 de nemetonplateforme, PR #692)
 
 Essai de la Colombière : l'étape FAST prenait ~4,9 min par scène (189 scènes,
