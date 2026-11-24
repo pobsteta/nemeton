@@ -160,6 +160,12 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-24 — étude FAST contre décoloration, script et zone pilote (mission 045 de nemetonplateforme)
+
+- Script `data-raw/etude_fast_decoloration/` (`fonctions.R`, `etude.R`), tests `test-etude-fast-decoloration.R`. Pas de release (étude).
+- Zone pilote passée de bout en bout hors étape FAST (base nemeton absente de la session) : durées dans la PR. FAST et le calcul des 14 zones restent à lancer par l'orchestrateur.
+- Choix tranchés (délégation) : 2 zones très touchées + 1 peu touchée par groupe d'essences ; date d'une coupe 20 m = date du 2e sous-pixel coupé ; alerte FAST 20 m = majorité, égalité = alerte ; dernière coupe connue prise sur toute la région, pas la zone.
+
 ### 2026-11-24 — nemetonshiny v2026.11.6 et plancher relevé à 2026.11.44 (missions 040 et 043 de nemetonplateforme)
 
 nemetonshiny v2026.11.6 (mission 040, PR #324) suit le forçage ERA5 `timeseries` :

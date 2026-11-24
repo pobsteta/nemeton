@@ -1,5 +1,11 @@
 # nemeton (version de développement)
 
+- **étude : FAST contre décoloration** (mission 045). Script d'étude
+  `data-raw/etude_fast_decoloration/` (hors paquet, aucun changement de
+  comportement) : tirage des zones, vérité SUFOSAT (coupe rase sous 48 mois),
+  censure, Kaplan-Meier pondéré, lift, AUC, précision à surface égale, tirage par
+  zone, reprise par étape. Tests : `test-etude-fast-decoloration.R`.
+
 - **perf : bandes Sentinel-2 distantes lues par fenêtre** (mission 044). Les
   URL `https://` des bandes (Planetary Computer) sont ouvertes en
   `/vsicurl/<url>` (lecteur à reprises et empreinte de tuile mémoïsée), avec
