@@ -1135,17 +1135,19 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
 # dans nemeton).
 # - GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR évite le listage du « répertoire »
 #   du blob (requêtes inutiles, voire 403 sur SAS).
-# - GDAL_HTTP_MAX_RETRY=3 / GDAL_HTTP_RETRY_DELAY=2 : GDAL réessaie lui-même
-#   429/502/503/504 (3 reprises, 2 s entre deux : assez pour un 503 bref de
-#   Planetary Computer sans bloquer longtemps ; GDAL les désactive par défaut).
 # - `non_cached` : chemin /vsicurl/ à ne pas servir depuis le cache de GDAL.
 #   Sous /vsicurl/ un échec (503, coupure) reste en cache pour la session et
 #   les tentatives suivantes ne rappellent pas le serveur ; la boucle de
 #   reprise le pose dès la 2e tentative (CPL_VSIL_CURL_NON_CACHED).
+#   Cette variable est une liste séparée par « : » : avec une URL http://…
+#   le « : » du schéma la coupe, et le motif effectif couvre probablement
+#   tout /vsicurl/ pendant l'appel (sans gravité, restauré après). Pas
+#   d'échappement simple connu : on garde le chemin tel quel.
+#   Pas de GDAL_HTTP_MAX_RETRY : le délai de GDAL croît (2 ; 4,3 ; 8,9 s) et
+#   terra rouvre plusieurs fois par tentative, d'où des minutes sur un
+#   serveur toujours en 503 ; la reprise reste celle de la boucle R.
 .with_s2_gdal_opts <- function(expr, non_cached = NULL) {
-  opts <- c(GDAL_DISABLE_READDIR_ON_OPEN = "EMPTY_DIR",
-            GDAL_HTTP_MAX_RETRY         = "3",
-            GDAL_HTTP_RETRY_DELAY       = "2")
+  opts <- c(GDAL_DISABLE_READDIR_ON_OPEN = "EMPTY_DIR")
   if (!is.null(non_cached)) opts[["CPL_VSIL_CURL_NON_CACHED"]] <- non_cached
   old <- vapply(names(opts), function(n) Sys.getenv(n, unset = NA_character_),
                 character(1))
