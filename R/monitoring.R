@@ -1090,7 +1090,9 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
     return(get(tile_code, envir = .s2_tile_ext_cache))
   }
   ext_native <- tryCatch({
-    r_full <- terra::rast(.pc_ensure_fresh_href(href))
+    r_full <- .with_s2_gdal_opts(
+      terra::rast(.s2_vsi_path(.pc_ensure_fresh_href(href)))
+    )
     terra::ext(r_full)
   }, error = function(e) {
     .s2_cache_log("Tile-ext memoize: terra::rast(href) failed for ",
@@ -1110,6 +1112,38 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   rm(list = ls(envir = .s2_tile_ext_cache),
      envir = .s2_tile_ext_cache)
   invisible(TRUE)
+}
+
+# Chemin GDAL d'une bande S2 : une URL http(s) est ouverte via `/vsicurl/`
+# (lecture par plages d'octets, donc par fenêtre) ; sans ce préfixe, terra
+# passe par le pilote HTTP qui télécharge la tuile entière (~150 s contre
+# ~3 s pour 86 x 86 px, mission 044). Un chemin local ou déjà en `/vsi…/`
+# reste tel quel : l'opération est idempotente.
+.s2_vsi_path <- function(href) {
+  if (!is.character(href) || length(href) != 1L || is.na(href)) return(href)
+  if (grepl("^https?://", href, ignore.case = TRUE)) {
+    paste0("/vsicurl/", href)
+  } else {
+    href
+  }
+}
+
+# Évalue `expr` avec les options GDAL utiles à la lecture distante, puis
+# restaure l'état d'avant (variable absente → retirée, sinon valeur
+# d'origine). GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR évite le listage du
+# « répertoire » du blob (requêtes inutiles, voire 403 sur SAS).
+.with_s2_gdal_opts <- function(expr) {
+  opts <- c(GDAL_DISABLE_READDIR_ON_OPEN = "EMPTY_DIR")
+  old <- vapply(names(opts), function(n) Sys.getenv(n, unset = NA_character_),
+                character(1))
+  on.exit({
+    for (nm in names(opts)) {
+      if (is.na(old[[nm]])) Sys.unsetenv(nm)
+      else do.call(Sys.setenv, stats::setNames(list(old[[nm]]), nm))
+    }
+  }, add = TRUE)
+  do.call(Sys.setenv, as.list(opts))
+  expr
 }
 
 # Open a Sentinel-2 band href with `terra::rast()`, retrying on the
@@ -1169,7 +1203,10 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
   last_err     <- NULL
   for (attempt in seq_len(max_tries)) {
     r <- tryCatch({
-      r0 <- terra::rast(current_href)
+      # Lecture distante par fenêtre : `/vsicurl/` (cf. .s2_vsi_path) ;
+      # le jeton renouvelé repart de l'URL nue, jamais d'un chemin déjà
+      # préfixé.
+      r0 <- .with_s2_gdal_opts(terra::rast(.s2_vsi_path(current_href)))
       # When a `materialize` closure is provided, run it INSIDE the
       # tryCatch so that the actual pixel reads (which terra defers
       # to whichever call first needs values — typically the caller's
@@ -1179,7 +1216,7 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       # read on the COG silently surfaces as a writeRaster() failure
       # past the retry budget, leaving an empty
       # `<cache_dir>/{scene_id}/` behind (v0.21.10 fix).
-      if (is.null(materialize)) r0 else materialize(r0)
+      if (is.null(materialize)) r0 else .with_s2_gdal_opts(materialize(r0))
     }, error = function(e) e)
     if (!inherits(r, "error")) return(r)
 
