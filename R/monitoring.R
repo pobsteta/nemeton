@@ -1132,10 +1132,21 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
 # restaure l'état d'avant (variable absente → retirée, sinon valeur
 # d'origine). Limite : une option posée avant par `terra::setGDALconfig()`
 # prime sur l'environnement et masquerait la nôtre (aucun appel aujourd'hui
-# dans nemeton). GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR évite le listage du
-# « répertoire » du blob (requêtes inutiles, voire 403 sur SAS).
-.with_s2_gdal_opts <- function(expr) {
-  opts <- c(GDAL_DISABLE_READDIR_ON_OPEN = "EMPTY_DIR")
+# dans nemeton).
+# - GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR évite le listage du « répertoire »
+#   du blob (requêtes inutiles, voire 403 sur SAS).
+# - GDAL_HTTP_MAX_RETRY=3 / GDAL_HTTP_RETRY_DELAY=2 : GDAL réessaie lui-même
+#   429/502/503/504 (3 reprises, 2 s entre deux : assez pour un 503 bref de
+#   Planetary Computer sans bloquer longtemps ; GDAL les désactive par défaut).
+# - `non_cached` : chemin /vsicurl/ à ne pas servir depuis le cache de GDAL.
+#   Sous /vsicurl/ un échec (503, coupure) reste en cache pour la session et
+#   les tentatives suivantes ne rappellent pas le serveur ; la boucle de
+#   reprise le pose dès la 2e tentative (CPL_VSIL_CURL_NON_CACHED).
+.with_s2_gdal_opts <- function(expr, non_cached = NULL) {
+  opts <- c(GDAL_DISABLE_READDIR_ON_OPEN = "EMPTY_DIR",
+            GDAL_HTTP_MAX_RETRY         = "3",
+            GDAL_HTTP_RETRY_DELAY       = "2")
+  if (!is.null(non_cached)) opts[["CPL_VSIL_CURL_NON_CACHED"]] <- non_cached
   old <- vapply(names(opts), function(n) Sys.getenv(n, unset = NA_character_),
                 character(1))
   on.exit({
@@ -1208,7 +1219,9 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       # Lecture distante par fenêtre : `/vsicurl/` (cf. .s2_vsi_path) ;
       # le jeton renouvelé repart de l'URL nue, jamais d'un chemin déjà
       # préfixé.
-      r0 <- .with_s2_gdal_opts(terra::rast(.s2_vsi_path(current_href)))
+      vsi_path <- .s2_vsi_path(current_href)
+      nc <- if (attempt > 1L && grepl("^/vsicurl/", vsi_path)) vsi_path else NULL
+      r0 <- .with_s2_gdal_opts(terra::rast(vsi_path), non_cached = nc)
       # When a `materialize` closure is provided, run it INSIDE the
       # tryCatch so that the actual pixel reads (which terra defers
       # to whichever call first needs values — typically the caller's
@@ -1218,7 +1231,8 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       # read on the COG silently surfaces as a writeRaster() failure
       # past the retry budget, leaving an empty
       # `<cache_dir>/{scene_id}/` behind (v0.21.10 fix).
-      if (is.null(materialize)) r0 else .with_s2_gdal_opts(materialize(r0))
+      if (is.null(materialize)) r0
+      else .with_s2_gdal_opts(materialize(r0), non_cached = nc)
     }, error = function(e) e)
     if (!inherits(r, "error")) return(r)
 

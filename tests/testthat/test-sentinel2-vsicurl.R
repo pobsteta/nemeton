@@ -92,13 +92,66 @@ test_that("reprise : 'HTTP response code: 503' (/vsicurl/) est transitoire", {
   expect_identical(vus, 2L)
 })
 
+test_that("reprise réelle : un 503 mis en cache par /vsicurl/ est retenté", {
+  skip_if_not_installed("processx")
+  skip_if(Sys.which("python3") == "", "python3 absent")
+  withr::with_tempdir({
+    r <- terra::rast(nrows = 20, ncols = 20, xmin = 0, xmax = 200, ymin = 0,
+                     ymax = 200, crs = "EPSG:32631")
+    terra::values(r) <- seq_len(400)
+    terra::writeRaster(r, "b.tif")
+    # Serveur à plages d'octets : répond 503 aux 4 premières requêtes
+    # (= 1 essai + 3 reprises internes de GDAL), puis 200/206.
+    writeLines(c(
+      "import http.server, os, sys",
+      "n = {'k': 0}",
+      "class H(http.server.BaseHTTPRequestHandler):",
+      "    def log_message(self, *a): pass",
+      "    def serve(self, body):",
+      "        if n['k'] < 4:",
+      "            n['k'] += 1; self.send_response(503); self.send_header('Content-Length','0'); self.end_headers(); return",
+      "        data = open('b.tif', 'rb').read(); rg = self.headers.get('Range')",
+      "        if rg:",
+      "            a, b = rg.split('=')[1].split('-'); a = int(a)",
+      "            b = min(int(b) if b else len(data) - 1, len(data) - 1)",
+      "            self.send_response(206); self.send_header('Content-Range', 'bytes %d-%d/%d' % (a, b, len(data))); chunk = data[a:b+1]",
+      "        else:",
+      "            self.send_response(200); chunk = data",
+      "        self.send_header('Content-Length', str(len(chunk))); self.send_header('Accept-Ranges', 'bytes'); self.end_headers()",
+      "        if body: self.wfile.write(chunk)",
+      "    def do_GET(self): self.serve(True)",
+      "    def do_HEAD(self): self.serve(False)",
+      "http.server.ThreadingHTTPServer(('127.0.0.1', int(sys.argv[1])), H).serve_forever()"
+    ), "srv.py")
+    port <- 20000L + sample.int(20000L, 1L)
+    srv <- processx::process$new("python3", c("srv.py", port),
+                                 stdout = "|", stderr = "|")
+    withr::defer(srv$kill())
+    ok <- FALSE
+    for (i in 1:30) {
+      ok <- tryCatch({ close(socketConnection("127.0.0.1", port, timeout = 1)); TRUE },
+                     error = function(e) FALSE, warning = function(w) FALSE)
+      if (ok) break
+      Sys.sleep(0.2)
+    }
+    skip_if_not(ok, "serveur HTTP local indisponible")
+    url <- sprintf("http://127.0.0.1:%d/b.tif", port)
+    ev <- character()
+    res <- suppressWarnings(nemeton:::.terra_rast_with_pc_retry(
+      url, max_tries = 3L, emit_fn = function(x) ev <<- c(ev, x$current)))
+    expect_s4_class(res, "SpatRaster")
+    expect_equal(terra::values(res), terra::values(terra::rast("b.tif")))
+    expect_false("s2:band_fetch_failed" %in% ev)
+  })
+})
+
 test_that("reprise : une coupure 'CURL error' est transitoire", {
   vus <- 0L
   ok_r <- terra::rast(nrows = 2, ncols = 2)
   local_mocked_bindings(
     rast = function(x, ...) {
       vus <<- vus + 1L
-      if (vus == 1L) stop("CURL error: Connection timed out after 5000 milliseconds")
+      if (vus == 1L) stop("CURL error: Couldn't connect to server")
       ok_r
     },
     .package = "terra"

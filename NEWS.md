@@ -7,7 +7,9 @@
   restauré ensuite. Mesure réelle (B04 Planetary Computer, Colombière, ~35 ha) :
   3,2 s au lieu de 87,0 s, résultat identique. La reprise sur erreur
   transitoire reconnaît aussi les messages GDAL de `/vsicurl/`
-  (`HTTP response code: 5xx`, `CURL error`). Signatures, événements `s2:*` et cache par bande
+  (`HTTP response code: 5xx`, `CURL error`) ; GDAL réessaie lui-même les
+  429/502/503/504 (`GDAL_HTTP_MAX_RETRY=3`, délai 2 s) et, dès la 2e tentative,
+  ne relit pas l'échec gardé en cache (`CPL_VSIL_CURL_NON_CACHED`). Signatures, événements `s2:*` et cache par bande
   inchangés ; le jeton SAS renouvelé ne double pas le préfixe.
 
 # nemeton 2026.11.44 (2026-11-24)
