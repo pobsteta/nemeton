@@ -160,6 +160,11 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-24 — ERA5 `timeseries` : liste d'années vide nommée comme telle (mission 049 de nemetonplateforme)
+
+- `.rsen_era5ts_exiger_annees_closes()` : une liste vide (`integer(0)`, `NULL`) lève désormais « no year was requested (empty list) » au lieu de « the requested year is missing (NA) » ; classe `rsen_era5ts_echec` et refus avant tout appel CDS inchangés. Année `NA`, année ouverte, années closes : comportement inchangé.
+- 4 tests ajoutés (vide, NA, ouverte, closes). `DESCRIPTION` en `2026.11.45.9000` (cycle dev ; NEWS et CITATION restent sur 2026.11.45). Pas de release.
+
 ### 2026-11-24 — doc de `skip_cached` corrigée (mission 047 de nemetonplateforme)
 
 - `ingest_sentinel2_timeseries()` : `@param skip_cached`, `@param cache_dir`, « Priming the cache » et l'exemple disaient que `skip_cached = FALSE` force un retéléchargement. Faux : il ne désactive que le saut de scène entière ; chaque bande relit d'abord le cache (`s2:band_cached`) et n'est téléchargée que si absente ou d'emprise insuffisante. Pour forcer : supprimer les fichiers du cache.
