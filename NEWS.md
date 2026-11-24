@@ -1,3 +1,20 @@
+# nemeton (development version)
+
+- **feat : détection de la décoloration du feuillage** (mission 046).
+  `decoloration_detecter()` porte la partie détection du suivi régional de
+  décoloration : indices Sentinel-2 à 20 m (GRVI, CIre, CRSWIR, CRre, NDVI),
+  composites mensuels avril-octobre (écriture atomique, mois en cours gardé),
+  anomalie par pixel (même mois, autres années, ≥ 4 années de référence), ICD
+  par essence, alerte et niveaux 0 à 4 (indice « à date »). Rend les niveaux
+  par année, l'ICD minimal et l'origine de la normale (rasters 20 m, L93).
+  **Normale de repli par les voisins** : un pixel sans 4 années de référence
+  (coupé tôt, série trouée) emprunte la médiane des normales des pixels voisins
+  de même essence (rayon 300 m, ≥ 20 voisins) plus son décalage propre ; sinon
+  il est « sans normale » (NA, jamais niveau 0). `decoloration_carte_essences()`
+  construit la carte d'essences depuis la BD Forêt V2 (4 codes TFV, lisière de
+  10 m). Les bandes passent par le lecteur fenêtré et le cache par bande de FAST
+  (B03, B06, B07 et SCL en plus). FAST, FORDEAD et RECONFORT inchangés.
+
 # nemeton 2026.11.45 (2026-11-24)
 
 - **perf : bandes Sentinel-2 distantes lues par fenêtre** (mission 044). Les
