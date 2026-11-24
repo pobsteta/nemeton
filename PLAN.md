@@ -160,6 +160,12 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-24 — doc de `skip_cached` corrigée (mission 047 de nemetonplateforme)
+
+- `ingest_sentinel2_timeseries()` : `@param skip_cached`, `@param cache_dir`, « Priming the cache » et l'exemple disaient que `skip_cached = FALSE` force un retéléchargement. Faux : il ne désactive que le saut de scène entière ; chaque bande relit d'abord le cache (`s2:band_cached`) et n'est téléchargée que si absente ou d'emprise insuffisante. Pour forcer : supprimer les fichiers du cache.
+- Aucun changement de code. Test sans réseau ajouté (`.cache_scene_bands` sur bandes en cache, lecteur distant simulé jamais appelé) ; titre d'un test existant corrigé.
+- Choix tranché (délégation) : pas de bump de version ni d'entrée NEWS (doc seule, évite un conflit avec la PR #695) ; pas de release.
+
 ### 2026-11-24 — étude FAST contre décoloration, script et zone pilote (mission 045 de nemetonplateforme)
 
 - Script `data-raw/etude_fast_decoloration/` (`fonctions.R`, `etude.R`), tests `test-etude-fast-decoloration.R`. Pas de release (étude).
