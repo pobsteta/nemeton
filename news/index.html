@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.43</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.43.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,6 +117,11 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="development version" id="nemeton-development-version">nemeton (development version)<a class="anchor" aria-label="anchor" href="#nemeton-development-version"></a></h2>
+<ul><li>
+<strong>fix : ERA5 <code>timeseries</code>, le contrôle de cache accepte les NetCDF réels du CDS</strong> (mission 042). <code>latitude</code> et <code>longitude</code> y sont des variables scalaires (0 dimension) : <code>.rsen_era5_nc_complet()</code> les rejetait, le fichier valide était effacé (« Discarding unreadable cache file ») et redemandé en boucle. Une variable à 0 dimension est maintenant lue entière ; fichier tronqué ou variable illisible restent refusés, chemin classique mcera5 inchangé.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.43" id="nemeton-20261143-2026-11-23">nemeton 2026.11.43 (2026-11-23)<a class="anchor" aria-label="anchor" href="#nemeton-20261143-2026-11-23"></a></h2>
 <ul><li>
