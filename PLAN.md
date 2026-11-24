@@ -169,8 +169,10 @@ propre/voisins/aucune). Choix de la mission : DESCRIPTION en `.9000`, pas de
 release ; recherche STAC propre à la décoloration (B03/B06/B07/SCL) pour ne pas
 changer les colonnes de `stac_search_s2()` utilisées par FAST. Reste : mission 2
 (coupes, volumes, risque), mission 3 (coupes partielles, IFN) ; comparaison au
-script régional à faire quand `sortie_decoloration/` sera disponible
-(`tests/manual/decoloration-couchey.R`).
+script régional : `tests/manual/decoloration-couchey.R` écrit (sortie régionale
+disponible), calcul réel lancé par l'orchestrateur. Relecture PR #695 : composites
+rangés par empreinte de grille, indice « à date » automatique, aperçu natif 20 m
+pour B03/B04/B08, pixels au décalage forcé à 0 comptés, arguments en français.
 
 ### 2026-11-24 — v2026.11.45 : bandes Sentinel-2 lues par fenêtre (mission 044 de nemetonplateforme, PR #692)
 

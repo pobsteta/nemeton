@@ -32,12 +32,22 @@ test_that("indices : valeurs connues sur des réflectances synthétiques", {
   expect_equal(i$CRRE, 0.2 / (0.04 + (0.3 - 0.04) * kr))
 })
 
-test_that("indices : l'offset de 1000 ne s'applique qu'à la baseline >= 04.00", {
+test_that("indices : l'offset de 1000 ne s'applique qu'à la baseline >= 04.00 (chemin de production)", {
+  g <- terra::rast(nrows = 1, ncols = 1, xmin = 0, xmax = 20, ymin = 0, ymax = 20,
+                   crs = "EPSG:2154")
+  lire <- function(b, m) {
+    x <- g
+    terra::values(x) <- switch(b, SCL = 4, B04 = 1500, B08 = 2500, 2000)
+    x
+  }
+  ndvi <- function(id) terra::values(nemeton:::.decol_indices_scene(lire, id)[["NDVI"]])[1]
   nouveau <- "S2B_MSIL2A_20230610T103031_N0509_R108_T31TGM_20230610T150000"
   ancien  <- "S2A_MSIL2A_20190610T103031_N0207_R108_T31TGM_20190610T150000"
-  x <- c(1500, 1000, 500)
-  expect_equal(nemeton:::.decol_retirer_offset(x, nouveau), c(500, NA, NA))
-  expect_equal(nemeton:::.decol_retirer_offset(x, ancien), x)
+  expect_equal(ndvi(nouveau), (1500 - 500) / (1500 + 500))   # offset retiré
+  expect_equal(ndvi(ancien), (2500 - 1500) / (2500 + 1500))  # inchangé
+  # réflectance <= 0 après offset : valeur écartée (NA)
+  lire0 <- function(b, m) { x <- g; terra::values(x) <- if (b == "SCL") 4 else 900; x }
+  expect_true(is.na(terra::values(nemeton:::.decol_indices_scene(lire0, nouveau)[["NDVI"]])[1]))
 })
 
 # --- 2. composite ----------------------------------------------------------
@@ -78,12 +88,16 @@ test_that("composite : écriture atomique, relecture et composite illisible refa
                      crs = "EPSG:2154")
     r <- terra::rast(lapply(1:5, function(k) { x <- g; terra::values(x) <- c(0.1234, 0.2, 0.3, NA) * k / 5; x }))
     names(r) <- nemeton:::.DECOL_INDICES
-    f <- nemeton:::.decol_composite_chemin(getwd(), 2022, 7)
+    f <- nemeton:::.decol_composite_chemin(getwd(), 2022, 7, g)
     nemeton:::.decol_composite_ecrire(r, f)
     expect_true(file.exists(f))
     expect_length(list.files(dirname(f), "part"), 0)
-    rr <- nemeton:::.decol_composite_lire(f)
+    rr <- nemeton:::.decol_composite_lire(f, g)
     expect_equal(unname(terra::values(rr[["GRVI"]])[1:3, 1]), c(0.1234, 0.2, 0.3) / 5 * 1, tolerance = 2e-3)
+    # autre grille : erreur claire à la relecture
+    g2 <- terra::rast(nrows = 2, ncols = 2, xmin = 20, xmax = 60, ymin = 0, ymax = 40,
+                      crs = "EPSG:2154")
+    expect_error(nemeton:::.decol_composite_lire(f, g2), "different grid")
     # déjà fait, mois fini depuis longtemps : rien à refaire
     expect_false(nemeton:::.decol_composite_a_faire(f, 2022, 7, as.Date("2026-11-24")))
     # illisible : supprimé et à refaire
@@ -91,7 +105,7 @@ test_that("composite : écriture atomique, relecture et composite illisible refa
     expect_true(nemeton:::.decol_composite_a_faire(f, 2022, 7, as.Date("2026-11-24")))
     expect_false(file.exists(f))
     # mois en cours (pas fini depuis 5 jours) et mois futur : jamais refaits
-    f2 <- nemeton:::.decol_composite_chemin(getwd(), 2026, 11)
+    f2 <- nemeton:::.decol_composite_chemin(getwd(), 2026, 11, g)
     expect_false(nemeton:::.decol_composite_a_faire(f2, 2026, 11, as.Date("2026-11-24")))
     expect_false(nemeton:::.decol_composite_a_faire(f2, 2026, 12, as.Date("2026-11-24")))
     # mois fini depuis plus de 5 jours, pas de fichier : à faire
@@ -249,11 +263,11 @@ test_that("détection complète : niveaux 3 puis 4, indice « à date », origin
         r
       })
       comp <- terra::rast(couches); names(comp) <- names(base)
-      nemeton:::.decol_composite_ecrire(comp, nemeton:::.decol_composite_chemin(getwd(), yrs[j], m))
+      nemeton:::.decol_composite_ecrire(comp, nemeton:::.decol_composite_chemin(getwd(), yrs[j], m, g))
     }
     ess <- terra::rast(g); terra::values(ess) <- 1L
-    res <- decoloration_detecter(ext, yrs, ess, cache_dir = getwd(),
-                                 compute_composites = FALSE)
+    res <- decoloration_detecter(ext, yrs, ess, dossier_cache = getwd(),
+                                 calculer_composites = FALSE)
     niv <- terra::values(res$niveaux)
     colnames(niv) <- yrs
     expect_true(all(niv[bloc[] == 1, "2022"] == 3))
@@ -262,8 +276,8 @@ test_that("détection complète : niveaux 3 puis 4, indice « à date », origin
     expect_true(all(terra::values(res$origine) == 1))
     # le mois 5 est hors saison du chêne : il n'a pas compté
     # indice « à date » : jusqu'en juin, un seul mois suivi -> pas d'alerte
-    date <- decoloration_detecter(ext, yrs, ess, cache_dir = getwd(),
-                                  compute_composites = FALSE, to_month = 6)
+    date <- decoloration_detecter(ext, yrs, ess, dossier_cache = getwd(),
+                                  calculer_composites = FALSE, mois_a_date = 6)
     nd <- terra::values(date$niveaux); colnames(nd) <- yrs
     expect_true(all(nd[bloc[] == 1, "2022"] == 1))
     expect_equal(dim(terra::values(res$icd_min)), dim(niv))
@@ -290,4 +304,125 @@ test_that("carte d'essences : codes TFV, libellé en préfixe, retrait de lisiè
   expect_equal(sum(!is.na(v)), sum(v %in% c(1, 4)))  # TFV inconnu ignoré
   expect_error(decoloration_carte_essences(sf::st_sf(AUTRE = "x", geometry = p[1]), p),
                "TFV")
+})
+
+# --- revue de la PR : cache par grille, à date, repli, robustesse ------------
+
+test_that("deux emprises, même cache : résultats égaux à ceux de caches séparés", {
+  withr::with_tempdir({
+    yrs <- 2017:2022
+    eff <- c(0, 0.01, -0.01, 0.02, -0.02, 0.01)
+    base <- c(GRVI = 0.2, CIRE = 3, CRSWIR = 0.9, CRRE = 1.1, NDVI = 0.8)
+    mult <- c(GRVI = 1, CIRE = 5, CRSWIR = 1, CRRE = 1, NDVI = 1)
+    ecrire <- function(g, cache, deg) {
+      for (j in seq_along(yrs)) for (m in 4:10) {
+        comp <- terra::rast(lapply(names(base), function(i) {
+          r <- terra::rast(g); v <- base[[i]] + eff[j] * mult[[i]]
+          terra::values(r) <- v + (seq_len(terra::ncell(g)) %% 7) * 1e-3
+          if (yrs[j] == 2022 && m %in% 6:7 && deg)
+            r <- r - nemeton:::.DECOL_SENS[[i]] * 0.15 * mult[[i]]
+          r
+        }))
+        names(comp) <- names(base)
+        nemeton:::.decol_composite_ecrire(comp, nemeton:::.decol_composite_chemin(cache, yrs[j], m, g))
+      }
+    }
+    mk <- function(x0) sf::st_as_sfc(sf::st_bbox(c(xmin = x0, ymin = 6700000, xmax = x0 + 300,
+                                                   ymax = 6700300), crs = 2154))
+    eA <- mk(800000); eB <- mk(800100)                       # B décalée de 5 pixels
+    gA <- nemeton:::.decol_grille(eA); gB <- nemeton:::.decol_grille(eB)
+    expect_false(identical(nemeton:::.decol_empreinte_grille(gA), nemeton:::.decol_empreinte_grille(gB)))
+    ess <- function(g) { r <- terra::rast(g); terra::values(r) <- 1L; r }
+    # cache partagé : A dégradée, B saine
+    ecrire(gA, "partage", TRUE); ecrire(gB, "partage", FALSE)
+    ecrire(gB, "seul", FALSE)
+    rB1 <- decoloration_detecter(eB, yrs, ess(gB), dossier_cache = "partage", calculer_composites = FALSE)
+    rB2 <- decoloration_detecter(eB, yrs, ess(gB), dossier_cache = "seul", calculer_composites = FALSE)
+    expect_equal(terra::values(rB1$niveaux), terra::values(rB2$niveaux))
+    expect_true(all(terra::values(rB1$niveaux) == 0))
+    rA <- decoloration_detecter(eA, yrs, ess(gA), dossier_cache = "partage", calculer_composites = FALSE)
+    expect_true(all(terra::values(rA$niveaux[["2022"]]) >= 2))
+  })
+})
+
+test_that("indice à date automatique : dernier composite, mois en cours dès le 20e jour", {
+  withr::with_tempdir({
+    g <- terra::rast(nrows = 1, ncols = 1, xmin = 0, xmax = 20, ymin = 0, ymax = 20, crs = "EPSG:2154")
+    r <- terra::rast(lapply(1:5, function(k) { x <- g; terra::values(x) <- 0.5; x }))
+    names(r) <- nemeton:::.DECOL_INDICES
+    for (m in 4:7) nemeton:::.decol_composite_ecrire(r, nemeton:::.decol_composite_chemin(getwd(), 2026, m, g))
+    f <- nemeton:::.decol_mois_a_date
+    expect_equal(f(getwd(), g, 2026, as.Date("2026-07-10")), 6)   # juillet entamé < 20 j
+    expect_equal(f(getwd(), g, 2026, as.Date("2026-07-25")), 7)
+    expect_equal(f(getwd(), g, 2026, as.Date("2026-11-24")), 7)   # dernier composite
+    expect_equal(f(getwd(), g, 2019, as.Date("2026-11-24")), 10)  # aucun : saison entière
+  })
+})
+
+test_that("repli : décalage ramené à 0 quand toutes les autres années sont écartées, signalé", {
+  rc <- .fx_grille(30); X <- .fx_X(rc)
+  p <- which(rc[, 1] == 15 & rc[, 2] == 15)
+  coupe <- .fx_coupe_2019(rc, X, p)
+  # 2017 : presque tous les voisins sans valeur -> année 2017 écartée du décalage
+  X[setdiff(seq_len(nrow(X)), p), 1] <- NA
+  r <- nemeton:::.decol_zscore(X, .fx_annees, .fx_annees, 0.01, rep(1L, nrow(rc)), rc, coupe)
+  # évaluée en 2018, la seule autre année du pixel (2017) est écartée
+  expect_true(r$decalage_nul[p, 2])
+  expect_equal(r$origine[p, 2], 2L)
+  expect_false(any(r$decalage_nul[-p, ]))
+})
+
+test_that("composite : second essai des scènes en échec", {
+  withr::with_tempdir({
+    options(nemeton.decoloration_pause_s = 0)
+    on.exit(options(nemeton.decoloration_pause_s = NULL), add = TRUE)
+    essais <- 0L
+    testthat::local_mocked_bindings(
+      .decol_chercher_scenes = function(...) data.frame(scene_id = c("S2B_MSIL2A_20220610T103031_N0400_R108_T31TGM_X")),
+      .decol_indices_scene = function(...) {
+        essais <<- essais + 1L
+        if (essais == 1L) stop("réseau coupé")
+        NULL
+      })
+    g <- terra::rast(nrows = 2, ncols = 2, xmin = 800000, xmax = 800040,
+                     ymin = 6700000, ymax = 6700040, crs = "EPSG:2154")
+    emprise <- sf::st_as_sf(sf::st_as_sfc(sf::st_bbox(g)))
+    ok <- nemeton:::.decol_composite_assurer(2022, 6, g, emprise, getwd(),
+                                             aujourdhui = as.Date("2026-11-24"))
+    expect_equal(essais, 2L)
+    expect_true(ok)   # le second essai a réussi : composite enregistré
+  })
+})
+
+test_that("bandes 10 m : aperçu natif lu et mis en cache, repli sur le lecteur sinon", {
+  withr::with_tempdir({
+    g <- terra::rast(nrows = 40, ncols = 40, xmin = 800000, xmax = 800400,
+                     ymin = 6700000, ymax = 6700400, crs = "EPSG:2154")
+    terra::values(g) <- seq_len(1600)
+    terra::writeRaster(g, "B04.tif", overwrite = TRUE)
+    # sans aperçu : NULL (le lecteur ordinaire prend le relais)
+    sc0 <- data.frame(scene_id = "sans_apercu", href_B04 = normalizePath("B04.tif"),
+                      stringsAsFactors = FALSE)
+    emp0 <- sf::st_as_sf(sf::st_as_sfc(sf::st_bbox(g)))
+    expect_null(nemeton:::.decol_lire_apercu(sc0, "B04", emp0, getwd()))
+    sf::gdal_addo("B04.tif", method = "AVERAGE", overviews = 2)
+    sc <- data.frame(scene_id = "S2B_MSIL2A_20220610T103031_N0400_R108_T31TGM_X",
+                     href_B04 = normalizePath("B04.tif"), stringsAsFactors = FALSE)
+    emprise <- sf::st_as_sf(sf::st_as_sfc(sf::st_bbox(g)))
+    r <- nemeton:::.decol_lire_apercu(sc, "B04", emprise, getwd())
+    expect_s4_class(r, "SpatRaster")
+    expect_true(file.exists(file.path("decoloration", "apercu20m",
+                                      nemeton:::.s2_safe_scene_id(sc$scene_id), "B04.tif")))
+    sc$href_B04 <- "/inexistant/B04.tif"
+    expect_s4_class(nemeton:::.decol_lire_apercu(sc, "B04", emprise, getwd()), "SpatRaster")  # cache
+    sc$scene_id <- "autre"
+    expect_null(nemeton:::.decol_lire_apercu(sc, "B04", emprise, getwd()))
+  })
+})
+
+test_that("carte d'essences : colonne ess_id (1 à 4) acceptée", {
+  p <- sf::st_sfc(sf::st_polygon(list(rbind(c(800000, 6700000), c(800100, 6700000),
+                  c(800100, 6700100), c(800000, 6700100), c(800000, 6700000)))), crs = 2154)
+  r <- decoloration_carte_essences(sf::st_sf(ess_id = 3L, geometry = p), p)
+  expect_setequal(unique(stats::na.omit(terra::values(r)[, 1])), 3)
 })

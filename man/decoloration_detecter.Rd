@@ -5,77 +5,84 @@
 \title{Detect abnormal foliage discoloration from Sentinel-2 monthly composites}
 \usage{
 decoloration_detecter(
-  extent,
-  years,
-  species,
-  cuts = NULL,
-  cache_dir,
-  ref_years = years,
-  n_ref_min = 4L,
-  fallback = TRUE,
-  radius_m = 300,
+  emprise,
+  annees,
+  essences,
+  coupes = NULL,
+  dossier_cache,
+  annees_reference = annees,
+  n_annees_ref_min = 4L,
+  repli = TRUE,
+  rayon_m = 300,
   n_voisins_min = 20L,
-  cloud_max = 70,
-  to_month = NULL,
-  compute_composites = TRUE,
-  emit = NULL
+  nuages_max = 70,
+  mois_a_date = NULL,
+  calculer_composites = TRUE,
+  emettre = NULL
 )
 }
 \arguments{
-\item{extent}{Area of interest: `sf`, `sfc`, `bbox` or `SpatRaster`.}
+\item{emprise}{Area of interest: `sf`, `sfc`, `bbox` or `SpatRaster`.}
 
-\item{years}{Integer vector of years to evaluate.}
+\item{annees}{Integer vector of years to evaluate.}
 
-\item{species}{Species map: a [terra::SpatRaster] with values 1 to 4
+\item{essences}{Species map: a [terra::SpatRaster] with values 1 to 4
 (1 oak, 2 beech, 3 fir/spruce, 4 Douglas fir), or an `sf` of BD Foret V2
 polygons (see [decoloration_carte_essences()]).}
 
-\item{cuts}{Optional cut dates: `NULL`, an `sf` with a `date_coupe` Date
+\item{coupes}{Optional cut dates: `NULL`, an `sf` with a `date_coupe` Date
 column, or a [terra::SpatRaster] of Dates. A pixel is removed from its
 cut month on.}
 
-\item{cache_dir}{Cache directory (e.g. a project's `cache/layers`).}
+\item{dossier_cache}{Cache directory (e.g. a project's `cache/layers`).}
 
-\item{ref_years}{Reference years for the normal; default all `years`.}
+\item{annees_reference}{Reference years for the normal; default all `annees`.}
 
-\item{n_ref_min}{Minimum number of valid reference years. Default 4.}
+\item{n_annees_ref_min}{Minimum number of valid reference years. Default 4.}
 
-\item{fallback}{Use the neighbour fallback normal. Default `TRUE`.}
+\item{repli}{Use the neighbour fallback normal. Default `TRUE`.}
 
-\item{radius_m}{Neighbour radius (m). Default 300.}
+\item{rayon_m}{Neighbour radius (m). Default 300.}
 
 \item{n_voisins_min}{Minimum number of usable neighbours. Default 20.}
 
-\item{cloud_max}{Maximum scene cloud cover (percent). Default 70.}
+\item{nuages_max}{Maximum scene cloud cover (percent). Default 70.}
 
-\item{to_month}{Last month taken into account ("a date" index); `NULL`
-uses the whole season.}
+\item{mois_a_date}{Last month taken into account ("a date" index). `NULL`
+(default): last month with a composite for the last year of `annees`; the
+month in progress counts only from its 20th day. Can be forced.}
 
-\item{compute_composites}{If `FALSE`, only composites already on disk are
+\item{calculer_composites}{If `FALSE`, only composites already on disk are
 used (no network).}
 
-\item{emit}{Optional function receiving progress events (lists with a
+\item{emettre}{Optional function receiving progress events (lists with a
 `current` field such as `"decoloration:composite"`), like FAST's.}
 }
 \value{
 A list with three multi-layer [terra::SpatRaster] (one layer per
 year, 20 m, EPSG:2154): `niveaux` (0-4, `NA` = no data or no normal),
 `icd_min` (minimal ICD of the year) and `origine` (origin of the normal:
-1 own, 2 neighbours, 0 none), plus `parametres`.
+1 own, 2 neighbours, 0 none), plus `parametres` and `diagnostics`
+(`n_pixels_decalage_nul`).
 }
 \description{
-Computes, on a 20 m Lambert-93 grid covering `extent`, the discoloration
+Computes, on a 20 m Lambert-93 grid covering `emprise`, the discoloration
 composite indicator (ICD) per pixel and year from monthly Sentinel-2
 composites (April to October), then the yearly alert and the 0-4 levels
 (0 normal, 1 watch, 2 alert, 3 strong alert, 4 repeated alert).
 
-Pixels without `n_ref_min` valid reference years (cut early, or gappy
+Pixels without `n_annees_ref_min` valid reference years (cut early, or gappy
 series) use a fallback normal drawn from neighbouring pixels of the same
 species: median of the neighbours' own normals plus the pixel's own offset,
 scale = median of the neighbours' MAD (floored). With fewer than
 `n_voisins_min` usable neighbours the pixel gets no normal: level `NA` and
 origin 0, never level 0. The normal stays temporal, so a regional drought is
-not cancelled.
+not cancelled. When every other year of a pixel is discarded (too few valid
+neighbours that year) its offset falls back to 0; the number of such pixels
+is reported (event `decoloration:repli_decalage_nul`, `diagnostics`).
+
+Composites are stored per grid footprint, so two extents never share one.
+The 10 m bands are read from the native 20 m overview of the COG.
 }
 \seealso{
 [decoloration_carte_essences()]

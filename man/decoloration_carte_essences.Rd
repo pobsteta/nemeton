@@ -4,18 +4,18 @@
 \alias{decoloration_carte_essences}
 \title{Build a species map for decoloration monitoring from BD Foret V2 polygons}
 \usage{
-decoloration_carte_essences(x, extent, tfv_col = NULL, buffer_m = 10)
+decoloration_carte_essences(x, emprise, col_tfv = NULL, retrait_m = 10)
 }
 \arguments{
 \item{x}{An `sf` object of BD Foret V2 polygons with a TFV column.}
 
-\item{extent}{Anything accepted by [sf::st_bbox()] (`sf`, `sfc`, `bbox`,
+\item{emprise}{Anything accepted by [sf::st_bbox()] (`sf`, `sfc`, `bbox`,
 `SpatRaster`); the grid covers it.}
 
-\item{tfv_col}{Name of the TFV column. Default `"TFV"`; `"tfv"` and
-`"code_tfv"` are also tried.}
+\item{col_tfv}{Name of the TFV column. Default `"TFV"`; `"tfv"`,
+`"code_tfv"` and `"ess_id"` (already coded 1 to 4) are also tried.}
 
-\item{buffer_m}{Inner buffer (m) removed along stand edges. Default 10.}
+\item{retrait_m}{Inner buffer (m) removed along stand edges. Default 10.}
 }
 \value{
 A [terra::SpatRaster] (EPSG:2154, 20 m) with values 1 to 4

@@ -59,15 +59,6 @@
   )
 }
 
-# Offset de réflectance selon la baseline (identifiant de scène) : retire 1000
-# aux scènes de baseline >= 04.00, borne à 0, 0 devient NA (nodata).
-.decol_retirer_offset <- function(x, scene_id) {
-  off <- .s2_boa_offset(scene_id)
-  if (!is.na(off) && off != 0) x <- x + off
-  x[x <= 0] <- NA
-  x
-}
-
 # Indices d'une scène sur la grille `g` (SpatRaster 20 m) ; `lire(bande, methode)`
 # renvoie la bande rééchantillonnée sur `g`. NULL si tout est masqué.
 .decol_indices_scene <- function(lire, scene_id) {
@@ -112,8 +103,16 @@
   out
 }
 
-.decol_composite_chemin <- function(cache_dir, annee, mois) {
-  file.path(cache_dir, "decoloration", "composites",
+# Empreinte de la grille (étendue, résolution, CRS) : les composites sont
+# rangés par grille, jamais relus pour une autre emprise.
+.decol_empreinte_grille <- function(g) {
+  e <- as.vector(terra::ext(g))
+  sprintf("g_%.0f_%.0f_%.0f_%.0f_r%.0f_%s", e[["xmin"]], e[["ymin"]], e[["xmax"]],
+          e[["ymax"]], terra::res(g)[1], gsub("[^A-Za-z0-9]", "", terra::crs(g, describe = TRUE)$code %||% "x"))
+}
+
+.decol_composite_chemin <- function(cache_dir, annee, mois, g) {
+  file.path(cache_dir, "decoloration", "composites", .decol_empreinte_grille(g),
             sprintf("s2_%d_%02d.tif", annee, mois))
 }
 
@@ -132,12 +131,21 @@
     TRUE
   }, error = function(e) FALSE))
   if (!ok) cli::cli_abort("Composite {.path {f}} unreadable after writing.")
-  file.rename(tmp, f)
+  if (!isTRUE(file.rename(tmp, f))) {
+    cli::cli_abort("Cannot rename {.path {tmp}} to {.path {f}}.")
+  }
   invisible(f)
 }
 
-.decol_composite_lire <- function(f) {
+# `g` : grille attendue ; erreur claire si le composite est sur une autre grille
+.decol_composite_lire <- function(f, g = NULL) {
   r <- terra::rast(f)
+  if (!is.null(g) &&
+      (!isTRUE(all.equal(as.vector(terra::ext(r)), as.vector(terra::ext(g)))) ||
+       !isTRUE(all.equal(terra::res(r), terra::res(g))))) {
+    cli::cli_abort(c("Composite {.path {f}} is on a different grid than the requested one.",
+                     i = "Delete it or use another {.arg dossier_cache}."))
+  }
   if (identical(terra::datatype(r)[1], "INT2S")) r <- r * .DECOL_ECHELLE[names(r)]
   r
 }
@@ -201,17 +209,55 @@
 # Lecture d'une bande par le lecteur fenêtré et le cache par bande de nemeton
 # (même cache que FAST : `<cache>/sentinel2/<scène>/<bande>.tif`), puis
 # rééchantillonnage sur la grille 20 m Lambert 93.
-.decol_lire_bande <- function(scene, bande, g, emprise_sf, bandes_dir, emit = NULL) {
-  r <- .get_s2_band_raster(scene, bande, emprise_sf, cache_dir = bandes_dir,
-                           emit = emit)
+.decol_lire_bande <- function(scene, bande, g, emprise_sf, cache_dir, emit = NULL) {
+  r <- NULL
+  if (bande %in% c("B03", "B04", "B08")) {
+    r <- .decol_lire_apercu(scene, bande, emprise_sf, cache_dir)
+  }
+  if (is.null(r)) {
+    r <- .get_s2_band_raster(scene, bande, emprise_sf,
+                             cache_dir = file.path(cache_dir, "sentinel2"),
+                             emit = emit)
+  }
   terra::project(r, g, method = if (bande == "SCL") "near" else "bilinear")
+}
+
+# Bandes à 10 m lues dans l'aperçu natif à 20 m inclus dans le COG (comme le
+# script régional : OVERVIEW_LEVEL=0, 4 fois moins de données) ; NULL si non
+# disponible (le lecteur ordinaire prend alors le relais). Cache dédié :
+# `<cache>/decoloration/apercu20m/<scène>/<bande>.tif`.
+.decol_lire_apercu <- function(scene, bande, emprise_sf, cache_dir) {
+  chemin <- file.path(cache_dir, "decoloration", "apercu20m",
+                      .s2_safe_scene_id(scene$scene_id), paste0(bande, ".tif"))
+  if (file.exists(chemin)) {
+    r <- tryCatch(terra::rast(chemin), error = function(e) NULL)
+    if (!is.null(r)) return(r)
+    unlink(chemin)
+  }
+  href <- .pc_ensure_fresh_href(scene[[paste0("href_", bande)]][[1]])
+  r <- tryCatch(
+    .with_s2_gdal_opts(suppressWarnings(
+      terra::rast(.s2_vsi_path(href), opts = "OVERVIEW_LEVEL=0"))),
+    error = function(e) NULL)
+  if (is.null(r) || terra::res(r)[1] > .DECOL_TAILLE_PIXEL * 1.01) return(NULL)
+  r <- tryCatch({
+    ext_n <- terra::ext(terra::vect(sf::st_transform(emprise_sf, terra::crs(r))))
+    terra::crop(r, ext_n, snap = "out") + 0
+  }, error = function(e) NULL)
+  if (is.null(r)) return(NULL)
+  dir.create(dirname(chemin), recursive = TRUE, showWarnings = FALSE)
+  tmp <- sub("\\.tif$", ".part.tif", chemin)
+  terra::writeRaster(r, tmp, overwrite = TRUE, filetype = "GTiff",
+                     gdal = "COMPRESS=DEFLATE")
+  if (!isTRUE(file.rename(tmp, chemin))) unlink(tmp)
+  r
 }
 
 # Garantit le composite (annee, mois) sur disque ; renvoie TRUE si écrit
 .decol_composite_assurer <- function(annee, mois, g, emprise_sf, cache_dir,
                                      nuages_max = 70, emit = NULL,
                                      aujourdhui = Sys.Date()) {
-  f <- .decol_composite_chemin(cache_dir, annee, mois)
+  f <- .decol_composite_chemin(cache_dir, annee, mois, g)
   if (!.decol_composite_a_faire(f, annee, mois, aujourdhui)) return(FALSE)
   d0 <- as.Date(sprintf("%d-%02d-01", annee, mois))
   d1 <- seq(d0, by = "month", length.out = 2)[2] - 1
@@ -224,16 +270,23 @@
                                   error_message = .redact_url(conditionMessage(scenes))))
     return(FALSE)  # mois refait au prochain lancement
   }
-  bandes_dir <- file.path(cache_dir, "sentinel2")
-  res <- lapply(seq_len(nrow(scenes)), function(i) {
+  traiter <- function(i) {
     sc <- scenes[i, , drop = FALSE]
     tryCatch(
       .decol_indices_scene(function(b, m) {
-        .decol_lire_bande(sc, b, g, emprise_sf, bandes_dir, emit)
+        .decol_lire_bande(sc, b, g, emprise_sf, cache_dir, emit)
       }, sc$scene_id),
       error = function(e) e)
-  })
+  }
+  res <- lapply(seq_len(nrow(scenes)), traiter)
   err <- vapply(res, inherits, logical(1), "error")
+  # second essai des scènes en échec, après une courte pause (réseau coupé en
+  # route, fichier tout juste publié), comme le script régional
+  if (any(err)) {
+    Sys.sleep(getOption("nemeton.decoloration_pause_s", 10))
+    res[err] <- lapply(which(err), traiter)
+    err <- vapply(res, inherits, logical(1), "error")
+  }
   # trop de scènes en échec : mois non enregistré, refait au prochain lancement
   if (any(err) && sum(err) > 0.2 * length(res)) {
     if (!is.null(emit)) emit(list(current = "decoloration:mois_non_enregistre",
@@ -292,6 +345,7 @@
   origine[ok] <- 1L
   origine[avec & !propre] <- 0L
 
+  decalage_nul <- matrix(FALSE, n, ny)
   if (repli && any(avec & !propre)) {
     nr <- max(rc[, 1]); nc <- max(rc[, 2])
     grille <- matrix(NA_integer_, nr, nc)
@@ -315,6 +369,9 @@
           else X[p, j] - stats::median(v, na.rm = TRUE)
         }, numeric(1))
         dec <- dec[!is.na(dec)]
+        # le pixel a d'autres années mais toutes sont écartées (trop peu de
+        # voisins valides) : décalage ramené à 0, signalé à l'appelant
+        if (length(autres) && !length(dec)) decalage_nul[p, i] <- TRUE
         off <- if (length(dec)) stats::median(dec) else 0
         normale <- stats::median(med[pool, i]) + off
         s <- max(stats::median(mad[pool, i]), plancher)
@@ -323,7 +380,7 @@
       }
     }
   }
-  list(z = z, origine = origine)
+  list(z = z, origine = origine, decalage_nul = decalage_nul)
 }
 
 # ---------------------------------------------------------------------------
@@ -405,28 +462,29 @@
 #' the stand edges.
 #'
 #' @param x An `sf` object of BD Foret V2 polygons with a TFV column.
-#' @param extent Anything accepted by [sf::st_bbox()] (`sf`, `sfc`, `bbox`,
+#' @param emprise Anything accepted by [sf::st_bbox()] (`sf`, `sfc`, `bbox`,
 #'   `SpatRaster`); the grid covers it.
-#' @param tfv_col Name of the TFV column. Default `"TFV"`; `"tfv"` and
-#'   `"code_tfv"` are also tried.
-#' @param buffer_m Inner buffer (m) removed along stand edges. Default 10.
+#' @param col_tfv Name of the TFV column. Default `"TFV"`; `"tfv"`,
+#'   `"code_tfv"` and `"ess_id"` (already coded 1 to 4) are also tried.
+#' @param retrait_m Inner buffer (m) removed along stand edges. Default 10.
 #'
 #' @return A [terra::SpatRaster] (EPSG:2154, 20 m) with values 1 to 4
 #'   (see `decoloration_detecter()`), `NA` elsewhere.
 #' @seealso [decoloration_detecter()]
 #' @export
-decoloration_carte_essences <- function(x, extent, tfv_col = NULL,
-                                        buffer_m = 10) {
+decoloration_carte_essences <- function(x, emprise, col_tfv = NULL,
+                                        retrait_m = 10) {
   if (!inherits(x, "sf")) cli::cli_abort("{.arg x} must be an {.cls sf} object.")
-  col <- tfv_col %||% intersect(c("TFV", "tfv", "code_tfv"), names(x))[1]
+  col <- col_tfv %||% intersect(c("TFV", "tfv", "code_tfv", "ess_id"), names(x))[1]
   if (is.na(col) || !col %in% names(x)) {
-    cli::cli_abort("No TFV column found in {.arg x} (tried TFV, tfv, code_tfv).")
+    cli::cli_abort("No TFV column found in {.arg x} (tried TFV, tfv, code_tfv, ess_id).")
   }
   ess <- .decol_essences()
-  g <- .decol_grille(extent)
+  g <- .decol_grille(emprise)
   x <- sf::st_transform(x, 2154)
   code <- as.character(sf::st_drop_geometry(x)[[col]])
-  id <- match(code, ess$code_tfv)
+  # colonne déjà codée 1 à 4 (cache BD Forêt de nemetonplateforme) : prise telle quelle
+  id <- if (identical(col, "ess_id")) match(as.integer(code), ess$ess_id) else match(code, ess$code_tfv)
   # le WFS IGN expose parfois le libellé plutôt que le code : on accepte
   # aussi le code en préfixe d'un libellé
   manque <- which(is.na(id) & !is.na(code))
@@ -439,7 +497,7 @@ decoloration_carte_essences <- function(x, extent, tfv_col = NULL,
   terra::values(out) <- NA_integer_
   if (any(keep)) {
     geom <- sf::st_geometry(x)[keep]
-    if (buffer_m > 0) geom <- sf::st_buffer(geom, -buffer_m)
+    if (retrait_m > 0) geom <- sf::st_buffer(geom, -retrait_m)
     ok <- !sf::st_is_empty(geom)
     if (any(ok)) {
       v <- terra::vect(sf::st_sf(ess_id = id[keep][ok], geometry = geom[ok]))
@@ -473,7 +531,7 @@ decoloration_carte_essences <- function(x, extent, tfv_col = NULL,
   if (is.null(coupes)) return(NULL)
   if (inherits(coupes, "sf")) {
     col <- intersect(c("date_coupe", "date"), names(coupes))[1]
-    if (is.na(col)) cli::cli_abort("{.arg cuts} (sf) needs a {.field date_coupe} Date column.")
+    if (is.na(col)) cli::cli_abort("{.arg coupes} (sf) needs a {.field date_coupe} Date column.")
     d <- as.Date(sf::st_drop_geometry(coupes)[[col]])
     tm <- .decol_t_mois(as.integer(format(d, "%Y")), as.integer(format(d, "%m")))
     v <- terra::vect(sf::st_sf(t = tm, geometry = sf::st_transform(sf::st_geometry(coupes), 2154)))
@@ -487,7 +545,7 @@ decoloration_carte_essences <- function(x, extent, tfv_col = NULL,
                                         as.integer(format(d, "%m")))
     return(out)
   }
-  cli::cli_abort("{.arg cuts} must be NULL, an sf with {.field date_coupe}, or a SpatRaster of Dates.")
+  cli::cli_abort("{.arg coupes} must be NULL, an sf with {.field date_coupe}, or a SpatRaster of Dates.")
 }
 
 # ---------------------------------------------------------------------------
@@ -496,12 +554,12 @@ decoloration_carte_essences <- function(x, extent, tfv_col = NULL,
 
 #' Detect abnormal foliage discoloration from Sentinel-2 monthly composites
 #'
-#' Computes, on a 20 m Lambert-93 grid covering `extent`, the discoloration
+#' Computes, on a 20 m Lambert-93 grid covering `emprise`, the discoloration
 #' composite indicator (ICD) per pixel and year from monthly Sentinel-2
 #' composites (April to October), then the yearly alert and the 0-4 levels
 #' (0 normal, 1 watch, 2 alert, 3 strong alert, 4 repeated alert).
 #'
-#' Pixels without `n_ref_min` valid reference years (cut early, or gappy
+#' Pixels without `n_annees_ref_min` valid reference years (cut early, or gappy
 #' series) use a fallback normal drawn from neighbouring pixels of the same
 #' species: median of the neighbours' own normals plus the pixel's own offset
 #' (median over its available years of its gap to the neighbours' median of
@@ -509,90 +567,101 @@ decoloration_carte_essences <- function(x, extent, tfv_col = NULL,
 #' than `n_voisins_min` usable neighbours the pixel gets no normal: level `NA`
 #' and origin 0, never level 0. The normal stays temporal (neighbours are
 #' compared with their own other years), so a regional drought is not
-#' cancelled.
+#' cancelled. A neighbour median of a given year needs at least half of
+#' `n_voisins_min` valid neighbours; when every other year of a pixel is
+#' discarded for that reason its offset falls back to 0, and the number of
+#' such pixels is reported (event `decoloration:repli_decalage_nul` and
+#' `diagnostics` in the result).
 #'
 #' Sentinel-2 bands are read through nemeton's windowed reader and shared
-#' per-band cache (`<cache_dir>/sentinel2/<scene>/<band>.tif`); monthly
-#' composites are stored in `<cache_dir>/decoloration/composites/`. The
-#' current month is not rebuilt until it has ended for 5 days.
+#' per-band cache (`<dossier_cache>/sentinel2/<scene>/<band>.tif`); the 10 m
+#' bands (B03, B04, B08) are read from the native 20 m overview of the COG
+#' (as the regional script does) into `<dossier_cache>/decoloration/apercu20m/`.
+#' Monthly composites are stored per grid in
+#' `<dossier_cache>/decoloration/composites/<grid footprint>/`, so two
+#' different extents never share a composite. The current month is not
+#' rebuilt until it has ended for 5 days.
 #'
-#' @param extent Area of interest: `sf`, `sfc`, `bbox` or `SpatRaster`.
-#' @param years Integer vector of years to evaluate (the reference uses all
-#'   of them, or `ref_years`).
-#' @param species Species map: a [terra::SpatRaster] with values 1 to 4
+#' @param emprise Area of interest: `sf`, `sfc`, `bbox` or `SpatRaster`.
+#' @param annees Integer vector of years to evaluate.
+#' @param essences Species map: a [terra::SpatRaster] with values 1 to 4
 #'   (1 oak, 2 beech, 3 fir/spruce, 4 Douglas fir), or an `sf` of BD Foret V2
 #'   polygons (see [decoloration_carte_essences()]).
-#' @param cuts Optional cut dates: `NULL`, an `sf` with a `date_coupe` Date
+#' @param coupes Optional cut dates: `NULL`, an `sf` with a `date_coupe` Date
 #'   column, or a [terra::SpatRaster] of Dates. A pixel is removed from its
 #'   cut month on.
-#' @param cache_dir Cache directory (e.g. a project's `cache/layers`).
-#' @param ref_years Reference years for the normal; default all `years`.
-#' @param n_ref_min Minimum number of valid reference years. Default 4.
-#' @param fallback Use the neighbour fallback normal. Default `TRUE`.
-#' @param radius_m Neighbour radius (m). Default 300.
+#' @param dossier_cache Cache directory (e.g. a project's `cache/layers`).
+#' @param annees_reference Reference years for the normal; default all `annees`.
+#' @param n_annees_ref_min Minimum number of valid reference years. Default 4.
+#' @param repli Use the neighbour fallback normal. Default `TRUE`.
+#' @param rayon_m Neighbour radius (m). Default 300.
 #' @param n_voisins_min Minimum number of usable neighbours. Default 20.
-#' @param cloud_max Maximum scene cloud cover (percent). Default 70.
-#' @param to_month Last month taken into account ("à date" index); `NULL`
-#'   uses the whole season.
-#' @param compute_composites If `FALSE`, only composites already on disk are
+#' @param nuages_max Maximum scene cloud cover (percent). Default 70.
+#' @param mois_a_date Last month taken into account ("à date" index). `NULL`
+#'   (default): last month with a composite for the last year of `annees`; the
+#'   month in progress counts only from its 20th day. Can be forced.
+#' @param calculer_composites If `FALSE`, only composites already on disk are
 #'   used (no network).
-#' @param emit Optional function receiving progress events (lists with a
+#' @param emettre Optional function receiving progress events (lists with a
 #'   `current` field such as `"decoloration:composite"`), like FAST's.
 #'
 #' @return A list with three multi-layer [terra::SpatRaster] (one layer per
 #'   year, 20 m, EPSG:2154): `niveaux` (0-4, `NA` = no data or no normal),
 #'   `icd_min` (minimal ICD of the year) and `origine` (origin of the normal:
-#'   1 own, 2 neighbours, 0 none), plus `parametres`.
+#'   1 own, 2 neighbours, 0 none), plus `parametres` and `diagnostics`
+#'   (`n_pixels_decalage_nul`).
 #' @seealso [decoloration_carte_essences()]
 #' @export
-decoloration_detecter <- function(extent, years, species, cuts = NULL,
-                                  cache_dir, ref_years = years,
-                                  n_ref_min = 4L, fallback = TRUE,
-                                  radius_m = 300, n_voisins_min = 20L,
-                                  cloud_max = 70, to_month = NULL,
-                                  compute_composites = TRUE, emit = NULL) {
-  years <- sort(as.integer(years))
-  g <- .decol_grille(extent)
+decoloration_detecter <- function(emprise, annees, essences, coupes = NULL,
+                                  dossier_cache, annees_reference = annees,
+                                  n_annees_ref_min = 4L, repli = TRUE,
+                                  rayon_m = 300, n_voisins_min = 20L,
+                                  nuages_max = 70, mois_a_date = NULL,
+                                  calculer_composites = TRUE, emettre = NULL) {
+  annees <- sort(as.integer(annees))
+  g <- .decol_grille(emprise)
   emprise_sf <- sf::st_as_sf(sf::st_as_sfc(sf::st_bbox(
     c(xmin = terra::xmin(g), ymin = terra::ymin(g), xmax = terra::xmax(g),
       ymax = terra::ymax(g)), crs = sf::st_crs(2154))))
-  ess_r <- if (inherits(species, "sf")) {
-    decoloration_carte_essences(species, extent)
-  } else if (inherits(species, "SpatRaster")) {
-    terra::project(species[[1]], g, method = "near")
+  ess_r <- if (inherits(essences, "sf")) {
+    decoloration_carte_essences(essences, emprise)
+  } else if (inherits(essences, "SpatRaster")) {
+    terra::project(essences[[1]], g, method = "near")
   } else {
-    cli::cli_abort("{.arg species} must be a SpatRaster or an sf of BD Foret V2.")
+    cli::cli_abort("{.arg essences} must be a SpatRaster or an sf of BD Foret V2.")
   }
-  if (compute_composites) {
-    for (a in years) for (m in .DECOL_MOIS) {
-      .decol_composite_assurer(a, m, g, emprise_sf, cache_dir, cloud_max, emit)
+  if (calculer_composites) {
+    for (a in annees) for (m in .DECOL_MOIS) {
+      .decol_composite_assurer(a, m, g, emprise_sf, dossier_cache, nuages_max, emettre)
     }
   }
   ess_v <- terra::values(ess_r, mat = FALSE)
   cells <- which(!is.na(ess_v))
-  nr <- terra::nrow(g); nc <- terra::ncol(g)
   rc <- cbind(terra::rowFromCell(g, cells), terra::colFromCell(g, cells))
   ess <- as.integer(ess_v[cells])
-  tc <- .decol_coupes_vers_t(cuts, g)
+  tc <- .decol_coupes_vers_t(coupes, g)
   tc <- if (is.null(tc)) rep(NA_real_, length(cells)) else terra::values(tc, mat = FALSE)[cells]
   tab <- .decol_essences()
   mois_ess <- .decol_mois_essence()
-  mois_utiles <- .DECOL_MOIS
-  if (!is.null(to_month)) mois_utiles <- mois_utiles[mois_utiles <= to_month]
-  ny <- length(years); n <- length(cells)
+  if (is.null(mois_a_date)) {
+    mois_a_date <- .decol_mois_a_date(dossier_cache, g, max(annees))
+  }
+  mois_utiles <- .DECOL_MOIS[.DECOL_MOIS <= mois_a_date]
+  ny <- length(annees); n <- length(cells)
 
   icd_m <- array(NA_real_, c(n, length(.DECOL_MOIS), ny))
   orig_m <- array(NA_integer_, c(n, length(.DECOL_MOIS), ny))
+  decalage_nul <- rep(FALSE, n)
   for (k in seq_along(.DECOL_MOIS)) {
     m <- .DECOL_MOIS[k]
     suivi <- which(vapply(seq_len(nrow(tab)), function(e) m %in% mois_ess[[tab$essence[e]]], logical(1)))
     sel <- which(ess %in% tab$ess_id[suivi])
     if (!length(sel)) next
-    comp <- lapply(years, function(a) {
-      f <- .decol_composite_chemin(cache_dir, a, m)
-      if (.decol_composite_lisible_strict(f)) .decol_composite_lire(f) else NULL
+    comp <- lapply(annees, function(a) {
+      f <- .decol_composite_chemin(dossier_cache, a, m, g)
+      if (.decol_composite_lisible_strict(f)) .decol_composite_lire(f, g) else NULL
     })
-    t_ym <- .decol_t_mois(years, m)
+    t_ym <- .decol_t_mois(annees, m)
     coupe <- outer(tc[sel], t_ym, function(a, b) !is.na(a) & a <= b)
     zs <- lapply(stats::setNames(.DECOL_INDICES, .DECOL_INDICES), function(ind) {
       X <- vapply(seq_len(ny), function(j) {
@@ -600,19 +669,27 @@ decoloration_detecter <- function(extent, years, species, cuts = NULL,
         else terra::values(comp[[j]][[ind]], mat = FALSE)[cells[sel]]
       }, numeric(length(sel)))
       X <- matrix(X, length(sel), ny)
-      .decol_zscore(X, years, ref_years, .DECOL_PLANCHER[[ind]],
+      .decol_zscore(X, annees, annees_reference, .DECOL_PLANCHER[[ind]],
                     ess[sel], rc[sel, , drop = FALSE], coupe,
-                    n_ref_min = n_ref_min, repli = fallback,
-                    rayon_px = radius_m / .DECOL_TAILLE_PIXEL,
+                    n_ref_min = n_annees_ref_min, repli = repli,
+                    rayon_px = rayon_m / .DECOL_TAILLE_PIXEL,
                     n_voisins_min = n_voisins_min)
     })
+    for (ind in names(zs)) {
+      decalage_nul[sel] <- decalage_nul[sel] | rowSums(zs[[ind]]$decalage_nul) > 0
+    }
     w <- vapply(.DECOL_INDICES, function(ind) tab[[paste0("w_", ind)]][match(ess[sel], tab$ess_id)], numeric(length(sel)))
     w <- matrix(w, length(sel), length(.DECOL_INDICES), dimnames = list(NULL, .DECOL_INDICES))
     r <- .decol_icd(zs, w)
     icd_m[sel, k, ] <- r$icd
     orig_m[sel, k, ] <- r$origine
-    if (!is.null(emit)) emit(list(current = "decoloration:anomalies", mois = m,
-                                  n_pixels = length(sel)))
+    if (!is.null(emettre)) emettre(list(current = "decoloration:anomalies", mois = m,
+                                        n_pixels = length(sel)))
+  }
+  n_dn <- sum(decalage_nul)
+  if (!is.null(emettre) && n_dn > 0) {
+    emettre(list(current = "decoloration:repli_decalage_nul", n_pixels = n_dn,
+                 n_pixels_total = n))
   }
 
   idx_date <- which(.DECOL_MOIS %in% mois_utiles)
@@ -633,14 +710,31 @@ decoloration_detecter <- function(extent, years, species, cuts = NULL,
       v <- rep(NA_real_, terra::ncell(g)); v[cells] <- M[, j]
       x <- terra::rast(g); terra::values(x) <- v; x
     }))
-    names(r) <- as.character(years)
+    names(r) <- as.character(annees)
     r
   }
   list(niveaux = vers_raster(niv), icd_min = vers_raster(icmin),
        origine = vers_raster(org),
-       parametres = list(n_ref_min = n_ref_min, fallback = fallback,
-                         radius_m = radius_m, n_voisins_min = n_voisins_min,
-                         to_month = to_month))
+       parametres = list(n_annees_ref_min = n_annees_ref_min, repli = repli,
+                         rayon_m = rayon_m, n_voisins_min = n_voisins_min,
+                         mois_a_date = mois_a_date),
+       diagnostics = list(n_pixels_decalage_nul = n_dn, n_pixels = n))
+}
+
+# Indice « à date » (§ 8) : dernier mois ayant un composite lisible pour
+# l'année de fin ; le mois en cours n'est pris qu'à partir de son 20e jour
+# (sinon composite trop pauvre). Sans composite : toute la saison.
+.decol_mois_a_date <- function(dossier_cache, g, annee_fin, aujourdhui = Sys.Date()) {
+  m <- .DECOL_MOIS[vapply(.DECOL_MOIS, function(k) {
+    .decol_composite_lisible_strict(.decol_composite_chemin(dossier_cache, annee_fin, k, g))
+  }, logical(1))]
+  if (length(m) &&
+      .decol_t_mois(annee_fin, max(m)) ==
+      .decol_t_mois(as.integer(format(aujourdhui, "%Y")), as.integer(format(aujourdhui, "%m"))) &&
+      as.integer(format(aujourdhui, "%d")) < 20) {
+    m <- m[m < max(m)]
+  }
+  if (length(m)) max(m) else max(.DECOL_MOIS)
 }
 
 # Origine de la normale pour une année : 2 si un mois valide l'utilise, 1 sinon,
