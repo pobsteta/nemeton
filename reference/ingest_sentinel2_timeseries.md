@@ -64,8 +64,12 @@ ingest_sentinel2_timeseries(
   Logical. When \`TRUE\` (default), skip every scene whose required band
   COGs are all already present under \`cache_dir\`, so re-runs avoid
   redundant HTTP traffic. Has no effect when \`cache_dir\` is \`NULL\`
-  (there is no on-disk cache to consult). Set \`FALSE\` to force a
-  re-fetch of every scene.
+  (there is no on-disk cache to consult). With \`FALSE\` no scene is
+  skipped up front, but each band is still read from the cache first: a
+  band already cached with an extent covering the zone is reused without
+  any network access, and only absent or too-small cached bands are
+  downloaded. \`skip_cached\` therefore never forces a re-download; to
+  force one, delete the cached files under \`cache_dir\`.
 
 - cache_dir:
 
@@ -77,9 +81,10 @@ ingest_sentinel2_timeseries(
   the pipeline continues with the in-memory raster. Cache reuse is
   \*extent-aware\*: a cached file whose bounding box no longer covers
   the requested plots is silently overwritten. Default \`NULL\` (no
-  on-disk cache, v0.21.3 behaviour). Combine with \`skip_cached =
-  FALSE\` to force re-extraction from cached COGs without touching the
-  network.
+  on-disk cache, v0.21.3 behaviour). With \`skip_cached = FALSE\`,
+  scenes whose bands are all cached are still walked band by band, but
+  each band is served from its cached COG (extent permitting) without
+  touching the network.
 
   Recommended layout for callers (e.g. \`nemetonshiny\`):
   \`\<project\>/cache/layers/sentinel2/\`, matching the
@@ -93,8 +98,11 @@ ingest_sentinel2_timeseries(
   **Priming the cache.** Since v0.58.0 the COG band cache is the single
   cache layer: \`skip_cached\` and \`cache_dir\` act on the same on-disk
   store. A scene is skipped when all its required band COGs already
-  exist under \`cache_dir\`; \`skip_cached = FALSE\` forces a re-fetch
-  even on a cache hit (e.g. to repair a truncated download).
+  exist under \`cache_dir\`; \`skip_cached = FALSE\` only disables that
+  whole-scene shortcut. It does not force a re-fetch: every band is
+  still read from the cache first, and downloaded only when absent or
+  when its cached extent no longer covers the zone. To repair a
+  truncated download, delete the cached file(s) under \`cache_dir\`.
 
 - progress_callback:
 
@@ -264,7 +272,7 @@ cache <- file.path(project_path, "cache", "layers", "sentinel2")
 ingest_sentinel2_timeseries(
   con, zone_id, "2020-01-01", "2025-12-31",
   bands       = c("NDVI", "NBR"),
-  skip_cached = FALSE,                 # force a re-fetch
+  skip_cached = FALSE,                 # no whole-scene skip; cached bands still reused
   cache_dir   = cache
 )
 

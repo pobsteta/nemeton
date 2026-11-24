@@ -198,8 +198,13 @@ three extra cropped band COGs per scene.</p></dd>
 <dd><p>Logical. When `TRUE` (default), skip every scene
 whose required band COGs are all already present under `cache_dir`,
 so re-runs avoid redundant HTTP traffic. Has no effect when
-`cache_dir` is `NULL` (there is no on-disk cache to consult). Set
-`FALSE` to force a re-fetch of every scene.</p></dd>
+`cache_dir` is `NULL` (there is no on-disk cache to consult). With
+`FALSE` no scene is skipped up front, but each band is still read from
+the cache first: a band already cached with an extent covering the
+zone is reused without any network access, and only absent or
+too-small cached bands are downloaded. `skip_cached` therefore never
+forces a re-download; to force one, delete the cached files under
+`cache_dir`.</p></dd>
 
 
 <dt id="arg-cache-dir">cache_dir<a class="anchor" aria-label="anchor" href="#arg-cache-dir"></a></dt>
@@ -212,8 +217,9 @@ so re-runs avoid redundant HTTP traffic. Has no effect when
   raster. Cache reuse is *extent-aware*: a cached file whose
   bounding box no longer covers the requested plots is silently
   overwritten. Default `NULL` (no on-disk cache, v0.21.3
-  behaviour). Combine with `skip_cached = FALSE` to force
-  re-extraction from cached COGs without touching the network.</p>
+  behaviour). With `skip_cached = FALSE`, scenes whose bands are all
+  cached are still walked band by band, but each band is served from
+  its cached COG (extent permitting) without touching the network.</p>
 <p>Recommended layout for callers (e.g. `nemetonshiny`):
   `&lt;project&gt;/cache/layers/sentinel2/`, matching the
   `&lt;project&gt;/cache/layers/&lt;layer&gt;` convention (with `&lt;layer&gt;` one of
@@ -225,8 +231,11 @@ so re-runs avoid redundant HTTP traffic. Has no effect when
 <p><strong>Priming the cache.</strong> Since v0.58.0 the COG band cache is the
   single cache layer: `skip_cached` and `cache_dir` act on the same
   on-disk store. A scene is skipped when all its required band COGs
-  already exist under `cache_dir`; `skip_cached = FALSE` forces a
-  re-fetch even on a cache hit (e.g. to repair a truncated download).</p></dd>
+  already exist under `cache_dir`; `skip_cached = FALSE` only disables
+  that whole-scene shortcut. It does not force a re-fetch: every band
+  is still read from the cache first, and downloaded only when absent
+  or when its cached extent no longer covers the zone. To repair a
+  truncated download, delete the cached file(s) under `cache_dir`.</p></dd>
 
 
 <dt id="arg-progress-callback">progress_callback<a class="anchor" aria-label="anchor" href="#arg-progress-callback"></a></dt>
@@ -388,7 +397,7 @@ Point it at `&lt;project&gt;/cache/layers/fast_alert`. Ignored when
 <span class="r-in"><span><span class="fu">ingest_sentinel2_timeseries</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">con</span>, <span class="va">zone_id</span>, <span class="st">"2020-01-01"</span>, <span class="st">"2025-12-31"</span>,</span></span>
 <span class="r-in"><span>  bands       <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"NDVI"</span>, <span class="st">"NBR"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  skip_cached <span class="op">=</span> <span class="cn">FALSE</span>,                 <span class="co"># force a re-fetch</span></span></span>
+<span class="r-in"><span>  skip_cached <span class="op">=</span> <span class="cn">FALSE</span>,                 <span class="co"># no whole-scene skip; cached bands still reused</span></span></span>
 <span class="r-in"><span>  cache_dir   <span class="op">=</span> <span class="va">cache</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
