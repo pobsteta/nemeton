@@ -501,6 +501,36 @@ test_that("année close : acceptée (comportement inchangé)", {
                 as.POSIXct("2026-11-23", tz = "UTC")))
 })
 
+# --- Mission 049 : liste d'années vide / NA / ouverte / close ----------------
+test_that("liste d'années vide : refus dédié, avant tout appel CDS", {
+  mnt <- as.POSIXct("2026-11-23", tz = "UTC")
+  for (vide in list(integer(0), NULL)) {
+    err <- expect_error(nemeton:::.rsen_era5ts_exiger_annees_closes(vide, mnt),
+                        class = "rsen_era5ts_echec")
+    expect_match(conditionMessage(err), "no year was requested")
+    expect_no_match(conditionMessage(err), "missing \\(NA\\)")
+  }
+})
+
+test_that("année NA (seule ou dans une liste) : message « missing (NA) » inchangé", {
+  mnt <- as.POSIXct("2026-11-23", tz = "UTC")
+  for (x in list(NA_integer_, c(2023L, NA_integer_))) {
+    expect_error(nemeton:::.rsen_era5ts_exiger_annees_closes(x, mnt),
+                 "missing \\(NA\\)", class = "rsen_era5ts_echec")
+  }
+})
+
+test_that("année ouverte : message et classe inchangés", {
+  expect_error(nemeton:::.rsen_era5ts_exiger_annees_closes(2030L,
+                 as.POSIXct("2026-11-23", tz = "UTC")),
+               "does not yet cover the whole of\\s+year\\(s\\) 2030", class = "rsen_era5ts_echec")
+})
+
+test_that("années closes : aucune erreur", {
+  expect_no_error(nemeton:::.rsen_era5ts_exiger_annees_closes(c(2022L, 2023L),
+                    as.POSIXct("2026-11-23", tz = "UTC")))
+})
+
 test_that("règle bissextile unique", {
   expect_identical(nemeton:::.rsen_era5ts_njours(2024L), 366L)
   expect_identical(nemeton:::.rsen_era5ts_njours(2023L), 365L)

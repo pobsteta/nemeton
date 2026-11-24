@@ -218,7 +218,10 @@
 
 # Refus (avant tout appel CDS) d'une année qu'ERA5 ne couvre pas encore entièrement.
 .rsen_era5ts_exiger_annees_closes <- function(annees, maintenant = Sys.time()) {
-  if (!length(annees) || anyNA(annees)) {
+  if (!length(annees)) {
+    .rsen_era5ts_abort("no year was requested (empty list); ask for at least one closed year.")
+  }
+  if (anyNA(annees)) {
     .rsen_era5ts_abort("the requested year is missing (NA); ask for a closed year.")
   }
   ouvertes <- sort(unique(annees[!vapply(annees, .rsen_era5ts_annee_close, NA,
