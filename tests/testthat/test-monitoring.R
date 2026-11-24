@@ -581,7 +581,7 @@ test_that("skip_cached only skips scenes whose every required band is cached", {
   })
 })
 
-test_that("skip_cached = FALSE forces a re-fetch even when COGs are cached", {
+test_that("skip_cached = FALSE disables the whole-scene skip (scene is walked again; bands still come from the cache)", {
   skip_if_no_timescaledb()
   with_clean_db(function(con) {
     db_migrate(con)
@@ -609,7 +609,7 @@ test_that("skip_cached = FALSE forces a re-fetch even when COGs are cached", {
                                        bands = "NDVI", cache_dir = cache,
                                        skip_cached = FALSE)
     expect_equal(out$n_scenes_cached, 0L)
-    expect_equal(counter$n, 2L)   # processed again despite cache hit
+    expect_equal(counter$n, 2L)   # scene walked again (no re-download forced: see the .cache_scene_bands test)
   })
 })
 
@@ -929,6 +929,52 @@ test_that(".get_s2_band_raster: cache hit reads the COG without HTTP", {
   expect_length(events, 1L)
   expect_identical(events[[1]]$current, "s2:band_cached")
   expect_identical(events[[1]]$band, "B04")
+})
+
+test_that("skip_cached = FALSE ne force pas de retéléchargement : la bande en cache est relue sans réseau", {
+  # Documentation de `skip_cached` (mission 047) : à FALSE, aucune scène
+  # n'est sautée d'avance, mais chaque bande passe par
+  # `.get_s2_band_raster()` qui relit d'abord le cache. C'est ce que
+  # `ingest_sentinel2_timeseries()` appelle (via `.cache_scene_bands()`)
+  # dans les deux cas ; `skip_cached` n'y est pas transmis.
+  skip_if_not_installed("terra"); skip_if_not_installed("sf")
+  skip_if_terra_write_broken()
+  cache <- withr::local_tempdir()
+  scene_id <- "S2_TEST_NOFORCE"
+  r <- terra::rast(nrows = 20, ncols = 20,
+                   xmin = 0, xmax = 200, ymin = 0, ymax = 200,
+                   crs = "EPSG:2154", vals = seq_len(400))
+  for (b in c("B04", "B08")) {
+    p <- nemeton:::.s2_band_cache_path(cache, scene_id, b)
+    dir.create(dirname(p), recursive = TRUE, showWarnings = FALSE)
+    terra::writeRaster(r, p, overwrite = TRUE)
+  }
+  buf <- sf::st_sf(
+    radius_m = 5,
+    geometry = sf::st_sfc(sf::st_buffer(sf::st_point(c(100, 100)), 5),
+                          crs = 2154))
+  # href bidon : toute ouverture distante échouerait.
+  scene <- data.frame(scene_id = scene_id,
+                      href_B04 = "https://nope/should-not-be-read",
+                      href_B08 = "https://nope/should-not-be-read",
+                      stringsAsFactors = FALSE)
+  # Lecteur distant simulé : ne doit jamais être appelé.
+  n_remote <- 0L
+  testthat::local_mocked_bindings(
+    .terra_rast_with_pc_retry = function(...) {
+      n_remote <<- n_remote + 1L
+      stop("remote read must not happen on a cache hit")
+    },
+    .package = "nemeton"
+  )
+  events <- list()
+  n <- nemeton:::.cache_scene_bands(
+    scene, c("B04", "B08"), crop_aoi = buf, cache_dir = cache,
+    emit = function(p) events[[length(events) + 1L]] <<- p)
+  expect_equal(n, 2L)
+  expect_identical(n_remote, 0L)
+  cur <- vapply(events, function(e) e$current, character(1))
+  expect_identical(cur, c("s2:band_cached", "s2:band_cached"))
 })
 
 test_that(".get_s2_band_raster: cache miss fetches, writes, emits 's2:band_fetched'", {
