@@ -1130,7 +1130,9 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
 
 # Évalue `expr` avec les options GDAL utiles à la lecture distante, puis
 # restaure l'état d'avant (variable absente → retirée, sinon valeur
-# d'origine). GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR évite le listage du
+# d'origine). Limite : une option posée avant par `terra::setGDALconfig()`
+# prime sur l'environnement et masquerait la nôtre (aucun appel aujourd'hui
+# dans nemeton). GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR évite le listage du
 # « répertoire » du blob (requêtes inutiles, voire 403 sur SAS).
 .with_s2_gdal_opts <- function(expr) {
   opts <- c(GDAL_DISABLE_READDIR_ON_OPEN = "EMPTY_DIR")
@@ -1233,7 +1235,11 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       paste0("could not resolve host|could not connect|",
              "connection (timed out|reset|refused)|",
              "network (is )?unreachable|temporary failure|",
-             "http error.*\\b5\\d{2}\\b|gdal error.*timeout"),
+             # `HTTP error code : 5xx` (pilote HTTP) et
+             # `HTTP response code: 5xx` / `CURL error` (/vsicurl/)
+             "http (error|response) code.*\\b5\\d{2}\\b|",
+             "curl error.*(timed out|timeout|couldn't connect|connection)|",
+             "gdal error.*timeout"),
       err_msg, ignore.case = TRUE, perl = TRUE
     )
 

@@ -4,8 +4,10 @@
   URL `https://` des bandes (Planetary Computer) sont ouvertes en
   `/vsicurl/<url>` (lecteur à reprises et empreinte de tuile mémoïsée), avec
   `GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR` le temps de la lecture, état GDAL
-  restauré ensuite. Banc d'essai de l'orchestrateur : 3,3 s au lieu de 156,5 s
-  pour 86 x 86 px d'une B04. Signatures, événements `s2:*` et cache par bande
+  restauré ensuite. Mesure réelle (B04 Planetary Computer, Colombière, ~35 ha) :
+  3,2 s au lieu de 87,0 s, résultat identique. La reprise sur erreur
+  transitoire reconnaît aussi les messages GDAL de `/vsicurl/`
+  (`HTTP response code: 5xx`, `CURL error`). Signatures, événements `s2:*` et cache par bande
   inchangés ; le jeton SAS renouvelé ne double pas le préfixe.
 
 # nemeton 2026.11.44 (2026-11-24)
