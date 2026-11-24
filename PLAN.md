@@ -160,6 +160,18 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-24 — nemetonshiny v2026.11.6 et plancher relevé à 2026.11.44 (missions 040 et 043 de nemetonplateforme)
+
+nemetonshiny v2026.11.6 (mission 040, PR #324) suit le forçage ERA5 `timeseries` :
+progression en « requêtes ERA5 i/n » (4 par point et par année), message de
+`rsen_era5ts_echec` affiché tel quel, sans bascule d'office vers le chemin
+classique. Mission 043 (PR nemetonshiny #326) : plancher `nemeton (>= 2026.11.44)`,
+2026.11.42 et 2026.11.43 échouant sur une vraie réponse du CDS ; le test de
+contrat lit désormais le plancher dans `DESCRIPTION`. Essai réel de la
+Colombière (5,05 E / 47,30 N) : 1,8 min par année au premier calcul. Ouverture
+du cycle dev `2026.11.44.9000`. Version nemetonshiny vérifiée : v2026.11.6
+(`main` en 2026.11.6.9000).
+
 ### 2026-11-24 — v2026.11.44 : fix ERA5 `timeseries`, cache à variables scalaires (mission 042 de nemetonplateforme, PR #689)
 
 Essai réel de la Colombière : le CDS livre `latitude`/`longitude` scalaires ;
