@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.44.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.45</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -117,6 +117,11 @@
       <small>Source: <a href="https://github.com/pobsteta/nemeton/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="2026.11.45" id="nemeton-20261145-2026-11-24">nemeton 2026.11.45 (2026-11-24)<a class="anchor" aria-label="anchor" href="#nemeton-20261145-2026-11-24"></a></h2>
+<ul><li>
+<strong>perf : bandes Sentinel-2 distantes lues par fenêtre</strong> (mission 044). Les URL <code>https://</code> des bandes (Planetary Computer) sont ouvertes en <code>/vsicurl/&lt;url&gt;</code> (lecteur à reprises et empreinte de tuile mémoïsée), avec <code>GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR</code> le temps de la lecture, état GDAL restauré ensuite. Mesure réelle (B04 Planetary Computer, Colombière, ~35 ha) : 3,2 s au lieu de 87,0 s, résultat identique. La reprise sur erreur transitoire reconnaît aussi les messages GDAL de <code>/vsicurl/</code> (<code>HTTP response code: 5xx</code>, <code>CURL error</code>) et, dès la 2e tentative, GDAL ne relit plus l’échec gardé en cache (<code>CPL_VSIL_CURL_NON_CACHED</code>). Signatures, événements <code>s2:*</code> et cache par bande inchangés ; le jeton SAS renouvelé ne double pas le préfixe.</li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="2026.11.44" id="nemeton-20261144-2026-11-24">nemeton 2026.11.44 (2026-11-24)<a class="anchor" aria-label="anchor" href="#nemeton-20261144-2026-11-24"></a></h2>
 <ul><li>
