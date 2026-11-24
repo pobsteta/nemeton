@@ -1,131 +1,160 @@
 #!/usr/bin/env Rscript
 # Étude FAST contre décoloration — point d'entrée unique (mission 045).
 #
-#   Rscript data-raw/etude_fast_decoloration/etude.R <dossier_sortie> [zones.csv] [--zone=Z01]
+#   Rscript data-raw/etude_fast_decoloration/etude.R <dossier_sortie> [--zone=Z01_...]
 #
 # <dossier_sortie> : HORS du dépôt. Cache par zone et par étape (<zone>/<etape>.rds) :
-# relancer la commande reprend là où elle s'est arrêtée. zones.csv : colonnes
-# zone, xmin, ymin (carré de 3 km, Lambert 93, coin sud-ouest), groupe, strate.
-# Sans zones.csv : zone pilote (Z_PILOTE). Variables : DECOLORATION_DIR
-# (défaut ~/dev/rapport_decoloration_bfc), NEMETON_DB_URL (étape FAST).
-# Étapes : verite -> decoloration -> fast -> mesures ; rapport.md en fin de run.
+# relancer la commande reprend là où elle s'est arrêtée. Zones : zones.csv (14 lignes,
+# tirées par choisir_zones.R). Variable : DECOLORATION_DIR (défaut ~/dev/rapport_decoloration_bfc).
+# FAST tourne sur une base SQLite LOCALE <sortie>/etude.sqlite ; NEMETON_DB_URL (base de
+# production) est effacée de l'environnement dès le démarrage, jamais lue.
+# Étapes : verite -> decoloration -> volume -> fast -> mesures ; tables + rapport.md à la fin.
 
+Sys.unsetenv("NEMETON_DB_URL")   # garde-fou : jamais la base de production
 suppressPackageStartupMessages({ library(terra); library(sf) })
 args <- commandArgs(trailingOnly = TRUE)
 rep_script <- dirname(normalizePath(sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1]), mustWork = FALSE))
-source(file.path(rep_script, "fonctions.R"))
+source(file.path(rep_script, "fonctions.R")); source(file.path(rep_script, "fonctions_comparaison.R"))
 
 dossier <- args[!grepl("^--", args)][1]
-if (is.na(dossier)) stop("usage : etude.R <dossier_sortie> [zones.csv] [--zone=Z]")
-dossier <- normalizePath(dossier, mustWork = FALSE); dir.create(dossier, recursive = TRUE, showWarnings = FALSE)
-fz <- args[!grepl("^--", args)][2]
+if (is.na(dossier)) stop("usage : etude.R <dossier_sortie> [--zone=Z]")
+dir.create(dossier, recursive = TRUE, showWarnings = FALSE); dossier <- normalizePath(dossier)
 une_zone <- sub("^--zone=", "", grep("^--zone=", args, value = TRUE))
 DEC <- Sys.getenv("DECOLORATION_DIR", path.expand("~/dev/rapport_decoloration_bfc"))
-ANNEES_TEST <- c(2021L, 2022L)
-ANNEES_FAST_SEUL <- 2018:2020
+ANNEES_TEST <- 2021:2023            # 2021 et 2022 complètes à 24 mois ; 2023 censurée
+ANNEES_FAST_SEUL <- 2018:2020       # à part, sans comparaison
+ANNEES <- c(ANNEES_FAST_SEUL, ANNEES_TEST)
 TAILLE <- 3000
-
-zones <- if (!is.na(fz) && file.exists(fz)) utils::read.csv(fz) else
-  data.frame(zone = "Z_PILOTE", xmin = 775000, ymin = 6571000, groupe = "pilote", strate = "pilote")
+ESS_ID <- c(chene = 1L, hetre = 2L, sapin_epicea = 3L, douglas = 4L)
+zones <- utils::read.csv(file.path(rep_script, "zones.csv"))
 if (length(une_zone)) zones <- zones[zones$zone %in% une_zone, ]
-msg <- function(...) cat(format(Sys.time(), "%H:%M:%S"), sprintf(...), "\n")
+msg <- function(...) cat(format(Sys.time(), "%H:%M:%S"), sprintf(...), "\n", file = stderr())
+etendue <- function(z, marge = 0) ext(z$xmin - marge, z$xmin + TAILLE + marge, z$ymin - marge, z$ymin + TAILLE + marge)
+grille20 <- function(z) rast(etendue(z), resolution = 20, crs = "EPSG:2154")
 
-# ---- étape verite : coupe SUFOSAT 20 m + masque forestier (lisière 10 m retirée)
+# ---- verite : coupe SUFOSAT 20 m sur la grille de la décoloration + masque forestier
 etape_verite <- function(z) {
-  e <- ext(z$xmin, z$xmin + TAILLE, z$ymin, z$ymin + TAILLE)
-  g20 <- rast(e, resolution = 20, crs = "EPSG:2154")
-  t10 <- crop(rast(file.path(DEC, "donnees/sufosat_tcoupe_p90_r27.tif")), e)
-  # 4 sous-pixels : décalages du bloc 2 x 2 de chaque pixel de 20 m
-  v <- values(t10, mat = FALSE); nr <- nrow(t10); nc <- ncol(t10)
-  m <- matrix(v, nr, nc, byrow = TRUE)
+  g20 <- grille20(z)
+  g10 <- rast(etendue(z), resolution = 10, crs = "EPSG:2154")          # alignée sur g20
+  t10 <- resample(crop(rast(file.path(DEC, "donnees/sufosat_tcoupe_p90_r27.tif")), etendue(z, 40)), g10, method = "near")
+  m <- matrix(values(t10, mat = FALSE), nrow(t10), ncol(t10), byrow = TRUE)
   sous <- sapply(list(c(0, 0), c(0, 1), c(1, 0), c(1, 1)), function(o)
-    as.vector(t(m[seq(1 + o[1], nr, 2), seq(1 + o[2], nc, 2)])))
-  tc <- coupe_20m(sous)
-  r <- g20; values(r) <- tc
+    as.vector(t(m[seq(1 + o[1], nrow(m), 2), seq(1 + o[2], ncol(m), 2)])))
+  r <- g20; values(r) <- coupe_20m(sous)
   zf <- st_as_sfc(st_bbox(c(xmin = z$xmin, ymin = z$ymin, xmax = z$xmin + TAILLE, ymax = z$ymin + TAILLE), crs = st_crs(2154)))
-  bf <- suppressWarnings(st_read(file.path(DEC, "donnees/ign_bdforet_v2_r27.gpkg"), quiet = TRUE,
-                                 wkt_filter = st_as_text(zf)))
-  bf <- st_make_valid(st_union(st_intersection(st_make_valid(bf), zf)))
-  bf <- if (length(bf)) st_buffer(bf, -10) else bf
-  foret <- if (length(bf) && !all(st_is_empty(bf))) rasterize(vect(bf), g20, field = 1, background = 0) else g20 * 0
-  list(t_coupe = wrap(r), foret = wrap(foret), derniere_coupe = DERNIERE_COUPE)
+  bf <- suppressWarnings(st_read(file.path(DEC, "donnees/ign_bdforet_v2_r27.gpkg"), quiet = TRUE, wkt_filter = st_as_text(zf)))
+  bf <- st_make_valid(st_transform(bf, 2154))
+  if (z$groupe == "melange") {      # forêt publique hors 4 essences
+    pb <- suppressWarnings(st_read(file.path(DEC, "donnees/ign_forets_publiques_r27.gpkg"), quiet = TRUE, wkt_filter = st_as_text(zf)))
+    pb <- st_make_valid(st_transform(pb, 2154))
+    f <- st_difference(st_union(st_geometry(pb)), if (nrow(bf)) st_union(st_geometry(bf)) else st_sfc(st_polygon(), crs = 2154))
+  } else f <- st_union(st_geometry(bf[bf$ess_id == ESS_ID[[z$groupe]], ]))
+  f <- st_intersection(st_make_valid(f), zf)
+  f <- if (length(f) && !all(st_is_empty(f))) st_buffer(f, -10) else f     # lisière de 10 m
+  foret <- if (length(f) && !all(st_is_empty(f))) rasterize(vect(f), g20, field = 1, background = 0) else g20 * 0
+  list(t_coupe = wrap(r), foret = wrap(foret))
 }
 
-# ---- étape decoloration : niveaux 0-4 et ICD min déjà calculés (lecture seule)
+# ---- decoloration : classe 0/1/2 et ICD min déjà calculés (lecture seule) ; NULL si « non_applicable »
 etape_decoloration <- function(z) {
-  e <- ext(z$xmin, z$xmin + TAILLE, z$ymin, z$ymin + TAILLE)
-  setNames(lapply(c(ANNEES_TEST, ANNEES_FAST_SEUL), function(a) {
+  if (z$groupe == "melange") return(NULL)
+  g20 <- grille20(z)
+  annees <- (min(ANNEES) - 1L):max(ANNEES)
+  setNames(lapply(annees, function(a) {
     f <- file.path(DEC, "sortie_decoloration/indicateurs", sprintf("alerte_%d.vrt", a))
     if (!file.exists(f)) return(NULL)
-    r <- crop(rast(f), e); wrap(r)
-  }), c(ANNEES_TEST, ANNEES_FAST_SEUL))
+    wrap(resample(crop(rast(f), etendue(z, 40)), g20, method = "near"))
+  }), annees)
 }
 
-# ---- étape fast : nemeton année par année (base + réseau requis ; long)
-etape_fast <- function(z) {
-  if (!nzchar(Sys.getenv("NEMETON_DB_URL")) || !requireNamespace("nemeton", quietly = TRUE))
-    return(list(statut = "non_execute", raison = "NEMETON_DB_URL ou paquet nemeton absent"))
-  con <- nemeton::db_connect(); on.exit(nemeton::db_disconnect(con), add = TRUE)
+# ---- volume : FORMS-T de l'année a-1 sur la grille 20 m (pondération)
+etape_volume <- function(z) {
+  g20 <- grille20(z)
+  setNames(lapply(ANNEES_TEST, function(a) {
+    f <- file.path(DEC, "donnees/forms_t", sprintf("WVD_%d.tif", a - 1L))
+    if (!file.exists(f)) return(NULL)
+    wrap(resample(crop(rast(f), etendue(z, 200)), g20, method = "average"))
+  }), ANNEES_TEST)
+}
+
+# ---- fast : nemeton année par année, base SQLite locale, lecture par fenêtre
+etape_fast <- function(z, con) {
+  g20 <- grille20(z)
+  mois <- MOIS_ICD[[z$groupe]]
   poly <- st_as_sfc(st_bbox(c(xmin = z$xmin, ymin = z$ymin, xmax = z$xmin + TAILLE, ymax = z$ymin + TAILLE), crs = st_crs(2154)))
-  id <- nemeton::create_monitoring_zone(con, paste0("etude045_", z$zone), poly, project_uuid = "etude-fast-decoloration")
-  res <- list(statut = "ok")
-  for (a in c(ANNEES_TEST, ANNEES_FAST_SEUL)) {
-    d0 <- sprintf("%d-01-01", a - 3L); d1 <- sprintf("%d-12-31", a)
-    nemeton::ingest_sentinel2_timeseries(con, id, start = d0, end = d1, bands = c("NDVI", "NBR", "NDMI", "NDRE"))
-    lst <- nemeton::read_fast_alert_rasters(con, id, date_from = d0, date_to = d1, months = 6:9,
-                                            cache_dir = file.path(dossier, "cache_fast"))
-    res[[as.character(a)]] <- lapply(lst, function(r) if (is.null(r)) NULL else wrap(r))
+  ex <- nemeton::find_zones_by_project(con, "etude-fast-decoloration")
+  id <- ex$id[ex$name == z$zone]
+  id <- if (length(id)) id[1] else nemeton::create_monitoring_zone(con, z$zone, poly, project_uuid = "etude-fast-decoloration")
+  cache <- file.path(dossier, "cache_fast"); dir.create(cache, showWarnings = FALSE)
+  res <- list(statut = "ok", zone_id = id)
+  for (a in ANNEES) {                    # saisons de a-3 ... a : une ingestion par saison
+    w <- fenetres_fast(a, mois)$saison
+    nemeton::ingest_sentinel2_timeseries(con, id, start = w[["from"]], end = w[["to"]],
+                                         bands = c("NDVI", "NBR"), cache_dir = cache)
+  }
+  lire <- function(mode, from, to) {
+    r <- nemeton::read_fast_alert_raster(con, id, index = "NDVI", date_from = from, date_to = to, mode = mode,
+                                         months = mois, cache_dir = cache)
+    if (is.null(r)) return(NULL)
+    wrap(fast_vers_20m(r, g20))          # 10 m -> grille commune 20 m (moyenne pour le score)
+  }
+  for (a in ANNEES) {
+    w <- fenetres_fast(a, mois)
+    res[[as.character(a)]] <- list(count = lire("count", w$saison[["from"]], w$saison[["to"]]),
+                                   rolling = lire("rolling", w$saison[["from"]], w$saison[["to"]]),
+                                   trend = if (a %in% ANNEES_TEST) lire("trend", w$trend[["from"]], w$trend[["to"]]))
   }
   res
 }
 
-# ---- étape mesures : une ligne par pixel, puis tables
-etape_mesures <- function(z, V, D) {
-  t_coupe <- rast(V$t_coupe); foret <- rast(V$foret)
-  out <- list()
-  for (a in ANNEES_TEST) {
-    if (is.null(D[[as.character(a)]])) next
-    d <- rast(D[[as.character(a)]]); d <- resample(d, t_coupe, method = "near")
-    co <- cohorte_pixels(values(t_coupe, mat = FALSE), mois_indice(a), V$derniere_coupe)
-    px <- data.frame(zone = z$zone, annee = a, classe = values(d[[1]], mat = FALSE),
-                     icd_min = values(d[[2]], mat = FALSE), foret = values(foret, mat = FALSE) == 1, co)
-    out[[as.character(a)]] <- px[px$foret & px$garde & !is.na(px$classe), ]
-  }
-  do.call(rbind, out)
+# ---- mesures : une ligne par pixel et par année
+etape_mesures <- function(z, V, D, VOL, F, derniere) {
+  t_coupe <- values(rast(V$t_coupe), mat = FALSE); foret <- values(rast(V$foret), mat = FALSE) == 1
+  val <- function(w) if (is.null(w)) NULL else values(rast(w), mat = FALSE)
+  out <- lapply(ANNEES, function(a) {
+    co <- cohorte_pixels(t_coupe, mois_indice(a), derniere)
+    dd <- if (is.null(D[[as.character(a)]])) NULL else rast(D[[as.character(a)]])
+    cl <- if (is.null(dd)) NULL else values(dd[[1]], mat = FALSE)
+    icd <- if (is.null(dd)) NULL else values(dd[[2]], mat = FALSE)
+    prec <- if (is.null(D[[as.character(a - 1L)]])) NULL else values(rast(D[[as.character(a - 1L)]])[[1]], mat = FALSE)
+    niv <- if (is.null(cl)) rep(NA_real_, length(t_coupe)) else niveaux_decoloration(cl, icd, prec)
+    fa <- F[[as.character(a)]]
+    sc <- function(m) { s <- if (identical(F$statut, "ok")) val(fa[[m]]) else NULL; if (is.null(s)) rep(NA_real_, length(t_coupe)) else s }
+    s_c <- sc("count"); s_r <- sc("rolling"); s_t <- sc("trend")
+    vol <- val(VOL[[as.character(a)]]); if (is.null(vol)) vol <- rep(NA_real_, length(t_coupe))
+    data.frame(zone = z$zone, groupe = z$groupe, annee = a, cell = seq_along(t_coupe), foret = foret,
+               co, annee_coupe = ifelse(is.na(t_coupe), NA, t_coupe %/% 12),
+               niv_dec = etat_pixel(niv, applicable = rep(!is.null(D), length(niv))),
+               sc_dec = if (is.null(icd)) NA_real_ else -icd,
+               sc_count = s_c, cl_count = classes_fast(s_c),
+               sc_rolling = s_r, cl_rolling = classes_fast(s_r),
+               sc_trend = s_t, cl_trend = classes_fast(s_t), vol = vol)
+  })
+  px <- do.call(rbind, out)
+  px$comparable <- pixel_comparable(px$annee_coupe)
+  px$y24 <- vrai_sous_h(px$delai, px$evenement, px$censure, HORIZON_PRINCIPAL)
+  px[px$foret & px$garde, ]
 }
 
-# dernière coupe connue de SUFOSAT sur TOUTE la région (censure, § 10) : jamais sur la zone
+# ---- principal
+sqlite_url <- isoler_base(dossier)
+con <- NULL
+fast_dispo <- requireNamespace("nemeton", quietly = TRUE) && !identical(Sys.getenv("ETUDE_SANS_FAST"), "1")
+if (fast_dispo) {
+  con <- nemeton::db_connect(sqlite_url); on.exit(nemeton::db_disconnect(con), add = TRUE)
+  nemeton::db_migrate(con)
+}
 DERNIERE_COUPE <- etape_cache(dossier, "_region", "derniere_coupe", function()
   as.integer(global(rast(file.path(DEC, "donnees/sufosat_tcoupe_p90_r27.tif")), "max", na.rm = TRUE)[1, 1]))
 
 res <- list()
 for (i in seq_len(nrow(zones))) {
-  z <- zones[i, ]; msg("zone %s", z$zone)
-  V <- etape_cache(dossier, z$zone, "verite", function() etape_verite(z))
-  D <- etape_cache(dossier, z$zone, "decoloration", function() etape_decoloration(z))
-  etape_cache(dossier, z$zone, "fast", function() etape_fast(z))
-  res[[z$zone]] <- etape_cache(dossier, z$zone, "mesures", function() etape_mesures(z, V, D))
+  z <- zones[i, ]; msg("zone %s (%d/%d)", z$zone, i, nrow(zones))
+  V   <- etape_cache(dossier, z$zone, "verite", function() etape_verite(z))
+  D   <- etape_cache(dossier, z$zone, "decoloration", function() etape_decoloration(z))
+  VOL <- etape_cache(dossier, z$zone, "volume", function() etape_volume(z))
+  Fz  <- etape_cache(dossier, z$zone, "fast", function() if (fast_dispo) etape_fast(z, con) else list(statut = "non_execute"))
+  res[[z$zone]] <- etape_cache(dossier, z$zone, "mesures", function() etape_mesures(z, V, D, VOL, Fz, DERNIERE_COUPE))
 }
 px <- do.call(rbind, res)
-
-# ---- tables et rapport (décoloration ; FAST s'ajoute quand l'étape fast a tourné)
-tab <- do.call(rbind, lapply(split(px, list(px$annee, px$classe), drop = TRUE), function(d)
-  data.frame(annee = d$annee[1], classe = d$classe[1], n_pixels = nrow(d),
-             t(setNames(km_risque(d$delai, d$evenement), paste0("risque_", HORIZONS))))))
-ref <- tab[tab$classe == 0, c("annee", "risque_48")]
-tab$lift_48 <- tab$risque_48 / ref$risque_48[match(tab$annee, ref$annee)]
-utils::write.csv(tab, file.path(dossier, "risque_par_classe.csv"), row.names = FALSE)
-auc <- vapply(ANNEES_TEST, function(a) { d <- px[px$annee == a, ]
-  auc_rang(-d$icd_min, d$evenement) }, numeric(1))
-dur <- utils::read.csv(file.path(dossier, "durees.csv"))
-writeLines(c("# Étude FAST contre décoloration — rapport généré", "",
-  sprintf("Zones : %s. Graine de tirage : 45. Années de test : %s.", paste(zones$zone, collapse = ", "), paste(ANNEES_TEST, collapse = ", ")), "",
-  "## Décoloration : risque de coupe rase par niveau (Kaplan-Meier, pixels)", "",
-  knitr::kable(tab, format = "pipe", digits = 4), "",
-  sprintf("AUC de -ICD min contre « coupé sous 48 mois » : %s.", paste(sprintf("%d : %.3f", ANNEES_TEST, auc), collapse = " ; ")), "",
-  "## Durées par étape (secondes)", "", knitr::kable(dur, format = "pipe"), "",
-  "## Limites de la vérité (brief § 4)", "",
-  "Coupe de régénération comptée « atteint » ; dépérissement sans coupe rase invisible (hêtre, chêne, forêt privée, scolytés extraits) ;",
-  "prévalence faible : on lit lift, AUC, précision à surface égale, pas le kappa."),
-  file.path(dossier, "rapport.md"))
-msg("rapport : %s", file.path(dossier, "rapport.md"))
+source(file.path(rep_script, "rapport.R"), local = TRUE)

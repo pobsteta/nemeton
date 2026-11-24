@@ -3,35 +3,50 @@
 # Les mois sont des indices entiers  an * 12 + mois - 1  (même codage que
 # `sufosat_tcoupe()` de la décoloration). Une absence de coupe vaut NA.
 
-HORIZONS <- c(12L, 24L, 36L, 48L)
+# Horizon principal 24 mois (décision de l'orchestrateur) : l'excès de coupe des
+# niveaux 2-4 sur le niveau 0 plafonne à 24 mois (1,65 / 1,98 / 1,96 / 1,90 points
+# à 12 / 24 / 36 / 46 mois, cohorte 2021) tandis que le lift baisse (6,3 / 4,1 /
+# 3,3 / 2,6) : au-delà, on n'ajoute que des coupes ordinaires. 12 et 36 mois en
+# sensibilité ; 46 mois en information, cohorte 2021 seule.
+HORIZON_PRINCIPAL <- 24L
+HORIZONS <- c(12L, 24L, 36L, 46L)
+MOIS_ICD <- list(chene = 6:8, hetre = 7:8, sapin_epicea = 6:10, douglas = 4:9,
+                 melange = 6:9)
 
 # --- 1. tirage des zones ---------------------------------------------------
-# communes : data.frame(commune, groupe, taux_touche). Par groupe d'essences :
-# `n_haut` communes très touchées (quartile haut) + `n_bas` peu touchées
-# (quartile bas) ; plus `n_melange` communes du groupe "melange" (FAST seul).
-# Graine fixe ; ordre d'entrée sans effet.
+# communes : data.frame(commune, departement, groupe, taux_touche). Déterministe,
+# comme comparaison_nemeton.R : par groupe d'essences, `n_haut` communes de plus
+# fort taux (un département au plus chacune tant que c'est possible) et `n_bas`
+# de plus faible taux ; égalités départagées par le nom. Les `n_melange`
+# communes du groupe « melange » (hors 4 essences) sont tirées avec `graine`.
 tirer_zones <- function(communes, graine = 45L, n_haut = 2L, n_bas = 1L,
                         n_melange = 2L,
                         groupes = c("chene", "hetre", "sapin_epicea", "douglas")) {
-  communes <- communes[order(communes$commune), ]
-  set.seed(graine)
-  tir <- function(d, n, haut, strate) {
-    if (!nrow(d) || n < 1L) return(NULL)
-    q <- stats::quantile(d$taux_touche, if (haut) 0.75 else 0.25, na.rm = TRUE)
-    p <- d[if (haut) d$taux_touche >= q else d$taux_touche <= q, , drop = FALSE]
-    p <- p[sample.int(nrow(p), min(n, nrow(p))), , drop = FALSE]
-    p$strate <- strate
-    p
-  }
+  if (is.null(communes$departement)) communes$departement <- NA_character_
+  communes <- communes[order(communes$commune), , drop = FALSE]
   out <- list()
   for (g in groupes) {
-    d <- communes[communes$groupe == g, , drop = FALSE]
-    out <- c(out, list(tir(d, n_haut, TRUE, "tres_touchee"), tir(d, n_bas, FALSE, "peu_touchee")))
+    d <- communes[communes$groupe == g & is.finite(communes$taux_touche), , drop = FALSE]
+    if (!nrow(d)) next
+    d <- d[order(-d$taux_touche, d$commune), , drop = FALSE]
+    fort <- d[!duplicated(d$departement), , drop = FALSE]
+    fort <- fort[seq_len(min(n_haut, nrow(fort))), , drop = FALSE]
+    if (nrow(fort) < n_haut) {
+      reste <- d[!d$commune %in% fort$commune, , drop = FALSE]
+      fort <- rbind(fort, reste[seq_len(min(n_haut - nrow(fort), nrow(reste))), , drop = FALSE])
+    }
+    fort$strate <- rep("tres_touchee", nrow(fort))
+    b <- d[order(d$taux_touche, d$commune), , drop = FALSE]
+    b <- b[!b$commune %in% fort$commune, , drop = FALSE]
+    b <- b[seq_len(min(n_bas, nrow(b))), , drop = FALSE]
+    b$strate <- rep("peu_touchee", nrow(b))
+    out <- c(out, list(fort, b))
   }
   m <- communes[communes$groupe == "melange", , drop = FALSE]
   if (nrow(m) && n_melange > 0L) {
-    m <- m[sample.int(nrow(m), min(n_melange, nrow(m))), , drop = FALSE]
-    m$strate <- "melange"
+    set.seed(graine)
+    m <- m[sort(sample.int(nrow(m), min(n_melange, nrow(m)))), , drop = FALSE]
+    m$strate <- rep("melange", nrow(m))
     out <- c(out, list(m))
   }
   z <- do.call(rbind, out); rownames(z) <- NULL
@@ -42,12 +57,12 @@ tirer_zones <- function(communes, graine = 45L, n_haut = 2L, n_bas = 1L,
 # --- 2. vérité SUFOSAT -----------------------------------------------------
 # t4 : matrice n x 4 des mois de coupe des 4 sous-pixels de 10 m (NA = pas de
 # coupe). Pixel de 20 m coupé si >= `min_sous` sous-pixels coupés ; sa date est
-# celle où ce seuil est atteint (min_sous-ième date la plus précoce).
+# la plus précoce des sous-pixels (règle de la décoloration, brief § 3.6).
 coupe_20m <- function(t4, min_sous = 2L) {
   t4 <- as.matrix(t4)
   apply(t4, 1L, function(v) {
     v <- sort(v[!is.na(v)])
-    if (length(v) >= min_sous) v[min_sous] else NA_real_
+    if (length(v) >= min_sous) v[1] else NA_real_
   })
 }
 
@@ -136,15 +151,20 @@ precision_rappel <- function(score, y, k) {
 # df avec colonne `zone` ; stat(df) -> nombre. On rééchantillonne les zones.
 ic_par_zone <- function(df, stat, B = 500L, graine = 45L, niveau = 0.95) {
   set.seed(graine)
-  zs <- unique(df$zone)
+  sp <- split(df, df$zone); zs <- names(sp)
   v <- replicate(B, {
     z <- sample(zs, length(zs), replace = TRUE)
-    stat(do.call(rbind, lapply(seq_along(z), function(i) {
-      d <- df[df$zone == z[i], ]; d$zone <- i; d })))
+    stat(do.call(rbind, sp[z]))
   })
   a <- (1 - niveau) / 2
-  c(estim = stat(df), bas = unname(stats::quantile(v, a, na.rm = TRUE)),
-    haut = unname(stats::quantile(v, 1 - a, na.rm = TRUE)))
+  e <- stat(df)
+  if (length(e) == 1L)   # statistique scalaire : c(estim, bas, haut)
+    return(c(estim = unname(e), bas = unname(stats::quantile(v, a, na.rm = TRUE)),
+             haut = unname(stats::quantile(v, 1 - a, na.rm = TRUE))))
+  v <- matrix(v, nrow = length(e))   # statistique vectorielle : une ligne par composante
+  data.frame(mesure = names(e), estim = unname(e),
+             bas = apply(v, 1, stats::quantile, a, na.rm = TRUE, names = FALSE),
+             haut = apply(v, 1, stats::quantile, 1 - a, na.rm = TRUE, names = FALSE))
 }
 
 # --- 8. grille commune (cas 5) -----------------------------------------------

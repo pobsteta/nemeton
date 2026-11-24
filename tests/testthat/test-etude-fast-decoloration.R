@@ -4,7 +4,8 @@
 charger_etude <- function() {
   f <- testthat::test_path("..", "..", "data-raw", "etude_fast_decoloration", "fonctions.R")
   skip_if_not(file.exists(f), "data-raw absent (paquet installé)")
-  e <- new.env(); sys.source(f, envir = e); e
+  e <- new.env(); sys.source(f, envir = e)
+  sys.source(file.path(dirname(f), "fonctions_comparaison.R"), envir = e); e
 }
 
 test_that("cas 0 : les cohortes avant 2021 sont biaisées, pas comparées", {
@@ -72,22 +73,88 @@ test_that("cas 6 : même graine, mêmes zones ; autre graine, autre tirage", {
   set.seed(1)
   g <- rep(c("chene", "hetre", "sapin_epicea", "douglas", "melange"), each = 40)
   cm <- data.frame(commune = sprintf("C%03d", seq_along(g)), groupe = g,
+                   departement = rep(c("21", "39", "70", "71"), length.out = length(g)),
                    taux_touche = runif(length(g)))
   z1 <- e$tirer_zones(cm, graine = 45L)
   z2 <- e$tirer_zones(cm[sample(nrow(cm)), ], graine = 45L)   # ordre d'entrée mélangé
   expect_identical(z1, z2)
   expect_equal(nrow(z1), 4 * 3 + 2)
   expect_equal(sum(z1$strate == "melange"), 2)
-  expect_false(identical(z1$commune, e$tirer_zones(cm, graine = 7L)$commune))
+  # déterministe : les très touchées sont les plus touchées du groupe, un département chacune
+  ch <- cm[cm$groupe == "chene", ]
+  expect_equal(max(ch$taux_touche), max(z1$taux_touche[z1$groupe == "chene" & z1$strate == "tres_touchee"]))
+  expect_equal(min(ch$taux_touche), z1$taux_touche[z1$groupe == "chene" & z1$strate == "peu_touchee"])
+  expect_equal(anyDuplicated(z1$departement[z1$groupe == "chene" & z1$strate == "tres_touchee"]), 0L)
+  # la graine ne joue que sur le groupe « melange »
+  z3 <- e$tirer_zones(cm, graine = 7L)
+  expect_identical(z1$commune[z1$strate != "melange"], z3$commune[z3$strate != "melange"])
+  expect_false(identical(z1$commune[z1$strate == "melange"], z3$commune[z3$strate == "melange"]))
   # les « très touchées » le sont plus que les « peu touchées »
   expect_gt(min(z1$taux_touche[z1$strate == "tres_touchee"]),
             max(z1$taux_touche[z1$strate == "peu_touchee"]))
 })
 
-test_that("vérité 20 m : au moins 2 sous-pixels sur 4", {
+test_that("vérité 20 m : au moins 2 sous-pixels sur 4, date la plus précoce", {
   e <- charger_etude()
   t4 <- rbind(c(100, NA, NA, NA), c(100, 104, NA, NA), c(NA, NA, NA, NA), c(90, 95, 99, NA))
-  expect_equal(e$coupe_20m(t4), c(NA, 104, NA, 95))
+  expect_equal(e$coupe_20m(t4), c(NA, 100, NA, 90))
+})
+
+test_that("horizon principal 24 mois : vérité, censure avant l'horizon", {
+  e <- charger_etude()
+  expect_equal(e$HORIZON_PRINCIPAL, 24L)
+  expect_equal(e$HORIZONS, c(12L, 24L, 36L, 46L))
+  # coupe à 10 mois, coupe à 30 mois, sans coupe suivi 34 mois, sans coupe suivi 22 mois (censuré)
+  y <- e$vrai_sous_h(c(10, 30, 34, 22), c(TRUE, TRUE, FALSE, FALSE), c(34, 34, 34, 22))
+  expect_equal(y, c(TRUE, FALSE, FALSE, NA))
+})
+
+test_that("niveaux 3 et 4 reconstruits depuis classe et icd_min", {
+  e <- charger_etude()
+  n <- e$niveaux_decoloration(classe = c(0, 1, 2, 2, 2, NA), icd_min = c(0, -1, -1, -5, -5, NA),
+                              classe_prec = c(NA, NA, 0, 0, 2, NA))
+  expect_equal(n, c(0, 1, 2, 3, 4, NA))
+})
+
+test_that("classes FAST 0-4 comme l'app, croisement et coupes vues", {
+  e <- charger_etude()
+  cl <- e$classes_fast(c(0, 0, 1, 2, 3, 4, 5, 6, 7, 8, NA))
+  expect_equal(cl[1:2], c(0, 0)); expect_true(is.na(cl[11]))
+  expect_equal(range(cl[3:10]), c(1, 4))
+  x <- e$croisement_classes(c(0, 1, NA), c("0", "2", "non_applicable"))
+  expect_equal(sum(x$surface_ha), 3 * 0.04)
+  expect_true(any(x$fast == "manquant")); expect_true(any(x$decoloration == "non_applicable"))
+  v <- e$part_coupes_vues(c(TRUE, TRUE, FALSE, FALSE), c(TRUE, FALSE, TRUE, FALSE), rep(TRUE, 4))
+  expect_equal(v$n_coupes, c(1, 1, 1, 1))
+})
+
+test_that("la base de production n'est jamais touchée : SQLite locale, variable effacée", {
+  e <- charger_etude()
+  old <- Sys.getenv("NEMETON_DB_URL", unset = NA)
+  withr::defer(if (is.na(old)) Sys.unsetenv("NEMETON_DB_URL") else Sys.setenv(NEMETON_DB_URL = old))
+  Sys.setenv(NEMETON_DB_URL = "postgresql://prod@x/nemeton")
+  d <- withr::local_tempdir()
+  url <- e$isoler_base(d)
+  expect_equal(Sys.getenv("NEMETON_DB_URL"), "")
+  expect_match(url, "^sqlite:///")
+  src <- readLines(testthat::test_path("..", "..", "data-raw", "etude_fast_decoloration", "etude.R"))
+  i_unset <- grep('Sys.unsetenv\\("NEMETON_DB_URL"\\)', src)[1]
+  i_conn <- grep("db_connect\\(", src)
+  expect_true(all(i_unset < i_conn))
+  expect_false(any(grepl('Sys.getenv\\("NEMETON_DB_URL"\\)', src[-grep("Sys.unsetenv", src)])))
+  expect_true(all(grepl("sqlite_url", src[i_conn])))
+  # lecture par read_fast_alert_raster (exportée), jamais la version « s » interne
+  expect_true(any(grepl("read_fast_alert_raster\\(", src)))
+  expect_false(any(grepl("read_fast_alert_rasters\\(", src)))
+})
+
+test_that("fenêtres FAST : saison aux mois de l'essence, tendance a-3 ... a", {
+  e <- charger_etude()
+  w <- e$fenetres_fast(2022L, e$MOIS_ICD$hetre)
+  expect_equal(unname(w$saison), c("2022-07-01", "2022-08-31"))
+  expect_equal(unname(w$trend), c("2019-01-01", "2022-12-31"))
+  expect_equal(unname(e$fenetres_fast(2021L, e$MOIS_ICD$sapin_epicea)$saison), c("2021-06-01", "2021-10-31"))
+  expect_equal(e$MOIS_ICD$melange, 6:9)
 })
 
 test_that("Kaplan-Meier pondéré, AUC, précision à surface égale", {
@@ -124,4 +191,16 @@ test_that("reprise : une étape déjà faite n'est pas recalculée", {
   expect_equal(e$etape_cache(d, "Z1", "verite", f), 42)
   expect_equal(n, 1L)
   expect_true(file.exists(file.path(d, "durees.csv")))
+})
+
+test_that("zones.csv : 14 zones, 2 en mélange, carrés alignés sur la grille de 20 m", {
+  f <- testthat::test_path("..", "..", "data-raw", "etude_fast_decoloration", "zones.csv")
+  skip_if_not(file.exists(f), "data-raw absent (paquet installé)")
+  z <- utils::read.csv(f)
+  expect_equal(nrow(z), 14L)
+  expect_equal(sum(z$groupe == "melange"), 2L)
+  expect_equal(sum(z$strate == "tres_touchee"), 8L)
+  expect_equal(sum(z$strate == "peu_touchee"), 4L)
+  expect_true(all(z$xmin %% 20 == 0 & z$ymin %% 20 == 0))
+  expect_true(all(z$graine == 45L)); expect_equal(anyDuplicated(z$zone), 0L)
 })

@@ -1,0 +1,15 @@
+"zone","xmin","ymin","groupe","strate","commune","nom","departement","taux_touche","part_essence_zone","graine"
+"Z01_chene_fort",847760,6700100,"chene","tres_touchee","21408","Messigny-et-Vantoux","21",71.2477558348294,28.7,45
+"Z02_chene_fort",844360,6618160,"chene","tres_touchee","71512","Sennecey-le-Grand","71",55.8051709112036,45.6,45
+"Z03_chene_faible",756560,6724420,"chene","peu_touchee","89233","Lucy-sur-Cure","89",0.0174855744011191,35.6,45
+"Z04_hetre_fort",842080,6687120,"hetre","tres_touchee","21273","Fleurey-sur-Ouche","21",32.4104683195592,30.7,45
+"Z05_hetre_fort",981900,6744700,"hetre","tres_touchee","90006","Auxelles-Haut","90",20.7909197369606,59.7,45
+"Z06_hetre_faible",929060,6620000,"hetre","peu_touchee","39424","Les Planches-en-Montagne","39",0.0159821000479463,35.1,45
+"Z07_sapin_epicea_fort",975000,6756440,"sapin_epicea","tres_touchee","70071","Beulotte-Saint-Laurent","70",41.0040307805057,29.1,45
+"Z08_sapin_epicea_fort",960420,6672120,"sapin_epicea","tres_touchee","25343","Longemaison","25",21.8079841636424,45.3,45
+"Z09_sapin_epicea_faible",936840,6607660,"sapin_epicea","peu_touchee","39059","Bois-d'Amont","39",0.030051086847641,82.3,45
+"Z10_douglas_fort",797160,6663080,"douglas","tres_touchee","71020","Barnay","71",36.7196652719665,31,45
+"Z11_douglas_fort",769320,6651580,"douglas","tres_touchee","58199","Onlay","58",24.7450882864959,29.2,45
+"Z12_douglas_faible",735740,6674400,"douglas","peu_touchee","58266","Saint-Révérien","58",0.55877070445021,32.8,45
+"Z13_melange_melange",909880,6640640,"melange","melange",NA,"melange_1",NA,NA,92.3,45
+"Z14_melange_melange",833180,6750220,"melange","melange",NA,"melange_2",NA,NA,91,45
