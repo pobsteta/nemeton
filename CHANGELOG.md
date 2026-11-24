@@ -10,6 +10,14 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.45] - 2026-11-24
+
+### Changed
+- Remote Sentinel-2 bands (Planetary Computer) are read by window through `/vsicurl/` instead of being downloaded whole: 3.2 s instead of 87 s per band on a ~35 ha zone, identical result. Used by FAST, FORDEAD and RECONFORT band reads.
+
+### Fixed
+- Transient-error retry recognises the `/vsicurl/` GDAL messages (`HTTP response code: 5xx`, `CURL error`) and no longer re-reads the failure cached by GDAL on later attempts; a lasting outage still fails fast (~6.5 s per band).
+
 ## [2026.11.44] - 2026-11-24
 
 ### Fixed

@@ -1,4 +1,4 @@
-# nemeton (version de développement)
+# nemeton 2026.11.45 (2026-11-24)
 
 - **perf : bandes Sentinel-2 distantes lues par fenêtre** (mission 044). Les
   URL `https://` des bandes (Planetary Computer) sont ouvertes en
