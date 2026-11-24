@@ -1,4 +1,4 @@
-# nemeton (version de développement)
+# nemeton 2026.11.45 (2026-11-24)
 
 - **étude : FAST contre décoloration** (mission 045). Script d'étude
   `data-raw/etude_fast_decoloration/` (hors paquet, aucun changement de

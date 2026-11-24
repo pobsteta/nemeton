@@ -166,6 +166,19 @@ Reste l'étape 3 (calibration sur placettes IFN, D-7).
 - Zone pilote passée de bout en bout hors étape FAST (base nemeton absente de la session) : durées dans la PR. FAST et le calcul des 14 zones restent à lancer par l'orchestrateur.
 - Choix tranchés (délégation) : 2 zones très touchées + 1 peu touchée par groupe d'essences ; date d'une coupe 20 m = date du 2e sous-pixel coupé ; alerte FAST 20 m = majorité, égalité = alerte ; dernière coupe connue prise sur toute la région, pas la zone.
 
+### 2026-11-24 — v2026.11.45 : bandes Sentinel-2 lues par fenêtre (mission 044 de nemetonplateforme, PR #692)
+
+Essai de la Colombière : l'étape FAST prenait ~4,9 min par scène (189 scènes,
+~15 h) parce que `terra::rast()` ouvrait l'URL `https://` nue et téléchargeait
+la bande entière. Correctif : `/vsicurl/<url>` dans le lecteur à reprises et
+l'empreinte de tuile, `GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR` le temps de la
+lecture. Mesure : 3,2 s au lieu de 87,0 s par bande, résultat identique. Choix :
+reprise par la boucle R seule (motif `/vsicurl/` reconnu, cache d'échec GDAL
+contourné par `CPL_VSIL_CURL_NON_CACHED` dès la 2e tentative) ; pas de retry
+interne de GDAL, qui portait une panne durable à 243 s par bande. Hors
+périmètre, noté : recherche CDSE en HTTP 400 (collection renommée). Version
+nemetonshiny vérifiée : v2026.11.6 (`main` en 2026.11.6.9000).
+
 ### 2026-11-24 — nemetonshiny v2026.11.6 et plancher relevé à 2026.11.44 (missions 040 et 043 de nemetonplateforme)
 
 nemetonshiny v2026.11.6 (mission 040, PR #324) suit le forçage ERA5 `timeseries` :
