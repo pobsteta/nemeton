@@ -10,6 +10,11 @@ For a narrative, per-feature description of each release, see
 
 ## [Unreleased]
 
+## [2026.11.44] - 2026-11-24
+
+### Fixed
+- ERA5 cache check accepts the NetCDF files actually served by the CDS `timeseries` dataset (scalar `latitude`/`longitude`); they were discarded and requested again in a loop, so the default ERA5 path of 2026.11.42 and 2026.11.43 failed on real data.
+
 ## [2026.11.43] - 2026-11-23
 
 ### Changed
