@@ -189,7 +189,7 @@ pins de Norvège seulement. Branche par défaut de `forptnemeton` et
 100 sites × 100 placettes × 50 ans en 21 s de CPU. Reste l’étape 3
 (calibration sur placettes IFN, D-7).
 
-### 2026-11-24 — fix ERA5 `timeseries` : cache à variables scalaires (mission 042 de nemetonplateforme)
+### 2026-11-24 — v2026.11.44 : fix ERA5 `timeseries`, cache à variables scalaires (mission 042 de nemetonplateforme, PR \#689)
 
 Essai réel de la Colombière : le CDS livre `latitude`/`longitude`
 scalaires ; `.rsen_era5_nc_complet()` (`start = varsize` vide) rejetait

@@ -1,6 +1,6 @@
 # Changelog
 
-## nemeton (development version)
+## nemeton 2026.11.44 (2026-11-24)
 
 - **fix : ERA5 `timeseries`, le contrôle de cache accepte les NetCDF
   réels du CDS** (mission 042). `latitude` et `longitude` y sont des
