@@ -136,6 +136,17 @@ test_that("a datetime window narrows the query without changing the vocabulary",
 
 # --- Vérification contre le catalogue réel (réseau) --------------------------
 
+# Coupure réseau pendant l'appel (DNS des runners instable, vu sur #701 puis #703 :
+# l'hôte répond à `skip_if_offline()` puis n'est plus résolu une seconde après).
+# Seule une erreur de transport saute le test ; toute autre réponse est vérifiée.
+.tss_sauter_si_reseau <- function(st) {
+  if (identical(st$reason, "error") &&
+      grepl("resolve host|resolve hostname|Timeout was reached|timed out|Connection refused|Failed to connect",
+            st$detail %||% "", ignore.case = TRUE)) {
+    testthat::skip(paste("réseau indisponible pendant l'appel :", st$detail))
+  }
+}
+
 test_that("theia_lst reports urban-only coverage against the live catalogue", {
   skip_on_cran()
   skip_if_offline("api.stac.teledetection.fr")  # hôte réellement interrogé (DNS des runners instable, 2026-11-25)
@@ -146,6 +157,7 @@ test_that("theia_lst reports urban-only coverage against the live catalogue", {
     c(xmin = 840999, ymin = 6901000, xmax = 845999, ymax = 6905000),
     crs = sf::st_crs(2154)))
   st <- theia_source_status("theia_lst", rural)
+  .tss_sauter_si_reseau(st)
   expect_false(st$available)
   expect_identical(st$reason, "no_asset_over_aoi", info = st$detail)
   expect_identical(st$collection, "thermocity-lst")
@@ -163,9 +175,21 @@ test_that("sufosat resolves against the live catalogue", {
     c(xmin = 1009220, ymin = 6843784, xmax = 1013174, ymax = 6847447),
     crs = sf::st_crs(2154)))
   st <- theia_source_status("sufosat", aoi)
+  .tss_sauter_si_reseau(st)
   expect_identical(st$collection, "sufosat")
   expect_gt(st$n_assets, 0L, label = paste("n_assets (detail:", st$detail, ")"))
   # `available` dépend des clés TLD de l'environnement : sans elles, la cause
   # doit être « pas de clés », jamais « pas de données ».
   expect_true(st$reason %in% c("ok", "no_credentials"), info = st$detail)
+})
+
+test_that(".tss_sauter_si_reseau ne saute que sur une erreur de transport", {
+  # une erreur de résolution DNS fait sauter le test (condition skip)
+  expect_condition(
+    .tss_sauter_si_reseau(list(reason = "error",
+      detail = "Could not resolve host: api.stac.teledetection.fr")),
+    class = "skip")
+  # une autre cause, ou une autre erreur, ne saute pas : le test vérifie
+  expect_silent(.tss_sauter_si_reseau(list(reason = "no_asset_over_aoi", detail = "")))
+  expect_silent(.tss_sauter_si_reseau(list(reason = "error", detail = "HTTP 500 Internal Server Error")))
 })
