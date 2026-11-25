@@ -1270,7 +1270,7 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
   tryCatch(
     .atomic_write(qgz_path, function(tmp) {
       withr::with_dir(stage, {
-        zip_rc <<- utils::zip(zipfile = tmp, files = fichiers, flags = "-q -X",
+        zip_rc <<- utils::zip(zipfile = tmp, files = fichiers, flags = "-q -X -n .tif",
                               zip = Sys.getenv("R_ZIPCMD", "zip"))
       })
       if (!identical(as.integer(zip_rc), 0L)) unlink(tmp)
@@ -1431,6 +1431,34 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #'   \code{\link{create_qgis_project}}.
 #' @param overwrite Logical. Overwrite an existing \code{.qgz}. Default
 #'   \code{TRUE}.
+#' @param n_workers Integer (\eqn{\ge 1}). Number of worker processes used
+#'   to segment the crowns tile by tile. Default
+#'   \code{getOption("nemeton.iv_workers", min(4, parallel::detectCores() - 1))}.
+#'   \code{1} segments sequentially, in this process. Workers are PSOCK
+#'   processes (never forks, which hang with \pkg{terra}); each one reads the
+#'   CHM from its file, so the parallel path is used only when the CHM is a
+#'   file (a path, or a \code{SpatRaster} backed by one file already in
+#'   EPSG:2154); an in-memory CHM is segmented sequentially. The crowns are
+#'   identical whatever \code{n_workers} (same rows, same order, same
+#'   \code{houppier_id}). If the cluster cannot be started, a warning is
+#'   raised and the segmentation runs sequentially.
+#' @param progress_callback Optional function called with a single list
+#'   \code{list(etape, i, n, secondes)} at the start of each stage
+#'   (\code{i = 0}) and after each of its units, never fatal (an error raised
+#'   by the callback is ignored). \code{etape} is the stable stage name,
+#'   \code{i} the units done out of \code{n}, \code{secondes} the time
+#'   elapsed since the stage started (so the last call of a stage, with
+#'   \code{i == n}, gives its duration). Stages, in order: \code{"sources"}
+#'   (project tables and forest extent; \code{n = 1}), \code{"placettes"}
+#'   (per-plot rasters and topography; \code{n} = plots), \code{"dalles_mnt"}
+#'   (1 km DTM tiles; \code{n} = tiles), \code{"houppiers"} (crown
+#'   segmentation; \code{n} = 1 km tiles, counted per tile when sequential,
+#'   per batch of \code{n_workers} tiles when parallel), \code{"cvat"}
+#'   (\code{n = 1}), \code{"geopackage"} (layers, triggers, indexes;
+#'   \code{n = 1}) and \code{"qgz"} (\code{.qgs}, archive and project
+#'   folder; \code{n = 1}). \code{"placettes"}, \code{"dalles_mnt"} and
+#'   \code{"houppiers"} occur only with \code{avec_lidar} (the last two also
+#'   need a DTM, respectively a CHM); \code{"cvat"} only with \code{cvat_path}.
 #'
 #' @return Absolute path to the \code{.qgz} (invisibly). The Groma QField
 #'   project plugin is written next to it as \code{<project_name>.qml}
@@ -1473,8 +1501,19 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
                                           avec_lidar = TRUE, dem = NULL, chm = NULL,
                                           project_path = NULL, marge_m = 10,
                                           cvat_path = NULL, output_dir, project_name = "inventaire_video",
-                                          region = "BFC", lang = "fr", overwrite = TRUE) {
+                                          region = "BFC", lang = "fr", overwrite = TRUE,
+                                          n_workers = getOption("nemeton.iv_workers",
+                                                                max(1L, min(4L, parallel::detectCores() - 1L))),
+                                          progress_callback = NULL) {
   unite_azimut <- match.arg(unite_azimut)
+  if (!is.numeric(n_workers) || length(n_workers) != 1L || is.na(n_workers) || n_workers < 1) {
+    cli::cli_abort("{.arg n_workers} must be a single number >= 1.")
+  }
+  n_workers <- as.integer(n_workers)
+  if (!is.null(progress_callback) && !is.function(progress_callback)) {
+    cli::cli_abort("{.arg progress_callback} must be a function or {.code NULL}.")
+  }
+  emit <- .iv_emetteur(progress_callback)
   if (!inherits(placettes, "sf")) cli::cli_abort("{.arg placettes} must be an sf object.")
   if (!"plot_id" %in% names(placettes)) {
     cli::cli_abort("{.arg placettes} must contain a {.val plot_id} column.")
@@ -1523,8 +1562,10 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
 
   # Tables de la carte et de la liste des projets de Groma (schéma 1.2.0) :
   # lues avant le LiDAR, car l'emprise de la forêt en dépend.
+  t_etape <- Sys.time(); emit("sources", 0L, 1L, t_etape)
   sources <- .iv_sources_projet(project_path, placettes)
   emprise <- .iv_emprise(placettes, sources, rayon_m, marge_m)
+  emit("sources", 1L, 1L, t_etape)
 
   # MNT / MNH : découpe par placette, topographie ; puis dalles MNT et
   # houppiers sur toute l'emprise (schéma 1.7.0).
@@ -1536,7 +1577,14 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
     if (is.null(dem) && is.null(chm)) {
       cli::cli_warn("No DTM nor CHM available: project built without rasters nor crowns.")
     }
-    for (k in seq_len(nrow(placettes))) {
+    # MNT et MNH ouverts une seule fois (en EPSG:2154) avant la boucle : chaque
+    # placette ne fait plus que la découpe (la reprojection d'un raster en
+    # autre CRS n'est plus refaite à chaque placette).
+    dem <- if (!is.null(dem)) .iv_raster_2154(dem)
+    chm <- if (!is.null(chm)) .iv_raster_2154(chm)
+    n_pl <- nrow(placettes)
+    t_etape <- Sys.time(); emit("placettes", 0L, n_pl, t_etape)
+    for (k in seq_len(n_pl)) {
       pid <- as.character(placettes$plot_id[k])
       centre <- sf::st_coordinates(placettes[k, ])[1, 1:2]
       zone <- sf::st_buffer(sf::st_geometry(placettes[k, ]), rayon_m + marge_m)
@@ -1558,21 +1606,26 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
         if (!col %in% names(placettes)) placettes[[col]] <- rep(NA, nrow(placettes))
         if (is.na(placettes[[col]][k])) placettes[[col]][k] <- topo[[col]]
       }
+      emit("placettes", k, n_pl, t_etape)
     }
     if (!is.null(dem)) {
-      rasters <- c(rasters, .iv_ecrire_dalles_mnt(dem, emprise, stage))
+      rasters <- c(rasters, .iv_ecrire_dalles_mnt(dem, emprise, stage, emit = emit))
     }
     if (!is.null(chm)) {
-      houppiers <- .iv_houppiers_emprise(chm, emprise, placettes, rayon_m + marge_m)
+      houppiers <- .iv_houppiers_emprise(chm, emprise, placettes, rayon_m + marge_m,
+                                         n_workers = n_workers, emit = emit)
     }
   }
   if (!is.null(cvat)) {
+    t_etape <- Sys.time(); emit("cvat", 0L, 1L, t_etape)
     f <- .iv_ecrire_cvat(cvat, emprise, stage)
     if (!is.null(f)) rasters <- c(rasters, f)
+    emit("cvat", 1L, 1L, t_etape)
   }
 
 
   # Écriture des couches (géométrie `geom`, fid `fid`, index selon schéma).
+  t_etape <- Sys.time(); emit("geopackage", 0L, 1L, t_etape)
   for (couche in names(schema)) {
     champs <- schema[[couche]]
     x <- switch(couche,
@@ -1585,11 +1638,14 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   }
   .iv_poser_declencheurs(gpkg)
   .iv_poser_index_btree(gpkg)
+  emit("geopackage", 1L, 1L, t_etape)
 
   bbox <- tryCatch(sf::st_bbox(sf::st_buffer(placettes, rayon_m + marge_m)),
                    error = function(e) NULL)
+  t_etape <- Sys.time(); emit("qgz", 0L, 1L, t_etape)
   .iv_empaqueter(stage, gpkg_rel, rasters, schema, bbox, project_name, qgz_path,
                  projet_nom = sources$projet$projet_nom[1] %||% NA_character_)
+  emit("qgz", 1L, 1L, t_etape)
   cli::cli_alert_success("Video inventory project created: {.path {qgz_path}}")
   invisible(qgz_path)
 }
@@ -1655,9 +1711,10 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
 
 # Dalles MNT de 1 km (2 000 x 2 000 pixels), `rasters/mnt_<x>_<y>.tif`, à plat ;
 # nodata hors de l'emprise et hors du LiDAR. Rend les chemins relatifs.
-.iv_ecrire_dalles_mnt <- function(dem, emprise, stage) {
+.iv_ecrire_dalles_mnt <- function(dem, emprise, stage, emit = function(...) invisible(NULL)) {
   dem <- .iv_raster_2154(dem)
   dalles <- .iv_dalles_km(emprise)
+  t_etape <- Sys.time(); emit("dalles_mnt", 0L, nrow(dalles), t_etape)
   v_emprise <- terra::vect(sf::st_sf(geometry = emprise))
   out <- character(nrow(dalles))
   for (i in seq_len(nrow(dalles))) {
@@ -1668,6 +1725,7 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
     f <- file.path("rasters", sprintf("mnt_%04d_%04d.tif", x, y))
     .iv_ecrire_tif(r, file.path(stage, f))
     out[i] <- f
+    emit("dalles_mnt", i, nrow(dalles), t_etape)
   }
   out
 }
@@ -1676,31 +1734,44 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
 # jamais écrit ; la mémoire reste bornée par la dalle + une marge), un houppier
 # appartenant à la dalle qui contient son sommet. `plot_id` : première
 # placette dont la zone (rayon + marge) touche le houppier, sinon NA.
-.iv_houppiers_emprise <- function(chm, emprise, placettes, zone_m) {
+# `n_workers` > 1 : dalles réparties sur des processus PSOCK (jamais de fork),
+# lorsque le MNH est un fichier ; le résultat est le même qu'en séquentiel
+# (les dalles sont réassemblées dans l'ordre des dalles).
+.iv_houppiers_emprise <- function(chm, emprise, placettes, zone_m,
+                                  n_workers = 1L, emit = function(...) invisible(NULL)) {
   chm <- .iv_raster_2154(chm)
   dalles <- .iv_dalles_km(emprise)
-  marge <- 15  # 3 * ws, valeur par défaut de segment_houppiers()
+  n <- nrow(dalles)
+  t_etape <- Sys.time(); emit("houppiers", 0L, n, t_etape)
+  x0 <- dalles$x * 1000; y0 <- dalles$y * 1000
+  zones <- lapply(seq_len(n), function(i) .iv_zone_dalle(x0[i], y0[i], emprise))
+  res <- NULL
+  src <- if (n_workers > 1L && n > 1L) .iv_chm_fichier(chm)
+  nw <- min(as.integer(n_workers), n)
+  if (!is.null(src) && nw > 1L) {
+    res <- tryCatch(
+      .iv_houppiers_paralleles(src, zones, x0, y0, nw, function(k) emit("houppiers", k, n, t_etape)),
+      error = function(e) {
+        cli::cli_warn(c("Parallel crown segmentation failed, running sequentially.",
+                        "x" = conditionMessage(e)))
+        NULL
+      })
+  }
+  if (is.null(res) || is.null(src) || nw < 2L) {
+    res <- vector("list", n)
+    for (i in seq_len(n)) {
+      res[i] <- list(if (length(zones[[i]])) .iv_houppiers_dalle(chm, zones[[i]], x0[i], y0[i]))
+      emit("houppiers", i, n, t_etape)
+    }
+  }
   tous <- list()
-  for (i in seq_len(nrow(dalles))) {
-    x0 <- dalles$x[i] * 1000; y0 <- dalles$y[i] * 1000
-    zone <- sf::st_sfc(sf::st_polygon(list(rbind(
-      c(x0 - marge, y0 - marge), c(x0 + 1000 + marge, y0 - marge),
-      c(x0 + 1000 + marge, y0 + 1000 + marge), c(x0 - marge, y0 + 1000 + marge),
-      c(x0 - marge, y0 - marge)))), crs = 2154)
-    zone <- sf::st_intersection(zone, sf::st_buffer(emprise, marge))
-    if (!length(zone) || all(sf::st_is_empty(zone))) next
-    mnh <- tryCatch(.iv_decouper(chm, zone), error = function(e) NULL)
-    if (is.null(mnh) || all(is.na(terra::values(mnh)))) next
-    h <- tryCatch(segment_houppiers(mnh, aoi = sf::st_sf(geometry = zone), emprise = "decoupe"),
-                  error = function(e) {
-                    cli::cli_warn("Crown segmentation failed for tile {x0 / 1000}_{y0 / 1000}: {conditionMessage(e)}")
-                    NULL
-                  })
-    if (is.null(h) || !nrow(h)) next
-    garde <- h$x_sommet >= x0 & h$x_sommet < x0 + 1000 &
-      h$y_sommet >= y0 & h$y_sommet < y0 + 1000
-    h <- h[garde, , drop = FALSE]
-    if (nrow(h)) tous[[length(tous) + 1L]] <- h
+  for (i in seq_len(n)) {
+    r <- res[[i]]
+    if (is.null(r)) next
+    if (!is.null(r$aviso)) {
+      cli::cli_warn("Crown segmentation failed for tile {x0[i] / 1000}_{y0[i] / 1000}: {r$aviso}")
+    }
+    if (!is.null(r$h)) tous[[length(tous) + 1L]] <- r$h
   }
   if (!length(tous)) return(NULL)
   h <- do.call(rbind, lapply(tous, function(t) {
@@ -1725,6 +1796,112 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   h$plot_id <- pid
   rownames(h) <- NULL
   h[, c("plot_id", "houppier_id", "h_max", "surface_m2", "x_sommet", "y_sommet")]
+}
+
+# Zone de segmentation d'une dalle de 1 km : la dalle + 3 * ws (15 m, valeur
+# par défaut de segment_houppiers()), limitée à l'emprise + 15 m. sfc vide si
+# la dalle ne touche pas l'emprise élargie.
+.iv_zone_dalle <- function(x0, y0, emprise, marge = 15) {
+  zone <- sf::st_sfc(sf::st_polygon(list(rbind(
+    c(x0 - marge, y0 - marge), c(x0 + 1000 + marge, y0 - marge),
+    c(x0 + 1000 + marge, y0 + 1000 + marge), c(x0 - marge, y0 + 1000 + marge),
+    c(x0 - marge, y0 - marge)))), crs = 2154)
+  zone <- sf::st_intersection(zone, sf::st_buffer(emprise, marge))
+  if (!length(zone) || all(sf::st_is_empty(zone))) return(zone[0])
+  zone
+}
+
+# Segmente les houppiers d'une dalle ; garde ceux dont le sommet est dans la
+# dalle. Rend list(h = sf (h_max, surface_m2, x_sommet, y_sommet) ou NULL,
+# aviso = message d'échec de segmentation ou NULL). `chm` : SpatRaster ou chemin.
+.iv_houppiers_dalle <- function(chm, zone, x0, y0) {
+  chm <- .iv_raster_2154(chm)
+  mnh <- tryCatch(.iv_decouper(chm, zone), error = function(e) NULL)
+  if (is.null(mnh) || all(is.na(terra::values(mnh)))) return(list(h = NULL, aviso = NULL))
+  aviso <- NULL
+  h <- tryCatch(segment_houppiers(mnh, aoi = sf::st_sf(geometry = zone), emprise = "decoupe"),
+                error = function(e) {
+                  aviso <<- conditionMessage(e)
+                  NULL
+                })
+  if (is.null(h) || !nrow(h)) return(list(h = NULL, aviso = aviso))
+  garde <- h$x_sommet >= x0 & h$x_sommet < x0 + 1000 &
+    h$y_sommet >= y0 & h$y_sommet < y0 + 1000
+  h <- h[garde, , drop = FALSE]
+  list(h = if (nrow(h)) h[, c("h_max", "surface_m2", "x_sommet", "y_sommet")], aviso = aviso)
+}
+
+# Chemin du fichier qui porte le MNH (déjà en EPSG:2154, une bande), ou NULL si
+# les workers ne peuvent pas le relire à l'identique : raster en mémoire,
+# plusieurs fichiers, fenêtre ou découpe en attente (géométrie différente de
+# celle du fichier).
+.iv_chm_fichier <- function(chm) {
+  src <- tryCatch(terra::sources(chm), error = function(e) character(0))
+  src <- src[nzchar(src)]
+  if (length(src) != 1L || !file.exists(src)) return(NULL)
+  rr <- tryCatch(terra::rast(src)[[1]], error = function(e) NULL)
+  if (is.null(rr) || !terra::same.crs(rr, "EPSG:2154")) return(NULL)
+  mm <- terra::compareGeom(chm, rr, stopOnError = FALSE, messages = FALSE)
+  if (!isTRUE(mm)) return(NULL)
+  normalizePath(src, winslash = "/", mustWork = TRUE)
+}
+
+# Dalles segmentées sur un cluster PSOCK de `nw` processus (jamais mclapply ni
+# fork : terra bloque). Les dalles sont servies par lots de `nw`, les plus
+# lourdes d'abord, puis rendues dans l'ordre des dalles ; `progres(k)` est
+# appelé après chaque lot avec le nombre de dalles faites. Le cluster est
+# toujours fermé.
+.iv_houppiers_paralleles <- function(src, zones, x0, y0, nw, progres) {
+  n <- length(zones)
+  cl <- parallel::makePSOCKcluster(nw)
+  on.exit(parallel::stopCluster(cl), add = TRUE)
+  chemin_dev <- if (requireNamespace("pkgload", quietly = TRUE) &&
+                    pkgload::is_dev_package("nemeton")) {
+    getNamespaceInfo("nemeton", "path")
+  }
+  # Fonctions de worker sans l'environnement du paquet (sérialisé par nom, il
+  # chargerait le nemeton installé, pas celui qui tourne ici).
+  init <- function(chemin_dev) {
+    if (!is.null(chemin_dev)) {
+      suppressMessages(pkgload::load_all(chemin_dev, quiet = TRUE, export_all = TRUE))
+    } else {
+      loadNamespace("nemeton")
+    }
+    invisible(TRUE)
+  }
+  tache <- function(a) {
+    f <- get(".iv_houppiers_dalle", envir = asNamespace("nemeton"))
+    f(a$chm, a$zone, a$x0, a$y0)
+  }
+  environment(init) <- globalenv()
+  environment(tache) <- globalenv()
+  parallel::clusterCall(cl, init, chemin_dev)
+  res <- vector("list", n)
+  a_faire <- which(lengths(zones) > 0L)
+  poids <- vapply(a_faire, function(i) as.numeric(sf::st_area(zones[[i]])), numeric(1))
+  a_faire <- a_faire[order(-poids)]
+  fait <- n - length(a_faire)  # dalles sans zone : déjà « faites »
+  if (fait > 0L) progres(fait)
+  for (lot in split(a_faire, ceiling(seq_along(a_faire) / nw))) {
+    args <- lapply(lot, function(i) list(chm = src, zone = zones[[i]], x0 = x0[i], y0 = y0[i]))
+    r <- parallel::clusterApply(cl, args, tache)
+    for (j in seq_along(lot)) res[lot[j]] <- list(r[[j]])
+    fait <- fait + length(lot)
+    progres(fait)
+  }
+  res
+}
+
+# Émetteur de progression (patron `emit` de regen_bilan_hydrique()) : no-op si
+# `callback` est NULL, jamais fatal.
+.iv_emetteur <- function(callback) {
+  function(etape, i, n, depuis) {
+    if (is.null(callback)) return(invisible(NULL))
+    tryCatch(callback(list(etape = etape, i = as.integer(i), n = as.integer(n),
+                           secondes = as.numeric(difftime(Sys.time(), depuis, units = "secs")))),
+             error = function(e) invisible(NULL))
+    invisible(NULL)
+  }
 }
 
 # Lit un CVAT source et en reconnaît le codage. Rend NULL (avertissement) si le
