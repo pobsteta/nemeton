@@ -160,6 +160,14 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-25 — Mission 064 : décisions de Pascal sur la tournée DEPERIS (suite de la 061), cycle dev `2026.11.45.9000`
+
+Trois décisions appliquées dans `R/deperis.R` : aucun délai de contre-notation (colonne vide par décision) ; seuil
+`centre_eloigne` de 30 m retenu (plus « provisoire ») ; graine du tirage des 5 % dérivée du code de tournée
+(`graine = NULL` par défaut, 7 premiers chiffres hexadécimaux du SHA-256 du `code`), recalculable car `tournee` n'a pas
+de colonne pour elle. Tests dans `test-deperis.R`. Brief de retour : `specs/brief-ramulus-deperis-v1-retour.md` (non
+déposé dans `~/dev/briefs/`, hors conteneur). Pas de release.
+
 ### 2026-11-25 — Mission 061 : tournée DEPERIS (`creer_tournee_deperis()`, `importer_deperis()`), cycle dev `2026.11.45.9000`
 
 Source : brief de Ramulus vers Nemeton (ADR 0003 de Ramulus), mission 061 de nemetonplateforme. Deux fonctions
