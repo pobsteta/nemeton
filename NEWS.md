@@ -13,7 +13,7 @@
   l'erreur `nemeton_erreur_cvat_codage`, avant toute écriture (aucun projet à
   moitié écrit) ; seul un fichier absent reste un avertissement. Un Byte au
   codage reconnu est accepté quelle que soit sa résolution ou son CRS (nodata mis
-  à NA, reprojection et plus proche voisin vers la grille de 2 m, puis codage) :
+  à NA, reprojection et plus proche voisin vers la grille de 2 m, au pixel près, puis codage) :
   écart assumé au § 2.3 du brief de Groma, car le CVAT de nemetonshiny garde la
   résolution du MNT (souvent 0,5 m). **Limite connue** : les pixels de relief
   maximal du CVAT foretaccess, codés 255 comme le nodata, sont perdus (ils
