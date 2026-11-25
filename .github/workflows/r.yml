@@ -91,6 +91,15 @@ jobs:
           # forge.inrae.fr, dont les 401 et les timeouts cassaient la CI.
           extra-repositories: 'https://r-lidar.r-universe.dev'
 
+      # Noyau Rust de nemeton (ADR 0003 de nemetonplateforme) : `configure`
+      # compile src/rust/ si cargo existe, sinon le paquet s'installe sans
+      # (repli R pur). On l'installe ici pour que la CI exerce le chemin Rust.
+      - name: Chaine Rust (noyau optionnel de nemeton)
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          cargo --version && rustc --version
+
       # --- Cache des paquets R, clé déterministe -------------------------
       # `setup-r-dependencies` cache sur `hashFiles('.github/pkg.lock')`, or
       # `pak::lockfile_create()` écrit les paquets dans un ordre NON
@@ -236,6 +245,15 @@ jobs:
           # forge.inrae.fr, dont les 401 et les timeouts cassaient la CI.
           extra-repositories: 'https://r-lidar.r-universe.dev'
 
+      # Noyau Rust de nemeton (ADR 0003 de nemetonplateforme) : `configure`
+      # compile src/rust/ si cargo existe, sinon le paquet s'installe sans
+      # (repli R pur). On l'installe ici pour que la CI exerce le chemin Rust.
+      - name: Chaine Rust (noyau optionnel de nemeton)
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          cargo --version && rustc --version
+
       # --- Cache des paquets R, clé déterministe -------------------------
       # `setup-r-dependencies` cache sur `hashFiles('.github/pkg.lock')`, or
       # `pak::lockfile_create()` écrit les paquets dans un ordre NON
@@ -352,6 +370,15 @@ jobs:
           # r-universe. lidaRtRee vient de CRAN (4.0.9) : plus de clone de
           # forge.inrae.fr, dont les 401 et les timeouts cassaient la CI.
           extra-repositories: 'https://r-lidar.r-universe.dev'
+
+      # Noyau Rust de nemeton (ADR 0003 de nemetonplateforme) : `configure`
+      # compile src/rust/ si cargo existe, sinon le paquet s'installe sans
+      # (repli R pur). On l'installe ici pour que la CI exerce le chemin Rust.
+      - name: Chaine Rust (noyau optionnel de nemeton)
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+          cargo --version && rustc --version
 
       # --- Cache des paquets R, clé déterministe -------------------------
       # `setup-r-dependencies` cache sur `hashFiles('.github/pkg.lock')`, or

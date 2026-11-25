@@ -727,6 +727,23 @@ reference:
     - reconfort_latest_complete_year
     - reconfort_year_bounds
 
+  - subtitle: "RECONFORT : spike de re-entrainement et noyau Rust (spec 070)"
+    desc: >
+      Indices CRswir/CRre (noyau Rust, repli R), etiquettes DEPERIS au format
+      amont propagees Y-2..Y+2, masques chenaie et coupes rases, Random Forest
+      ranger en validation croisee spatiale. Essai, hors production.
+    contents:
+    - nemeton_rust_disponible
+    - reconfort_indices
+    - reconfort_classe
+    - reconfort_etiquettes
+    - reconfort_coupe_encoder
+    - reconfort_coupe_decoder
+    - reconfort_masquer
+    - reconfort_entrainer
+    - reconfort_predire
+    - reconfort_comparer_amont
+
   - subtitle: "Validation terrain du suivi sanitaire"
     contents:
     - get_health_validation_schema

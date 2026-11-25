@@ -160,6 +160,14 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-25 — spike de ré-entraînement RECONFORT et premier noyau Rust (mission 060 de nemetonplateforme, fiche `060-nemeton-reconfort-spike-rust`, ADR 0003)
+
+- **Décision de Pascal** (2026-11-25) : ré-entraînement en spike, étiquettes terrain + propagation, Rust dès le spike, crate dans nemeton, repli R pur, modèle amont comme référence en attendant le terrain.
+- **Fait** : crate `src/rust/` (`extendr-api` 0.9, `cr_swir` / `cr_re`, 5 tests `cargo test` aux valeurs écrites à la main) ; `configure` / `cleanup` / `src/Makevars.{rust,norust,win}` / `src/entrypoint.c` (Rust optionnel : absent, `NEMETON_NO_RUST=1` ou compilation en échec ⇒ install sans, repli R) ; `R/reconfort_indices.R`, `R/reconfort_etiquettes.R`, `R/reconfort_masques.R`, `R/reconfort_apprentissage.R`, `R/extendr-wrappers.R` (écrit à la main) ; spec `specs/070-reconfort-reentrainement-spike/spec.md` ; CI : étape « Chaîne Rust » dans les trois jobs de `r.yml`.
+- **Tests** : `test-reconfort-{indices,etiquettes,masques,apprentissage}.R` + `helper-reconfort-synth.R` (jeux `synth_`, `synthetic = TRUE`), 120 attentes, sans réseau.
+- **Non fait / à savoir** : aucune note DEPERIS réelle (la précision sur `synth_` ne prouve rien du terrain) ; pas de chaîne image (extraction S2, carte) ; pas de `vendor/` Cargo (crates téléchargés à l'installation) ; Windows sans Rust ; choix tranchés par Pascal le 2026-11-25 (coupe retirée dès son année, « très dépérissante » propagée en classe 3, classe recalculée prioritaire). Rouge hors périmètre déjà présent sur `origin/main` : `test-reconfort-ingest.R:802` (délai d'un téléchargement figé, conteneur).
+- `DESCRIPTION` reste `2026.11.45.9000`, pas de release.
+
 ### 2026-11-25 — `creer_projet_inventaire_video()` : placettes et dalles MNT sur le cluster des houppiers, un seul cluster (mission 059 de nemetonplateforme, fiche `059-nemeton-projet-video-parallele-suite`)
 
 - **Constat** (suite de la 056) : ~20 s restaient séquentiels sur 441 ha (placettes ~7-8 s, dalles MNT ~5 s, `.qgz` ~7 s) et le cluster des houppiers payait seul le chargement des workers.

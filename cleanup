@@ -1,0 +1,2 @@
+#!/bin/sh
+rm -Rf src/Makevars src/rust/target src/.cargo src/rust/build.log

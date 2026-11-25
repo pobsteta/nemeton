@@ -1,0 +1,1 @@
+# Windows : pas de noyau Rust pour l'instant (repli R pur). Seul entrypoint.c est compile.

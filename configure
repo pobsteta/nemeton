@@ -1,0 +1,35 @@
+#!/bin/sh
+# Rust est OPTIONNEL pour nemeton (ADR 0003 de nemetonplateforme) : on compile le
+# crate s'il y a cargo, sinon (ou si NEMETON_NO_RUST=1, ou si la compilation
+# echoue) on installe sans, et les indices RECONFORT tournent en R pur.
+PATH="$PATH:$HOME/.cargo/bin"
+export PATH
+
+utiliser_repli() {
+  echo "nemeton: noyau Rust non compile ($1) ; repli R pur."
+  cp src/Makevars.norust src/Makevars
+  exit 0
+}
+
+if [ "${NEMETON_NO_RUST:-0}" = "1" ]; then
+  utiliser_repli "NEMETON_NO_RUST=1"
+fi
+if ! command -v cargo >/dev/null 2>&1 || ! command -v rustc >/dev/null 2>&1; then
+  utiliser_repli "cargo ou rustc introuvable"
+fi
+
+echo "nemeton: $(cargo --version), $(rustc --version)"
+CARGO_HOME="$(pwd)/src/.cargo"
+export CARGO_HOME
+if cargo build --release --lib --manifest-path=src/rust/Cargo.toml \
+     --target-dir src/rust/target >src/rust/build.log 2>&1; then
+  rm -f src/rust/build.log
+  cp src/Makevars.rust src/Makevars
+  echo "nemeton: noyau Rust compile."
+else
+  tail -n 20 src/rust/build.log
+  rm -f src/rust/build.log
+  rm -Rf src/rust/target src/.cargo
+  utiliser_repli "la compilation de src/rust a echoue"
+fi
+exit 0

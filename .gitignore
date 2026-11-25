@@ -84,3 +84,8 @@ data-raw/ifn/
 docs/
 vignettes/*.html
 vignettes/*.R
+
+# Noyau Rust : fichiers produits par ./configure et par la compilation
+/src/Makevars
+/src/rust/target/
+/src/.cargo/

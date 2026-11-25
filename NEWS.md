@@ -1,5 +1,22 @@
 # nemeton 2026.11.45.9000 (development)
 
+- **feat : spike de ré-entraînement RECONFORT et premier noyau Rust** (mission
+  060, ADR 0003 de nemetonplateforme ; spec `specs/070-reconfort-reentrainement-spike`).
+  Nouveau crate `src/rust/` (`extendr`) qui calcule CRswir et CRre par pixel ;
+  `reconfort_indices()` l'appelle s'il est compilé, sinon un repli R pur égal à
+  1e-12 près (`options(nemeton.rust = FALSE)` force le repli ;
+  `nemeton_rust_disponible()`). Le paquet s'installe et tourne sans Rust :
+  `configure` saute la compilation si `cargo` manque, si `NEMETON_NO_RUST=1` ou
+  si elle échoue. Autour : `reconfort_etiquettes()` (format amont `train_new_model/`,
+  classes recalculées de `DEPERIS_pe`, propagation Y-2..Y+2 sans écraser une
+  observation, conflits listés), `reconfort_masquer()` (hors chênaie, coupes
+  rases `YYDDD`), `reconfort_coupe_decoder()` / `reconfort_coupe_encoder()`,
+  `reconfort_entrainer()` (`ranger`, validation croisée spatiale par blocs),
+  `reconfort_predire()`, `reconfort_comparer_amont()`. Testé sur des jeux
+  `synth_` uniquement : aucune note DEPERIS réelle, donc aucune précision à
+  citer. Production RECONFORT (spec 021) inchangée. `SystemRequirements`
+  déclare Cargo et rustc (optionnels) ; la CI installe la chaîne Rust.
+
 - **perf : `creer_projet_inventaire_video()` découpe les placettes et écrit
   les dalles MNT sur les mêmes workers que les houppiers, avec un seul cluster
   par création** (mission 059, suite de la 056). Le cluster PSOCK (jamais de
