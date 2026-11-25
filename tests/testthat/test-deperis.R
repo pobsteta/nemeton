@@ -2,7 +2,14 @@
 # les cas communs `fixtures/echange/` de Ramulus (copies dans fixtures/deperis-v1/, sans reseau).
 
 dp_fix <- function(...) normalizePath(testthat::test_path("fixtures", "deperis-v1", ...), mustWork = TRUE)
-dp_schema_fichier <- function() normalizePath(file.path(testthat::test_path("..", "..", "inst", "schemas", "deperis-v1.schema.json")), mustWork = TRUE)
+# Paquet installe (R CMD check, covr) d'abord, arbre source ensuite.
+dp_schema_fichier <- function() {
+  f <- system.file("schemas", "deperis-v1.schema.json", package = "nemeton")
+  if (!nzchar(f)) {
+    f <- testthat::test_path("..", "..", "inst", "schemas", "deperis-v1.schema.json")
+  }
+  normalizePath(f, mustWork = TRUE)
+}
 
 dp_cas <- function() {
   d <- sort(list.dirs(dp_fix(), recursive = FALSE))
