@@ -1405,14 +1405,23 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #'   Accepted codings, recognised by the declared nodata: Byte with nodata
 #'   \code{255} (foretaccess, relief \code{0} to \code{254}) written as
 #'   \code{value + 1}, \code{255} giving \code{0}; Byte with nodata \code{0}
-#'   (already Groma, \code{1} to \code{255}) copied as is; Byte rasters must be
-#'   EPSG:2154 and 2 m (nearest neighbour resampling); a float relief \code{v} in
-#'   \eqn{[0, 1]} (cache of \code{generate_rvt()}) written as
-#'   \code{1 + round(v * 254)}, \code{NA} giving \code{0}. Reprojected when
-#'   not in EPSG:2154 (float only). \code{NULL} (default): no \code{cvat.tif}. A missing file
-#'   only raises a warning; an unreadable or otherwise coded file (Byte without
-#'   declared nodata, Int16, float outside \eqn{[0, 1]}, Byte not at 2 m or not in EPSG:2154) is an
-#'   error of class \code{nemeton_erreur_cvat_codage}, raised before anything is
+#'   (already Groma, \code{1} to \code{255}) copied as is; a float relief
+#'   \code{v} in \eqn{[0, 1]} (cache of \code{generate_rvt()}) written as
+#'   \code{1 + round(v * 254)}, \code{NA} giving \code{0}. Whatever the
+#'   resolution or CRS, the nodata is set to \code{NA} first, then the raster
+#'   is reprojected (when not in EPSG:2154) and resampled to the 2 m grid
+#'   (nearest neighbour for Byte, bilinear for float), then coded. This is a
+#'   deliberate departure from section 2.3 of the Groma brief, which refused
+#'   any resolution other than 2 m: the CVAT of nemetonshiny keeps the
+#'   resolution of the DTM (often 0.5 m), and refusing it would break real use.
+#'   Known limit: \code{foretaccess::vat_combined(as_byte = TRUE)} codes
+#'   \code{0} to \code{255} with \code{NA} as \code{255}; a valid maximal
+#'   relief pixel (\eqn{v \ge 0.996}) is therefore indistinguishable from
+#'   nodata and becomes \code{0} (fix planned in foretaccess). \code{NULL}
+#'   (default): no \code{cvat.tif}. A missing file only raises a warning; an
+#'   unreadable or otherwise coded file (Byte without nodata \code{0} or
+#'   \code{255} declared, Int16, float outside \eqn{[0, 1]}) is an error of
+#'   class \code{nemeton_erreur_cvat_codage}, raised before anything is
 #'   written.
 #' @param output_dir Destination directory.
 #' @param project_name File name of the \code{.qgz} (\code{^[A-Za-z0-9_-]+$}).
@@ -1729,7 +1738,7 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
       "{.arg cvat_path} has an unsupported coding: no {.file cvat.tif} written.",
       "x" = raison,
       "i" = paste0("Accepted: Byte with nodata 255 (foretaccess, 0-254), Byte with ",
-                   "nodata 0 (Groma, 1-255), both at 2 m; or float in [0, 1].")
+                   "nodata 0 (Groma, 1-255), at any resolution or CRS; or float in [0, 1].")
     ), class = "nemeton_erreur_cvat_codage")
   }
   if (!is.character(cvat_path) || length(cvat_path) != 1L || is.na(cvat_path) ||
@@ -1750,13 +1759,6 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
     if (is.na(lu$nodata) || !lu$nodata %in% c(0, 255)) {
       refus(sprintf("Byte raster with nodata %s declared: 0 (Groma) or 255 (foretaccess) expected.",
                     if (is.na(lu$nodata)) "none" else format(lu$nodata)))
-    }
-    if (!terra::same.crs(r, "EPSG:2154")) {
-      refus("Byte raster not in EPSG:2154 (Groma's coding is defined on the 2 m Lambert-93 grid).")
-    }
-    if (!isTRUE(all.equal(terra::res(r), c(2, 2), tolerance = 1e-6))) {
-      refus(sprintf("Pixel of %s x %s m: 2 m expected for a Byte raster.",
-                    format(terra::res(r)[1]), format(terra::res(r)[2])))
     }
     return(list(r = r, codage = if (lu$nodata == 255) "foretaccess" else "groma"))
   }
@@ -1781,8 +1783,8 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   if (is.null(cvat)) return(NULL)
   r <- cvat$r
   octet <- cvat$codage %in% c("foretaccess", "groma")
-  # Byte : plus proche voisin (pas de mélange entre deux niveaux de gris) ; le
-  # nodata (NA pour terra) sort AVANT tout rééchantillonnage.
+  # Byte : le nodata déclaré est NA pour terra dès la lecture, donc avant tout
+  # rééchantillonnage ; plus proche voisin (pas de mélange entre deux niveaux).
   methode <- if (octet) "near" else "bilinear"
   if (!terra::same.crs(r, "EPSG:2154")) r <- terra::project(r, "EPSG:2154", method = methode)
   v_emprise <- terra::vect(sf::st_sf(geometry = emprise))
@@ -1793,7 +1795,7 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   v <- terra::mask(.iv_sur_gabarit(r, gabarit, methode), v_emprise)
   val <- terra::values(v, mat = FALSE)
   b <- switch(cvat$codage,
-    foretaccess = { val[val >= 255] <- NA; val + 1 },
+    foretaccess = val + 1,   # le nodata 255 déclaré est déjà NA pour terra
     groma = val,
     flottant = 1 + round(val * 254))
   b[is.na(b)] <- 0

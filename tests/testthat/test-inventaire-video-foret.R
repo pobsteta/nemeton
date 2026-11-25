@@ -256,6 +256,49 @@ test_that("cvat flottant [0, 1] : 1 + round(v * 254), NA -> 0, bornes 0 et 1 adm
   })
 })
 
+test_that("cvat Byte foretaccess à 0,5 m : accepté, rééchantillonné au plus proche voisin, source + 1", {
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    dir.create("rasters")
+    # blocs de 4 x 4 pixels de 0,5 m = 1 pixel de 2 m, alignés sur la grille paire
+    r <- terra::rast(terra::ext(925000, 925008, 6700000, 6700002), resolution = 0.5, crs = "EPSG:2154")
+    terra::values(r) <- as.vector(t(matrix(rep(rep(c(10L, 20L, 30L, 255L), each = 4), 4), nrow = 4, byrow = TRUE)))
+    terra::writeRaster(r, "h.tif", overwrite = TRUE, datatype = "INT1U", NAflag = 255)
+    e <- sf::st_geometry(if_carre(925000, 6700000, 925008, 6700002))
+    f <- nemeton:::.iv_ecrire_cvat("h.tif", e, ".")
+    expect_equal(terra::res(terra::rast(f)), c(2, 2))
+    expect_equal(if_lire_cvat(f), c(11, 21, 31, 0))
+  })
+})
+
+test_that("cvat Byte foretaccess en EPSG:4326 : accepté et reprojeté, valeurs source + 1", {
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    dir.create("rasters")
+    r <- terra::rast(terra::ext(925000, 925100, 6700000, 6700100), resolution = 2, crs = "EPSG:2154")
+    terra::values(r) <- 100L
+    r4 <- terra::project(r, "EPSG:4326", method = "near")
+    terra::writeRaster(r4, "g4326.tif", overwrite = TRUE, datatype = "INT1U", NAflag = 255)
+    e <- sf::st_geometry(if_carre(925020, 6700020, 925080, 6700080))
+    f <- nemeton:::.iv_ecrire_cvat("g4326.tif", e, ".")
+    v <- terra::values(terra::rast(f), mat = FALSE)
+    expect_true(terra::same.crs(terra::rast(f), "EPSG:2154"))
+    expect_setequal(unique(v[!is.na(v)]), 101)
+  })
+})
+
+test_that("cvat Byte foretaccess : un gradient, chaque pixel vaut exactement source + 1", {
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    dir.create("rasters")
+    src <- as.integer(seq(0, 254, length.out = 20))      # toutes différentes
+    if_cvat_octets("grad.tif", src, nodata = 255)
+    e <- sf::st_geometry(if_carre(925000, 6700000, 925040, 6700002))
+    f <- nemeton:::.iv_ecrire_cvat("grad.tif", e, ".")
+    expect_equal(if_lire_cvat(f), src + 1)
+  })
+})
+
 test_that("cvat : codage non reconnu -> erreur de classe dédiée, aucun cvat.tif (cas 4)", {
   skip_if_terra_write_broken()
   withr::with_tempdir({
@@ -266,10 +309,7 @@ test_that("cvat : codage non reconnu -> erreur de classe dédiée, aucun cvat.ti
       octet_autre_nodata = if_cvat_octets("a2.tif", c(10, 20, 30, 40), nodata = 7),
       int16 = if_cvat_octets("b.tif", c(10, 20, 30, 40), nodata = -1, type = "INT2S"),
       float_hors_01 = if_cvat_octets("c.tif", c(-0.5, 0.2, 1.7, 0.4), nodata = NA, type = "FLT4S"),
-      octet_5_m = if_cvat_octets("d.tif", c(10, 20), nodata = 255, res = 5,
-                                 ext = terra::ext(925000, 925010, 6700000, 6700005)),
-      octet_4326 = if_cvat_octets("e.tif", c(10, 20), nodata = 255, crs = "EPSG:4326",
-                                  ext = terra::ext(3, 3.0003, 47, 47.0003)))
+      octet_nodata_128 = if_cvat_octets("d2.tif", c(10, 20, 30, 40), nodata = 128))
     for (n in names(mauvais)) {
       expect_error(nemeton:::.iv_ecrire_cvat(mauvais[[n]], e, "."),
                    class = "nemeton_erreur_cvat_codage", info = n)
