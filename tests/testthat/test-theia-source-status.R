@@ -147,7 +147,7 @@ test_that("theia_lst reports urban-only coverage against the live catalogue", {
     crs = sf::st_crs(2154)))
   st <- theia_source_status("theia_lst", rural)
   expect_false(st$available)
-  expect_identical(st$reason, "no_asset_over_aoi")
+  expect_identical(st$reason, "no_asset_over_aoi", info = st$detail)
   expect_identical(st$collection, "thermocity-lst")
 })
 
@@ -164,8 +164,8 @@ test_that("sufosat resolves against the live catalogue", {
     crs = sf::st_crs(2154)))
   st <- theia_source_status("sufosat", aoi)
   expect_identical(st$collection, "sufosat")
-  expect_gt(st$n_assets, 0L)
+  expect_gt(st$n_assets, 0L, label = paste("n_assets (detail:", st$detail, ")"))
   # `available` dépend des clés TLD de l'environnement : sans elles, la cause
   # doit être « pas de clés », jamais « pas de données ».
-  expect_true(st$reason %in% c("ok", "no_credentials"))
+  expect_true(st$reason %in% c("ok", "no_credentials"), info = st$detail)
 })
