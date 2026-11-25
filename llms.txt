@@ -1201,6 +1201,34 @@ Centre-Val de Loire). Garde-fou G3 : avertit, ne bloque pas.
 - [`reconfort_year_bounds()`](https://pobsteta.github.io/nemeton/reference/reconfort_year_bounds.md)
   : Bounds for a RECONFORT \`s2_year\` picker
 
+### RECONFORT : spike de re-entrainement et noyau Rust (spec 070)
+
+Indices CRswir/CRre (noyau Rust, repli R), etiquettes DEPERIS au format
+amont propagees Y-2..Y+2, masques chenaie et coupes rases, Random Forest
+ranger en validation croisee spatiale. Essai, hors production.
+
+- [`nemeton_rust_disponible()`](https://pobsteta.github.io/nemeton/reference/nemeton_rust_disponible.md)
+  : Is the Rust core of nemeton available?
+- [`reconfort_indices()`](https://pobsteta.github.io/nemeton/reference/reconfort_indices.md)
+  : RECONFORT spectral indices CRswir and CRre
+- [`reconfort_classe()`](https://pobsteta.github.io/nemeton/reference/reconfort_classe.md)
+  : Class of a DEPERIS dieback share
+- [`reconfort_etiquettes()`](https://pobsteta.github.io/nemeton/reference/reconfort_etiquettes.md)
+  : RECONFORT field labels, checked and propagated from Y-2 to Y+2
+- [`reconfort_coupe_encoder()`](https://pobsteta.github.io/nemeton/reference/reconfort_coupe_encoder.md)
+  : Encode a date as a SUFOSAT \`YYDDD\` code
+- [`reconfort_coupe_decoder()`](https://pobsteta.github.io/nemeton/reference/reconfort_coupe_decoder.md)
+  : Decode a SUFOSAT \`YYDDD\` clear-cut date
+- [`reconfort_masquer()`](https://pobsteta.github.io/nemeton/reference/reconfort_masquer.md)
+  : Remove pixels outside the oak stands or clear-cut
+- [`reconfort_entrainer()`](https://pobsteta.github.io/nemeton/reference/reconfort_entrainer.md)
+  : Train the RECONFORT-style dieback classifier (spike)
+- [`reconfort_predire()`](https://pobsteta.github.io/nemeton/reference/reconfort_predire.md)
+  : Predict RECONFORT classes with a trained spike model
+- [`reconfort_comparer_amont()`](https://pobsteta.github.io/nemeton/reference/reconfort_comparer_amont.md)
+  : Pixel-by-pixel agreement of a class map with the upstream RECONFORT
+  map
+
 ### Validation terrain du suivi sanitaire
 
 - [`get_health_validation_schema()`](https://pobsteta.github.io/nemeton/reference/get_health_validation_schema.md)

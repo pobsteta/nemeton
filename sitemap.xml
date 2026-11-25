@@ -383,6 +383,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/nemeton_compute.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/nemeton_layers.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/nemeton_radar.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/nemeton_rust_disponible.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/nemeton_set_language.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/nemeton_temporal.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/nemeton_units.html</loc></url>
@@ -431,8 +432,17 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_site_index_curves.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_uts_fertility_table.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_cache_manifest.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_classe.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_comparer_amont.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_coupe_decoder.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_coupe_encoder.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_entrainer.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_etiquettes.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_indices.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_latest_complete_year.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_layer_manifest.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_masquer.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_predire.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/reconfort_year_bounds.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/regen_rank_species.html</loc></url>

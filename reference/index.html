@@ -2839,6 +2839,85 @@
         <dd>Bounds for a RECONFORT `s2_year` picker</dd>
       </dl></div><div class="section level2">
 
+      <h3 id="reconfort-spike-de-re-entrainement-et-noyau-rust-spec-">RECONFORT : spike de re-entrainement et noyau Rust (spec 070)<a class="anchor" aria-label="anchor" href="#reconfort-spike-de-re-entrainement-et-noyau-rust-spec-"></a></h3>
+      <div class="section-desc"><p>Indices CRswir/CRre (noyau Rust, repli R), etiquettes DEPERIS au format amont propagees Y-2..Y+2, masques chenaie et coupes rases, Random Forest ranger en validation croisee spatiale. Essai, hors production.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="nemeton_rust_disponible.html">nemeton_rust_disponible()</a></code>
+
+        </dt>
+        <dd>Is the Rust core of nemeton available?</dd>
+
+        <dt>
+
+          <code><a href="reconfort_indices.html">reconfort_indices()</a></code>
+
+        </dt>
+        <dd>RECONFORT spectral indices CRswir and CRre</dd>
+
+        <dt>
+
+          <code><a href="reconfort_classe.html">reconfort_classe()</a></code>
+
+        </dt>
+        <dd>Class of a DEPERIS dieback share</dd>
+
+        <dt>
+
+          <code><a href="reconfort_etiquettes.html">reconfort_etiquettes()</a></code>
+
+        </dt>
+        <dd>RECONFORT field labels, checked and propagated from Y-2 to Y+2</dd>
+
+        <dt>
+
+          <code><a href="reconfort_coupe_encoder.html">reconfort_coupe_encoder()</a></code>
+
+        </dt>
+        <dd>Encode a date as a SUFOSAT `YYDDD` code</dd>
+
+        <dt>
+
+          <code><a href="reconfort_coupe_decoder.html">reconfort_coupe_decoder()</a></code>
+
+        </dt>
+        <dd>Decode a SUFOSAT `YYDDD` clear-cut date</dd>
+
+        <dt>
+
+          <code><a href="reconfort_masquer.html">reconfort_masquer()</a></code>
+
+        </dt>
+        <dd>Remove pixels outside the oak stands or clear-cut</dd>
+
+        <dt>
+
+          <code><a href="reconfort_entrainer.html">reconfort_entrainer()</a></code>
+
+        </dt>
+        <dd>Train the RECONFORT-style dieback classifier (spike)</dd>
+
+        <dt>
+
+          <code><a href="reconfort_predire.html">reconfort_predire()</a></code>
+
+        </dt>
+        <dd>Predict RECONFORT classes with a trained spike model</dd>
+
+        <dt>
+
+          <code><a href="reconfort_comparer_amont.html">reconfort_comparer_amont()</a></code>
+
+        </dt>
+        <dd>Pixel-by-pixel agreement of a class map with the upstream RECONFORT map</dd>
+      </dl></div><div class="section level2">
+
       <h3 id="validation-terrain-du-suivi-sanitaire">Validation terrain du suivi sanitaire<a class="anchor" aria-label="anchor" href="#validation-terrain-du-suivi-sanitaire"></a></h3>
 
 
