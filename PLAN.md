@@ -160,6 +160,13 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-25 — ERA5 `timeseries` : restes des relectures de 039 et 042 (mission 049 de nemetonplateforme, fiche `049-nemeton-era5-restes-039-042`)
+
+- **Cas 1 (039)** : `regen_sensibilite()` sans option `nemeton.era5_source` est testé de bout en bout jusqu'au forçage (accès CDS simulé par `.rsen_era5_acces_cds` ; le calcul s'arrête au premier appel de `microclimf::checkinputs`, qui capte le forçage) : 4 requêtes du jeu `timeseries`, fichiers `era5ts_*` seuls, 8760 pas. Rougit si le défaut de `.rsen_era5_source()` repasse à `"classique"`.
+- **Cas 2 (042)** : sur la forme réelle du CDS (`.ts_fixture_cds()`), le code **acceptait** deux fichiers : un NetCDF sans l'une des 10 variables (`fdir`) et un NetCDF dont une variable n'est écrite que sur une partie des pas (reste à 9,97e36). `.rsen_era5ts_en_cache()` les tenait pour un cache : plus de requête, échec de lecture à chaque appel, fichier jamais remplacé. **Correctif minimal** dans `.rsen_era5ts_couvre()` : les 10 variables présentes, finies, `|v| < 1e30`, et `t2m`/`d2m`/`sp` strictement positives, sinon FALSE (le fichier est effacé et redemandé ; après téléchargement, `rsen_era5ts_echec`). Message de `.rsen_era5_assurer()` complété (« time steps, variables or values missing »).
+- Choix (délégation) : variable non écrite détectée par valeur implausible (fill 9,97e36 ou 0), seule détection possible sans lire les attributs du fichier ; la plage physique fine (T, pression) n'est pas contrôlée. Cas 1 placé dans `test-era5-timeseries.R` (réutilise `.acces_ts_faux()` et `.ts_fixture_cds()`, non partagés entre fichiers de test). Calcul microclimf réel non rejoué dans le test (33 s) : arrêt volontaire après le forçage.
+- `DESCRIPTION` en `2026.11.45.9000`, pas de release. Cas 5 de 042 (vrai fichier CDS) non touché.
+
 ### 2026-11-24 — ERA5 `timeseries` : liste d'années vide nommée comme telle (mission 049 de nemetonplateforme)
 
 - `.rsen_era5ts_exiger_annees_closes()` : une liste vide (`integer(0)`, `NULL`) lève désormais « no year was requested (empty list) » au lieu de « the requested year is missing (NA) » ; classe `rsen_era5ts_echec` et refus avant tout appel CDS inchangés. Année `NA`, année ouverte, années closes : comportement inchangé.
