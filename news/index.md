@@ -1,5 +1,17 @@
 # Changelog
 
+## nemeton 2026.11.45.9000 (development)
+
+- **fix : ERA5 `timeseries`, un NetCDF incomplet n’est plus pris pour un
+  cache** (mission 049). Un fichier de la forme réelle du CDS auquel il
+  manquait l’une des 10 variables, ou portant des valeurs non écrites
+  (valeur de remplissage NetCDF, ou `t2m`, `d2m`, `sp` nuls), était
+  accepté en cache : plus aucune requête, puis échec de lecture à chaque
+  appel. Il est maintenant effacé et redemandé ; si la réponse reste
+  incomplète, `rsen_era5ts_echec`. Limite : un reste non écrit dont la
+  valeur est plausible (0 pour `tcc`, `ssrd`, `fdir`, `tp`) n’est pas
+  détectable. Signatures inchangées.
+
 ## nemeton 2026.11.45 (2026-11-24)
 
 - **perf : bandes Sentinel-2 distantes lues par fenêtre** (mission 044).
