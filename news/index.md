@@ -4,6 +4,25 @@
 
 - **perf :
   [`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md)
+  découpe les placettes et écrit les dalles MNT sur les mêmes workers
+  que les houppiers, avec un seul cluster par création** (mission 059,
+  suite de la 056). Le cluster PSOCK (jamais de fork) est créé à la
+  première étape qui en a besoin, initialisé une fois, partagé par
+  `placettes`, `dalles_mnt` et `houppiers`, puis fermé (aussi en cas
+  d’erreur) : le chargement des workers n’est payé qu’une fois.
+  Placettes (découpe MNT/MNH, tif, topographie) et dalles MNT sont
+  servies par lots de `n_workers`, chaque worker relisant les rasters
+  par leur fichier ; une étape dont un raster est en mémoire ou
+  reprojeté reste séquentielle, et un lot en échec laisse un
+  avertissement puis refait l’étape en séquentiel. Sortie identique à
+  `n_workers = 1` (mêmes fichiers, mêmes valeurs, mêmes attributs
+  `topo`, même ordre). Progression inchangée dans ses noms ; les
+  compteurs des étapes `placettes` et `dalles_mnt` avancent par lot
+  quand elles sont parallèles. Le `.qgz` reste séquentiel. Ni le schéma
+  1.7.0 ni le contenu produit ne changent.
+
+- **perf :
+  [`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md)
   segmente les houppiers en parallèle, ouvre ses rasters une fois et
   annonce chaque étape** (mission 056). Nouvel argument `n_workers`
   (défaut
