@@ -160,6 +160,15 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-25 — `creer_projet_inventaire_video()` : placettes et dalles MNT sur le cluster des houppiers, un seul cluster (mission 059 de nemetonplateforme, fiche `059-nemeton-projet-video-parallele-suite`)
+
+- **Constat** (suite de la 056) : ~20 s restaient séquentiels sur 441 ha (placettes ~7-8 s, dalles MNT ~5 s, `.qgz` ~7 s) et le cluster des houppiers payait seul le chargement des workers.
+- **Fait** (`R/inventaire_video.R`) : un pool (`.iv_pool()`, cluster PSOCK créé à la demande par `.iv_pool_cl()`, initialisé une fois par `.iv_cluster_init()`, fermé par `.iv_pool_fermer()` après les houppiers et par `on.exit`) partagé par `.iv_placettes()` (par placette : `.iv_placette_unite()`), `.iv_ecrire_dalles_mnt()` (par dalle : `.iv_dalle_mnt()`) et `.iv_houppiers_emprise()`. Lots de `n_workers` unités via `.iv_lots_pool()` (placettes, dalles) ; houppiers gardent leur ordre « plus lourdes d'abord ». Les workers relisent MNT et MNH par leur chemin (`.iv_chm_fichier()`) ; raster en mémoire ou reprojeté pour une étape : séquentiel. Échec d'un lot ou démarrage impossible : avertissement, étape refaite en séquentiel (compteur repart à `i = 0`) ; un démarrage impossible n'avertit qu'une fois. La fusion des attributs `topo` et de la liste des rasters se fait dans le processus principal, dans l'ordre des placettes. `.qgz` inchangé.
+- **Tests** `tests/testthat/test-inventaire-video-rapide.R` (cas 1 à 5 de la fiche, plus MNT fichier / MNH mémoire, repli, démarrage impossible, fermeture sur erreur). Contre-épreuve sur le code d'`origin/main` (f685248) : 7 tests sur 8 échouent (compteurs par lot absents, MNT fichier / MNH mémoire, repli) ; le cas « raster en mémoire » et le contrat de progression passent aussi sur main, c'est voulu (ils verrouillent un comportement conservé).
+- **Mesure** (scénario B, 441 ha, 62 placettes, 4 cœurs, `n_workers = 3`, paquet installé en bibliothèque jetable) : avant 55,7 s puis 47,1 s ; après 39,0 s puis 38,5 s (placettes 6,9-7,1 s dont le démarrage des workers, dalles 2,2 s, houppiers 20,0-20,3 s, `.qgz` ~7 s). 19 060 houppiers identiques.
+- Choix (délégation) : lots de `n_workers` unités plutôt qu'un découpage en tranches contiguës (progression par lot, charge équilibrée) ; cluster dimensionné à `n_workers` même si une étape a moins d'unités ; étape parallèle seulement si tous ses rasters sont des fichiers (pas de mélange fichier/mémoire).
+- `DESCRIPTION` reste `2026.11.45.9000`, pas de release.
+
 ### 2026-11-25 — `creer_projet_inventaire_video()` : houppiers en parallèle, rasters ouverts une fois, progression (mission 056 de nemetonplateforme, fiche `056-nemeton-projet-video-rapide-et-suivi`)
 
 - **Constat** (chronométrage synthétique de la mission) : la segmentation des houppiers domine (~12 s/km², un cœur), puis la boucle des placettes (~9 s) et le `.qgz` (7 à 11 s) ; aucune progression par étape.

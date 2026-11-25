@@ -104,17 +104,21 @@ the BD Foret V2 reference); kept for symmetry with
 \code{TRUE}.}
 
 \item{n_workers}{Integer (\eqn{\ge 1}). Number of worker processes used
-to segment the crowns tile by tile. Default
+to cut the per-plot rasters, write the 1 km DTM tiles and segment the
+crowns tile by tile. Default
 \code{getOption("nemeton.iv_workers", min(4, parallel::detectCores() - 1))}
 (\code{1} when the number of cores cannot be detected).
-\code{1} segments sequentially, in this process. Workers are PSOCK
-processes (never forks, which hang with \pkg{terra}); each one reads the
-CHM from its file, so the parallel path is used only when the CHM is a
-file (a path, or a \code{SpatRaster} backed by one file already in
-EPSG:2154); an in-memory CHM is segmented sequentially. The crowns are
-identical whatever \code{n_workers} (same rows, same order, same
-\code{houppier_id}). If the cluster cannot be started, a warning is
-raised and the segmentation runs sequentially.}
+\code{1} works sequentially, in this process. Workers are PSOCK
+processes (never forks, which hang with \pkg{terra}), started once per
+call and shared by the three stages, then closed; each one reads the
+rasters from their files, so a stage runs in parallel only when its
+rasters (DTM and CHM for the plots, DTM for the tiles, CHM for the
+crowns) are files (a path, or a \code{SpatRaster} backed by one file
+already in EPSG:2154); an in-memory or reprojected raster is processed
+sequentially. The output is identical whatever \code{n_workers} (same
+files and values, same \code{topo} attributes, same crown rows, order
+and \code{houppier_id}). If the cluster cannot be started, or a stage
+fails midway, a warning is raised and that stage runs sequentially.}
 
 \item{progress_callback}{Optional function called with a single list
 \code{list(etape, i, n, secondes)} at the start of each stage
@@ -126,10 +130,11 @@ elapsed since the stage started (so the last call of a stage, with
 (project tables and forest extent; \code{n = 1}), \code{"placettes"}
 (per-plot rasters and topography; \code{n} = plots), \code{"dalles_mnt"}
 (1 km DTM tiles; \code{n} = tiles), \code{"houppiers"} (crown
-segmentation; \code{n} = 1 km tiles, counted per tile when sequential,
-per batch of \code{n_workers} tiles when parallel; if the parallel run
-fails midway and falls back to sequential, the stage restarts with a new
-\code{i = 0} call and \code{secondes} restarts from 0), \code{"cvat"}
+segmentation; \code{n} = 1 km tiles). Each of these three stages counts
+per unit when sequential and per batch of \code{n_workers} units when
+parallel; if a parallel run fails midway and falls back to sequential,
+the stage restarts with a new \code{i = 0} call and \code{secondes}
+restarts from 0, \code{"cvat"}
 (\code{n = 1}), \code{"geopackage"} (layers, triggers, indexes;
 \code{n = 1}) and \code{"qgz"} (\code{.qgs}, archive and project
 folder; \code{n = 1}). \code{"placettes"}, \code{"dalles_mnt"} and
