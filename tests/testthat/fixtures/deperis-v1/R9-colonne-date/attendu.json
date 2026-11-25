@@ -1,0 +1,16 @@
+{
+ "cas": "R9",
+ "titre": "Colonne nommée date dans centres",
+ "source": "Groma, brief vers Nemeton, § 2.1",
+ "lecteur": "ramulus",
+ "fichiers": [
+  "deperis.gpkg"
+ ],
+ "depart": null,
+ "attendu": "refuse",
+ "motifs": [
+  "colonne_date"
+ ],
+ "fusion": null,
+ "notes": []
+}

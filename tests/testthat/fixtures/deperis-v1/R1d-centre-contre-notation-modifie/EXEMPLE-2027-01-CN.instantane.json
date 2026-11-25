@@ -1,0 +1,227 @@
+{
+ "application_id": 1196444487,
+ "user_version": 10400,
+ "version_schema": 1,
+ "nature": "contre_notation",
+ "tables": {
+  "centres": {
+   "data_type": "features",
+   "geometrie": {
+    "colonne": "geom",
+    "type": "POINT",
+    "srs": {
+     "organisation": "EPSG",
+     "code": 2154
+    }
+   },
+   "index_spatial": false,
+   "cle_primaire": "fid",
+   "colonnes": {
+    "fid": "INTEGER",
+    "geom": "POINT",
+    "uuid": "TEXT",
+    "plot_id": "TEXT",
+    "precision_m": "REAL",
+    "nb_mesures": "INTEGER",
+    "source": "TEXT",
+    "date_releve": "DATETIME",
+    "operateur": "TEXT"
+   },
+   "lignes": [
+    {
+     "fid": 1,
+     "geom": {
+      "x": 856861.42,
+      "y": 6670360.78
+     },
+     "uuid": "01a68f32-f3c0-7bde-9e4a-972400b66ecd",
+     "plot_id": "P002",
+     "precision_m": 7.2,
+     "nb_mesures": 60,
+     "source": "telephone",
+     "date_releve": "2027-07-06T12:58:00.000Z",
+     "operateur": "operateur-B"
+    }
+   ]
+  },
+  "contre_notations": {
+   "data_type": "attributes",
+   "geometrie": null,
+   "index_spatial": false,
+   "cle_primaire": "fid",
+   "colonnes": {
+    "fid": "INTEGER",
+    "uuid": "TEXT",
+    "plot_id": "TEXT",
+    "rang": "INTEGER",
+    "repere": "TEXT",
+    "essence": "TEXT",
+    "type": "TEXT",
+    "mb": "INTEGER",
+    "second": "INTEGER",
+    "critere": "TEXT",
+    "classe": "TEXT",
+    "saison": "TEXT",
+    "date_notation": "DATETIME",
+    "operateur": "TEXT",
+    "photos": "TEXT",
+    "ia_premiere_mb": "INTEGER",
+    "ia_premiere_second": "INTEGER",
+    "ia_mb": "INTEGER",
+    "ia_second": "INTEGER",
+    "ia_confiance": "REAL",
+    "ia_modele": "TEXT"
+   },
+   "lignes": [
+    {
+     "fid": 1,
+     "uuid": "01a6b26a-2660-785a-96ad-0cc4c7f537cd",
+     "plot_id": "P002",
+     "rang": 1,
+     "repere": "11",
+     "essence": "Sapin",
+     "type": "RESINEUX",
+     "mb": 0,
+     "second": 3,
+     "critere": "MA",
+     "classe": "D",
+     "saison": "ETE",
+     "date_notation": "2027-07-13T09:05:00.000Z",
+     "operateur": "operateur-C",
+     "photos": [],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    },
+    {
+     "fid": 2,
+     "uuid": "01a6b26e-ba40-7e38-8364-6d65ded5da67",
+     "plot_id": "P002",
+     "rang": 2,
+     "repere": "12",
+     "essence": "Mélèze",
+     "type": "RESINEUX",
+     "mb": 1,
+     "second": 3,
+     "critere": "MA",
+     "classe": "D",
+     "saison": "ETE",
+     "date_notation": "2027-07-13T09:10:00.000Z",
+     "operateur": "operateur-C",
+     "photos": [],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    },
+    {
+     "fid": 3,
+     "uuid": "01a6b272-63c0-7dd7-89ff-f5a2a2aaa420",
+     "plot_id": "P002",
+     "rang": 3,
+     "repere": "12b",
+     "essence": "Cèdre",
+     "type": "RESINEUX",
+     "mb": 0,
+     "second": 0,
+     "critere": "MA",
+     "classe": "A",
+     "saison": "ETE",
+     "date_notation": "2027-07-13T09:14:00.000Z",
+     "operateur": "operateur-C",
+     "photos": [],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    }
+   ]
+  },
+  "placettes": {
+   "data_type": "features",
+   "geometrie": {
+    "colonne": "geom",
+    "type": "POINT",
+    "srs": {
+     "organisation": "EPSG",
+     "code": 2154
+    }
+   },
+   "index_spatial": false,
+   "cle_primaire": "fid",
+   "colonnes": {
+    "fid": "INTEGER",
+    "geom": "POINT",
+    "plot_id": "TEXT",
+    "wgt": "REAL",
+    "ip": "REAL",
+    "stratum": "TEXT",
+    "strat_type": "TEXT",
+    "nb_arbres": "INTEGER",
+    "regle_choix": "TEXT",
+    "saison": "TEXT",
+    "collecte_photos": "BOOLEAN",
+    "contre_notation": "BOOLEAN",
+    "etat": "TEXT"
+   },
+   "lignes": [
+    {
+     "fid": 1,
+     "geom": {
+      "x": 856863.42,
+      "y": 6670359.28
+     },
+     "plot_id": "P002",
+     "wgt": 9.75,
+     "ip": 0.1,
+     "stratum": "S2",
+     "strat_type": "resineux",
+     "nb_arbres": 4,
+     "regle_choix": "Kraft 1 à 3, tour d'horizon depuis le nord, sens horaire",
+     "saison": "ETE",
+     "collecte_photos": 0,
+     "contre_notation": 1,
+     "etat": "notee"
+    }
+   ]
+  },
+  "tournee": {
+   "data_type": "attributes",
+   "geometrie": null,
+   "index_spatial": false,
+   "cle_primaire": "fid",
+   "colonnes": {
+    "fid": "INTEGER",
+    "version_schema": "INTEGER",
+    "code_tournee": "TEXT",
+    "nature": "TEXT",
+    "prepare_le": "DATETIME",
+    "version_nemeton": "TEXT",
+    "delai_contre_notation_jours": "INTEGER",
+    "operateur": "TEXT",
+    "version_ramulus": "TEXT"
+   },
+   "lignes": [
+    {
+     "fid": 1,
+     "version_schema": 1,
+     "code_tournee": "EXEMPLE-2027-01-CN",
+     "nature": "contre_notation",
+     "prepare_le": "2027-07-08T08:00:00.000Z",
+     "version_nemeton": "exemple",
+     "delai_contre_notation_jours": 15,
+     "operateur": "operateur-C",
+     "version_ramulus": "exemple"
+    }
+   ]
+  }
+ },
+ "photos_du_paquet": []
+}

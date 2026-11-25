@@ -1,0 +1,196 @@
+{
+ "application_id": 1196444487,
+ "user_version": 10400,
+ "version_schema": 2,
+ "nature": "premiere",
+ "tables": {
+  "centres": {
+   "data_type": "features",
+   "geometrie": {
+    "colonne": "geom",
+    "type": "POINT",
+    "srs": {
+     "organisation": "EPSG",
+     "code": 2154
+    }
+   },
+   "index_spatial": false,
+   "cle_primaire": "fid",
+   "colonnes": {
+    "fid": "INTEGER",
+    "geom": "POINT",
+    "uuid": "TEXT",
+    "plot_id": "TEXT",
+    "precision_m": "REAL",
+    "nb_mesures": "INTEGER",
+    "source": "TEXT",
+    "date_releve": "DATETIME",
+    "operateur": "TEXT"
+   },
+   "lignes": []
+  },
+  "notations": {
+   "data_type": "attributes",
+   "geometrie": null,
+   "index_spatial": false,
+   "cle_primaire": "fid",
+   "colonnes": {
+    "fid": "INTEGER",
+    "uuid": "TEXT",
+    "plot_id": "TEXT",
+    "rang": "INTEGER",
+    "repere": "TEXT",
+    "essence": "TEXT",
+    "type": "TEXT",
+    "mb": "INTEGER",
+    "second": "INTEGER",
+    "critere": "TEXT",
+    "classe": "TEXT",
+    "saison": "TEXT",
+    "date_notation": "DATETIME",
+    "operateur": "TEXT",
+    "photos": "TEXT",
+    "ia_premiere_mb": "INTEGER",
+    "ia_premiere_second": "INTEGER",
+    "ia_mb": "INTEGER",
+    "ia_second": "INTEGER",
+    "ia_confiance": "REAL",
+    "ia_modele": "TEXT",
+    "champ_futur": "REAL"
+   },
+   "lignes": []
+  },
+  "placettes": {
+   "data_type": "features",
+   "geometrie": {
+    "colonne": "geom",
+    "type": "POINT",
+    "srs": {
+     "organisation": "EPSG",
+     "code": 2154
+    }
+   },
+   "index_spatial": false,
+   "cle_primaire": "fid",
+   "colonnes": {
+    "fid": "INTEGER",
+    "geom": "POINT",
+    "plot_id": "TEXT",
+    "wgt": "REAL",
+    "ip": "REAL",
+    "stratum": "TEXT",
+    "strat_type": "TEXT",
+    "nb_arbres": "INTEGER",
+    "regle_choix": "TEXT",
+    "saison": "TEXT",
+    "collecte_photos": "BOOLEAN",
+    "contre_notation": "BOOLEAN",
+    "etat": "TEXT"
+   },
+   "lignes": [
+    {
+     "fid": 1,
+     "geom": {
+      "x": 856560.23,
+      "y": 6670351.34
+     },
+     "plot_id": "P001",
+     "wgt": 12.5,
+     "ip": 0.08,
+     "stratum": "S1",
+     "strat_type": "feuillus",
+     "nb_arbres": 4,
+     "regle_choix": "Kraft 1 à 3, tour d'horizon depuis le nord, sens horaire",
+     "saison": "ETE",
+     "collecte_photos": 1,
+     "contre_notation": 0,
+     "etat": null
+    },
+    {
+     "fid": 2,
+     "geom": {
+      "x": 856863.42,
+      "y": 6670359.28
+     },
+     "plot_id": "P002",
+     "wgt": 9.75,
+     "ip": 0.1,
+     "stratum": "S2",
+     "strat_type": "resineux",
+     "nb_arbres": 4,
+     "regle_choix": "Kraft 1 à 3, tour d'horizon depuis le nord, sens horaire",
+     "saison": "ETE",
+     "collecte_photos": 0,
+     "contre_notation": 1,
+     "etat": null
+    },
+    {
+     "fid": 3,
+     "geom": {
+      "x": 856551.51,
+      "y": 6670684.45
+     },
+     "plot_id": "P003",
+     "wgt": 12.5,
+     "ip": 0.08,
+     "stratum": "S1",
+     "strat_type": "melange",
+     "nb_arbres": 4,
+     "regle_choix": "Kraft 1 à 3, tour d'horizon depuis le nord, sens horaire",
+     "saison": "ETE",
+     "collecte_photos": 0,
+     "contre_notation": 0,
+     "etat": null
+    }
+   ]
+  },
+  "table_future": {
+   "data_type": "attributes",
+   "geometrie": null,
+   "index_spatial": false,
+   "cle_primaire": "fid",
+   "colonnes": {
+    "fid": "INTEGER",
+    "libelle": "TEXT"
+   },
+   "lignes": [
+    {
+     "fid": 1,
+     "libelle": "table d'une version future"
+    }
+   ]
+  },
+  "tournee": {
+   "data_type": "attributes",
+   "geometrie": null,
+   "index_spatial": false,
+   "cle_primaire": "fid",
+   "colonnes": {
+    "fid": "INTEGER",
+    "version_schema": "INTEGER",
+    "code_tournee": "TEXT",
+    "nature": "TEXT",
+    "prepare_le": "DATETIME",
+    "version_nemeton": "TEXT",
+    "delai_contre_notation_jours": "INTEGER",
+    "operateur": "TEXT",
+    "version_ramulus": "TEXT",
+    "champ_futur": "TEXT"
+   },
+   "lignes": [
+    {
+     "fid": 1,
+     "version_schema": 2,
+     "code_tournee": "EXEMPLE-2027-01",
+     "nature": "premiere",
+     "prepare_le": "2027-06-15T08:00:00.000Z",
+     "version_nemeton": "exemple",
+     "delai_contre_notation_jours": 15,
+     "operateur": null,
+     "version_ramulus": null,
+     "champ_futur": "valeur d'une version future"
+    }
+   ]
+  }
+ }
+}

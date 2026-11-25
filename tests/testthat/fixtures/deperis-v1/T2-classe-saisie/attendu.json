@@ -1,0 +1,89 @@
+{
+ "cas": "T2",
+ "titre": "Enregistrement par Ramulus d'une note qui arrive avec une classe déjà remplie, juste ou fausse : refusée (la classe se calcule par l'abaque). Le fichier est la tournée de départ A1, intacte ; le refus porte sur la saisie, pas sur le fichier",
+ "source": "Pascal, 2026-10-28 (T2 bis) ; ADR 0001",
+ "lecteur": "ramulus",
+ "fichiers": [
+  "deperis.gpkg"
+ ],
+ "depart": null,
+ "attendu": "refuse",
+ "motifs": [
+  "classe_saisie"
+ ],
+ "fusion": null,
+ "notes": [],
+ "enregistrement": {
+  "table": "notations",
+  "saisies": [
+   {
+    "nom": "classe fournie, juste",
+    "ligne": {
+     "uuid": "01a68e2b-47c0-7d87-9db2-164808fe8603",
+     "plot_id": "P001",
+     "rang": 1,
+     "repere": "1",
+     "essence": "Chêne sessile",
+     "type": "FEUILLU",
+     "mb": 2,
+     "second": 3,
+     "critere": "MR",
+     "classe": "D",
+     "saison": "ETE",
+     "date_notation": "2027-07-06T08:10:00.000Z",
+     "operateur": "operateur-A",
+     "photos": [
+      {
+       "nom": "photos/01a68e2b-47c0-7d87-9db2-164808fe8603_1.jpg",
+       "sha256": "845e771205812f1172d63e38061709ce07fa67f8022a17ec7b08884d082fc349"
+      },
+      {
+       "nom": "photos/01a68e2b-47c0-7d87-9db2-164808fe8603_2.jpg",
+       "sha256": "b7be9e9a9989e2ba289d933062f04e89709d51fb5f45cb75145e42a26360cebe"
+      }
+     ],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    }
+   },
+   {
+    "nom": "classe fournie, fausse",
+    "ligne": {
+     "uuid": "01a68e2b-47c0-7d87-9db2-164808fe8603",
+     "plot_id": "P001",
+     "rang": 1,
+     "repere": "1",
+     "essence": "Chêne sessile",
+     "type": "FEUILLU",
+     "mb": 2,
+     "second": 3,
+     "critere": "MR",
+     "classe": "A",
+     "saison": "ETE",
+     "date_notation": "2027-07-06T08:10:00.000Z",
+     "operateur": "operateur-A",
+     "photos": [
+      {
+       "nom": "photos/01a68e2b-47c0-7d87-9db2-164808fe8603_1.jpg",
+       "sha256": "845e771205812f1172d63e38061709ce07fa67f8022a17ec7b08884d082fc349"
+      },
+      {
+       "nom": "photos/01a68e2b-47c0-7d87-9db2-164808fe8603_2.jpg",
+       "sha256": "b7be9e9a9989e2ba289d933062f04e89709d51fb5f45cb75145e42a26360cebe"
+      }
+     ],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,14 @@
+{
+ "cas": "A6",
+ "titre": "Version 2 avec une colonne et une table inconnues : lue en les ignorant",
+ "source": "ADR 0003 § 2 ; Q1",
+ "lecteur": "ramulus",
+ "fichiers": [
+  "deperis.gpkg"
+ ],
+ "depart": null,
+ "attendu": "accepte",
+ "motifs": [],
+ "fusion": null,
+ "notes": []
+}

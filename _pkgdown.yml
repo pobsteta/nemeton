@@ -600,6 +600,14 @@ reference:
     - groma_etat_placettes
     - groma_envoyer_projet
 
+  - subtitle: "Tournee DEPERIS (echange deperis.gpkg avec Ramulus, mission 061)"
+    desc: >
+      Ecrire le fichier de depart d'une tournee de notation DEPERIS et importer
+      le paquet rendu par Ramulus (tout ou rien, rejouable, classe recalculee)
+    contents:
+    - creer_tournee_deperis
+    - importer_deperis
+
   - subtitle: "Tarifs Schaeffer par essence x sylvoecoregion (spec 062)"
     desc: >
       Numeros de tarif Schaeffer calcules depuis les arbres IFN (methode

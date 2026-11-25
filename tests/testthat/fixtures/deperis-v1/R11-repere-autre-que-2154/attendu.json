@@ -1,0 +1,17 @@
+{
+ "cas": "R11",
+ "titre": "Placettes écrites en WGS 84 (EPSG:4326, degrés) au lieu d'EPSG:2154",
+ "source": "ADR 0003 § 1 (repère lu, jamais supposé) ; Pascal, 2026-10-28",
+ "lecteur": "ramulus",
+ "fichiers": [
+  "deperis.gpkg"
+ ],
+ "depart": null,
+ "attendu": "refuse",
+ "motifs": [
+  "hors_france",
+  "repere_hors_2154"
+ ],
+ "fusion": null,
+ "notes": []
+}

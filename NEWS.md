@@ -1,5 +1,17 @@
 # nemeton 2026.11.45.9000 (development)
 
+- **feat : tournée DEPERIS, échange `deperis.gpkg` avec Ramulus** (mission 061, brief de
+  Ramulus, ADR 0003 de Ramulus). `creer_tournee_deperis()` écrit le fichier de départ
+  (EPSG:2154, sans index spatial, `tournee`/`placettes`/`centres`/`notations`, ou la variante
+  de contre-notation avec le centre du premier opérateur en lecture et un tirage reproductible
+  de 5 % des placettes). `importer_deperis()` importe le `.zip` rendu : verdict `accepte` /
+  `signale` / `refuse` et motifs du catalogue du format, tout ou rien, rejouable sans doublon
+  (union sur l'`uuid`, fusion de plusieurs paquets, conflit écarté et signalé), classe
+  recalculée par l'abaque. Le schéma `deperis-v1` de Ramulus est copié dans `inst/schemas/`
+  (empreinte vérifiée par un test) ; les 39 cas communs de Ramulus sont rejoués dans
+  `test-deperis.R`. `stringi` passe en Suggests. Le bilan par unité de gestion vers sommieR et
+  le module de l'app ne sont pas inclus.
+
 - **feat : spike de ré-entraînement RECONFORT et premier noyau Rust** (mission
   060, ADR 0003 de nemetonplateforme ; spec `specs/070-reconfort-reentrainement-spike`).
   Nouveau crate `src/rust/` (`extendr`) qui calcule CRswir et CRre par pixel ;

@@ -1,0 +1,60 @@
+{
+ "cas": "A4",
+ "titre": "Contre-notation rendue : contre_notations remplie, centre fourni intact",
+ "source": "ADR 0003 § 4",
+ "lecteur": "nemeton",
+ "fichiers": [
+  "EXEMPLE-2027-01-CN.zip"
+ ],
+ "depart": "../A2-tournee-contre-notation/deperis.gpkg",
+ "attendu": "accepte",
+ "motifs": [],
+ "fusion": null,
+ "notes": [
+  {
+   "fichier": "EXEMPLE-2027-01-CN.zip",
+   "table": "contre_notations",
+   "uuid": "01a6b26a-2660-785a-96ad-0cc4c7f537cd",
+   "plot_id": "P002",
+   "rang": 1,
+   "repere": "11",
+   "essence": "Sapin",
+   "type": "RESINEUX",
+   "mb": 0,
+   "second": 3,
+   "critere": "MA",
+   "classe": "D",
+   "photo_dsf": "dsf2025-20_08"
+  },
+  {
+   "fichier": "EXEMPLE-2027-01-CN.zip",
+   "table": "contre_notations",
+   "uuid": "01a6b26e-ba40-7e38-8364-6d65ded5da67",
+   "plot_id": "P002",
+   "rang": 2,
+   "repere": "12",
+   "essence": "Mélèze",
+   "type": "RESINEUX",
+   "mb": 1,
+   "second": 3,
+   "critere": "MA",
+   "classe": "D",
+   "photo_dsf": "dsf2025-14_09"
+  },
+  {
+   "fichier": "EXEMPLE-2027-01-CN.zip",
+   "table": "contre_notations",
+   "uuid": "01a6b272-63c0-7dd7-89ff-f5a2a2aaa420",
+   "plot_id": "P002",
+   "rang": 3,
+   "repere": "12b",
+   "essence": "Cèdre",
+   "type": "RESINEUX",
+   "mb": 0,
+   "second": 0,
+   "critere": "MA",
+   "classe": "A",
+   "photo_dsf": "dsf2025-00_02"
+  }
+ ]
+}

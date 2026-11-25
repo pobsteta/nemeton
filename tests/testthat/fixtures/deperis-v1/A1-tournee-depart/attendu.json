@@ -1,0 +1,14 @@
+{
+ "cas": "A1",
+ "titre": "Tournée de départ telle que Nemeton l'écrit : toutes les tables, centres et notations vides",
+ "source": "ADR 0003 § 1-3 ; Q13",
+ "lecteur": "ramulus",
+ "fichiers": [
+  "deperis.gpkg"
+ ],
+ "depart": null,
+ "attendu": "accepte",
+ "motifs": [],
+ "fusion": null,
+ "notes": []
+}
