@@ -21,7 +21,9 @@ creer_projet_inventaire_video(
   project_name = "inventaire_video",
   region = "BFC",
   lang = "fr",
-  overwrite = TRUE
+  overwrite = TRUE,
+  n_workers = .iv_workers_defaut(),
+  progress_callback = NULL
 )
 }
 \arguments{
@@ -100,6 +102,39 @@ the BD Foret V2 reference); kept for symmetry with
 
 \item{overwrite}{Logical. Overwrite an existing \code{.qgz}. Default
 \code{TRUE}.}
+
+\item{n_workers}{Integer (\eqn{\ge 1}). Number of worker processes used
+to segment the crowns tile by tile. Default
+\code{getOption("nemeton.iv_workers", min(4, parallel::detectCores() - 1))}
+(\code{1} when the number of cores cannot be detected).
+\code{1} segments sequentially, in this process. Workers are PSOCK
+processes (never forks, which hang with \pkg{terra}); each one reads the
+CHM from its file, so the parallel path is used only when the CHM is a
+file (a path, or a \code{SpatRaster} backed by one file already in
+EPSG:2154); an in-memory CHM is segmented sequentially. The crowns are
+identical whatever \code{n_workers} (same rows, same order, same
+\code{houppier_id}). If the cluster cannot be started, a warning is
+raised and the segmentation runs sequentially.}
+
+\item{progress_callback}{Optional function called with a single list
+\code{list(etape, i, n, secondes)} at the start of each stage
+(\code{i = 0}) and after each of its units, never fatal (an error raised
+by the callback is ignored). \code{etape} is the stable stage name,
+\code{i} the units done out of \code{n}, \code{secondes} the time
+elapsed since the stage started (so the last call of a stage, with
+\code{i == n}, gives its duration). Stages, in order: \code{"sources"}
+(project tables and forest extent; \code{n = 1}), \code{"placettes"}
+(per-plot rasters and topography; \code{n} = plots), \code{"dalles_mnt"}
+(1 km DTM tiles; \code{n} = tiles), \code{"houppiers"} (crown
+segmentation; \code{n} = 1 km tiles, counted per tile when sequential,
+per batch of \code{n_workers} tiles when parallel; if the parallel run
+fails midway and falls back to sequential, the stage restarts with a new
+\code{i = 0} call and \code{secondes} restarts from 0), \code{"cvat"}
+(\code{n = 1}), \code{"geopackage"} (layers, triggers, indexes;
+\code{n = 1}) and \code{"qgz"} (\code{.qgs}, archive and project
+folder; \code{n = 1}). \code{"placettes"}, \code{"dalles_mnt"} and
+\code{"houppiers"} occur only with \code{avec_lidar} (the last two also
+need a DTM, respectively a CHM); \code{"cvat"} only with \code{cvat_path}.}
 }
 \value{
 Absolute path to the \code{.qgz} (invisibly). The Groma QField
