@@ -737,3 +737,21 @@ test_that("m049 cas 2 : une variable de forme CDS non écrite sur tous les pas n
   .ts_fixture_cds(g, .tt_annee(2023L))
   expect_true(nemeton:::.rsen_era5ts_couvre(g, 2023L))
 })
+
+test_that("m049 cas 2 : t2m, d2m ou sp à zéro partout (jamais écrits) ne font pas un cache", {
+  for (k in c("t2m", "d2m", "sp")) {
+    f <- withr::local_tempfile(fileext = ".nc")
+    .ts_fixture_cds(f, .tt_annee(2023L))
+    nc <- ncdf4::nc_open(f, write = TRUE)
+    ncdf4::ncvar_put(nc, k, rep(0, 8760))
+    ncdf4::nc_close(nc)
+    expect_false(nemeton:::.rsen_era5ts_couvre(f, 2023L), info = k)
+  }
+  # Témoin : u10 à zéro (vent nul) reste une valeur réelle acceptée.
+  f <- withr::local_tempfile(fileext = ".nc")
+  .ts_fixture_cds(f, .tt_annee(2023L))
+  nc <- ncdf4::nc_open(f, write = TRUE)
+  ncdf4::ncvar_put(nc, "u10", rep(0, 8760))
+  ncdf4::nc_close(nc)
+  expect_true(nemeton:::.rsen_era5ts_couvre(f, 2023L))
+})
