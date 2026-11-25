@@ -24,8 +24,10 @@ Cette copie fait foi ; il reste à la déposer là-bas, ou à la transmettre par
 - **Le GeoPackage est écrit par RSQLite**, non par GDAL : GDAL déclare `MEDIUMINT` pour les entiers 32 bits, que le
   schéma refuse. GDAL (sf) relit le fichier sans difficulté.
 - **Conflit d'`uuid` entre paquets = signalement, pas refus** : si deux paquets portent le même `uuid` avec un contenu
-  différent, nemeton garde une version, écarte l'autre, rend le conflit dans `conflits` et signale
-  (`uuid_contenu_different`) ; rien n'est tranché en silence.
+  différent, nemeton n'en garde aucune version : la ligne en conflit est écartée, le conflit rendu dans
+  `conflits` et signalé (`uuid_contenu_different`) ; rien n'est tranché en silence. Pour un conflit sur un
+  **centre**, la placette est gardée avec ses notes mais **sans centre**, et l'import demande de dire quel
+  centre fait foi, puis de rendre de nouveau.
 - Aucune note DEPERIS réelle n'a servi : les essais sont sur les cas communs et sur des jeux `synth_`.
 
 ## 3. Décisions de Pascal (2026-11-25)
