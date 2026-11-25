@@ -1,0 +1,3 @@
+# Variante SANS Rust : copiee en src/Makevars par ./configure quand cargo manque,
+# quand NEMETON_NO_RUST=1, ou quand la compilation du crate a echoue. Seul
+# entrypoint.c est compile ; les indices tournent en R pur.

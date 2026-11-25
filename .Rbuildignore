@@ -50,3 +50,6 @@ __pycache__
 ^\.Renviron$
 ^\.Renviron\.example$
 ^tools$
+^src/rust/target$
+^src/\.cargo$
+^src/rust/build\.log$

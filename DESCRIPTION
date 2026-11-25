@@ -19,6 +19,8 @@ Description: Implement the Nemeton method for systemic forest territory analysis
     land managers.
 License: GPL-3
 Encoding: UTF-8
+SystemRequirements: Cargo (Rust's package manager), rustc (optional: without
+    them the package installs and runs on pure-R fallbacks)
 LazyData: true
 Depends:
     R (>= 4.1.0)

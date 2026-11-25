@@ -1,0 +1,25 @@
+# Variante AVEC Rust : copiee en src/Makevars par ./configure quand cargo existe
+# ET que la compilation du crate a reussi (le crate est deja compile par
+# configure ; la regle ci-dessous le recompile si besoin, sans effet sinon).
+TARGET_DIR = ./rust/target
+LIBDIR = $(TARGET_DIR)/release
+STATLIB = $(LIBDIR)/libnemeton.a
+PKG_CPPFLAGS = -DNEMETON_RUST
+PKG_LIBS = -L$(LIBDIR) -lnemeton
+
+all: $(SHLIB) rust_clean
+
+.PHONY: $(STATLIB)
+
+$(SHLIB): $(STATLIB)
+
+$(STATLIB):
+	export CARGO_HOME=$(CURDIR)/.cargo && \
+	export PATH="$(PATH):$(HOME)/.cargo/bin" && \
+	cargo build --release --lib --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR)
+
+rust_clean: $(SHLIB)
+	rm -Rf $(CURDIR)/.cargo $(TARGET_DIR)
+
+clean:
+	rm -Rf $(SHLIB) $(STATLIB) $(OBJECTS) $(TARGET_DIR) $(CURDIR)/.cargo
