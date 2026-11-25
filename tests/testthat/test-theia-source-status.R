@@ -138,7 +138,7 @@ test_that("a datetime window narrows the query without changing the vocabulary",
 
 test_that("theia_lst reports urban-only coverage against the live catalogue", {
   skip_on_cran()
-  skip_if_offline()
+  skip_if_offline("api.stac.teledetection.fr")  # hôte réellement interrogé (DNS des runners instable, 2026-11-25)
   skip_if_not_installed("sf")
 
   # Ardennes (projet Fordead) : hors couverture Thermocity.
@@ -153,7 +153,7 @@ test_that("theia_lst reports urban-only coverage against the live catalogue", {
 
 test_that("sufosat resolves against the live catalogue", {
   skip_on_cran()
-  skip_if_offline()
+  skip_if_offline("api.stac.teledetection.fr")
   skip_if_not_installed("sf")
 
   # Couverture nationale : n'importe quelle emprise métropolitaine doit trouver

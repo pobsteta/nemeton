@@ -1,4 +1,4 @@
-# Mission 056 : segmentation des houppiers en parallèle (PSOCK, jamais de fork),
+# Missions 056 et 059 : segmentation des houppiers en parallèle (PSOCK, jamais de fork),
 # rasters ouverts une fois dans la boucle des placettes, progression par étape,
 # .qgz sans recompression des GeoTIFF. Données synthétiques minuscules, sans
 # réseau. Le parallèle est sauté sur CRAN ; 2 workers au plus.
@@ -328,7 +328,7 @@ test_that("repli séquentiel après un échec en cours de route : l'étape houpp
     terra::writeRaster(ir_mnh(terra::ext(924940, 925060, 6699940, 6700060)), "mnh.tif")
     e <- ir_emprise_2x2()
     pl <- ir_pl("P1", x = 925000)
-    testthat::local_mocked_bindings(.iv_houppiers_paralleles = function(src, zones, x0, y0, nw, progres) {
+    testthat::local_mocked_bindings(.iv_houppiers_paralleles = function(src, zones, x0, y0, nw, progres, pool = NULL) {
       progres(2L)
       stop("worker perdu")
     })
@@ -351,5 +351,220 @@ test_that("binaire zip introuvable : erreur claire avant tout calcul", {
       suppressWarnings(creer_projet_inventaire_video(ir_pl(), avec_lidar = FALSE, output_dir = "sortie")),
       "Rtools")
     expect_false(dir.exists("sortie"))   # rien d'écrit
+  })
+})
+
+# ---- Mission 059 : placettes et dalles MNT sur le même cluster -----------
+
+# Lit un .qgz : fichiers, couche placettes, couche houppiers.
+iv59_lire <- function(qgz, rep) {
+  utils::unzip(qgz, exdir = rep)
+  list(
+    fichiers = sort(list.files(rep, recursive = TRUE)),
+    placettes = sf::st_read(file.path(rep, "inventaire_video.gpkg"), layer = "placettes", quiet = TRUE),
+    houppiers = sf::st_read(file.path(rep, "inventaire_video.gpkg"), layer = "houppiers", quiet = TRUE))
+}
+# Mêmes valeurs et même géométrie pour chaque raster du dossier `a` et du dossier `b`.
+iv59_memes_rasters <- function(a, b, fichiers) {
+  for (f in fichiers[grepl("\\.tif$", fichiers)]) {
+    ra <- terra::rast(file.path(a, f)); rb <- terra::rast(file.path(b, f))
+    expect_true(terra::compareGeom(ra, rb, stopOnError = FALSE), info = f)
+    expect_identical(terra::values(ra, mat = FALSE), terra::values(rb, mat = FALSE), info = f)
+  }
+}
+iv59_fichiers <- function() {
+  terra::writeRaster(ir_mnt(), "mnt.tif")
+  terra::writeRaster(ir_mnh(), "mnh.tif")
+}
+
+test_that("placettes et dalles MNT : 2 workers identiques au séquentiel (cas 1 et 2)", {
+  skip_on_cran()
+  skip_if_not_installed("RSQLite")
+  skip_if_not_installed("lidR")
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    iv59_fichiers()
+    s1 <- iv59_lire(ir_creer("s1", dem = "mnt.tif", chm = "mnh.tif", n_workers = 1L), "x1")
+    col <- ir_collecteur()
+    s2 <- iv59_lire(ir_creer("s2", dem = "mnt.tif", chm = "mnh.tif", n_workers = 2L,
+                             progress_callback = col$f), "x2")
+    # mêmes fichiers (rasters par placette et dalles MNT), mêmes valeurs
+    expect_identical(s2$fichiers, s1$fichiers)
+    expect_true(any(grepl("^rasters/P1_mnt\\.tif$", s1$fichiers)))
+    expect_equal(sum(grepl("^rasters/mnt_", s1$fichiers)), 4L)
+    iv59_memes_rasters("x1", "x2", s1$fichiers)
+    # mêmes attributs topographiques (pente, exposition, recouvrement) et même ordre
+    expect_false(all(is.na(s1$placettes$pente_pct)))
+    expect_equal(s2$placettes, s1$placettes)
+    expect_equal(s2$houppiers, s1$houppiers)
+    # les deux étapes ont bien tourné en parallèle : compteur par lot de 2
+    d <- ir_df(col$appels())
+    expect_identical(d$i[d$etape == "placettes"], c(0L, 2L))
+    expect_identical(d$i[d$etape == "dalles_mnt"], c(0L, 2L, 4L))
+    expect_identical(d$i[d$etape == "houppiers"], c(0L, 2L, 4L))
+  })
+})
+
+test_that("un seul cluster PSOCK par création, pour placettes, dalles et houppiers (cas 3)", {
+  skip_on_cran()
+  skip_if_not_installed("RSQLite")
+  skip_if_not_installed("lidR")
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    iv59_fichiers()
+    n_cluster <- 0L; n_init <- 0L; n_stop <- 0L
+    orig_make <- parallel::makePSOCKcluster
+    orig_stop <- parallel::stopCluster
+    orig_init <- nemeton:::.iv_cluster_init
+    testthat::local_mocked_bindings(
+      makePSOCKcluster = function(...) { n_cluster <<- n_cluster + 1L; orig_make(...) },
+      stopCluster = function(cl) { n_stop <<- n_stop + 1L; orig_stop(cl) },
+      .package = "parallel")
+    testthat::local_mocked_bindings(
+      .iv_cluster_init = function(cl) { n_init <<- n_init + 1L; orig_init(cl) })
+    col <- ir_collecteur()
+    ir_creer("s", dem = "mnt.tif", chm = "mnh.tif", n_workers = 2L, progress_callback = col$f)
+    d <- ir_df(col$appels())
+    # les trois étapes ont utilisé les workers (compteurs par lot)...
+    expect_identical(d$i[d$etape == "placettes"], c(0L, 2L))
+    expect_identical(d$i[d$etape == "dalles_mnt"], c(0L, 2L, 4L))
+    expect_identical(d$i[d$etape == "houppiers"], c(0L, 2L, 4L))
+    # ... sur un seul cluster, initialisé une fois et fermé une fois
+    expect_identical(n_cluster, 1L)
+    expect_identical(n_init, 1L)
+    expect_identical(n_stop, 1L)
+  })
+})
+
+test_that("cluster fermé aussi quand la création échoue après son démarrage", {
+  skip_on_cran()
+  skip_if_not_installed("RSQLite")
+  skip_if_not_installed("lidR")
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    iv59_fichiers()
+    n_cluster <- 0L; n_stop <- 0L
+    orig_make <- parallel::makePSOCKcluster
+    orig_stop <- parallel::stopCluster
+    testthat::local_mocked_bindings(
+      makePSOCKcluster = function(...) { n_cluster <<- n_cluster + 1L; orig_make(...) },
+      stopCluster = function(cl) { n_stop <<- n_stop + 1L; orig_stop(cl) },
+      .package = "parallel")
+    testthat::local_mocked_bindings(
+      .iv_houppiers_emprise = function(...) stop("boum après les placettes"))
+    expect_error(ir_creer("s", dem = "mnt.tif", chm = "mnh.tif", n_workers = 2L), "boum")
+    expect_identical(n_cluster, 1L)
+    expect_identical(n_stop, 1L)
+  })
+})
+
+test_that("rasters en mémoire avec n_workers = 2 : séquentiel, aucun cluster, sans erreur (cas 4)", {
+  skip_on_cran()
+  skip_if_not_installed("RSQLite")
+  skip_if_not_installed("lidR")
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    s1 <- iv59_lire(ir_creer("s1", n_workers = 1L), "x1")
+    n_cluster <- 0L
+    orig_make <- parallel::makePSOCKcluster
+    testthat::local_mocked_bindings(
+      makePSOCKcluster = function(...) { n_cluster <<- n_cluster + 1L; orig_make(...) },
+      .package = "parallel")
+    col <- ir_collecteur()
+    s2 <- NULL
+    expect_no_error(s2 <- iv59_lire(ir_creer("s2", n_workers = 2L, progress_callback = col$f), "x2"))
+    expect_identical(n_cluster, 0L)
+    expect_identical(s2$fichiers, s1$fichiers)
+    iv59_memes_rasters("x1", "x2", s1$fichiers)
+    expect_equal(s2$placettes, s1$placettes)
+    expect_equal(s2$houppiers, s1$houppiers)
+    d <- ir_df(col$appels())
+    expect_identical(d$i[d$etape == "placettes"], 0:2)            # une placette à la fois
+    expect_identical(d$i[d$etape == "dalles_mnt"], 0:4)
+  })
+})
+
+test_that("MNT fichier mais MNH en mémoire : placettes séquentielles, dalles MNT parallèles, résultat identique", {
+  skip_on_cran()
+  skip_if_not_installed("RSQLite")
+  skip_if_not_installed("lidR")
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    terra::writeRaster(ir_mnt(), "mnt.tif")
+    s1 <- iv59_lire(ir_creer("s1", dem = "mnt.tif", n_workers = 1L), "x1")
+    col <- ir_collecteur()
+    s2 <- iv59_lire(ir_creer("s2", dem = "mnt.tif", n_workers = 2L, progress_callback = col$f), "x2")
+    iv59_memes_rasters("x1", "x2", s1$fichiers)
+    expect_equal(s2$placettes, s1$placettes)
+    d <- ir_df(col$appels())
+    expect_identical(d$i[d$etape == "placettes"], 0:2)
+    expect_identical(d$i[d$etape == "dalles_mnt"], c(0L, 2L, 4L))
+  })
+})
+
+test_that("progression parallèle : étapes dans l'ordre, chacune finit à i == n (cas 5)", {
+  skip_on_cran()
+  skip_if_not_installed("RSQLite")
+  skip_if_not_installed("lidR")
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    iv59_fichiers()
+    col <- ir_collecteur()
+    ir_creer("s", dem = "mnt.tif", chm = "mnh.tif", n_workers = 2L, progress_callback = col$f)
+    d <- ir_df(col$appels())
+    expect_identical(unique(d$etape),
+                     c("sources", "placettes", "dalles_mnt", "houppiers", "geopackage", "qgz"))
+    expect_identical(rle(d$etape)$values, unique(d$etape))
+    for (e in unique(d$etape)) {
+      x <- d[d$etape == e, ]
+      expect_identical(x$i[1], 0L, info = e)
+      expect_identical(tail(x$i, 1L), tail(x$n, 1L), info = e)
+      expect_false(is.unsorted(x$i), info = e)
+      expect_false(is.unsorted(x$secondes), info = e)
+    }
+    expect_identical(d$n[d$etape == "placettes"][1], 2L)
+    expect_identical(d$n[d$etape == "dalles_mnt"][1], 4L)
+  })
+})
+
+test_that("placettes en échec dans les workers : avertissement, étape refaite en séquentiel dès i = 0", {
+  skip_if_not_installed("RSQLite")
+  skip_if_not_installed("lidR")
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    iv59_fichiers()
+    s1 <- iv59_lire(ir_creer("s1", dem = "mnt.tif", chm = "mnh.tif", n_workers = 1L), "x1")
+    testthat::local_mocked_bindings(.iv_pool_cl = function(pool) stop("pas de cluster"))
+    col <- ir_collecteur()
+    out <- NULL
+    expect_warning(
+      out <- suppressMessages(creer_projet_inventaire_video(
+        ir_pl(), dem = "mnt.tif", chm = "mnh.tif", output_dir = "s2", n_workers = 2L,
+        progress_callback = col$f)),
+      "running sequentially")
+    s2 <- iv59_lire(out, "x2")
+    expect_equal(s2$placettes, s1$placettes)
+    iv59_memes_rasters("x1", "x2", s1$fichiers)
+    d <- ir_df(col$appels())
+    expect_identical(d$i[d$etape == "placettes"], c(0L, 0L, 1L, 2L))
+    expect_identical(tail(d$i[d$etape == "dalles_mnt"], 1L), 4L)
+  })
+})
+
+test_that("cluster impossible à démarrer : un seul avertissement, tout le projet en séquentiel", {
+  skip_if_not_installed("RSQLite")
+  skip_if_not_installed("lidR")
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    iv59_fichiers()
+    testthat::local_mocked_bindings(
+      makePSOCKcluster = function(...) stop("pas de socket"), .package = "parallel")
+    avis <- character(0)
+    out <- withCallingHandlers(
+      suppressMessages(creer_projet_inventaire_video(
+        ir_pl(), dem = "mnt.tif", chm = "mnh.tif", output_dir = "s", n_workers = 2L)),
+      warning = function(w) { avis <<- c(avis, conditionMessage(w)); invokeRestart("muffleWarning") })
+    expect_true(file.exists(out))
+    expect_identical(sum(grepl("could not start", avis)), 1L)
   })
 })

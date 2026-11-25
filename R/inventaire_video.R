@@ -1432,17 +1432,21 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #' @param overwrite Logical. Overwrite an existing \code{.qgz}. Default
 #'   \code{TRUE}.
 #' @param n_workers Integer (\eqn{\ge 1}). Number of worker processes used
-#'   to segment the crowns tile by tile. Default
+#'   to cut the per-plot rasters, write the 1 km DTM tiles and segment the
+#'   crowns tile by tile. Default
 #'   \code{getOption("nemeton.iv_workers", min(4, parallel::detectCores() - 1))}
 #'   (\code{1} when the number of cores cannot be detected).
-#'   \code{1} segments sequentially, in this process. Workers are PSOCK
-#'   processes (never forks, which hang with \pkg{terra}); each one reads the
-#'   CHM from its file, so the parallel path is used only when the CHM is a
-#'   file (a path, or a \code{SpatRaster} backed by one file already in
-#'   EPSG:2154); an in-memory CHM is segmented sequentially. The crowns are
-#'   identical whatever \code{n_workers} (same rows, same order, same
-#'   \code{houppier_id}). If the cluster cannot be started, a warning is
-#'   raised and the segmentation runs sequentially.
+#'   \code{1} works sequentially, in this process. Workers are PSOCK
+#'   processes (never forks, which hang with \pkg{terra}), started once per
+#'   call and shared by the three stages, then closed; each one reads the
+#'   rasters from their files, so a stage runs in parallel only when its
+#'   rasters (DTM and CHM for the plots, DTM for the tiles, CHM for the
+#'   crowns) are files (a path, or a \code{SpatRaster} backed by one file
+#'   already in EPSG:2154); an in-memory or reprojected raster is processed
+#'   sequentially. The output is identical whatever \code{n_workers} (same
+#'   files and values, same \code{topo} attributes, same crown rows, order
+#'   and \code{houppier_id}). If the cluster cannot be started, or a stage
+#'   fails midway, a warning is raised and that stage runs sequentially.
 #' @param progress_callback Optional function called with a single list
 #'   \code{list(etape, i, n, secondes)} at the start of each stage
 #'   (\code{i = 0}) and after each of its units, never fatal (an error raised
@@ -1453,10 +1457,11 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #'   (project tables and forest extent; \code{n = 1}), \code{"placettes"}
 #'   (per-plot rasters and topography; \code{n} = plots), \code{"dalles_mnt"}
 #'   (1 km DTM tiles; \code{n} = tiles), \code{"houppiers"} (crown
-#'   segmentation; \code{n} = 1 km tiles, counted per tile when sequential,
-#'   per batch of \code{n_workers} tiles when parallel; if the parallel run
-#'   fails midway and falls back to sequential, the stage restarts with a new
-#'   \code{i = 0} call and \code{secondes} restarts from 0), \code{"cvat"}
+#'   segmentation; \code{n} = 1 km tiles). Each of these three stages counts
+#'   per unit when sequential and per batch of \code{n_workers} units when
+#'   parallel; if a parallel run fails midway and falls back to sequential,
+#'   the stage restarts with a new \code{i = 0} call and \code{secondes}
+#'   restarts from 0, \code{"cvat"}
 #'   (\code{n = 1}), \code{"geopackage"} (layers, triggers, indexes;
 #'   \code{n = 1}) and \code{"qgz"} (\code{.qgs}, archive and project
 #'   folder; \code{n = 1}). \code{"placettes"}, \code{"dalles_mnt"} and
@@ -1516,6 +1521,10 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
     cli::cli_abort("{.arg progress_callback} must be a function or {.code NULL}.")
   }
   emit <- .iv_emetteur(progress_callback)
+  # Un seul cluster PSOCK pour toute la création (placettes, dalles MNT,
+  # houppiers) : créé à la première étape qui en a besoin, fermé quoi qu'il arrive.
+  pool <- .iv_pool(n_workers)
+  on.exit(.iv_pool_fermer(pool), add = TRUE)
   if (!inherits(placettes, "sf")) cli::cli_abort("{.arg placettes} must be an sf object.")
   if (!"plot_id" %in% names(placettes)) {
     cli::cli_abort("{.arg placettes} must contain a {.val plot_id} column.")
@@ -1585,39 +1594,24 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
     # autre CRS n'est plus refaite à chaque placette).
     dem <- if (!is.null(dem)) .iv_raster_2154(dem)
     chm <- if (!is.null(chm)) .iv_raster_2154(chm)
-    n_pl <- nrow(placettes)
-    t_etape <- Sys.time(); emit("placettes", 0L, n_pl, t_etape)
-    for (k in seq_len(n_pl)) {
-      pid <- as.character(placettes$plot_id[k])
-      centre <- sf::st_coordinates(placettes[k, ])[1, 1:2]
-      zone <- sf::st_buffer(sf::st_geometry(placettes[k, ]), rayon_m + marge_m)
-      mnt_k <- mnh_k <- NULL
-      if (!is.null(dem)) {
-        mnt_k <- .iv_decouper(dem, zone)
-        f <- file.path("rasters", paste0(pid, "_mnt.tif"))
-        .iv_ecrire_tif(mnt_k, file.path(stage, f))
-        rasters <- c(rasters, f)
-      }
-      if (!is.null(chm)) {
-        mnh_k <- .iv_decouper(chm, zone)
-        f <- file.path("rasters", paste0(pid, "_mnh.tif"))
-        .iv_ecrire_tif(mnh_k, file.path(stage, f))
-        rasters <- c(rasters, f)
-      }
-      topo <- .iv_topographie(mnt_k, mnh_k, centre, rayon_m)
+    unites <- .iv_placettes(dem, chm, placettes, rayon_m, marge_m, stage,
+                            pool = pool, emit = emit)
+    for (k in seq_len(nrow(placettes))) {
+      rasters <- c(rasters, unites[[k]]$rasters)
+      topo <- unites[[k]]$topo
       for (col in names(topo)) {
         if (!col %in% names(placettes)) placettes[[col]] <- rep(NA, nrow(placettes))
         if (is.na(placettes[[col]][k])) placettes[[col]][k] <- topo[[col]]
       }
-      emit("placettes", k, n_pl, t_etape)
     }
     if (!is.null(dem)) {
-      rasters <- c(rasters, .iv_ecrire_dalles_mnt(dem, emprise, stage, emit = emit))
+      rasters <- c(rasters, .iv_ecrire_dalles_mnt(dem, emprise, stage, emit = emit, pool = pool))
     }
     if (!is.null(chm)) {
       houppiers <- .iv_houppiers_emprise(chm, emprise, placettes, rayon_m + marge_m,
-                                         n_workers = n_workers, emit = emit)
+                                         n_workers = n_workers, emit = emit, pool = pool)
     }
+    .iv_pool_fermer(pool)  # les workers ne servent plus : libérés avant la suite
   }
   if (!is.null(cvat)) {
     t_etape <- Sys.time(); emit("cvat", 0L, 1L, t_etape)
@@ -1712,25 +1706,109 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   terra::resample(terra::crop(r, e, snap = "out"), gabarit, method = methode)
 }
 
+# Une dalle MNT de 1 km (coin sud-ouest x, y en km) : `rasters/mnt_<x>_<y>.tif`
+# sous `stage`. `dem` : SpatRaster ou chemin ; `emprise` : SpatVector ou sfc
+# (un SpatVector ne se sérialise pas vers un worker). Rend le chemin relatif.
+.iv_dalle_mnt <- function(dem, x, y, emprise, stage) {
+  if (!inherits(dem, "SpatRaster")) dem <- .iv_raster_2154(dem)
+  if (inherits(emprise, "sfc")) emprise <- terra::vect(sf::st_sf(geometry = emprise))
+  gabarit <- terra::rast(terra::ext(x * 1000, (x + 1) * 1000, y * 1000, (y + 1) * 1000),
+                         resolution = 0.5, crs = "EPSG:2154")
+  r <- terra::mask(.iv_sur_gabarit(dem, gabarit), emprise)
+  f <- file.path("rasters", sprintf("mnt_%04d_%04d.tif", x, y))
+  .iv_ecrire_tif(r, file.path(stage, f))
+  f
+}
+
 # Dalles MNT de 1 km (2 000 x 2 000 pixels), `rasters/mnt_<x>_<y>.tif`, à plat ;
 # nodata hors de l'emprise et hors du LiDAR. Rend les chemins relatifs.
-.iv_ecrire_dalles_mnt <- function(dem, emprise, stage, emit = function(...) invisible(NULL)) {
+# `pool` (cluster partagé de la création ; sinon un pool local à `n_workers`) :
+# dalles réparties sur des workers PSOCK quand le MNT est un fichier relisible
+# à l'identique, par lots de `n_workers` dalles ; sinon séquentiel.
+.iv_ecrire_dalles_mnt <- function(dem, emprise, stage, emit = function(...) invisible(NULL),
+                                  n_workers = 1L, pool = NULL) {
+  if (is.null(pool)) {
+    pool <- .iv_pool(n_workers)
+    on.exit(.iv_pool_fermer(pool), add = TRUE)
+  }
   dem <- .iv_raster_2154(dem)
   dalles <- .iv_dalles_km(emprise)
-  t_etape <- Sys.time(); emit("dalles_mnt", 0L, nrow(dalles), t_etape)
-  v_emprise <- terra::vect(sf::st_sf(geometry = emprise))
-  out <- character(nrow(dalles))
-  for (i in seq_len(nrow(dalles))) {
-    x <- dalles$x[i]; y <- dalles$y[i]
-    gabarit <- terra::rast(terra::ext(x * 1000, (x + 1) * 1000, y * 1000, (y + 1) * 1000),
-                           resolution = 0.5, crs = "EPSG:2154")
-    r <- terra::mask(.iv_sur_gabarit(dem, gabarit), v_emprise)
-    f <- file.path("rasters", sprintf("mnt_%04d_%04d.tif", x, y))
-    .iv_ecrire_tif(r, file.path(stage, f))
-    out[i] <- f
-    emit("dalles_mnt", i, nrow(dalles), t_etape)
+  n <- nrow(dalles)
+  t_etape <- Sys.time(); emit("dalles_mnt", 0L, n, t_etape)
+  out <- NULL
+  src <- if (pool$nw > 1L && n > 1L) .iv_chm_fichier(dem)
+  if (!is.null(src)) {
+    args <- lapply(seq_len(n), function(i)
+      list(dem = src, x = dalles$x[i], y = dalles$y[i], emprise = emprise, stage = stage))
+    res <- .iv_lots_pool(pool, args, ".iv_dalle_mnt", function(k) emit("dalles_mnt", k, n, t_etape),
+                         "Parallel DTM tile writing failed, running sequentially.")
+    if (!is.null(res)) out <- vapply(res, as.character, character(1))
+    # Repli après un échec en cours de route : l'étape recommence (i = 0).
+    if (is.null(out)) { t_etape <- Sys.time(); emit("dalles_mnt", 0L, n, t_etape) }
+  }
+  if (is.null(out)) {
+    v_emprise <- terra::vect(sf::st_sf(geometry = emprise))
+    out <- character(n)
+    for (i in seq_len(n)) {
+      out[i] <- .iv_dalle_mnt(dem, dalles$x[i], dalles$y[i], v_emprise, stage)
+      emit("dalles_mnt", i, n, t_etape)
+    }
   }
   out
+}
+
+# Découpe, écriture des tif et topographie d'UNE placette. `dem` / `chm` :
+# SpatRaster, chemin ou NULL. Rend list(topo, rasters = chemins relatifs).
+.iv_placette_unite <- function(dem, chm, zone, centre, pid, stage, rayon_m) {
+  mnt_k <- mnh_k <- NULL
+  rasters <- character(0)
+  if (!is.null(dem)) {
+    mnt_k <- .iv_decouper(dem, zone)
+    f <- file.path("rasters", paste0(pid, "_mnt.tif"))
+    .iv_ecrire_tif(mnt_k, file.path(stage, f))
+    rasters <- c(rasters, f)
+  }
+  if (!is.null(chm)) {
+    mnh_k <- .iv_decouper(chm, zone)
+    f <- file.path("rasters", paste0(pid, "_mnh.tif"))
+    .iv_ecrire_tif(mnh_k, file.path(stage, f))
+    rasters <- c(rasters, f)
+  }
+  list(topo = .iv_topographie(mnt_k, mnh_k, centre, rayon_m), rasters = rasters)
+}
+
+# Placettes : une liste de `.iv_placette_unite()` dans l'ordre des placettes.
+# Parallèle (pool partagé, lots de `n_workers` placettes, chaque worker relit
+# MNT et MNH par leur chemin) seulement si chaque raster présent est un fichier
+# relisible à l'identique ; sinon, ou en cas d'échec, séquentiel.
+.iv_placettes <- function(dem, chm, placettes, rayon_m, marge_m, stage, pool,
+                          emit = function(...) invisible(NULL)) {
+  n <- nrow(placettes)
+  t_etape <- Sys.time(); emit("placettes", 0L, n, t_etape)
+  centres <- lapply(seq_len(n), function(k) sf::st_coordinates(placettes[k, ])[1, 1:2])
+  zones <- lapply(seq_len(n), function(k)
+    sf::st_buffer(sf::st_geometry(placettes[k, ]), rayon_m + marge_m))
+  pids <- as.character(placettes$plot_id)
+  res <- NULL
+  src_dem <- if (!is.null(dem)) .iv_chm_fichier(dem)
+  src_chm <- if (!is.null(chm)) .iv_chm_fichier(chm)
+  fichiers <- (is.null(dem) || !is.null(src_dem)) && (is.null(chm) || !is.null(src_chm))
+  if (pool$nw > 1L && n > 1L && fichiers) {
+    args <- lapply(seq_len(n), function(k)
+      list(dem = src_dem, chm = src_chm, zone = zones[[k]], centre = centres[[k]],
+           pid = pids[k], stage = stage, rayon_m = rayon_m))
+    res <- .iv_lots_pool(pool, args, ".iv_placette_unite", function(k) emit("placettes", k, n, t_etape),
+                         "Parallel plot rasters failed, running sequentially.")
+    if (is.null(res)) { t_etape <- Sys.time(); emit("placettes", 0L, n, t_etape) }
+  }
+  if (is.null(res)) {
+    res <- vector("list", n)
+    for (k in seq_len(n)) {
+      res[[k]] <- .iv_placette_unite(dem, chm, zones[[k]], centres[[k]], pids[k], stage, rayon_m)
+      emit("placettes", k, n, t_etape)
+    }
+  }
+  res
 }
 
 # Houppiers de toute l'emprise : segmentation dalle par dalle (le MNH n'est
@@ -1741,7 +1819,13 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
 # lorsque le MNH est un fichier ; le résultat est le même qu'en séquentiel
 # (les dalles sont réassemblées dans l'ordre des dalles).
 .iv_houppiers_emprise <- function(chm, emprise, placettes, zone_m,
-                                  n_workers = 1L, emit = function(...) invisible(NULL)) {
+                                  n_workers = 1L, emit = function(...) invisible(NULL),
+                                  pool = NULL) {
+  if (is.null(pool)) {
+    pool <- .iv_pool(n_workers)
+    on.exit(.iv_pool_fermer(pool), add = TRUE)
+  }
+  n_workers <- pool$nw
   chm <- .iv_raster_2154(chm)
   dalles <- .iv_dalles_km(emprise)
   n <- nrow(dalles)
@@ -1753,7 +1837,8 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   nw <- min(as.integer(n_workers), n)
   if (!is.null(src) && nw > 1L) {
     res <- tryCatch(
-      .iv_houppiers_paralleles(src, zones, x0, y0, nw, function(k) emit("houppiers", k, n, t_etape)),
+      .iv_houppiers_paralleles(src, zones, x0, y0, nw, function(k) emit("houppiers", k, n, t_etape),
+                               pool = pool),
       error = function(e) {
         cli::cli_warn(c("Parallel crown segmentation failed, running sequentially.",
                         "x" = conditionMessage(e)))
@@ -1901,30 +1986,104 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   invisible(cl)
 }
 
-# Dalles segmentées sur un cluster PSOCK de `nw` processus (jamais mclapply ni
-# fork : terra bloque). Les dalles sont servies par lots de `nw`, les plus
-# lourdes d'abord, puis rendues dans l'ordre des dalles ; `progres(k)` est
-# appelé après chaque lot avec le nombre de dalles faites. Le cluster est
-# toujours fermé.
-.iv_houppiers_paralleles <- function(src, zones, x0, y0, nw, progres) {
+# ---- Cluster PSOCK partagé par toute la création ------------------------
+
+# Pool : `nw` workers, cluster créé à la demande (première étape qui en a
+# besoin), une seule fois ; `echec` si le démarrage a échoué (alors tout reste
+# séquentiel, sans nouvel avertissement). À fermer par `.iv_pool_fermer()`.
+.iv_pool <- function(nw) {
+  p <- new.env(parent = emptyenv())
+  p$nw <- max(1L, as.integer(nw))
+  p$cl <- NULL
+  p$echec <- FALSE
+  p
+}
+
+# Cluster du pool (créé et initialisé au premier appel), ou NULL s'il n'a pas
+# pu démarrer (avertissement une seule fois).
+.iv_pool_cl <- function(pool) {
+  if (!is.null(pool$cl)) return(pool$cl)
+  if (pool$echec) return(NULL)
+  cl <- NULL
+  tryCatch({
+    cl <- parallel::makePSOCKcluster(pool$nw)
+    .iv_cluster_init(cl)
+    pool$cl <- cl
+  }, error = function(e) {
+    if (!is.null(cl)) try(parallel::stopCluster(cl), silent = TRUE)
+    pool$echec <- TRUE
+    cli::cli_warn(c("Parallel workers could not start, running sequentially.",
+                    "x" = conditionMessage(e)))
+  })
+  pool$cl
+}
+
+# Ferme le cluster du pool (sans erreur, répétable).
+.iv_pool_fermer <- function(pool) {
+  cl <- pool$cl
+  pool$cl <- NULL
+  if (!is.null(cl)) try(parallel::stopCluster(cl), silent = TRUE)
+  invisible(NULL)
+}
+
+# Fonction de worker appelant `nom` du paquet nemeton avec la liste d'arguments
+# `a` ; sans l'environnement du paquet (sérialisé par nom, il chargerait le
+# nemeton installé, pas celui qui tourne ici).
+.iv_tache <- function(nom) {
+  f <- eval(bquote(function(a) do.call(get(.(nom), envir = asNamespace("nemeton")), a)))
+  environment(f) <- globalenv()
+  f
+}
+
+# Unités servies par lots de `nw` sur le cluster du pool, rendues dans l'ordre
+# des unités. `args` : liste d'arguments (une par unité) de `nom` ; `ordre` :
+# unités à traiter, dans l'ordre de service (les autres restent NULL) ;
+# `progres(k)` après chaque lot (k = unités faites, `fait` de départ compris).
+# Rend NULL, avec un avertissement `avis`, si le cluster ne démarre pas ou si un
+# lot échoue : l'appelant refait alors tout en séquentiel.
+.iv_lots_pool <- function(pool, args, nom, progres, avis,
+                          ordre = seq_along(args), fait = length(args) - length(ordre)) {
+  tryCatch({
+    cl <- .iv_pool_cl(pool)
+    if (is.null(cl)) return(NULL)
+    tache <- .iv_tache(nom)
+    res <- vector("list", length(args))
+    if (fait > 0L) progres(fait)
+    for (lot in split(ordre, ceiling(seq_along(ordre) / pool$nw))) {
+      r <- parallel::clusterApply(cl, args[lot], tache)
+      for (j in seq_along(lot)) res[lot[j]] <- list(r[[j]])
+      fait <- fait + length(lot)
+      progres(fait)
+    }
+    res
+  }, error = function(e) {
+    cli::cli_warn(c(avis, "x" = conditionMessage(e)))
+    NULL
+  })
+}
+
+# Dalles segmentées sur le cluster du pool (jamais mclapply ni fork : terra
+# bloque). Les dalles sont servies par lots de `nw`, les plus lourdes d'abord,
+# puis rendues dans l'ordre des dalles ; `progres(k)` est appelé après chaque
+# lot avec le nombre de dalles faites. Le pool est fermé par son propriétaire.
+.iv_houppiers_paralleles <- function(src, zones, x0, y0, nw, progres, pool = NULL) {
   n <- length(zones)
-  cl <- parallel::makePSOCKcluster(nw)
-  on.exit(parallel::stopCluster(cl), add = TRUE)
-  .iv_cluster_init(cl)
-  tache <- function(a) {
-    f <- get(".iv_houppiers_dalle", envir = asNamespace("nemeton"))
-    f(a$chm, a$zone, a$x0, a$y0)
+  if (is.null(pool)) {
+    pool <- .iv_pool(nw)
+    on.exit(.iv_pool_fermer(pool), add = TRUE)
   }
-  environment(tache) <- globalenv()
-  res <- vector("list", n)
+  cl <- .iv_pool_cl(pool)
+  if (is.null(cl)) return(NULL)
   a_faire <- which(lengths(zones) > 0L)
   poids <- vapply(a_faire, function(i) as.numeric(sf::st_area(zones[[i]])), numeric(1))
   a_faire <- a_faire[order(-poids)]
+  args <- lapply(seq_len(n), function(i) list(chm = src, zone = zones[[i]], x0 = x0[i], y0 = y0[i]))
+  tache <- .iv_tache(".iv_houppiers_dalle")
+  res <- vector("list", n)
   fait <- n - length(a_faire)  # dalles sans zone : déjà « faites »
   if (fait > 0L) progres(fait)
-  for (lot in split(a_faire, ceiling(seq_along(a_faire) / nw))) {
-    args <- lapply(lot, function(i) list(chm = src, zone = zones[[i]], x0 = x0[i], y0 = y0[i]))
-    r <- parallel::clusterApply(cl, args, tache)
+  for (lot in split(a_faire, ceiling(seq_along(a_faire) / pool$nw))) {
+    r <- parallel::clusterApply(cl, args[lot], tache)
     for (j in seq_along(lot)) res[lot[j]] <- list(r[[j]])
     fait <- fait + length(lot)
     progres(fait)
