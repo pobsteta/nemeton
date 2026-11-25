@@ -294,3 +294,62 @@ test_that(".qgz : mêmes fichiers et mêmes octets que le dossier du projet, Geo
     expect_false(any(grepl("Stored", grep("\\.(gpkg|qgs)$", v, value = TRUE))))
   })
 })
+
+# ---- Relecture de la PR #700 : quatre mineurs ---------------------------
+
+test_that("n_workers par défaut : detectCores() NA -> 1 (séquentiel), sinon min(4, coeurs - 1)", {
+  withr::local_options(nemeton.iv_workers = NULL)
+  testthat::local_mocked_bindings(detectCores = function(...) NA_integer_, .package = "parallel")
+  expect_identical(nemeton:::.iv_workers_defaut(), 1L)
+  testthat::local_mocked_bindings(detectCores = function(...) 16L, .package = "parallel")
+  expect_identical(nemeton:::.iv_workers_defaut(), 4L)
+  testthat::local_mocked_bindings(detectCores = function(...) 1L, .package = "parallel")
+  expect_identical(nemeton:::.iv_workers_defaut(), 1L)
+  withr::local_options(nemeton.iv_workers = 2)
+  expect_equal(nemeton:::.iv_workers_defaut(), 2)
+})
+
+test_that("workers PSOCK : le .libPaths() du parent est celui du worker, posé avant le chargement", {
+  skip_on_cran()
+  lib <- withr::local_tempdir()
+  withr::local_libpaths(lib, action = "prefix")
+  cl <- parallel::makePSOCKcluster(1)
+  on.exit(parallel::stopCluster(cl), add = TRUE)
+  nemeton:::.iv_cluster_init(cl)
+  lp <- parallel::clusterCall(cl, function() .libPaths())[[1]]
+  expect_identical(normalizePath(lp[1]), normalizePath(lib))
+  expect_true(parallel::clusterCall(cl, function() "nemeton" %in% loadedNamespaces())[[1]])
+})
+
+test_that("repli séquentiel après un échec en cours de route : l'étape houppiers recommence à i = 0", {
+  skip_if_not_installed("lidR")
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    terra::writeRaster(ir_mnh(terra::ext(924940, 925060, 6699940, 6700060)), "mnh.tif")
+    e <- ir_emprise_2x2()
+    pl <- ir_pl("P1", x = 925000)
+    testthat::local_mocked_bindings(.iv_houppiers_paralleles = function(src, zones, x0, y0, nw, progres) {
+      progres(2L)
+      stop("worker perdu")
+    })
+    col <- ir_collecteur()
+    expect_warning(nemeton:::.iv_houppiers_emprise("mnh.tif", e, pl, 25, n_workers = 2L,
+                                                   emit = nemeton:::.iv_emetteur(col$f)),
+                   "running sequentially")
+    d <- ir_df(col$appels())
+    expect_identical(d$i[d$etape == "houppiers"], c(0L, 2L, 0L, 1L, 2L, 3L, 4L))
+  })
+})
+
+test_that("binaire zip introuvable : erreur claire avant tout calcul", {
+  withr::local_envvar(R_ZIPCMD = file.path(tempdir(), "zip_inexistant"))
+  withr::with_tempdir({
+    expect_error(
+      suppressWarnings(creer_projet_inventaire_video(ir_pl(), avec_lidar = FALSE, output_dir = "sortie")),
+      "zip.*not found")
+    expect_error(
+      suppressWarnings(creer_projet_inventaire_video(ir_pl(), avec_lidar = FALSE, output_dir = "sortie")),
+      "Rtools")
+    expect_false(dir.exists("sortie"))   # rien d'écrit
+  })
+})

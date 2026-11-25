@@ -1433,7 +1433,8 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #'   \code{TRUE}.
 #' @param n_workers Integer (\eqn{\ge 1}). Number of worker processes used
 #'   to segment the crowns tile by tile. Default
-#'   \code{getOption("nemeton.iv_workers", min(4, parallel::detectCores() - 1))}.
+#'   \code{getOption("nemeton.iv_workers", min(4, parallel::detectCores() - 1))}
+#'   (\code{1} when the number of cores cannot be detected).
 #'   \code{1} segments sequentially, in this process. Workers are PSOCK
 #'   processes (never forks, which hang with \pkg{terra}); each one reads the
 #'   CHM from its file, so the parallel path is used only when the CHM is a
@@ -1453,7 +1454,9 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #'   (per-plot rasters and topography; \code{n} = plots), \code{"dalles_mnt"}
 #'   (1 km DTM tiles; \code{n} = tiles), \code{"houppiers"} (crown
 #'   segmentation; \code{n} = 1 km tiles, counted per tile when sequential,
-#'   per batch of \code{n_workers} tiles when parallel), \code{"cvat"}
+#'   per batch of \code{n_workers} tiles when parallel; if the parallel run
+#'   fails midway and falls back to sequential, the stage restarts with a new
+#'   \code{i = 0} call and \code{secondes} restarts from 0), \code{"cvat"}
 #'   (\code{n = 1}), \code{"geopackage"} (layers, triggers, indexes;
 #'   \code{n = 1}) and \code{"qgz"} (\code{.qgs}, archive and project
 #'   folder; \code{n = 1}). \code{"placettes"}, \code{"dalles_mnt"} and
@@ -1502,8 +1505,7 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
                                           project_path = NULL, marge_m = 10,
                                           cvat_path = NULL, output_dir, project_name = "inventaire_video",
                                           region = "BFC", lang = "fr", overwrite = TRUE,
-                                          n_workers = getOption("nemeton.iv_workers",
-                                                                max(1L, min(4L, parallel::detectCores() - 1L))),
+                                          n_workers = .iv_workers_defaut(),
                                           progress_callback = NULL) {
   unite_azimut <- match.arg(unite_azimut)
   if (!is.numeric(n_workers) || length(n_workers) != 1L || is.na(n_workers) || n_workers < 1) {
@@ -1536,6 +1538,7 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
     placettes <- placettes[placettes$plot_id %in% plot_ids, ]
   }
   if (!nrow(placettes)) cli::cli_abort("No plot to include.")
+  .iv_exiger_zip()
 
   # Le CVAT est lu et son codage vérifié AVANT toute écriture : un codage non
   # reconnu lève une erreur, il ne laisse aucun projet à moitié écrit.
@@ -1758,6 +1761,10 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
       })
   }
   if (is.null(res) || is.null(src) || nw < 2L) {
+    # Repli après un échec en cours de route : l'étape recommence (i = 0).
+    if (!is.null(src) && nw > 1L) {
+      t_etape <- Sys.time(); emit("houppiers", 0L, n, t_etape)
+    }
     res <- vector("list", n)
     for (i in seq_len(n)) {
       res[i] <- list(if (length(zones[[i]])) .iv_houppiers_dalle(chm, zones[[i]], x0[i], y0[i]))
@@ -1796,6 +1803,30 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   h$plot_id <- pid
   rownames(h) <- NULL
   h[, c("plot_id", "houppier_id", "h_max", "surface_m2", "x_sommet", "y_sommet")]
+}
+
+# Nombre de workers par défaut : l'option `nemeton.iv_workers`, sinon
+# min(4, coeurs - 1) ; 1 (séquentiel) si le nombre de coeurs est inconnu (NA).
+.iv_workers_defaut <- function() {
+  opt <- getOption("nemeton.iv_workers")
+  if (!is.null(opt)) return(opt)
+  cc <- suppressWarnings(as.integer(parallel::detectCores()))
+  if (length(cc) != 1L || is.na(cc)) return(1L)
+  max(1L, min(4L, cc - 1L))
+}
+
+# Le binaire zip doit exister avant tout travail (sinon l'échec n'arrive qu'à la
+# toute fin, après les minutes de calcul).
+.iv_exiger_zip <- function() {
+  zip <- Sys.getenv("R_ZIPCMD", "zip")
+  if (!nzchar(Sys.which(zip))) {
+    cli::cli_abort(c(
+      "The {.file zip} program was not found: the {.file .qgz} cannot be built.",
+      "x" = "Looked for {.val {zip}} (environment variable {.envvar R_ZIPCMD}, else {.code zip} on the PATH).",
+      "i" = "Install it (Debian/Ubuntu: {.code apt install zip}; macOS: bundled; Windows: install Rtools and put it on the PATH), or set {.envvar R_ZIPCMD} to its full path."
+    ))
+  }
+  invisible(zip)
 }
 
 # Zone de segmentation d'une dalle de 1 km : la dalle + 3 * ws (15 m, valeur
@@ -1846,6 +1877,30 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   normalizePath(src, winslash = "/", mustWork = TRUE)
 }
 
+# Initialise les workers d'un cluster : bibliothèques du parent (`.libPaths()`,
+# posées en cours de session par renv ou par code, que PSOCK ne transmet pas)
+# AVANT tout chargement, puis nemeton (le dépôt en mode dev, sinon l'installé).
+# Fonction de worker sans l'environnement du paquet (sérialisé par nom, il
+# chargerait le nemeton installé, pas celui qui tourne ici).
+.iv_cluster_init <- function(cl) {
+  chemin_dev <- if (requireNamespace("pkgload", quietly = TRUE) &&
+                    pkgload::is_dev_package("nemeton")) {
+    getNamespaceInfo("nemeton", "path")
+  }
+  init <- function(chemin_dev, libs) {
+    .libPaths(libs)
+    if (!is.null(chemin_dev)) {
+      suppressMessages(pkgload::load_all(chemin_dev, quiet = TRUE, export_all = TRUE))
+    } else {
+      loadNamespace("nemeton")
+    }
+    invisible(TRUE)
+  }
+  environment(init) <- globalenv()
+  parallel::clusterCall(cl, init, chemin_dev, .libPaths())
+  invisible(cl)
+}
+
 # Dalles segmentées sur un cluster PSOCK de `nw` processus (jamais mclapply ni
 # fork : terra bloque). Les dalles sont servies par lots de `nw`, les plus
 # lourdes d'abord, puis rendues dans l'ordre des dalles ; `progres(k)` est
@@ -1855,27 +1910,12 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   n <- length(zones)
   cl <- parallel::makePSOCKcluster(nw)
   on.exit(parallel::stopCluster(cl), add = TRUE)
-  chemin_dev <- if (requireNamespace("pkgload", quietly = TRUE) &&
-                    pkgload::is_dev_package("nemeton")) {
-    getNamespaceInfo("nemeton", "path")
-  }
-  # Fonctions de worker sans l'environnement du paquet (sérialisé par nom, il
-  # chargerait le nemeton installé, pas celui qui tourne ici).
-  init <- function(chemin_dev) {
-    if (!is.null(chemin_dev)) {
-      suppressMessages(pkgload::load_all(chemin_dev, quiet = TRUE, export_all = TRUE))
-    } else {
-      loadNamespace("nemeton")
-    }
-    invisible(TRUE)
-  }
+  .iv_cluster_init(cl)
   tache <- function(a) {
     f <- get(".iv_houppiers_dalle", envir = asNamespace("nemeton"))
     f(a$chm, a$zone, a$x0, a$y0)
   }
-  environment(init) <- globalenv()
   environment(tache) <- globalenv()
-  parallel::clusterCall(cl, init, chemin_dev)
   res <- vector("list", n)
   a_faire <- which(lengths(zones) > 0L)
   poids <- vapply(a_faire, function(i) as.numeric(sf::st_area(zones[[i]])), numeric(1))

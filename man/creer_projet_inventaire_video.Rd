@@ -22,8 +22,7 @@ creer_projet_inventaire_video(
   region = "BFC",
   lang = "fr",
   overwrite = TRUE,
-  n_workers = getOption("nemeton.iv_workers", max(1L, min(4L, parallel::detectCores() -
-    1L))),
+  n_workers = .iv_workers_defaut(),
   progress_callback = NULL
 )
 }
@@ -106,7 +105,8 @@ the BD Foret V2 reference); kept for symmetry with
 
 \item{n_workers}{Integer (\eqn{\ge 1}). Number of worker processes used
 to segment the crowns tile by tile. Default
-\code{getOption("nemeton.iv_workers", min(4, parallel::detectCores() - 1))}.
+\code{getOption("nemeton.iv_workers", min(4, parallel::detectCores() - 1))}
+(\code{1} when the number of cores cannot be detected).
 \code{1} segments sequentially, in this process. Workers are PSOCK
 processes (never forks, which hang with \pkg{terra}); each one reads the
 CHM from its file, so the parallel path is used only when the CHM is a
@@ -127,7 +127,9 @@ elapsed since the stage started (so the last call of a stage, with
 (per-plot rasters and topography; \code{n} = plots), \code{"dalles_mnt"}
 (1 km DTM tiles; \code{n} = tiles), \code{"houppiers"} (crown
 segmentation; \code{n} = 1 km tiles, counted per tile when sequential,
-per batch of \code{n_workers} tiles when parallel), \code{"cvat"}
+per batch of \code{n_workers} tiles when parallel; if the parallel run
+fails midway and falls back to sequential, the stage restarts with a new
+\code{i = 0} call and \code{secondes} restarts from 0), \code{"cvat"}
 (\code{n = 1}), \code{"geopackage"} (layers, triggers, indexes;
 \code{n = 1}) and \code{"qgz"} (\code{.qgs}, archive and project
 folder; \code{n = 1}). \code{"placettes"}, \code{"dalles_mnt"} and
