@@ -974,6 +974,20 @@ vers definitif, import et client du serveur Groma
 - [`groma_envoyer_projet()`](https://pobsteta.github.io/nemeton/reference/groma_envoyer_projet.md)
   : Publish the video inventory QField project on the Groma server
 
+### Tournee DEPERIS (echange deperis.gpkg avec Ramulus, mission 061)
+
+Ecrire le fichier de depart d’une tournee de notation DEPERIS et
+importer le paquet rendu par Ramulus (tout ou rien, rejouable, classe
+recalculee)
+
+- [`creer_tournee_deperis()`](https://pobsteta.github.io/nemeton/reference/creer_tournee_deperis.md)
+  :
+
+  Write the starting file of a DEPERIS round (`deperis.gpkg`)
+
+- [`importer_deperis()`](https://pobsteta.github.io/nemeton/reference/importer_deperis.md)
+  : Import a DEPERIS round returned by Ramulus
+
 ### Tarifs Schaeffer par essence x sylvoecoregion (spec 062)
 
 Numeros de tarif Schaeffer calcules depuis les arbres IFN (methode
