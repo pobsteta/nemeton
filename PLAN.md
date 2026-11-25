@@ -160,6 +160,13 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-25 — CVAT de `creer_projet_inventaire_video()` : codage exact de Groma (mission 051 de nemetonplateforme, fiche `051-nemeton-cvat-conversion-foretaccess`)
+
+- **Constat** : `.iv_ecrire_cvat()` calculait `1 + round(v / 255 * 254)` (254 donnait 254, 0 donnait 1), ne reconnaissait pas un CVAT déjà Groma (reconverti) et avertissait seulement sur tout autre codage. Brief groma § 2.3 : `source + 1`, 255 vers 0, erreur sinon.
+- **Fait** (`R/inventaire_video.R`) : `.iv_cvat_lire()` reconnaît le codage par le nodata déclaré (255 foretaccess, 0 Groma, flottant `[0, 1]`) et lève `nemeton_erreur_cvat_codage` sinon ; appelé dans `creer_projet_inventaire_video()` avant toute écriture. `.iv_ecrire_cvat()` applique `source + 1` / recopie / `1 + round(v * 254)`.
+- Choix (délégation) : Byte de codage reconnu accepté à toute résolution et tout CRS (écart assumé au § 2.3 du brief : le CVAT de nemetonshiny garde la résolution du MNT), nodata mis à NA puis plus proche voisin vers 2 m ; limite connue : le relief maximal foretaccess (255 = nodata) devient 0, correctif à faire dans foretaccess ; flottant hors `[0, 1]` refusé (il était ramené aux bornes) ; flottant entièrement NA accepté (donne 0) ; fichier illisible = erreur (`nemeton_erreur_cvat_codage`, il n'était qu'un avertissement), absent = avertissement ; masque d'emprise `touches = TRUE` inchangé (écart avec Groma, préexistant) ; GDAL « not recognized » masqué car l'erreur dit déjà la cause. Tests existants corrigés : `test-inventaire-video-foret.R` (formule fausse, valeurs hors `[0, 1]`, Byte sans nodata déclaré, fichier illisible).
+- `DESCRIPTION` en `2026.11.45.9000`, pas de release. Rien dans nemetonshiny : il passe `cvat_path` seulement si le fichier existe ; un CVAT mal codé fait désormais échouer l'appel (à surveiller côté app).
+
 ### 2026-11-25 — ERA5 `timeseries` : restes des relectures de 039 et 042 (mission 049 de nemetonplateforme, fiche `049-nemeton-era5-restes-039-042`)
 
 - **Cas 1 (039)** : `regen_sensibilite()` sans option `nemeton.era5_source` est testé de bout en bout jusqu'au forçage (accès CDS simulé par `.rsen_era5_acces_cds` ; le calcul s'arrête au premier appel de `microclimf::checkinputs`, qui capte le forçage) : 4 requêtes du jeu `timeseries`, fichiers `era5ts_*` seuls, 8760 pas. Rougit si le défaut de `.rsen_era5_source()` repasse à `"classique"`.
