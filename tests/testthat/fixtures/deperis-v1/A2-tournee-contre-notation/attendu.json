@@ -1,0 +1,14 @@
+{
+ "cas": "A2",
+ "titre": "Tournée de contre-notation : placette P002 seule, centre du premier opérateur en lecture, contre_notations vide, aucune table notations ni colonne de note",
+ "source": "ADR 0003 § 4 ; Q12",
+ "lecteur": "ramulus",
+ "fichiers": [
+  "deperis.gpkg"
+ ],
+ "depart": null,
+ "attendu": "accepte",
+ "motifs": [],
+ "fusion": null,
+ "notes": []
+}

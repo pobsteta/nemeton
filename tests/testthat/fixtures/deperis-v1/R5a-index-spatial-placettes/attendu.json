@@ -1,0 +1,16 @@
+{
+ "cas": "R5a",
+ "titre": "Index spatial R*Tree sur placettes (SPATIAL_INDEX oublié)",
+ "source": "ADR 0003 § 1 ; Groma, brief vers Nemeton, § 2.2",
+ "lecteur": "ramulus",
+ "fichiers": [
+  "deperis.gpkg"
+ ],
+ "depart": null,
+ "attendu": "refuse",
+ "motifs": [
+  "index_spatial"
+ ],
+ "fusion": null,
+ "notes": []
+}

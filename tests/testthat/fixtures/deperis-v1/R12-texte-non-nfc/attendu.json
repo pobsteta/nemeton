@@ -1,0 +1,16 @@
+{
+ "cas": "R12",
+ "titre": "Règle de choix de P001 écrite en Unicode NFD (« à » décomposé) au lieu de NFC",
+ "source": "Pascal, 2026-10-28 (tous les textes en NFC)",
+ "lecteur": "ramulus",
+ "fichiers": [
+  "deperis.gpkg"
+ ],
+ "depart": null,
+ "attendu": "refuse",
+ "motifs": [
+  "texte_non_nfc"
+ ],
+ "fusion": null,
+ "notes": []
+}

@@ -1,0 +1,62 @@
+{
+ "cas": "R6",
+ "titre": "Tournée de contre-notation qui porte les premières notes",
+ "source": "ADR 0003 § 4",
+ "lecteur": "ramulus",
+ "fichiers": [
+  "deperis.gpkg"
+ ],
+ "depart": null,
+ "attendu": "refuse",
+ "motifs": [
+  "notations_dans_contre_notation"
+ ],
+ "fusion": null,
+ "notes": [
+  {
+   "fichier": "deperis.gpkg",
+   "table": "notations",
+   "uuid": "01a68f39-5c60-7cbe-8158-348620f9bc71",
+   "plot_id": "P002",
+   "rang": 1,
+   "repere": "11",
+   "essence": "Sapin",
+   "type": "RESINEUX",
+   "mb": 1,
+   "second": 3,
+   "critere": "MA",
+   "classe": "D",
+   "photo_dsf": "dsf2025-20_09"
+  },
+  {
+   "fichier": "deperis.gpkg",
+   "table": "notations",
+   "uuid": "01a68f3d-05e0-7708-9487-eb3546263c7e",
+   "plot_id": "P002",
+   "rang": 2,
+   "repere": "12",
+   "essence": "Mélèze",
+   "type": "RESINEUX",
+   "mb": 2,
+   "second": 4,
+   "critere": "MA",
+   "classe": "E",
+   "photo_dsf": "dsf2025-14_12"
+  },
+  {
+   "fichier": "deperis.gpkg",
+   "table": "notations",
+   "uuid": "01a68f3f-c500-7fd1-8b15-a9ca65dadc3b",
+   "plot_id": "P002",
+   "rang": 3,
+   "repere": "12b",
+   "essence": "Cèdre",
+   "type": "RESINEUX",
+   "mb": 0,
+   "second": 0,
+   "critere": "MA",
+   "classe": "A",
+   "photo_dsf": "dsf2025-00_02"
+  }
+ ]
+}

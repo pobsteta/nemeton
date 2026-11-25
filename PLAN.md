@@ -160,6 +160,19 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-25 — Mission 061 : tournée DEPERIS (`creer_tournee_deperis()`, `importer_deperis()`), cycle dev `2026.11.45.9000`
+
+Source : brief de Ramulus vers Nemeton (ADR 0003 de Ramulus), mission 061 de nemetonplateforme. Deux fonctions
+exportées dans `R/deperis.R` : `creer_tournee_deperis()` écrit le `deperis.gpkg` de départ (tables `tournee`,
+`placettes`, `centres`, `notations` vides ; variante `contre_notation` sans `notations`, centre du premier opérateur en
+lecture, tirage reproductible de 5 %) ; `importer_deperis()` importe le `.zip` rendu (tout ou rien, rejouable sans
+doublon par union sur l'`uuid`, fusion de plusieurs paquets, classe recalculée par l'abaque, catalogue des motifs).
+Le schéma de Ramulus est copié dans `inst/schemas/` (empreinte et commit d'origine dans son README) et les 39 cas de
+`fixtures/echange/` dans `tests/testthat/fixtures/deperis-v1/` ; `tests/testthat/test-deperis.R` joue chaque cas.
+Le GeoPackage est écrit avec RSQLite (OGC 12-128), non avec GDAL, dont les entiers 32 bits sont déclarés MEDIUMINT et
+refusés par le schéma ; GDAL (sf) le relit. Hors périmètre : bilan par unité de gestion vers sommieR, module
+nemetonshiny. Pas de release ; `stringi` ajouté en Suggests (contrôle NFC).
+
 ### 2026-11-25 — spike de ré-entraînement RECONFORT et premier noyau Rust (mission 060 de nemetonplateforme, fiche `060-nemeton-reconfort-spike-rust`, ADR 0003)
 
 - **Décision de Pascal** (2026-11-25) : ré-entraînement en spike, étiquettes terrain + propagation, Rust dès le spike, crate dans nemeton, repli R pur, modèle amont comme référence en attendant le terrain.

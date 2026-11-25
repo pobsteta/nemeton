@@ -1,0 +1,507 @@
+{
+ "application_id": 1196444487,
+ "user_version": 10400,
+ "version_schema": 1,
+ "nature": "premiere",
+ "tables": {
+  "centres": {
+   "data_type": "features",
+   "geometrie": {
+    "colonne": "geom",
+    "type": "POINT",
+    "srs": {
+     "organisation": "EPSG",
+     "code": 2154
+    }
+   },
+   "index_spatial": false,
+   "cle_primaire": "fid",
+   "colonnes": {
+    "fid": "INTEGER",
+    "geom": "POINT",
+    "uuid": "TEXT",
+    "plot_id": "TEXT",
+    "precision_m": "REAL",
+    "nb_mesures": "INTEGER",
+    "source": "TEXT",
+    "date_releve": "DATETIME",
+    "operateur": "TEXT"
+   },
+   "lignes": [
+    {
+     "fid": 1,
+     "geom": {
+      "x": 856563.43,
+      "y": 6670349.24
+     },
+     "uuid": "01a68e23-f4c0-7124-bdae-f15d2458b1eb",
+     "plot_id": "P001",
+     "precision_m": 5.8,
+     "nb_mesures": 60,
+     "source": "telephone",
+     "date_releve": "2027-07-06T08:02:00.000Z",
+     "operateur": "operateur-A"
+    },
+    {
+     "fid": 2,
+     "geom": {
+      "x": 856859.42,
+      "y": 6670360.78
+     },
+     "uuid": "01a68f32-f3c0-7bde-9e4a-972400b66ecd",
+     "plot_id": "P002",
+     "precision_m": 7.2,
+     "nb_mesures": 60,
+     "source": "telephone",
+     "date_releve": "2027-07-06T12:58:00.000Z",
+     "operateur": "operateur-B"
+    },
+    {
+     "fid": 3,
+     "geom": {
+      "x": 856553.51,
+      "y": 6670689.95
+     },
+     "uuid": "01a69312-77e0-7fdc-8fe8-ae2636a427eb",
+     "plot_id": "P003",
+     "precision_m": 4.9,
+     "nb_mesures": 60,
+     "source": "telephone",
+     "date_releve": "2027-07-07T07:01:00.000Z",
+     "operateur": "operateur-B"
+    }
+   ]
+  },
+  "notations": {
+   "data_type": "attributes",
+   "geometrie": null,
+   "index_spatial": false,
+   "cle_primaire": "fid",
+   "colonnes": {
+    "fid": "INTEGER",
+    "uuid": "TEXT",
+    "plot_id": "TEXT",
+    "rang": "INTEGER",
+    "repere": "TEXT",
+    "essence": "TEXT",
+    "type": "TEXT",
+    "mb": "INTEGER",
+    "second": "INTEGER",
+    "critere": "TEXT",
+    "classe": "TEXT",
+    "saison": "TEXT",
+    "date_notation": "DATETIME",
+    "operateur": "TEXT",
+    "photos": "TEXT",
+    "ia_premiere_mb": "INTEGER",
+    "ia_premiere_second": "INTEGER",
+    "ia_mb": "INTEGER",
+    "ia_second": "INTEGER",
+    "ia_confiance": "REAL",
+    "ia_modele": "TEXT"
+   },
+   "lignes": [
+    {
+     "fid": 1,
+     "uuid": "01a68e2b-47c0-7d87-9db2-164808fe8603",
+     "plot_id": "P001",
+     "rang": 1,
+     "repere": "1",
+     "essence": "Chêne sessile",
+     "type": "FEUILLU",
+     "mb": 2,
+     "second": 3,
+     "critere": "MR",
+     "classe": "D",
+     "saison": "ETE",
+     "date_notation": "2027-07-06T08:10:00.000Z",
+     "operateur": "operateur-A",
+     "photos": [
+      {
+       "nom": "photos/01a68e2b-47c0-7d87-9db2-164808fe8603_1.jpg",
+       "sha256": "845e771205812f1172d63e38061709ce07fa67f8022a17ec7b08884d082fc349"
+      },
+      {
+       "nom": "photos/01a68e2b-47c0-7d87-9db2-164808fe8603_2.jpg",
+       "sha256": "b7be9e9a9989e2ba289d933062f04e89709d51fb5f45cb75145e42a26360cebe"
+      }
+     ],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    },
+    {
+     "fid": 2,
+     "uuid": "01a68e2e-f140-7314-825b-bf2f790af7d9",
+     "plot_id": "P001",
+     "rang": 2,
+     "repere": "2",
+     "essence": "Hêtre",
+     "type": "FEUILLU",
+     "mb": 1,
+     "second": 2,
+     "critere": "MR",
+     "classe": "C",
+     "saison": "ETE",
+     "date_notation": "2027-07-06T08:14:00.000Z",
+     "operateur": "operateur-A",
+     "photos": [
+      {
+       "nom": "photos/01a68e2e-f140-7314-825b-bf2f790af7d9_1.jpg",
+       "sha256": "1dc71ccb0ee6462e10720c8f26108c6fdfbc1a7b0e49f85057bb30aedaaa9542"
+      },
+      {
+       "nom": "photos/01a68e2e-f140-7314-825b-bf2f790af7d9_2.jpg",
+       "sha256": "8bb8601d526c26f3b1b54ead8f61ac866eff3ba8be3c3b46d6955953ec406d75"
+      }
+     ],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    },
+    {
+     "fid": 3,
+     "uuid": "01a68e33-8520-74a1-aab7-4221099018c1",
+     "plot_id": "P001",
+     "rang": 3,
+     "repere": "3",
+     "essence": "Charme",
+     "type": "FEUILLU",
+     "mb": 5,
+     "second": 5,
+     "critere": "MR",
+     "classe": "F",
+     "saison": "ETE",
+     "date_notation": "2027-07-06T08:19:00.000Z",
+     "operateur": "operateur-A",
+     "photos": [
+      {
+       "nom": "photos/01a68e33-8520-74a1-aab7-4221099018c1_1.jpg",
+       "sha256": "340ddc2666cc5b450a2add6aa3dab26a0414c71da0ad34caba0247a56f4a3c6d"
+      },
+      {
+       "nom": "photos/01a68e33-8520-74a1-aab7-4221099018c1_2.jpg",
+       "sha256": "76e974dee03f25650d6b7e4e5beea4d3facaba5862b69f6dd9f28e4b10aad49d"
+      }
+     ],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    },
+    {
+     "fid": 4,
+     "uuid": "01a68e37-2ea0-7363-b2cb-d0ccba3f5fdb",
+     "plot_id": "P001",
+     "rang": 4,
+     "repere": "4",
+     "essence": "Chêne sessile",
+     "type": "FEUILLU",
+     "mb": 0,
+     "second": 1,
+     "critere": "MR",
+     "classe": "B",
+     "saison": "ETE",
+     "date_notation": "2027-07-06T08:23:00.000Z",
+     "operateur": "operateur-A",
+     "photos": [
+      {
+       "nom": "photos/01a68e37-2ea0-7363-b2cb-d0ccba3f5fdb_1.jpg",
+       "sha256": "88041926029638710fc496b96d195d9a3a6055208ba3b96ed507d25b8c389f49"
+      },
+      {
+       "nom": "photos/01a68e37-2ea0-7363-b2cb-d0ccba3f5fdb_2.jpg",
+       "sha256": "2bf2d90f4b00bcd6994104931e053900073c7a87c732f1c571e057c58491851c"
+      }
+     ],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    },
+    {
+     "fid": 5,
+     "uuid": "01a68f39-5c60-7cbe-8158-348620f9bc71",
+     "plot_id": "P002",
+     "rang": 1,
+     "repere": "11",
+     "essence": "Sapin",
+     "type": "RESINEUX",
+     "mb": 1,
+     "second": 3,
+     "critere": "MA",
+     "classe": "D",
+     "saison": "ETE",
+     "date_notation": "2027-07-06T13:05:00.000Z",
+     "operateur": "operateur-B",
+     "photos": [
+      {
+       "nom": "photos/01a68f39-5c60-7cbe-8158-348620f9bc71_1.jpg",
+       "sha256": "6d635e6982aee571abfca0e2737fd9db0e566c281670cb5bd7b3e3f14366bac6"
+      }
+     ],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    },
+    {
+     "fid": 6,
+     "uuid": "01a68f3d-05e0-7708-9487-eb3546263c7e",
+     "plot_id": "P002",
+     "rang": 2,
+     "repere": "12",
+     "essence": "Mélèze",
+     "type": "RESINEUX",
+     "mb": 2,
+     "second": 4,
+     "critere": "MA",
+     "classe": "E",
+     "saison": "ETE",
+     "date_notation": "2027-07-06T13:09:00.000Z",
+     "operateur": "operateur-B",
+     "photos": [],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    },
+    {
+     "fid": 7,
+     "uuid": "01a68f3f-c500-7fd1-8b15-a9ca65dadc3b",
+     "plot_id": "P002",
+     "rang": 3,
+     "repere": "12b",
+     "essence": "Cèdre",
+     "type": "RESINEUX",
+     "mb": 0,
+     "second": 0,
+     "critere": "MA",
+     "classe": "A",
+     "saison": "ETE",
+     "date_notation": "2027-07-06T13:12:00.000Z",
+     "operateur": "operateur-B",
+     "photos": [],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    },
+    {
+     "fid": 8,
+     "uuid": "01a69318-e080-74b7-87e7-5c99dedf42de",
+     "plot_id": "P003",
+     "rang": 1,
+     "repere": "21",
+     "essence": "Hêtre",
+     "type": "FEUILLU",
+     "mb": 5,
+     "second": 0,
+     "critere": "MR",
+     "classe": "F",
+     "saison": "ETE",
+     "date_notation": "2027-07-07T07:08:00.000Z",
+     "operateur": "operateur-B",
+     "photos": [],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    },
+    {
+     "fid": 9,
+     "uuid": "01a6931c-8a00-785b-8e94-0b31399ab98d",
+     "plot_id": "P003",
+     "rang": 2,
+     "repere": "22",
+     "essence": "Mélèze",
+     "type": "RESINEUX",
+     "mb": 1,
+     "second": 1,
+     "critere": "MA",
+     "classe": "B",
+     "saison": "ETE",
+     "date_notation": "2027-07-07T07:12:00.000Z",
+     "operateur": "operateur-B",
+     "photos": [],
+     "ia_premiere_mb": null,
+     "ia_premiere_second": null,
+     "ia_mb": null,
+     "ia_second": null,
+     "ia_confiance": null,
+     "ia_modele": null
+    }
+   ]
+  },
+  "placettes": {
+   "data_type": "features",
+   "geometrie": {
+    "colonne": "geom",
+    "type": "POINT",
+    "srs": {
+     "organisation": "EPSG",
+     "code": 2154
+    }
+   },
+   "index_spatial": false,
+   "cle_primaire": "fid",
+   "colonnes": {
+    "fid": "INTEGER",
+    "geom": "POINT",
+    "plot_id": "TEXT",
+    "wgt": "REAL",
+    "ip": "REAL",
+    "stratum": "TEXT",
+    "strat_type": "TEXT",
+    "nb_arbres": "INTEGER",
+    "regle_choix": "TEXT",
+    "saison": "TEXT",
+    "collecte_photos": "BOOLEAN",
+    "contre_notation": "BOOLEAN",
+    "etat": "TEXT"
+   },
+   "lignes": [
+    {
+     "fid": 1,
+     "geom": {
+      "x": 856560.23,
+      "y": 6670351.34
+     },
+     "plot_id": "P001",
+     "wgt": 12.5,
+     "ip": 0.08,
+     "stratum": "S1",
+     "strat_type": "feuillus",
+     "nb_arbres": 4,
+     "regle_choix": "Kraft 1 à 3, tour d'horizon depuis le nord, sens horaire",
+     "saison": "ETE",
+     "collecte_photos": 1,
+     "contre_notation": 0,
+     "etat": "notee"
+    },
+    {
+     "fid": 2,
+     "geom": {
+      "x": 856863.42,
+      "y": 6670359.28
+     },
+     "plot_id": "P002",
+     "wgt": 9.75,
+     "ip": 0.1,
+     "stratum": "S2",
+     "strat_type": "resineux",
+     "nb_arbres": 4,
+     "regle_choix": "Kraft 1 à 3, tour d'horizon depuis le nord, sens horaire",
+     "saison": "ETE",
+     "collecte_photos": 0,
+     "contre_notation": 1,
+     "etat": "notee"
+    },
+    {
+     "fid": 3,
+     "geom": {
+      "x": 856551.51,
+      "y": 6670684.45
+     },
+     "plot_id": "P003",
+     "wgt": 12.5,
+     "ip": 0.08,
+     "stratum": "S1",
+     "strat_type": "melange",
+     "nb_arbres": 4,
+     "regle_choix": "Kraft 1 à 3, tour d'horizon depuis le nord, sens horaire",
+     "saison": "ETE",
+     "collecte_photos": 0,
+     "contre_notation": 0,
+     "etat": "notee"
+    }
+   ]
+  },
+  "tournee": {
+   "data_type": "attributes",
+   "geometrie": null,
+   "index_spatial": false,
+   "cle_primaire": "fid",
+   "colonnes": {
+    "fid": "INTEGER",
+    "version_schema": "INTEGER",
+    "code_tournee": "TEXT",
+    "nature": "TEXT",
+    "prepare_le": "DATETIME",
+    "version_nemeton": "TEXT",
+    "delai_contre_notation_jours": "INTEGER",
+    "operateur": "TEXT",
+    "version_ramulus": "TEXT"
+   },
+   "lignes": [
+    {
+     "fid": 1,
+     "version_schema": 1,
+     "code_tournee": "EXEMPLE-2027-01",
+     "nature": "premiere",
+     "prepare_le": "2027-06-15T08:00:00.000Z",
+     "version_nemeton": "exemple",
+     "delai_contre_notation_jours": 15,
+     "operateur": "operateur-A",
+     "version_ramulus": "exemple"
+    }
+   ]
+  }
+ },
+ "photos_du_paquet": [
+  {
+   "nom": "photos/01a68e2b-47c0-7d87-9db2-164808fe8603_1.jpg",
+   "sha256": "0316f04d113a6957dc6bf3815e171ff6e4ae379cca5156ddb093ec9bd6b44d41"
+  },
+  {
+   "nom": "photos/01a68e2b-47c0-7d87-9db2-164808fe8603_2.jpg",
+   "sha256": "b7be9e9a9989e2ba289d933062f04e89709d51fb5f45cb75145e42a26360cebe"
+  },
+  {
+   "nom": "photos/01a68e2e-f140-7314-825b-bf2f790af7d9_1.jpg",
+   "sha256": "1dc71ccb0ee6462e10720c8f26108c6fdfbc1a7b0e49f85057bb30aedaaa9542"
+  },
+  {
+   "nom": "photos/01a68e2e-f140-7314-825b-bf2f790af7d9_2.jpg",
+   "sha256": "8bb8601d526c26f3b1b54ead8f61ac866eff3ba8be3c3b46d6955953ec406d75"
+  },
+  {
+   "nom": "photos/01a68e33-8520-74a1-aab7-4221099018c1_1.jpg",
+   "sha256": "340ddc2666cc5b450a2add6aa3dab26a0414c71da0ad34caba0247a56f4a3c6d"
+  },
+  {
+   "nom": "photos/01a68e33-8520-74a1-aab7-4221099018c1_2.jpg",
+   "sha256": "76e974dee03f25650d6b7e4e5beea4d3facaba5862b69f6dd9f28e4b10aad49d"
+  },
+  {
+   "nom": "photos/01a68e37-2ea0-7363-b2cb-d0ccba3f5fdb_1.jpg",
+   "sha256": "88041926029638710fc496b96d195d9a3a6055208ba3b96ed507d25b8c389f49"
+  },
+  {
+   "nom": "photos/01a68e37-2ea0-7363-b2cb-d0ccba3f5fdb_2.jpg",
+   "sha256": "2bf2d90f4b00bcd6994104931e053900073c7a87c732f1c571e057c58491851c"
+  },
+  {
+   "nom": "photos/01a68f39-5c60-7cbe-8158-348620f9bc71_1.jpg",
+   "sha256": "6d635e6982aee571abfca0e2737fd9db0e566c281670cb5bd7b3e3f14366bac6"
+  }
+ ]
+}

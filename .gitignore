@@ -27,6 +27,8 @@
 # Build files
 *.tar.gz
 *.zip
+# cas communs Ramulus (deperis-v1) : paquets rendus, à versionner
+!tests/testthat/fixtures/deperis-v1/**/*.zip
 
 # pkgdown
 # docs/ - Removed to allow pkgdown site deployment

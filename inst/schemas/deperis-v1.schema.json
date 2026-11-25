@@ -1,0 +1,719 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/pobsteta/ramulus/docs/formats/deperis-v1.schema.json",
+  "title": "Instantané d'un fichier deperis.gpkg, version 1",
+  "description": "Ce schéma valide l'instantané JSON d'un GeoPackage deperis.gpkg (docs/formats/deperis-v1.md, § « Instantané ») : une entrée par table de gpkg_contents, avec son data_type, sa géométrie et son repère lus dans gpkg_geometry_columns et gpkg_spatial_ref_sys, la présence d'un index spatial, les types déclarés de ses colonnes et ses lignes. Coordonnées : EPSG:2154, x = est, y = nord, en mètres. Un lecteur v1 ignore les tables et les colonnes qu'il ne connaît pas (ADR 0003 § 2). Chaque sous-schéma qui fonde un refus ou un signalement porte son motif dans « x-motif » ; un écart sans motif est un défaut de « structure ». Les « $defs » essence, essence_type et abaque sont générés depuis docs/referentiels/deperis/*.csv par fixtures/echange/generer.py : ne pas les modifier à la main.",
+  "type": "object",
+  "required": ["application_id", "user_version", "version_schema", "nature", "tables"],
+  "properties": {
+    "application_id": {
+      "description": "PRAGMA application_id : 0x47504B47 (« GPKG »), OGC 12-128 Req. 2.",
+      "const": 1196444487,
+      "x-motif": "pas_un_geopackage"
+    },
+    "user_version": {
+      "description": "PRAGMA user_version : GeoPackage 1.2 à 1.4 (10200 à 10499). Ramulus ne le change jamais (Pascal, 2026-10-28).",
+      "type": "integer",
+      "minimum": 10200,
+      "maximum": 10499,
+      "x-motif": "pas_un_geopackage"
+    },
+    "version_schema": {
+      "description": "Repris de la ligne unique de tournee. Entier, 1 pour ce format ; un lecteur v1 lit aussi 2 et au-delà en ignorant ce qu'il ne connaît pas.",
+      "type": "integer",
+      "minimum": 1,
+      "x-motif": "version_illisible"
+    },
+    "nature": {"description": "Repris de la ligne unique de tournee.", "enum": ["premiere", "contre_notation"]},
+    "photos_du_paquet": {
+      "description": "Pour un .zip rendu seulement : chaque fichier du dossier photos/, avec son empreinte. Le croisement avec les colonnes photos est fait par le lecteur (motifs photo_*).",
+      "type": "array",
+      "items": {"$ref": "#/$defs/photo"}
+    },
+    "tables": {
+      "type": "object",
+      "required": ["tournee", "placettes", "centres"],
+      "properties": {
+        "tournee": {"$ref": "#/$defs/table_tournee"},
+        "placettes": {"$ref": "#/$defs/table_placettes"},
+        "centres": {"$ref": "#/$defs/table_centres"},
+        "notations": {"$ref": "#/$defs/table_notes"},
+        "contre_notations": {"$ref": "#/$defs/table_notes"}
+      },
+      "additionalProperties": {"$ref": "#/$defs/table"}
+    }
+  },
+  "allOf": [
+    {
+      "description": "Tournée de première notation : la table notations, pas de contre_notations (ADR 0003 § 3-4).",
+      "if": {"properties": {"nature": {"const": "premiere"}}, "required": ["nature"]},
+      "then": {"properties": {"tables": {"required": ["notations"], "not": {"required": ["contre_notations"]}}}}
+    },
+    {
+      "description": "Tournée de contre-notation : aucune première note, ni table notations, ni colonne de note hors de contre_notations ; seules les placettes marquées contre_notation (ADR 0003 § 4).",
+      "if": {"properties": {"nature": {"const": "contre_notation"}}, "required": ["nature"]},
+      "then": {
+        "properties": {
+          "tables": {
+            "required": ["contre_notations"],
+            "properties": {
+              "notations": {"x-motif": "notations_dans_contre_notation", "not": true},
+              "contre_notations": true,
+              "placettes": {
+                "properties": {
+                  "colonnes": {"propertyNames": {"$ref": "#/$defs/nom_hors_notes"}},
+                  "lignes": {"items": {"properties": {"contre_notation": {"const": 1}}}}
+                }
+              }
+            },
+            "additionalProperties": {
+              "properties": {"colonnes": {"propertyNames": {"$ref": "#/$defs/nom_hors_notes"}}}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "x-motifs": {
+    "pas_un_geopackage": {
+      "statut": "refuse",
+      "description": "application_id ou user_version d'un fichier qui n'est pas un GeoPackage 1.2 à 1.4."
+    },
+    "version_illisible": {
+      "statut": "refuse",
+      "description": "version_schema absente, non entière, nulle ou négative ; ou tournee sans ligne unique."
+    },
+    "structure": {
+      "statut": "refuse",
+      "description": "Table, colonne, type déclaré ou valeur non conforme sans motif plus précis."
+    },
+    "index_spatial": {
+      "statut": "refuse",
+      "description": "Index spatial (R*Tree) sur placettes ou centres : toute mise à jour par l'appareil échouerait (Groma, brief vers Nemeton, § 2.2 ; ADR 0003 § 1)."
+    },
+    "repere_hors_2154": {
+      "statut": "refuse",
+      "description": "Colonne géométrique dont le repère, lu dans gpkg_spatial_ref_sys, n'est pas EPSG:2154."
+    },
+    "hors_france": {
+      "statut": "refuse",
+      "description": "Point hors de l'emprise d'EPSG:2154 (France métropolitaine et Corse ; DOM hors v1, Q3) : X et Y inversés, degrés à la place de mètres, autre repère."
+    },
+    "colonne_date": {
+      "statut": "refuse",
+      "description": "Colonne nommée date, mot réservé SQL (Groma, brief vers Nemeton, § 2.1)."
+    },
+    "notations_dans_contre_notation": {
+      "statut": "refuse",
+      "description": "Une tournée de contre-notation porte la table notations ou une colonne de note hors de contre_notations : la contre-notation ne serait plus aveugle (ADR 0003 § 4)."
+    },
+    "essence_hors_referentiel": {
+      "statut": "refuse",
+      "description": "Essence absente des 19 essences de docs/referentiels/deperis/essences.csv, au caractère près (spec § 4, Q11)."
+    },
+    "type_incoherent": {
+      "statut": "refuse",
+      "description": "Type (FEUILLU, RESINEUX) qui n'est pas celui de l'essence dans essences.csv."
+    },
+    "critere_incoherent": {
+      "statut": "refuse",
+      "description": "Second critère autre que MR pour un feuillu ou MA pour un résineux (fiches DSF 2025, page 1)."
+    },
+    "note_hors_bornes": {"statut": "refuse", "description": "MB ou MR/MA hors des entiers 0 à 5."},
+    "classe_differente_abaque": {
+      "statut": "refuse",
+      "description": "Classe différente de l'abaque appliqué à MB et MR/MA (ADR 0003 § 6 ; abaque.csv)."
+    },
+    "classe_saisie": {
+      "statut": "refuse",
+      "description": "Note qui arrive à Ramulus avec une classe déjà remplie, juste ou fausse : refusée à l'enregistrement, car la classe ne se saisit pas, elle se calcule par l'abaque (ADR 0001 ; Pascal, 2026-10-28, T2 bis). Motif de l'enregistrement par Ramulus seulement : le contrôle d'un paquet rendu garde classe_differente_abaque (R2)."
+    },
+    "ia_incomplete": {
+      "statut": "refuse",
+      "description": "Colonnes de l'IA ni toutes vides ni toutes remplies (ADR 0001)."
+    },
+    "uuid_duplique": {
+      "statut": "refuse",
+      "description": "Même uuid deux fois dans centres, notations ou contre_notations."
+    },
+    "rattachement_invalide": {
+      "statut": "refuse",
+      "description": "plot_id absent de placettes, ou rang supérieur au nb_arbres de la placette."
+    },
+    "plan_modifie": {
+      "statut": "refuse",
+      "description": "Ce que Nemeton a écrit est revenu changé : colonnes de placettes (sauf etat) changées, renommées ou supprimées, point prévu déplacé, champs Nemeton de tournee, ou centres fournis en lecture dans une contre-notation (ADR 0003 § 6, Q12)."
+    },
+    "photo_absente": {
+      "statut": "refuse",
+      "description": "Photo citée par une notation, absente du dossier photos/ du .zip."
+    },
+    "empreinte_photo_differente": {
+      "statut": "refuse",
+      "description": "Photo dont le SHA-256 n'est pas celui que cite la notation."
+    },
+    "photo_non_citee": {"statut": "refuse", "description": "Fichier du dossier photos/ cité par aucune notation."},
+    "texte_non_nfc": {
+      "statut": "refuse",
+      "description": "Texte (nom de table, nom de colonne ou valeur) qui n'est pas en Unicode NFC : « Mélèze » écrit en lettres et accents séparés ne se compare plus au référentiel (Pascal, 2026-10-28)."
+    },
+    "uuid_contenu_different": {
+      "statut": "signale",
+      "description": "À la fusion de paquets rendus, même uuid (ou même photo) avec deux contenus différents : les deux versions sont écartées de l'union (avec les photos de la note), aucune n'est choisie, le conflit est signalé et le reste de l'union est gardé, comme Surculus (docs/formats/sursync-v1.md, l. 63 : « les deux versions refusées, les autres restaurées ») ; ADR 0005, l. 33 (« signalées comme conflit ») ; Pascal, 2026-10-28."
+    },
+    "doublon_arbre": {
+      "statut": "signale",
+      "description": "Deux notations du même arbre (même plot_id et même rang ; ou même plot_id et même repere si les deux repere sont non NULL) hors contre-notation (ADR 0003 § 5 ; définition du même arbre : Pascal, 2026-10-28)."
+    },
+    "centre_eloigne": {
+      "statut": "signale",
+      "description": "Centre relevé à plus de 30 m du point prévu (ADR 0004 ; seuil provisoire, non tranché par Pascal)."
+    }
+  },
+  "$defs": {
+    "type_texte": {"type": "string", "pattern": "^TEXT(\\([0-9]+\\))?$"},
+    "type_entier": {"const": "INTEGER"},
+    "type_reel": {"const": "REAL"},
+    "type_booleen": {"const": "BOOLEAN"},
+    "type_horodatage": {"const": "DATETIME"},
+    "horodatage": {
+      "description": "ISO 8601 en UTC, suffixe Z, millisecondes facultatives (forme écrite par GDAL : 2027-07-06T09:12:00.000Z).",
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\\.[0-9]{1,3})?Z$"
+    },
+    "texte": {"type": "string", "minLength": 1},
+    "booleen": {"enum": [0, 1]},
+    "uuid7": {
+      "description": "UUID version 7 (RFC 9562), en minuscules.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "note": {
+      "description": "Note DEPERIS de 0 à 5 (fiches DSF 2025, page 1).",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5,
+      "x-motif": "note_hors_bornes"
+    },
+    "saison": {"enum": ["ETE", "HIVER"]},
+    "nom_hors_notes": {
+      "description": "Dans une contre-notation, aucune colonne de note hors de contre_notations.",
+      "x-motif": "notations_dans_contre_notation",
+      "not": {
+        "enum": ["mb", "second", "critere", "classe", "ia_premiere_mb", "ia_premiere_second", "ia_mb", "ia_second"]
+      }
+    },
+    "point_l93": {
+      "description": "Point en EPSG:2154 : x = est, y = nord, en mètres, dans le rectangle qui contient l'emprise d'EPSG:2154 (-9,86° à 10,38° de longitude, 41,15° à 51,56° de latitude). Le lecteur contrôle aussi l'emprise elle-même, point par point.",
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": {
+        "x": {"type": "number", "minimum": -378306, "maximum": 1320650, "x-motif": "hors_france"},
+        "y": {"type": "number", "minimum": 6005281, "maximum": 7235613, "x-motif": "hors_france"}
+      }
+    },
+    "photo": {
+      "type": "object",
+      "required": ["nom", "sha256"],
+      "properties": {
+        "nom": {
+          "type": "string",
+          "pattern": "^photos/[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}_[1-9][0-9]*\\.jpg$"
+        },
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "table": {
+      "description": "Toute table de gpkg_contents, connue ou non.",
+      "type": "object",
+      "required": ["data_type", "geometrie", "index_spatial", "cle_primaire", "colonnes", "lignes"],
+      "properties": {
+        "data_type": {"type": "string"},
+        "colonnes": {
+          "type": "object",
+          "additionalProperties": {"type": "string"},
+          "propertyNames": {"x-motif": "colonne_date", "not": {"pattern": "^[Dd][Aa][Tt][Ee]$"}}
+        },
+        "lignes": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "table_attributs": {
+      "description": "Table sans géométrie (OGC 12-128, data_type attributes), clé fid.",
+      "allOf": [{"$ref": "#/$defs/table"}],
+      "properties": {
+        "data_type": {"const": "attributes"},
+        "geometrie": {"const": null},
+        "cle_primaire": {"const": "fid"}
+      }
+    },
+    "table_points": {
+      "description": "Couche de points en EPSG:2154, géométrie geom, clé fid, sans index spatial (SPATIAL_INDEX=NO).",
+      "allOf": [{"$ref": "#/$defs/table"}],
+      "properties": {
+        "data_type": {"const": "features"},
+        "geometrie": {
+          "type": "object",
+          "required": ["colonne", "type", "srs"],
+          "properties": {
+            "colonne": {"const": "geom"},
+            "type": {"const": "POINT"},
+            "srs": {"x-motif": "repere_hors_2154", "const": {"organisation": "EPSG", "code": 2154}}
+          }
+        },
+        "index_spatial": {"x-motif": "index_spatial", "const": false},
+        "cle_primaire": {"const": "fid"}
+      }
+    },
+    "table_tournee": {
+      "description": "Une seule ligne. Écrite par Nemeton ; operateur et version_ramulus écrits par Ramulus (ADR 0003 § 2).",
+      "allOf": [{"$ref": "#/$defs/table_attributs"}],
+      "properties": {
+        "colonnes": {
+          "required": [
+            "fid",
+            "version_schema",
+            "code_tournee",
+            "nature",
+            "prepare_le",
+            "version_nemeton",
+            "delai_contre_notation_jours",
+            "operateur",
+            "version_ramulus"
+          ],
+          "properties": {
+            "fid": {"$ref": "#/$defs/type_entier"},
+            "version_schema": {"$ref": "#/$defs/type_entier"},
+            "code_tournee": {"$ref": "#/$defs/type_texte"},
+            "nature": {"$ref": "#/$defs/type_texte"},
+            "prepare_le": {"$ref": "#/$defs/type_horodatage"},
+            "version_nemeton": {"$ref": "#/$defs/type_texte"},
+            "delai_contre_notation_jours": {"$ref": "#/$defs/type_entier"},
+            "operateur": {"$ref": "#/$defs/type_texte"},
+            "version_ramulus": {"$ref": "#/$defs/type_texte"}
+          }
+        },
+        "lignes": {
+          "minItems": 1,
+          "maxItems": 1,
+          "x-motif": "version_illisible",
+          "items": {
+            "type": "object",
+            "required": [
+              "fid",
+              "version_schema",
+              "code_tournee",
+              "nature",
+              "prepare_le",
+              "version_nemeton",
+              "delai_contre_notation_jours",
+              "operateur",
+              "version_ramulus"
+            ],
+            "properties": {
+              "fid": {"type": "integer"},
+              "version_schema": {"type": "integer", "minimum": 1, "x-motif": "version_illisible"},
+              "code_tournee": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9._-]+$",
+                "description": "Nomme le .zip rendu ; jamais de nom de propriétaire ni d'agent (ADR 0005)."
+              },
+              "nature": {"enum": ["premiere", "contre_notation"]},
+              "prepare_le": {"$ref": "#/$defs/horodatage"},
+              "version_nemeton": {"$ref": "#/$defs/texte"},
+              "delai_contre_notation_jours": {
+                "description": "Délai maximal entre les deux passages, en jours. Valeur provisoire : non fixée par Pascal.",
+                "type": ["integer", "null"],
+                "minimum": 1
+              },
+              "operateur": {
+                "description": "Opérateur qui rend (Q4) ; vide à la préparation.",
+                "type": ["string", "null"],
+                "minLength": 1
+              },
+              "version_ramulus": {"type": ["string", "null"], "minLength": 1}
+            }
+          }
+        }
+      }
+    },
+    "table_placettes": {
+      "description": "Point prévu du plan. Toute colonne que ce schéma ne nomme pas est une colonne de plan (wgt, ip, stratum, strat_*…), jamais modifiée et contrôlée à l'import (plan_modifie).",
+      "allOf": [{"$ref": "#/$defs/table_points"}],
+      "properties": {
+        "colonnes": {
+          "required": [
+            "fid",
+            "geom",
+            "plot_id",
+            "nb_arbres",
+            "regle_choix",
+            "saison",
+            "collecte_photos",
+            "contre_notation",
+            "etat"
+          ],
+          "properties": {
+            "fid": {"$ref": "#/$defs/type_entier"},
+            "geom": {"const": "POINT"},
+            "plot_id": {"$ref": "#/$defs/type_texte"},
+            "wgt": {"$ref": "#/$defs/type_reel"},
+            "ip": {"$ref": "#/$defs/type_reel"},
+            "stratum": {"$ref": "#/$defs/type_texte"},
+            "nb_arbres": {"$ref": "#/$defs/type_entier"},
+            "regle_choix": {"$ref": "#/$defs/type_texte"},
+            "saison": {"$ref": "#/$defs/type_texte"},
+            "collecte_photos": {"$ref": "#/$defs/type_booleen"},
+            "contre_notation": {"$ref": "#/$defs/type_booleen"},
+            "etat": {"$ref": "#/$defs/type_texte"}
+          }
+        },
+        "lignes": {
+          "items": {
+            "type": "object",
+            "required": [
+              "fid",
+              "geom",
+              "plot_id",
+              "nb_arbres",
+              "regle_choix",
+              "saison",
+              "collecte_photos",
+              "contre_notation",
+              "etat"
+            ],
+            "properties": {
+              "fid": {"type": "integer"},
+              "geom": {"$ref": "#/$defs/point_l93"},
+              "plot_id": {"$ref": "#/$defs/texte"},
+              "nb_arbres": {"type": "integer", "minimum": 1},
+              "regle_choix": {"$ref": "#/$defs/texte"},
+              "saison": {"$ref": "#/$defs/saison"},
+              "collecte_photos": {"$ref": "#/$defs/booleen"},
+              "contre_notation": {"$ref": "#/$defs/booleen"},
+              "etat": {
+                "description": "Vide à la préparation, notee à la clôture (Q8). Écrit par Ramulus.",
+                "enum": [null, "notee"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "table_centres": {
+      "description": "Centre relevé au GNSS du téléphone, moyenné (ADR 0004). Écrit par Ramulus ; fourni en lecture dans une contre-notation (Q12).",
+      "allOf": [{"$ref": "#/$defs/table_points"}],
+      "properties": {
+        "colonnes": {
+          "required": [
+            "fid",
+            "geom",
+            "uuid",
+            "plot_id",
+            "precision_m",
+            "nb_mesures",
+            "source",
+            "date_releve",
+            "operateur"
+          ],
+          "properties": {
+            "fid": {"$ref": "#/$defs/type_entier"},
+            "geom": {"const": "POINT"},
+            "uuid": {"$ref": "#/$defs/type_texte"},
+            "plot_id": {"$ref": "#/$defs/type_texte"},
+            "precision_m": {"$ref": "#/$defs/type_reel"},
+            "nb_mesures": {"$ref": "#/$defs/type_entier"},
+            "source": {"$ref": "#/$defs/type_texte"},
+            "date_releve": {"$ref": "#/$defs/type_horodatage"},
+            "operateur": {"$ref": "#/$defs/type_texte"}
+          }
+        },
+        "lignes": {
+          "items": {
+            "type": "object",
+            "required": [
+              "fid",
+              "geom",
+              "uuid",
+              "plot_id",
+              "precision_m",
+              "nb_mesures",
+              "source",
+              "date_releve",
+              "operateur"
+            ],
+            "properties": {
+              "fid": {"type": "integer"},
+              "geom": {"$ref": "#/$defs/point_l93"},
+              "uuid": {"$ref": "#/$defs/uuid7"},
+              "plot_id": {"$ref": "#/$defs/texte"},
+              "precision_m": {
+                "description": "Précision horizontale estimée, en mètres.",
+                "type": "number",
+                "minimum": 0
+              },
+              "nb_mesures": {"type": "integer", "minimum": 1},
+              "source": {"enum": ["telephone", "rtk"]},
+              "date_releve": {"$ref": "#/$defs/horodatage"},
+              "operateur": {"$ref": "#/$defs/texte"}
+            }
+          }
+        }
+      }
+    },
+    "table_notes": {
+      "description": "notations (première notation) et contre_notations (tournée à part) : mêmes colonnes, table sans géométrie, rattachée par plot_id et rang, repere étant facultatif (ADR 0003 § 3-4, ADR 0004).",
+      "allOf": [{"$ref": "#/$defs/table_attributs"}],
+      "properties": {
+        "colonnes": {
+          "required": [
+            "fid",
+            "uuid",
+            "plot_id",
+            "rang",
+            "repere",
+            "essence",
+            "type",
+            "mb",
+            "second",
+            "critere",
+            "classe",
+            "saison",
+            "date_notation",
+            "operateur",
+            "photos",
+            "ia_premiere_mb",
+            "ia_premiere_second",
+            "ia_mb",
+            "ia_second",
+            "ia_confiance",
+            "ia_modele"
+          ],
+          "properties": {
+            "fid": {"$ref": "#/$defs/type_entier"},
+            "uuid": {"$ref": "#/$defs/type_texte"},
+            "plot_id": {"$ref": "#/$defs/type_texte"},
+            "rang": {"$ref": "#/$defs/type_entier"},
+            "repere": {"$ref": "#/$defs/type_texte"},
+            "essence": {"$ref": "#/$defs/type_texte"},
+            "type": {"$ref": "#/$defs/type_texte"},
+            "mb": {"$ref": "#/$defs/type_entier"},
+            "second": {"$ref": "#/$defs/type_entier"},
+            "critere": {"$ref": "#/$defs/type_texte"},
+            "classe": {"$ref": "#/$defs/type_texte"},
+            "saison": {"$ref": "#/$defs/type_texte"},
+            "date_notation": {"$ref": "#/$defs/type_horodatage"},
+            "operateur": {"$ref": "#/$defs/type_texte"},
+            "photos": {"$ref": "#/$defs/type_texte"},
+            "ia_premiere_mb": {"$ref": "#/$defs/type_entier"},
+            "ia_premiere_second": {"$ref": "#/$defs/type_entier"},
+            "ia_mb": {"$ref": "#/$defs/type_entier"},
+            "ia_second": {"$ref": "#/$defs/type_entier"},
+            "ia_confiance": {"$ref": "#/$defs/type_reel"},
+            "ia_modele": {"$ref": "#/$defs/type_texte"}
+          }
+        },
+        "lignes": {"items": {"$ref": "#/$defs/ligne_note"}}
+      }
+    },
+    "ligne_note": {
+      "type": "object",
+      "required": [
+        "fid",
+        "uuid",
+        "plot_id",
+        "rang",
+        "repere",
+        "essence",
+        "type",
+        "mb",
+        "second",
+        "critere",
+        "classe",
+        "saison",
+        "date_notation",
+        "operateur",
+        "photos",
+        "ia_premiere_mb",
+        "ia_premiere_second",
+        "ia_mb",
+        "ia_second",
+        "ia_confiance",
+        "ia_modele"
+      ],
+      "properties": {
+        "fid": {"type": "integer"},
+        "uuid": {"$ref": "#/$defs/uuid7"},
+        "plot_id": {"$ref": "#/$defs/texte"},
+        "rang": {
+          "description": "Position de l'arbre dans le tour d'horizon depuis le nord, sens horaire (ADR 0004).",
+          "type": "integer",
+          "minimum": 1
+        },
+        "repere": {
+          "description": "Repère physique déjà présent sur l'arbre (plaque, ancienne marque), recopié de la tournée de départ s'il y figure ; sinon NULL ; jamais demandé à l'opérateur (Pascal, 2026-10-29). Texte (« 12b » permis, Q10).",
+          "anyOf": [{"type": "null"}, {"$ref": "#/$defs/texte"}]
+        },
+        "essence": {"$ref": "#/$defs/essence"},
+        "type": {"x-motif": "type_incoherent", "enum": ["FEUILLU", "RESINEUX"]},
+        "mb": {"$ref": "#/$defs/note"},
+        "second": {"$ref": "#/$defs/note"},
+        "critere": {"x-motif": "critere_incoherent", "enum": ["MR", "MA"]},
+        "classe": {"x-motif": "classe_differente_abaque", "enum": ["A", "B", "C", "D", "E", "F"]},
+        "saison": {"$ref": "#/$defs/saison"},
+        "date_notation": {"$ref": "#/$defs/horodatage"},
+        "operateur": {"$ref": "#/$defs/texte"},
+        "photos": {
+          "description": "Texte JSON dans le fichier, lu comme tableau dans l'instantané ; [] sans photo.",
+          "type": "array",
+          "items": {"$ref": "#/$defs/photo"}
+        },
+        "ia_premiere_mb": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/note"}]},
+        "ia_premiere_second": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/note"}]},
+        "ia_mb": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/note"}]},
+        "ia_second": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/note"}]},
+        "ia_confiance": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "ia_modele": {"type": ["string", "null"], "minLength": 1}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"essence": {"$ref": "#/$defs/essence"}}, "required": ["essence"]},
+          "then": {"$ref": "#/$defs/essence_type"}
+        },
+        {
+          "if": {"properties": {"type": {"enum": ["FEUILLU", "RESINEUX"]}}, "required": ["type"]},
+          "then": {
+            "x-motif": "critere_incoherent",
+            "anyOf": [
+              {"properties": {"type": {"const": "FEUILLU"}, "critere": {"const": "MR"}}},
+              {"properties": {"type": {"const": "RESINEUX"}, "critere": {"const": "MA"}}}
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {"mb": {"$ref": "#/$defs/note"}, "second": {"$ref": "#/$defs/note"}},
+            "required": ["mb", "second"]
+          },
+          "then": {"$ref": "#/$defs/abaque"}
+        },
+        {
+          "x-motif": "ia_incomplete",
+          "anyOf": [
+            {
+              "properties": {
+                "ia_premiere_mb": {"type": "null"},
+                "ia_premiere_second": {"type": "null"},
+                "ia_mb": {"type": "null"},
+                "ia_second": {"type": "null"},
+                "ia_confiance": {"type": "null"},
+                "ia_modele": {"type": "null"}
+              }
+            },
+            {
+              "properties": {
+                "ia_premiere_mb": {"type": "integer"},
+                "ia_premiere_second": {"type": "integer"},
+                "ia_mb": {"type": "integer"},
+                "ia_second": {"type": "integer"},
+                "ia_confiance": {"type": "number"},
+                "ia_modele": {"type": "string"}
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "essence": {
+      "description": "Les 19 essences des fiches DEPERIS du DSF, nom exact (accents compris, Unicode NFC). Généré depuis docs/referentiels/deperis/essences.csv.",
+      "x-motif": "essence_hors_referentiel",
+      "enum": [
+        "Cèdre",
+        "Charme",
+        "Châtaignier",
+        "Chêne liège",
+        "Chêne pédonculé",
+        "Chêne pubescent",
+        "Chêne sessile",
+        "Chêne vert",
+        "Douglas",
+        "Épicéa commun",
+        "Frêne",
+        "Hêtre",
+        "Mélèze",
+        "Pin à crochets",
+        "Pin d'Alep",
+        "Pin laricio de Corse",
+        "Pin maritime",
+        "Pin sylvestre",
+        "Sapin"
+      ]
+    },
+    "essence_type": {
+      "description": "Type de chaque essence. Généré depuis docs/referentiels/deperis/essences.csv.",
+      "x-motif": "type_incoherent",
+      "anyOf": [
+        {"properties": {"essence": {"const": "Cèdre"}, "type": {"const": "RESINEUX"}}},
+        {"properties": {"essence": {"const": "Charme"}, "type": {"const": "FEUILLU"}}},
+        {"properties": {"essence": {"const": "Châtaignier"}, "type": {"const": "FEUILLU"}}},
+        {"properties": {"essence": {"const": "Chêne liège"}, "type": {"const": "FEUILLU"}}},
+        {"properties": {"essence": {"const": "Chêne pédonculé"}, "type": {"const": "FEUILLU"}}},
+        {"properties": {"essence": {"const": "Chêne pubescent"}, "type": {"const": "FEUILLU"}}},
+        {"properties": {"essence": {"const": "Chêne sessile"}, "type": {"const": "FEUILLU"}}},
+        {"properties": {"essence": {"const": "Chêne vert"}, "type": {"const": "FEUILLU"}}},
+        {"properties": {"essence": {"const": "Douglas"}, "type": {"const": "RESINEUX"}}},
+        {"properties": {"essence": {"const": "Épicéa commun"}, "type": {"const": "RESINEUX"}}},
+        {"properties": {"essence": {"const": "Frêne"}, "type": {"const": "FEUILLU"}}},
+        {"properties": {"essence": {"const": "Hêtre"}, "type": {"const": "FEUILLU"}}},
+        {"properties": {"essence": {"const": "Mélèze"}, "type": {"const": "RESINEUX"}}},
+        {"properties": {"essence": {"const": "Pin à crochets"}, "type": {"const": "RESINEUX"}}},
+        {"properties": {"essence": {"const": "Pin d'Alep"}, "type": {"const": "RESINEUX"}}},
+        {"properties": {"essence": {"const": "Pin laricio de Corse"}, "type": {"const": "RESINEUX"}}},
+        {"properties": {"essence": {"const": "Pin maritime"}, "type": {"const": "RESINEUX"}}},
+        {"properties": {"essence": {"const": "Pin sylvestre"}, "type": {"const": "RESINEUX"}}},
+        {"properties": {"essence": {"const": "Sapin"}, "type": {"const": "RESINEUX"}}}
+      ]
+    },
+    "abaque": {
+      "description": "Classe = abaque(MB, MR ou MA), 36 cases (fiches DSF 2025, page 1). Généré depuis docs/referentiels/deperis/abaque.csv.",
+      "x-motif": "classe_differente_abaque",
+      "anyOf": [
+        {"properties": {"mb": {"const": 0}, "second": {"const": 0}, "classe": {"const": "A"}}},
+        {"properties": {"mb": {"const": 0}, "second": {"const": 1}, "classe": {"const": "B"}}},
+        {"properties": {"mb": {"const": 0}, "second": {"const": 2}, "classe": {"const": "C"}}},
+        {"properties": {"mb": {"const": 0}, "second": {"const": 3}, "classe": {"const": "D"}}},
+        {"properties": {"mb": {"const": 0}, "second": {"const": 4}, "classe": {"const": "E"}}},
+        {"properties": {"mb": {"const": 0}, "second": {"const": 5}, "classe": {"const": "F"}}},
+        {"properties": {"mb": {"const": 1}, "second": {"const": 0}, "classe": {"const": "B"}}},
+        {"properties": {"mb": {"const": 1}, "second": {"const": 1}, "classe": {"const": "B"}}},
+        {"properties": {"mb": {"const": 1}, "second": {"const": 2}, "classe": {"const": "C"}}},
+        {"properties": {"mb": {"const": 1}, "second": {"const": 3}, "classe": {"const": "D"}}},
+        {"properties": {"mb": {"const": 1}, "second": {"const": 4}, "classe": {"const": "E"}}},
+        {"properties": {"mb": {"const": 1}, "second": {"const": 5}, "classe": {"const": "F"}}},
+        {"properties": {"mb": {"const": 2}, "second": {"const": 0}, "classe": {"const": "C"}}},
+        {"properties": {"mb": {"const": 2}, "second": {"const": 1}, "classe": {"const": "C"}}},
+        {"properties": {"mb": {"const": 2}, "second": {"const": 2}, "classe": {"const": "D"}}},
+        {"properties": {"mb": {"const": 2}, "second": {"const": 3}, "classe": {"const": "D"}}},
+        {"properties": {"mb": {"const": 2}, "second": {"const": 4}, "classe": {"const": "E"}}},
+        {"properties": {"mb": {"const": 2}, "second": {"const": 5}, "classe": {"const": "F"}}},
+        {"properties": {"mb": {"const": 3}, "second": {"const": 0}, "classe": {"const": "D"}}},
+        {"properties": {"mb": {"const": 3}, "second": {"const": 1}, "classe": {"const": "D"}}},
+        {"properties": {"mb": {"const": 3}, "second": {"const": 2}, "classe": {"const": "D"}}},
+        {"properties": {"mb": {"const": 3}, "second": {"const": 3}, "classe": {"const": "E"}}},
+        {"properties": {"mb": {"const": 3}, "second": {"const": 4}, "classe": {"const": "F"}}},
+        {"properties": {"mb": {"const": 3}, "second": {"const": 5}, "classe": {"const": "F"}}},
+        {"properties": {"mb": {"const": 4}, "second": {"const": 0}, "classe": {"const": "E"}}},
+        {"properties": {"mb": {"const": 4}, "second": {"const": 1}, "classe": {"const": "E"}}},
+        {"properties": {"mb": {"const": 4}, "second": {"const": 2}, "classe": {"const": "E"}}},
+        {"properties": {"mb": {"const": 4}, "second": {"const": 3}, "classe": {"const": "F"}}},
+        {"properties": {"mb": {"const": 4}, "second": {"const": 4}, "classe": {"const": "F"}}},
+        {"properties": {"mb": {"const": 4}, "second": {"const": 5}, "classe": {"const": "F"}}},
+        {"properties": {"mb": {"const": 5}, "second": {"const": 0}, "classe": {"const": "F"}}},
+        {"properties": {"mb": {"const": 5}, "second": {"const": 1}, "classe": {"const": "F"}}},
+        {"properties": {"mb": {"const": 5}, "second": {"const": 2}, "classe": {"const": "F"}}},
+        {"properties": {"mb": {"const": 5}, "second": {"const": 3}, "classe": {"const": "F"}}},
+        {"properties": {"mb": {"const": 5}, "second": {"const": 4}, "classe": {"const": "F"}}},
+        {"properties": {"mb": {"const": 5}, "second": {"const": 5}, "classe": {"const": "F"}}}
+      ]
+    }
+  }
+}
