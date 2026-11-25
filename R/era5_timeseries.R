@@ -235,7 +235,11 @@
   invisible(TRUE)
 }
 
-# Le fichier couvre l'année entière en pas horaires (jours entiers de 24 h).
+# Le fichier est un cache utilisable de l'année : année entière en pas horaires
+# (jours entiers de 24 h), les 10 variables présentes et écrites sur tous les pas
+# (t2m, d2m, sp : jamais nuls). Une variable absente ou
+# restée à zéro (jamais écrite) ne fait pas un cache : le fichier est redemandé
+# au lieu de rester en cache et d'échouer à chaque lecture (mission 049).
 .rsen_era5ts_couvre <- function(path, annee) {
   # ncdf4 absent : erreur claire, jamais confondue avec un fichier illisible.
   .rsen_era5ts_exiger_ncdf4()
@@ -248,6 +252,15 @@
     base <- as.POSIXct(gsub(".*since ", "", td$units), tz = "UTC")
     t <- base + as.numeric(td$vals) * (if (grepl("hours", td$units)) 3600 else 1)
     njours <- .rsen_era5ts_njours(annee)
-    sum(format(t, "%Y", tz = "UTC") == as.character(annee)) == 24L * njours
+    if (sum(format(t, "%Y", tz = "UTC") == as.character(annee)) != 24L * njours)
+      return(FALSE)
+    if (!all(.RSEN_ERA5TS_NC %in% names(nc$var))) return(FALSE)
+    # Valeur non écrite d'un NetCDF-4 : 9,97e36 (remplissage par défaut) ou 0.
+    for (k in .RSEN_ERA5TS_NC) {
+      v <- as.numeric(ncdf4::ncvar_get(nc, k))
+      if (!all(is.finite(v) & abs(v) < 1e30)) return(FALSE)
+      if (k %in% c("t2m", "d2m", "sp") && !all(v > 0)) return(FALSE)
+    }
+    TRUE
   }, error = function(e) NA)
 }

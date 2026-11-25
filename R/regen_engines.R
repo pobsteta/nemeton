@@ -986,7 +986,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
                                    basename(t$nc)))
       }
       if (!couvre) {
-        .rsen_era5ts_abort(sprintf("file %s does not cover year %d.",
+        .rsen_era5ts_abort(sprintf("file %s does not cover year %d (time steps, variables or values missing).",
                                    basename(t$nc), t$year))
       }
     }

@@ -541,17 +541,23 @@ test_that("règle bissextile unique", {
 # --- Mission 042 : forme réelle de la réponse CDS `timeseries` ---------------
 # NetCDF-4, dimension unique `valid_time`, variables float sur valid_time,
 # `latitude` / `longitude` SCALAIRES (0 dimension). Construit ici, pas copié.
-.ts_fixture_cds <- function(path, times) {
+# `sans` : variables non écrites dans le fichier ; `court` : variable dont seules
+# les 100 premières valeurs sont écrites (le reste n'est jamais écrit : 0).
+.ts_fixture_cds <- function(path, times, sans = character(), court = NULL) {
   skip_if_not_installed("ncdf4")
   dt <- ncdf4::ncdim_def("valid_time", "seconds since 1970-01-01", as.numeric(times))
-  noms <- c("u10", "v10", "d2m", "t2m", "sp", "ssrd", "strd", "tcc", "tp", "fdir")
+  noms <- setdiff(c("u10", "v10", "d2m", "t2m", "sp", "ssrd", "strd", "tcc", "tp", "fdir"),
+                  sans)
   vals <- list(u10 = 3, v10 = 4, d2m = 278.15, t2m = 283.15, sp = 95000,
                ssrd = 1.8e6, strd = 1.08e6, tcc = 0.5, tp = 0.001, fdir = 0.9e6)
   vars <- lapply(noms, function(k) ncdf4::ncvar_def(k, "", list(dt), prec = "float"))
   vars <- c(vars, list(ncdf4::ncvar_def("latitude", "degrees_north", list(), prec = "double"),
                        ncdf4::ncvar_def("longitude", "degrees_east", list(), prec = "double")))
   nc <- ncdf4::nc_create(path, vars, force_v4 = TRUE)
-  for (i in seq_along(noms)) ncdf4::ncvar_put(nc, vars[[i]], rep_len(vals[[noms[i]]], length(times)))
+  for (i in seq_along(noms)) {
+    n <- if (identical(noms[i], court)) 100L else length(times)
+    ncdf4::ncvar_put(nc, vars[[i]], rep_len(vals[[noms[i]]], n), start = 1, count = n)
+  }
   ncdf4::ncvar_put(nc, "latitude", 47.25)
   ncdf4::ncvar_put(nc, "longitude", 5)
   ncdf4::nc_close(nc)
@@ -616,4 +622,136 @@ test_that("m042 cas 5 : le vrai fichier CDS (hors CI) est accepté et lu", {
   nc <- nemeton:::.rsen_era5ts_extraire(zp, file.path(d, "reel.nc"))
   expect_true(nemeton:::.rsen_era5_nc_complet(nc))
   expect_equal(nrow(nemeton:::.rsen_era5ts_lire_maille(nc, 2018L)), 8760L)
+})
+
+# --- Mission 049 : restes des relectures de 039 et 042 -----------------------
+
+# Accès CDS factice qui répond avec la forme réelle du CDS (`.ts_fixture_cds()`).
+# `fixture` remplace l'écriture du fichier (par défaut : fichier valide de 2023).
+.acces_cds_reel_faux <- function(fixture = NULL) {
+  acces <- .acces_ts_faux()
+  acces$soumettre <- function(req_k, cache_dir) {
+    acces$appels$req[[length(acces$appels$req) + 1L]] <- req_k
+    list(req = req_k, cache = file.path(cache_dir, "x"))
+  }
+  acces$extraire <- function(h, req_k, cache_dir) {
+    f <- file.path(cache_dir, sub("\\.zip$", ".nc", req_k$target))
+    if (is.null(fixture)) .ts_fixture_cds(f, .tt_annee(2023L)) else fixture(f)
+  }
+  acces
+}
+
+test_that("m049 cas 1 : regen_sensibilite() sans option part par le jeu timeseries", {
+  skip_if_not_installed("ncdf4")
+  skip_if_not_installed("terra")
+  skip_if_not_installed("microclimf")
+  skip_if_not_installed("exactextractr")
+  # Défaut : ni option ni argument `source`.
+  withr::local_options(list(nemeton.era5_source = NULL))
+  u <- sf::st_sf(id = 1:3, geometry = sf::st_sfc(lapply(0:2, function(i) {
+    x <- i * 10
+    sf::st_polygon(list(rbind(c(x, 0), c(x + 5, 0), c(x + 5, 5), c(x, 5), c(x, 0))))
+  }), crs = 2154))
+  tmpl <- terra::rast(xmin = -200, xmax = 260, ymin = -200, ymax = 260,
+                      resolution = 10, crs = "EPSG:2154")
+  mnt <- terra::setValues(tmpl, seq_len(terra::ncell(tmpl)))
+  mnh <- terra::setValues(tmpl, 12)
+  pai <- terra::setValues(tmpl, 3)
+  acces <- .acces_cds_reel_faux()
+  # Le calcul s'arrête sur le premier appel de microclimf, APRÈS le forçage
+  # (qu'on capte) : on teste l'amont, pas le modèle.
+  meteo <- NULL
+  testthat::local_mocked_bindings(.rsen_era5_acces_cds = function() acces)
+  testthat::local_mocked_bindings(
+    checkinputs = function(weather, ...) {
+      meteo <<- weather
+      stop(structure(class = c("m049_apres_forcage", "error", "condition"),
+                     list(message = "arret apres le forcage", call = NULL)))
+    }, .package = "microclimf")
+  cd <- withr::local_tempdir()
+  expect_error(
+    suppressWarnings(regen_sensibilite(u, mnt = mnt, mnh = mnh, pai = pai,
+                                       annees_moy = 2023L, annees_canic = 2023L,
+                                       cache_dir = cd)),
+    class = "m049_apres_forcage")
+  # 4 mailles voisines, toutes du jeu timeseries.
+  sets <- vapply(acces$appels$req, `[[`, "", "dataset_short_name")
+  expect_length(sets, 4L)
+  expect_true(all(sets == nemeton:::.RSEN_ERA5TS_DATASET))
+  # Fichiers du cache : `era5ts_*` seulement, aucun `era5_*` classique.
+  nc <- list.files(cd, pattern = "\\.nc$")
+  expect_length(nc, 4L)
+  expect_true(all(grepl("^era5ts_", nc)))
+  expect_false(any(grepl("^era5_.*\\.(nc|zip)$", list.files(cd))))
+  # Le forçage rendu à microclimf est celui du jeu timeseries : année entière.
+  expect_identical(names(meteo), .COLS_MICROCLIMF)
+  expect_equal(nrow(meteo), 8760L)
+})
+
+test_that("m049 cas 2 : un fichier de forme CDS sans une des 10 variables n'est pas un cache", {
+  skip_if_not_installed("ncdf4")
+  cd <- withr::local_tempdir()
+  m <- nemeton:::.rsen_era5ts_mailles(4.8, 47.3)
+  for (k in seq_len(nrow(m)))
+    .ts_fixture_cds(nemeton:::.rsen_era5ts_nom(cd, m$x[k], m$y[k], 2023L),
+                    .tt_annee(2023L), sans = "fdir")
+  f1 <- nemeton:::.rsen_era5ts_nom(cd, m$x[1], m$y[1], 2023L)
+  expect_true(nemeton:::.rsen_era5_nc_complet(f1))      # NetCDF sain, mais incomplet
+  expect_false(isTRUE(nemeton:::.rsen_era5ts_couvre(f1, 2023L)))
+  expect_false(nemeton:::.rsen_era5ts_en_cache(cd, 4.8, 47.3, 2023L))
+  # Le contrôle de cache le refuse : les 4 mailles sont redemandées (et remplacées
+  # par des fichiers complets), au lieu de rester en cache et d'échouer à chaque lecture.
+  acces <- .acces_cds_reel_faux()
+  d <- nemeton:::.rsen_forcage_era5(4.8, 47.3, 2023L, cd, source = "timeseries",
+                                    acces_ts = acces, pause = function(...) NULL)
+  expect_length(acces$appels$req, 4L)
+  expect_equal(nrow(d), 8760L)
+  expect_true(nemeton:::.rsen_era5ts_en_cache(cd, 4.8, 47.3, 2023L))
+})
+
+test_that("m049 cas 2 : une réponse sans variable, ou à variable non écrite, lève rsen_era5ts_echec", {
+  skip_if_not_installed("ncdf4")
+  cas <- list(
+    sans_fdir = function(f) .ts_fixture_cds(f, .tt_annee(2023L), sans = "fdir"),
+    t2m_non_ecrite = function(f) .ts_fixture_cds(f, .tt_annee(2023L), court = "t2m"))
+  for (nom in names(cas)) {
+    cd <- withr::local_tempdir()
+    e <- expect_error(
+      nemeton:::.rsen_forcage_era5(4.8, 47.3, 2023L, cd, source = "timeseries",
+                                   acces_ts = .acces_cds_reel_faux(cas[[nom]]),
+                                   pause = function(...) NULL),
+      class = "rsen_era5ts_echec")
+    expect_match(conditionMessage(e), "does not\\s+cover year 2023", info = nom)
+  }
+})
+
+test_that("m049 cas 2 : une variable de forme CDS non écrite sur tous les pas n'est pas un cache", {
+  skip_if_not_installed("ncdf4")
+  for (v in c("t2m", "d2m", "sp")) {
+    f <- withr::local_tempfile(fileext = ".nc")
+    .ts_fixture_cds(f, .tt_annee(2023L), court = v)
+    expect_false(isTRUE(nemeton:::.rsen_era5ts_couvre(f, 2023L)), info = v)
+  }
+  # Contrôle : le même fichier, complet, est accepté.
+  g <- withr::local_tempfile(fileext = ".nc")
+  .ts_fixture_cds(g, .tt_annee(2023L))
+  expect_true(nemeton:::.rsen_era5ts_couvre(g, 2023L))
+})
+
+test_that("m049 cas 2 : t2m, d2m ou sp à zéro partout (jamais écrits) ne font pas un cache", {
+  for (k in c("t2m", "d2m", "sp")) {
+    f <- withr::local_tempfile(fileext = ".nc")
+    .ts_fixture_cds(f, .tt_annee(2023L))
+    nc <- ncdf4::nc_open(f, write = TRUE)
+    ncdf4::ncvar_put(nc, k, rep(0, 8760))
+    ncdf4::nc_close(nc)
+    expect_false(nemeton:::.rsen_era5ts_couvre(f, 2023L), info = k)
+  }
+  # Témoin : u10 à zéro (vent nul) reste une valeur réelle acceptée.
+  f <- withr::local_tempfile(fileext = ".nc")
+  .ts_fixture_cds(f, .tt_annee(2023L))
+  nc <- ncdf4::nc_open(f, write = TRUE)
+  ncdf4::ncvar_put(nc, "u10", rep(0, 8760))
+  ncdf4::nc_close(nc)
+  expect_true(nemeton:::.rsen_era5ts_couvre(f, 2023L))
 })
