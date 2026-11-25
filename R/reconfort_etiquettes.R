@@ -36,7 +36,7 @@ reconfort_classe <- function(deperis_pe) {
 #' labels, recomputes the class from `DEPERIS_pe`, then propagates the labels
 #' in time: a **healthy** plot in year Y is healthy in Y-1 and Y-2; a
 #' **declining** plot (class 2 or 3) in year Y is declining in Y+1 and Y+2
-#' (class 2, the minimum guaranteed by the rule, whatever the observed class).
+#' with its observed class (a very declining plot, class 3, stays class 3).
 #' A propagation never overwrites a real observation, and a disagreement is
 #' listed, never settled silently.
 #'
@@ -141,7 +141,8 @@ reconfort_etiquettes <- function(placettes, propager = TRUE, avant = 2L, apres =
       cl <- 1L
     } else {
       ans <- if (apres > 0L) y + seq_len(apres) else integer(0)
-      cl <- 2L
+      # la classe observee (2 ou 3) est gardee en aval (Pascal, 2026-11-25)
+      cl <- obs$dep_cor[i]
     }
     if (!length(ans)) return(NULL)
     data.frame(id_unique = obs$id_unique[i], annee = ans, dep_cor = cl,

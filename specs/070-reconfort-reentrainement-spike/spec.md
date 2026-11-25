@@ -15,7 +15,7 @@
    (`dep_cor` ∈ {1, 2, 3}, jamais 0 ; `DEPERIS_pe` ∈ [0, 1] ; `id_unique` unique par année),
    recalcule la classe depuis `DEPERIS_pe` (< 0,20 saine ; 0,20 à 0,50 dépérissante ;
    > 0,50 très dépérissante), puis propage de Y-2 à Y+2 : saine en Y ⇒ saine en Y-1 et Y-2 ;
-   dépérissante (2 ou 3) en Y ⇒ classe 2 en Y+1 et Y+2. Une observation réelle n'est jamais
+   dépérissante (2 ou 3) en Y ⇒ même classe en Y+1 et Y+2 (Pascal, 2026-11-25). Une observation réelle n'est jamais
    écrasée ; tout désaccord est listé (attribut `conflits`), et deux propagations en
    désaccord écartent la ligne au lieu de trancher.
 3. **Masques** — `reconfort_masquer()` retire les pixels hors chênaie (couche fournie, BD
@@ -43,8 +43,9 @@ Tout est testé sans réseau sur des jeux `synth_` (`tests/testthat/helper-recon
 - La chaîne image : extraction des séries Sentinel-2 aux placettes, application du modèle à
   une zone, écriture de la carte (le spike s'arrête aux tables de séries).
 - Le portage Windows du crate (le paquet s'y installe sans Rust).
-- Le choix de la classe propagée pour « très dépérissante » : le spike propage la classe 2
-  (le minimum garanti par la règle) ; à confirmer avec les notes réelles.
+- Choix tranchés par Pascal le 2026-11-25 : un pixel coupé est retiré dès l'année de la
+  coupe ; une « très dépérissante » propagée garde la classe 3 ; la classe recalculée depuis
+  `DEPERIS_pe` l'emporte sur `dep_cor`, l'écart étant signalé (`ecarts_classe`).
 
 ## Critère pour amender la spec 021
 

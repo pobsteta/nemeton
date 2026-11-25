@@ -30,7 +30,7 @@ Validates survey plots in the format of the upstream `train_new_model/`
 labels, recomputes the class from `DEPERIS_pe`, then propagates the labels
 in time: a **healthy** plot in year Y is healthy in Y-1 and Y-2; a
 **declining** plot (class 2 or 3) in year Y is declining in Y+1 and Y+2
-(class 2, the minimum guaranteed by the rule, whatever the observed class).
+with its observed class (a very declining plot, class 3, stays class 3).
 A propagation never overwrites a real observation, and a disagreement is
 listed, never settled silently.
 }

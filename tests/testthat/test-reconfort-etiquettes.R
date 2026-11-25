@@ -40,9 +40,9 @@ test_that("cas 3 : saine 2022 => 2020 et 2021 saines ; deperissante 2022 => 2023
   expect_equal(d$annee, 2022:2024)
   expect_equal(d$dep_cor, c(2L, 2L, 2L))
 
-  # tres deperissante : la regle garantit « deperissante » (classe 2) en aval
+  # tres deperissante : garde la classe 3 en aval (Pascal, 2026-11-25)
   t3 <- reconfort_etiquettes(pl("tres", 2022L, 0.9))
-  expect_equal(t3$dep_cor, c(3L, 2L, 2L))
+  expect_equal(t3$dep_cor, c(3L, 3L, 3L))
   expect_equal(nrow(attr(s, "conflits")), 0L)
 })
 
