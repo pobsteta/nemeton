@@ -172,14 +172,14 @@ if_cvat_float <- function(vals, ext = terra::ext(925000, 925100, 6700000, 670010
   r
 }
 
-test_that("cvat : Byte, DEFLATE, nodata 0 déclaré, NA -> 0, hors [0, 1] ramené aux bornes", {
+test_that("cvat : Byte, DEFLATE, nodata 0 déclaré, flottant [0, 1] -> 1 + round(v * 254), NA -> 0", {
   skip_if_terra_write_broken()
   withr::with_tempdir({
     dir.create("rasters")
-    # une valeur par colonne de 2 m : 0, 0.5, 1, 1.7, -0.5, NA
+    # une valeur par colonne de 2 m : 0, 0.5, 1, 0.2, 0.8, NA
     ext <- terra::ext(925000, 925012, 6700000, 6700002)
     src <- terra::rast(ext, resolution = 2, crs = "EPSG:2154")
-    terra::values(src) <- c(0, 0.5, 1, 1.7, -0.5, NA)
+    terra::values(src) <- c(0, 0.5, 1, 0.2, 0.8, NA)
     terra::writeRaster(src, "src.tif", overwrite = TRUE)
     e <- sf::st_geometry(if_carre(925000, 6700000, 925020, 6700002))   # dépasse le CVAT
     f <- nemeton:::.iv_ecrire_cvat("src.tif", e, ".")
@@ -194,33 +194,90 @@ test_that("cvat : Byte, DEFLATE, nodata 0 déclaré, NA -> 0, hors [0, 1] ramen�
     # le 0 déclaré nodata est lu NA par terra : on le remet à 0 pour comparer
     zero <- function(x) { x <- unname(x); x[is.na(x)] <- 0; x }
     v <- unlist(terra::extract(r, cbind(925000 + 2 * (0:5) + 1, 6700001)))
-    # 0 -> 1 ; 0.5 -> 128 ; 1 -> 255 ; 1.7 -> 255 (borné) ; -0.5 -> 1 (borné) ; NA -> 0
-    expect_equal(zero(v), c(1, 128, 255, 255, 1, 0))
+    # 0 -> 1 ; 0.5 -> 128 ; 1 -> 255 ; 0.2 -> 1 + 51 ; 0.8 -> 1 + 203 ; NA -> 0
+    expect_equal(zero(v), c(1, 128, 255, 52, 204, 0))
     # hors de la couverture du CVAT : 0 (nodata)
     expect_equal(zero(unlist(terra::extract(r, cbind(925015, 6700001)))), 0)
   })
 })
 
-test_that("cvat : une valeur hors [0, 1] est ramenée à la borne (-0,5 comme 0, 1,7 comme 1)", {
+# Rasters Byte synthétiques : `nodata` déclaré (NA = aucun), grille 2 m par défaut.
+if_cvat_octets <- function(nom, vals, nodata, res = 2, type = "INT1U",
+                           ext = NULL, crs = "EPSG:2154") {
+  n <- length(vals)
+  if (is.null(ext)) ext <- terra::ext(925000, 925000 + n * res, 6700000, 6700000 + res)
+  r <- terra::rast(ext, resolution = res, crs = crs)
+  terra::values(r) <- rep_len(vals, terra::ncell(r))
+  terra::writeRaster(r, nom, overwrite = TRUE, datatype = type, NAflag = nodata)
+  nom
+}
+
+if_lire_cvat <- function(f) {
+  v <- terra::values(terra::rast(f), mat = FALSE)
+  v[is.na(v)] <- 0                    # le 0 déclaré nodata est lu NA par terra
+  v
+}
+
+test_that("cvat Byte foretaccess (nodata 255) : source + 1, 255 -> 0 (cas 1)", {
   skip_if_terra_write_broken()
   withr::with_tempdir({
     dir.create("rasters")
-    ext <- terra::ext(925000, 925004, 6700000, 6700002)
-    for (cas in list(list(n = "a.tif", v = c(-0.5, 1.7)), list(n = "b.tif", v = c(0, 1)))) {
-      r <- terra::rast(ext, resolution = 2, crs = "EPSG:2154")
-      terra::values(r) <- cas$v
-      terra::writeRaster(r, cas$n, overwrite = TRUE)
+    if_cvat_octets("fa.tif", c(0, 127, 254, 255), nodata = 255)
+    e <- sf::st_geometry(if_carre(925000, 6700000, 925008, 6700002))
+    f <- nemeton:::.iv_ecrire_cvat("fa.tif", e, ".")
+    expect_identical(f, "rasters/cvat.tif")
+    expect_equal(if_lire_cvat(f), c(1, 128, 255, 0))
+    expect_match(if_info(f), "Type=Byte", fixed = TRUE)
+    expect_match(if_info(f), "NoData Value=0", fixed = TRUE)
+  })
+})
+
+test_that("cvat Byte déjà au format Groma (nodata 0) : recopié sans changement de valeur (cas 2)", {
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    dir.create("rasters")
+    if_cvat_octets("gr.tif", c(1, 128, 254, 255, 0), nodata = 0)
+    e <- sf::st_geometry(if_carre(925000, 6700000, 925010, 6700002))
+    f <- nemeton:::.iv_ecrire_cvat("gr.tif", e, ".")
+    expect_equal(if_lire_cvat(f), c(1, 128, 254, 255, 0))
+  })
+})
+
+test_that("cvat flottant [0, 1] : 1 + round(v * 254), NA -> 0, bornes 0 et 1 admises (cas 3)", {
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    dir.create("rasters")
+    src <- terra::rast(terra::ext(925000, 925008, 6700000, 6700002), resolution = 2, crs = "EPSG:2154")
+    terra::values(src) <- c(0, 1, 0.5, NA)
+    terra::writeRaster(src, "fl.tif", overwrite = TRUE)
+    e <- sf::st_geometry(if_carre(925000, 6700000, 925008, 6700002))
+    f <- nemeton:::.iv_ecrire_cvat("fl.tif", e, ".")
+    expect_equal(if_lire_cvat(f), c(1, 255, 128, 0))
+  })
+})
+
+test_that("cvat : codage non reconnu -> erreur de classe dédiée, aucun cvat.tif (cas 4)", {
+  skip_if_terra_write_broken()
+  withr::with_tempdir({
+    dir.create("rasters")
+    e <- sf::st_geometry(if_carre(925000, 6700000, 925008, 6700002))
+    mauvais <- list(
+      octet_sans_nodata = if_cvat_octets("a.tif", c(10, 20, 30, 40), nodata = NA),
+      octet_autre_nodata = if_cvat_octets("a2.tif", c(10, 20, 30, 40), nodata = 7),
+      int16 = if_cvat_octets("b.tif", c(10, 20, 30, 40), nodata = -1, type = "INT2S"),
+      float_hors_01 = if_cvat_octets("c.tif", c(-0.5, 0.2, 1.7, 0.4), nodata = NA, type = "FLT4S"),
+      octet_5_m = if_cvat_octets("d.tif", c(10, 20), nodata = 255, res = 5,
+                                 ext = terra::ext(925000, 925010, 6700000, 6700005)),
+      octet_4326 = if_cvat_octets("e.tif", c(10, 20), nodata = 255, crs = "EPSG:4326",
+                                  ext = terra::ext(3, 3.0003, 47, 47.0003)))
+    for (n in names(mauvais)) {
+      expect_error(nemeton:::.iv_ecrire_cvat(mauvais[[n]], e, "."),
+                   class = "nemeton_erreur_cvat_codage", info = n)
     }
-    e <- sf::st_geometry(if_carre(925000, 6700000, 925004, 6700002))
-    fa <- nemeton:::.iv_ecrire_cvat("a.tif", e, ".")
-    va <- terra::values(terra::rast(fa), mat = FALSE)
-    va[is.na(va)] <- 0
-    file.rename(fa, "a_out.tif")
-    fb <- nemeton:::.iv_ecrire_cvat("b.tif", e, ".")
-    vb <- terra::values(terra::rast(fb), mat = FALSE)
-    vb[is.na(vb)] <- 0
-    expect_equal(va, vb)            # -0.5 -> 1 comme 0 ; 1.7 -> 255 comme 1
-    expect_equal(va, c(1, 255))
+    writeLines("pas un raster", "faux.tif")
+    expect_error(nemeton:::.iv_ecrire_cvat("faux.tif", e, "."),
+                 class = "nemeton_erreur_cvat_codage")
+    expect_false(file.exists("rasters/cvat.tif"))
   })
 })
 
@@ -229,18 +286,18 @@ test_that("cvat Byte de nemetonshiny : marqueur NA retiré avant le rééchantil
   withr::with_tempdir({
     dir.create("rasters")
     # grille 2 m DÉCALÉE d'1 m en x par rapport à la grille de sortie (qui
-    # s'aligne sur les multiples de 2 m) ; relief 100, zone NA (255) au milieu
+    # s'aligne sur les multiples de 2 m) ; relief 200, zone NA (255) au milieu
     r <- terra::rast(terra::ext(925001, 925101, 6700000, 6700100), resolution = 2, crs = "EPSG:2154")
-    m <- matrix(100L, nrow = 50, ncol = 50)
+    m <- matrix(200L, nrow = 50, ncol = 50)
     m[20:30, 20:30] <- 255L
     terra::values(r) <- as.vector(t(m))
-    terra::writeRaster(r, "b.tif", overwrite = TRUE, datatype = "INT1U", NAflag = NA)
+    terra::writeRaster(r, "b.tif", overwrite = TRUE, datatype = "INT1U", NAflag = 255)
     # emprise décalée d'1 m : grille de sortie décalée par rapport à la source
     e <- sf::st_geometry(if_carre(925001, 6700001, 925099, 6700099))
     f <- nemeton:::.iv_ecrire_cvat("b.tif", e, ".")
     v <- terra::values(terra::rast(f), mat = FALSE)
     v[is.na(v)] <- 0
-    attendu <- 1 + round(100 / 255 * 254)
+    attendu <- 200 + 1                              # source + 1
     expect_setequal(unique(v), c(0, attendu))      # aucune valeur intermédiaire
     expect_gt(sum(v == 0), 0L)                      # la zone NA existe bien
   })
@@ -261,15 +318,14 @@ test_that("cvat : reprojeté quand il n'est pas en EPSG:2154", {
   })
 })
 
-test_that("cvat_path absent ou illisible : avertissement, pas de cvat.tif", {
+test_that("cvat_path absent : avertissement ; illisible : erreur ; pas de cvat.tif", {
   withr::with_tempdir({
     dir.create("rasters")
     e <- sf::st_geometry(if_carre(925000, 6700000, 925100, 6700100))
     expect_warning(r <- nemeton:::.iv_ecrire_cvat("nexiste_pas.tif", e, "."), "cvat_path")
     expect_null(r)
     writeLines("pas un raster", "faux.tif")
-    expect_warning(r <- nemeton:::.iv_ecrire_cvat("faux.tif", e, "."), "cvat_path")
-    expect_null(r)
+    expect_error(nemeton:::.iv_ecrire_cvat("faux.tif", e, "."), class = "nemeton_erreur_cvat_codage")
     expect_false(file.exists("rasters/cvat.tif"))
   })
 })
@@ -439,6 +495,34 @@ test_that("projet : cvat_path illisible n'empêche pas le projet", {
       output_dir = "sortie"), "cvat_path")
     expect_true(file.exists(qgz))
     expect_false("rasters/cvat.tif" %in% utils::unzip(qgz, list = TRUE)$Name)
+  })
+})
+
+test_that("projet : cvat_path mal codé -> erreur, ni .qgz ni dossier de projet (cas 4)", {
+  skip_if_not_installed("RSQLite")
+    skip_if_terra_write_broken()
+  withr::with_tempdir({
+    if_cvat_octets("sans_nodata.tif", c(10, 20, 30, 40), nodata = NA,
+                   ext = terra::ext(924950, 925250, 6699950, 6699952))
+    expect_error(creer_projet_inventaire_video(
+      if_pl(), dem = if_mnt(), cvat_path = "sans_nodata.tif",
+      output_dir = "sortie"), class = "nemeton_erreur_cvat_codage")
+    expect_length(list.files("sortie", recursive = TRUE, all.files = TRUE), 0L)
+  })
+})
+
+test_that("projet : cvat_path foretaccess -> cvat.tif source + 1 dans le projet (cas 1)", {
+  skip_if_not_installed("RSQLite")
+    skip_if_terra_write_broken()
+  withr::with_tempdir({
+    r <- terra::rast(terra::ext(924950, 925250, 6699950, 6700050), resolution = 2, crs = "EPSG:2154")
+    terra::values(r) <- 200
+    terra::writeRaster(r, "fa.tif", overwrite = TRUE, datatype = "INT1U", NAflag = 255)
+    qgz <- suppressWarnings(creer_projet_inventaire_video(if_pl(), dem = if_mnt(), cvat_path = "fa.tif", output_dir = "fa_out"))
+    utils::unzip(qgz, files = "rasters/cvat.tif", exdir = "x")
+    v <- terra::values(terra::rast("x/rasters/cvat.tif"), mat = FALSE)
+    expect_true(201 %in% v)
+    expect_false(200 %in% v)
   })
 })
 

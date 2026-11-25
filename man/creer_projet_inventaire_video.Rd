@@ -66,13 +66,19 @@ nor \code{parcelles}. Default 10.}
 \item{cvat_path}{Optional path of a CVAT relief raster (as computed by
 nemetonshiny with \code{foretaccess::vat_combined()}). When given, it is
 cropped to the forest extent and written as \code{rasters/cvat.tif}
-(Byte, 2 m, EPSG:2154, DEFLATE; \code{1 + round(v * 254)} for a relief
-\code{v} in \eqn{[0, 1]}, \code{0} = nodata; a float value outside
-\eqn{[0, 1]} is clamped, \code{NA} gives \code{0}). A Byte input (the
-8-bit CVAT of nemetonshiny, \code{v = b / 255}) is rescaled the same way,
-its value \code{255} being foretaccess' marker for \code{NA} and giving
-\code{0}. Reprojected when not in EPSG:2154. \code{NULL} (default): no
-\code{cvat.tif}. A missing or unreadable file only raises a warning.}
+(Byte, 2 m, EPSG:2154, DEFLATE, \code{0} = nodata), in Groma's coding.
+Accepted codings, recognised by the declared nodata: Byte with nodata
+\code{255} (foretaccess, relief \code{0} to \code{254}) written as
+\code{value + 1}, \code{255} giving \code{0}; Byte with nodata \code{0}
+(already Groma, \code{1} to \code{255}) copied as is; Byte rasters must be
+EPSG:2154 and 2 m (nearest neighbour resampling); a float relief \code{v} in
+\eqn{[0, 1]} (cache of \code{generate_rvt()}) written as
+\code{1 + round(v * 254)}, \code{NA} giving \code{0}. Reprojected when
+not in EPSG:2154 (float only). \code{NULL} (default): no \code{cvat.tif}. A missing file
+only raises a warning; an unreadable or otherwise coded file (Byte without
+declared nodata, Int16, float outside \eqn{[0, 1]}, Byte not at 2 m or not in EPSG:2154) is an
+error of class \code{nemeton_erreur_cvat_codage}, raised before anything is
+written.}
 
 \item{output_dir}{Destination directory.}
 

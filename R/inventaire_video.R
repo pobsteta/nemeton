@@ -1401,13 +1401,19 @@ valider_inventaire_video <- function(gpkg, plan = NULL, region = "BFC") {
 #' @param cvat_path Optional path of a CVAT relief raster (as computed by
 #'   nemetonshiny with \code{foretaccess::vat_combined()}). When given, it is
 #'   cropped to the forest extent and written as \code{rasters/cvat.tif}
-#'   (Byte, 2 m, EPSG:2154, DEFLATE; \code{1 + round(v * 254)} for a relief
-#'   \code{v} in \eqn{[0, 1]}, \code{0} = nodata; a float value outside
-#'   \eqn{[0, 1]} is clamped, \code{NA} gives \code{0}). A Byte input (the
-#'   8-bit CVAT of nemetonshiny, \code{v = b / 255}) is rescaled the same way,
-#'   its value \code{255} being foretaccess' marker for \code{NA} and giving
-#'   \code{0}. Reprojected when not in EPSG:2154. \code{NULL} (default): no
-#'   \code{cvat.tif}. A missing or unreadable file only raises a warning.
+#'   (Byte, 2 m, EPSG:2154, DEFLATE, \code{0} = nodata), in Groma's coding.
+#'   Accepted codings, recognised by the declared nodata: Byte with nodata
+#'   \code{255} (foretaccess, relief \code{0} to \code{254}) written as
+#'   \code{value + 1}, \code{255} giving \code{0}; Byte with nodata \code{0}
+#'   (already Groma, \code{1} to \code{255}) copied as is; Byte rasters must be
+#'   EPSG:2154 and 2 m (nearest neighbour resampling); a float relief \code{v} in
+#'   \eqn{[0, 1]} (cache of \code{generate_rvt()}) written as
+#'   \code{1 + round(v * 254)}, \code{NA} giving \code{0}. Reprojected when
+#'   not in EPSG:2154 (float only). \code{NULL} (default): no \code{cvat.tif}. A missing file
+#'   only raises a warning; an unreadable or otherwise coded file (Byte without
+#'   declared nodata, Int16, float outside \eqn{[0, 1]}, Byte not at 2 m or not in EPSG:2154) is an
+#'   error of class \code{nemeton_erreur_cvat_codage}, raised before anything is
+#'   written.
 #' @param output_dir Destination directory.
 #' @param project_name File name of the \code{.qgz} (\code{^[A-Za-z0-9_-]+$}).
 #'   Default \code{"inventaire_video"}.
@@ -1483,6 +1489,10 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   }
   if (!nrow(placettes)) cli::cli_abort("No plot to include.")
 
+  # Le CVAT est lu et son codage vérifié AVANT toute écriture : un codage non
+  # reconnu lève une erreur, il ne laisse aucun projet à moitié écrit.
+  cvat <- if (!is.null(cvat_path)) .iv_cvat_lire(cvat_path)
+
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
   output_dir <- normalizePath(output_dir, winslash = "/", mustWork = TRUE)
   qgz_path <- file.path(output_dir, paste0(project_name, ".qgz"))
@@ -1547,8 +1557,8 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
       houppiers <- .iv_houppiers_emprise(chm, emprise, placettes, rayon_m + marge_m)
     }
   }
-  if (!is.null(cvat_path)) {
-    f <- .iv_ecrire_cvat(cvat_path, emprise, stage)
+  if (!is.null(cvat)) {
+    f <- .iv_ecrire_cvat(cvat, emprise, stage)
     if (!is.null(f)) rasters <- c(rasters, f)
   }
 
@@ -1708,47 +1718,92 @@ creer_projet_inventaire_video <- function(placettes, plot_ids = NULL,
   h[, c("plot_id", "houppier_id", "h_max", "surface_m2", "x_sommet", "y_sommet")]
 }
 
+# Lit un CVAT source et en reconnaît le codage. Rend NULL (avertissement) si le
+# fichier est absent ; lève `nemeton_erreur_cvat_codage` s'il est illisible ou
+# d'un codage non reconnu : jamais de conversion silencieuse (brief groma § 2.3).
+# Codages : "foretaccess" (Byte, nodata 255, relief 0-254), "groma" (Byte, nodata
+# 0, relief 1-255, recopié), "flottant" (relief [0, 1], cache de generate_rvt()).
+.iv_cvat_lire <- function(cvat_path) {
+  refus <- function(raison) {
+    cli::cli_abort(c(
+      "{.arg cvat_path} has an unsupported coding: no {.file cvat.tif} written.",
+      "x" = raison,
+      "i" = paste0("Accepted: Byte with nodata 255 (foretaccess, 0-254), Byte with ",
+                   "nodata 0 (Groma, 1-255), both at 2 m; or float in [0, 1].")
+    ), class = "nemeton_erreur_cvat_codage")
+  }
+  if (!is.character(cvat_path) || length(cvat_path) != 1L || is.na(cvat_path) ||
+      !file.exists(cvat_path)) {
+    cli::cli_warn("{.arg cvat_path} not usable (file not found): no {.file cvat.tif} written.")
+    return(NULL)
+  }
+  lu <- tryCatch({
+    r <- suppressWarnings(terra::rast(cvat_path))[[1]]
+    ligne <- grep("NoData Value=", terra::describe(cvat_path), value = TRUE)[1]
+    nodata <- suppressWarnings(as.numeric(sub(".*NoData Value=", "", ligne)))
+    list(r = r, nodata = nodata)
+  }, error = function(e) e)
+  if (inherits(lu, "error")) refus(paste0("File unreadable: ", conditionMessage(lu), "."))
+  r <- lu$r
+  type <- terra::datatype(r)
+  if (identical(type, "INT1U")) {
+    if (is.na(lu$nodata) || !lu$nodata %in% c(0, 255)) {
+      refus(sprintf("Byte raster with nodata %s declared: 0 (Groma) or 255 (foretaccess) expected.",
+                    if (is.na(lu$nodata)) "none" else format(lu$nodata)))
+    }
+    if (!terra::same.crs(r, "EPSG:2154")) {
+      refus("Byte raster not in EPSG:2154 (Groma's coding is defined on the 2 m Lambert-93 grid).")
+    }
+    if (!isTRUE(all.equal(terra::res(r), c(2, 2), tolerance = 1e-6))) {
+      refus(sprintf("Pixel of %s x %s m: 2 m expected for a Byte raster.",
+                    format(terra::res(r)[1]), format(terra::res(r)[2])))
+    }
+    return(list(r = r, codage = if (lu$nodata == 255) "foretaccess" else "groma"))
+  }
+  if (type %in% c("FLT4S", "FLT8S")) {
+    mm <- terra::global(r, range, na.rm = TRUE)
+    # Tout NA : accepté (donne 0 partout) ; sinon les bornes doivent tenir dans [0, 1].
+    if (!anyNA(mm) && (mm[[1]] < 0 || mm[[2]] > 1)) {
+      refus(sprintf("Float raster with values in [%s, %s]: [0, 1] expected.",
+                    format(mm[[1]]), format(mm[[2]])))
+    }
+    return(list(r = r, codage = "flottant"))
+  }
+  refus(sprintf("Data type %s: Byte or float expected.", type))
+}
+
 # `rasters/cvat.tif` : Byte, 2 m, EPSG:2154, DEFLATE, 0 = nodata. Rend le chemin
-# relatif, ou NULL (avertissement) si le fichier est absent ou illisible.
-.iv_ecrire_cvat <- function(cvat_path, emprise, stage) {
-  tryCatch({
-    if (!is.character(cvat_path) || length(cvat_path) != 1L || !file.exists(cvat_path)) {
-      stop("file not found")
-    }
-    r <- terra::rast(cvat_path)[[1]]
-    octet <- terra::datatype(r) %in% "INT1U"
-    methode <- "bilinear"
-    if (octet) {
-      # Le marqueur NA (255) sort AVANT tout rééchantillonnage : interpolé, il
-      # fabriquerait des valeurs intermédiaires en bordure des zones NA. Les
-      # niveaux 0-254 restent interpolés au plus proche voisin (pas de
-      # mélange non plus entre deux niveaux de gris).
-      r <- terra::ifel(r >= 255, NA, r)
-      methode <- "near"
-    }
-    if (!terra::same.crs(r, "EPSG:2154")) r <- terra::project(r, "EPSG:2154", method = methode)
-    v_emprise <- terra::vect(sf::st_sf(geometry = emprise))
-    e <- terra::ext(v_emprise)
-    gabarit <- terra::rast(terra::ext(floor(terra::xmin(e) / 2) * 2, ceiling(terra::xmax(e) / 2) * 2,
-                                      floor(terra::ymin(e) / 2) * 2, ceiling(terra::ymax(e) / 2) * 2),
-                           resolution = 2, crs = "EPSG:2154")
-    v <- terra::mask(.iv_sur_gabarit(r, gabarit, methode), v_emprise)
-    val <- terra::values(v, mat = FALSE)
-    if (octet) val <- val / 255
-    val <- pmin(pmax(val, 0), 1)
-    b <- 1 + round(val * 254)
-    b[is.na(b)] <- 0
-    out <- terra::rast(v)
-    terra::values(out) <- b
-    names(out) <- "cvat"
-    f <- file.path("rasters", "cvat.tif")
-    terra::writeRaster(out, file.path(stage, f), overwrite = TRUE, datatype = "INT1U",
-                       NAflag = 0, gdal = c("COMPRESS=DEFLATE"))
-    f
-  }, error = function(e) {
-    cli::cli_warn("{.arg cvat_path} not usable ({conditionMessage(e)}): no {.file cvat.tif} written.")
-    NULL
-  })
+# relatif, ou NULL (avertissement) si le fichier est absent. `cvat` : chemin, ou
+# résultat de `.iv_cvat_lire()`. Codage Groma : foretaccess + 1, 255 -> 0 ;
+# format Groma recopié ; flottant [0, 1] : 1 + round(v * 254).
+.iv_ecrire_cvat <- function(cvat, emprise, stage) {
+  if (!is.list(cvat)) cvat <- .iv_cvat_lire(cvat)
+  if (is.null(cvat)) return(NULL)
+  r <- cvat$r
+  octet <- cvat$codage %in% c("foretaccess", "groma")
+  # Byte : plus proche voisin (pas de mélange entre deux niveaux de gris) ; le
+  # nodata (NA pour terra) sort AVANT tout rééchantillonnage.
+  methode <- if (octet) "near" else "bilinear"
+  if (!terra::same.crs(r, "EPSG:2154")) r <- terra::project(r, "EPSG:2154", method = methode)
+  v_emprise <- terra::vect(sf::st_sf(geometry = emprise))
+  e <- terra::ext(v_emprise)
+  gabarit <- terra::rast(terra::ext(floor(terra::xmin(e) / 2) * 2, ceiling(terra::xmax(e) / 2) * 2,
+                                    floor(terra::ymin(e) / 2) * 2, ceiling(terra::ymax(e) / 2) * 2),
+                         resolution = 2, crs = "EPSG:2154")
+  v <- terra::mask(.iv_sur_gabarit(r, gabarit, methode), v_emprise)
+  val <- terra::values(v, mat = FALSE)
+  b <- switch(cvat$codage,
+    foretaccess = { val[val >= 255] <- NA; val + 1 },
+    groma = val,
+    flottant = 1 + round(val * 254))
+  b[is.na(b)] <- 0
+  out <- terra::rast(v)
+  terra::values(out) <- b
+  names(out) <- "cvat"
+  f <- file.path("rasters", "cvat.tif")
+  terra::writeRaster(out, file.path(stage, f), overwrite = TRUE, datatype = "INT1U",
+                     NAflag = 0, gdal = c("COMPRESS=DEFLATE"))
+  f
 }
 
 # Index B-tree déclarés par le schéma (`index_btree`), p. ex. houppiers
