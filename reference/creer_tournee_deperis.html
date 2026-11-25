@@ -150,7 +150,7 @@ first operator as a read-only copy, an empty <code>contre_notations</code> table
 <span>  regle_choix <span class="op">=</span> <span class="va">.dp_regle_choix_defaut</span>,</span>
 <span>  <span class="va">dossier</span>,</span>
 <span>  contre_notation <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  graine <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  graine <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  nb_arbres <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  collecte_photos <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  prepare_le <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.time</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -205,7 +205,9 @@ on the first round, which provides the centres.</p></dd>
 
 
 <dt id="arg-graine">graine<a class="anchor" aria-label="anchor" href="#arg-graine"></a></dt>
-<dd><p>Integer seed of the re-scoring draw.</p></dd>
+<dd><p>Integer seed of the re-scoring draw, or <code>NULL</code> (default): the
+seed is then the first 7 hexadecimal digits of the SHA-256 of <code>code</code>
+(UTF-8), read as an integer. Give an integer to replay a given draw.</p></dd>
 
 
 <dt id="arg-nb-arbres-collecte-photos">nb_arbres, collecte_photos<a class="anchor" aria-label="anchor" href="#arg-nb-arbres-collecte-photos"></a></dt>
@@ -219,7 +221,8 @@ column (<code>nb_arbres</code> is then required; <code>collecte_photos</code> de
 
 <dt id="arg-delai-contre-notation-jours">delai_contre_notation_jours<a class="anchor" aria-label="anchor" href="#arg-delai-contre-notation-jours"></a></dt>
 <dd><p>Maximal delay in days between the two
-passes, or <code>NULL</code> (left empty; the value is not settled yet).</p></dd>
+passes, or <code>NULL</code> (default, left empty): Pascal decided on 2026-11-25 that
+there is no delay.</p></dd>
 
 
 <dt id="arg-version-nemeton">version_nemeton<a class="anchor" aria-label="anchor" href="#arg-version-nemeton"></a></dt>
@@ -245,7 +248,11 @@ as <code>attributes</code> tables. The file just written is read back and checke
 same control as an import; nothing is returned if it would be refused.</p>
 <p>The re-scoring covers a share of the plots (5 % in the brief), drawn
 reproducibly: the plots are sorted by <code>plot_id</code>, then drawn with
-<code>set.seed(graine)</code>, so the same plan and seed give the same draw.</p>
+<code>set.seed(graine)</code>, so the same plan and seed give the same draw. Unless
+<code>graine</code> is given, the seed is derived from <code>code</code> (see <code>graine</code>): the same
+round code gives the same draw, different codes give independent draws. The
+seed is not written in <code>deperis.gpkg</code> (the <code>tournee</code> table has no column for
+it); it is recomputed from the <code>code_tournee</code> already written.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

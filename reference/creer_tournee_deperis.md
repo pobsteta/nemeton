@@ -20,7 +20,7 @@ creer_tournee_deperis(
   regle_choix = .dp_regle_choix_defaut,
   dossier,
   contre_notation = NULL,
-  graine = 1L,
+  graine = NULL,
   nb_arbres = NULL,
   collecte_photos = NULL,
   prepare_le = Sys.time(),
@@ -76,7 +76,9 @@ creer_tournee_deperis(
 
 - graine:
 
-  Integer seed of the re-scoring draw.
+  Integer seed of the re-scoring draw, or `NULL` (default): the seed is
+  then the first 7 hexadecimal digits of the SHA-256 of `code` (UTF-8),
+  read as an integer. Give an integer to replay a given draw.
 
 - nb_arbres, collecte_photos:
 
@@ -89,8 +91,8 @@ creer_tournee_deperis(
 
 - delai_contre_notation_jours:
 
-  Maximal delay in days between the two passes, or `NULL` (left empty;
-  the value is not settled yet).
+  Maximal delay in days between the two passes, or `NULL` (default, left
+  empty): Pascal decided on 2026-11-25 that there is no delay.
 
 - version_nemeton:
 
@@ -117,7 +119,12 @@ if it would be refused.
 
 The re-scoring covers a share of the plots (5 % in the brief), drawn
 reproducibly: the plots are sorted by `plot_id`, then drawn with
-`set.seed(graine)`, so the same plan and seed give the same draw.
+`set.seed(graine)`, so the same plan and seed give the same draw. Unless
+`graine` is given, the seed is derived from `code` (see `graine`): the
+same round code gives the same draw, different codes give independent
+draws. The seed is not written in `deperis.gpkg` (the `tournee` table
+has no column for it); it is recomputed from the `code_tournee` already
+written.
 
 ## See also
 
