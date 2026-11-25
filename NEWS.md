@@ -1,5 +1,16 @@
 # nemeton 2026.11.45.9000 (development)
 
+- **fix : tournée DEPERIS, trois décisions de Pascal du 2026-11-25** (mission 064, suite de la 061).
+  Aucun délai de contre-notation (`delai_contre_notation_jours` reste vide par défaut, dit comme
+  une décision) ; seuil « centre éloigné » de 30 m retenu (plus « provisoire », ni dans le code ni
+  dans le message du motif `centre_eloigne`) ; `graine` de `creer_tournee_deperis()` passe de
+  `1L` à `NULL` : par défaut elle est dérivée du code de tournée (7 premiers chiffres
+  hexadécimaux de son SHA-256), donc même code, même tirage des 5 %, codes différents, tirages
+  indépendants ; un `graine =` explicite reste prioritaire. Rien n'est écrit dans `tournee`
+  (le schéma n'a pas de colonne) : la graine se recalcule depuis `code_tournee`. **Changement
+  de comportement** : sans `graine`, le tirage change par rapport à la 061 (qui tirait avec
+  1). Brief de retour vers Ramulus : `specs/brief-ramulus-deperis-v1-retour.md`.
+
 - **feat : tournée DEPERIS, échange `deperis.gpkg` avec Ramulus** (mission 061, brief de
   Ramulus, ADR 0003 de Ramulus). `creer_tournee_deperis()` écrit le fichier de départ
   (EPSG:2154, sans index spatial, `tournee`/`placettes`/`centres`/`notations`, ou la variante

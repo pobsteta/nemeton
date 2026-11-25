@@ -276,6 +276,58 @@ test_that("le tirage de la contre-notation est reproductible, au moins une place
   expect_identical(attr(creer_tournee_deperis(plan, "T", dossier = withr::local_tempdir(), contre_notation = c("Q001")), "contre_notation"), "Q001")
 })
 
+dp_plan_60 <- function() {
+  set.seed(1)
+  n <- 60L
+  sf::st_as_sf(data.frame(plot_id = sprintf("Q%03d", sample(n)), nb_arbres = 4L,
+                          x = 856000 + seq_len(n) * 40, y = 6670000), coords = c("x", "y"), crs = 2154)
+}
+
+test_that("la graine par defaut derive du code de tournee (decision de Pascal, 2026-11-25)", {
+  dp_deps()
+  plan <- dp_plan_60()
+  g <- function(code, ...) attr(creer_tournee_deperis(plan, code, dossier = withr::local_tempdir(), contre_notation = 0.1, ...), "contre_notation")
+  # graine documentee : 7 premiers chiffres hexadecimaux du SHA-256 du code
+  attendu <- strtoi(substr(as.character(openssl::sha256(charToRaw("TOUR-A"))), 1L, 7L), base = 16L)
+  expect_identical(nemeton:::.dp_graine_depuis_code("TOUR-A"), attendu)
+  expect_true(attendu >= 0L && attendu < 2^28)
+  # meme code => memes placettes marquees ; la graine implicite vaut la graine derivee passee a la main
+  expect_identical(g("TOUR-A"), g("TOUR-A"))
+  expect_identical(g("TOUR-A"), g("TOUR-A", graine = attendu))
+  # codes differents => tirages independants (au moins un differe parmi plusieurs codes)
+  tirages <- lapply(c("TOUR-A", "TOUR-B", "TOUR-C", "TOUR-D"), g)
+  expect_gt(length(unique(tirages)), 1L)
+  expect_false(identical(g("TOUR-A"), g("TOUR-B")))
+  # graine explicite : priorite sur le code, et rejoue le meme tirage sous un autre code
+  expect_identical(g("TOUR-A", graine = 7L), g("TOUR-B", graine = 7L))
+  # le schema n'a pas de colonne pour la graine : la table tournee n'en gagne pas
+  f <- creer_tournee_deperis(plan, "TOUR-A", dossier = withr::local_tempdir(), contre_notation = 0.1)
+  con <- DBI::dbConnect(RSQLite::SQLite(), f)
+  on.exit(DBI::dbDisconnect(con))
+  expect_false(any(grepl("graine|seed", DBI::dbListFields(con, "tournee"))))
+  expect_true(is.na(DBI::dbGetQuery(con, "SELECT delai_contre_notation_jours AS d FROM tournee")$d)) # aucun delai
+})
+
+test_that("le seuil centre_eloigne est de 30 m, sans mention provisoire", {
+  dp_deps()
+  expect_identical(nemeton:::.dp_seuil_centre_eloigne_m, 30)
+  d <- dp_cas()[basename(dp_cas()) == "S2-centre-eloigne"]
+  a <- dp_attendu(d)
+  imp <- dp_importer(d, a)
+  expect_identical(imp$motifs, "centre_eloigne")
+  msg <- grep("centres :", imp$messages, value = TRUE)
+  expect_length(msg, 1L)
+  expect_false(grepl("provisoire", msg, ignore.case = TRUE))
+  expect_match(msg, "seuil 30 m", fixed = TRUE)
+  dist <- as.numeric(sub(".* \u00e0 ([0-9.]+) m du point.*", "\\1", msg))
+  expect_gt(dist, 30) # au-dela du seuil, signale
+  # en deca : aucun des autres cas communs n'est signale pour ce motif sans l'attendre
+  for (c in setdiff(dp_cas(), d)) {
+    a2 <- dp_attendu(c)
+    if (!"centre_eloigne" %in% unlist(a2$motifs)) expect_false("centre_eloigne" %in% dp_importer(c, a2)$motifs, info = basename(c))
+  }
+})
+
 test_that("creer_tournee_deperis refuse un plan hors format", {
   dp_deps()
   p <- dp_plan()

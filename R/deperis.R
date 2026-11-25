@@ -22,9 +22,15 @@
 
 .dp_application_id <- 1196444487L # 0x47504B47, " GPKG " (OGC 12-128, Req. 2)
 .dp_user_version <- 10400L # GeoPackage 1.4, comme le GeoPackage d'exemple de Groma
-.dp_seuil_centre_eloigne_m <- 30 # PROVISOIRE (ADR 0004 de Ramulus, non tranche par Pascal)
+.dp_seuil_centre_eloigne_m <- 30 # metres ; retenu par Pascal le 2026-11-25 (ADR 0004 de Ramulus)
 .dp_emprise_2154 <- c(ouest = -9.86, sud = 41.15, est = 10.38, nord = 51.56) # lon/lat, EPSG:2154
 .dp_tables_notes <- c("notations", "contre_notations")
+# Graine par defaut du tirage des 5 % : 7 premiers chiffres hexadecimaux (28 bits,
+# donc un entier R valide) du SHA-256 du code de tournee en UTF-8.
+.dp_graine_depuis_code <- function(code) {
+  h <- as.character(openssl::sha256(charToRaw(enc2utf8(code))))
+  as.integer(strtoi(substr(h, 1L, 7L), base = 16L))
+}
 .dp_regle_choix_defaut <- "Kraft 1 \u00e0 3, tour d'horizon depuis le nord, sens horaire"
 
 .dp_ou <- function(a, b) if (is.null(a)) b else a
@@ -595,7 +601,7 @@
       if (i %in% hors_france_centres || is.null(p) || !(.dp_point(c[["geom"]]) && .dp_point(p[["geom"]]))) next
       d <- sqrt((c$geom$x - p$geom$x)^2 + (c$geom$y - p$geom$y)^2)
       if (d > .dp_seuil_centre_eloigne_m) {
-        ajouter("centre_eloigne", sprintf("centres : %s \u00e0 %.1f m du point pr\u00e9vu (seuil provisoire %.0f m)", pid, d, .dp_seuil_centre_eloigne_m))
+        ajouter("centre_eloigne", sprintf("centres : %s \u00e0 %.1f m du point pr\u00e9vu (seuil %.0f m)", pid, d, .dp_seuil_centre_eloigne_m))
       }
     }
   }
@@ -972,7 +978,11 @@ print.deperis_import <- function(x, ...) {
 #'
 #' The re-scoring covers a share of the plots (5 \% in the brief), drawn
 #' reproducibly: the plots are sorted by `plot_id`, then drawn with
-#' `set.seed(graine)`, so the same plan and seed give the same draw.
+#' `set.seed(graine)`, so the same plan and seed give the same draw. Unless
+#' `graine` is given, the seed is derived from `code` (see `graine`): the same
+#' round code gives the same draw, different codes give independent draws. The
+#' seed is not written in `deperis.gpkg` (the `tournee` table has no column for
+#' it); it is recomputed from the `code_tournee` already written.
 #'
 #' @param plan An `sf` object of POINT geometries in EPSG:2154 (planned points,
 #'   inside the extent of EPSG:2154), one row per plot. Required column `plot_id`
@@ -993,12 +1003,15 @@ print.deperis_import <- function(x, ...) {
 #'   for re-scoring (e.g. `0.05`, at least one plot), or a character vector of
 #'   `plot_id`. For `nature = "contre_notation"`: the result of [importer_deperis()]
 #'   on the first round, which provides the centres.
-#' @param graine Integer seed of the re-scoring draw.
+#' @param graine Integer seed of the re-scoring draw, or `NULL` (default): the
+#'   seed is then the first 7 hexadecimal digits of the SHA-256 of `code`
+#'   (UTF-8), read as an integer. Give an integer to replay a given draw.
 #' @param nb_arbres,collecte_photos Campaign values used when the plan has no such
 #'   column (`nb_arbres` is then required; `collecte_photos` defaults to `FALSE`).
 #' @param prepare_le Time stamp of the preparation (default now, written in UTC).
 #' @param delai_contre_notation_jours Maximal delay in days between the two
-#'   passes, or `NULL` (left empty; the value is not settled yet).
+#'   passes, or `NULL` (default, left empty): Pascal decided on 2026-11-25 that
+#'   there is no delay.
 #' @param version_nemeton Character, default the installed nemeton version.
 #' @param overwrite Logical; replace an existing `deperis.gpkg`?
 #' @return The path of the written `deperis.gpkg`, invisibly, with the attribute
@@ -1007,7 +1020,7 @@ print.deperis_import <- function(x, ...) {
 #' @export
 creer_tournee_deperis <- function(plan, code, nature = c("premiere", "contre_notation"),
                                   saison = c("ETE", "HIVER"), regle_choix = .dp_regle_choix_defaut,
-                                  dossier, contre_notation = NULL, graine = 1L,
+                                  dossier, contre_notation = NULL, graine = NULL,
                                   nb_arbres = NULL, collecte_photos = NULL,
                                   prepare_le = Sys.time(), delai_contre_notation_jours = NULL,
                                   version_nemeton = NULL, overwrite = FALSE) {
@@ -1059,6 +1072,7 @@ creer_tournee_deperis <- function(plan, code, nature = c("premiere", "contre_not
   d$contre_notation <- as.integer(as.logical(d$contre_notation))
   if (anyNA(d$contre_notation)) cli::cli_abort("{.field contre_notation} must be logical or 0/1.")
 
+  if (is.null(graine)) graine <- .dp_graine_depuis_code(code)
   tirage <- function(part, graine) {
     ordre <- order(d$plot_id, method = "radix")
     k <- max(1L, as.integer(ceiling(part * n - 1e-9)))

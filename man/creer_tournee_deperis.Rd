@@ -12,7 +12,7 @@ creer_tournee_deperis(
   regle_choix = .dp_regle_choix_defaut,
   dossier,
   contre_notation = NULL,
-  graine = 1L,
+  graine = NULL,
   nb_arbres = NULL,
   collecte_photos = NULL,
   prepare_le = Sys.time(),
@@ -48,7 +48,9 @@ for re-scoring (e.g. \code{0.05}, at least one plot), or a character vector of
 \code{plot_id}. For \code{nature = "contre_notation"}: the result of \code{\link[=importer_deperis]{importer_deperis()}}
 on the first round, which provides the centres.}
 
-\item{graine}{Integer seed of the re-scoring draw.}
+\item{graine}{Integer seed of the re-scoring draw, or \code{NULL} (default): the
+seed is then the first 7 hexadecimal digits of the SHA-256 of \code{code}
+(UTF-8), read as an integer. Give an integer to replay a given draw.}
 
 \item{nb_arbres, collecte_photos}{Campaign values used when the plan has no such
 column (\code{nb_arbres} is then required; \code{collecte_photos} defaults to \code{FALSE}).}
@@ -56,7 +58,8 @@ column (\code{nb_arbres} is then required; \code{collecte_photos} defaults to \c
 \item{prepare_le}{Time stamp of the preparation (default now, written in UTC).}
 
 \item{delai_contre_notation_jours}{Maximal delay in days between the two
-passes, or \code{NULL} (left empty; the value is not settled yet).}
+passes, or \code{NULL} (default, left empty): Pascal decided on 2026-11-25 that
+there is no delay.}
 
 \item{version_nemeton}{Character, default the installed nemeton version.}
 
@@ -85,7 +88,11 @@ same control as an import; nothing is returned if it would be refused.
 
 The re-scoring covers a share of the plots (5 \% in the brief), drawn
 reproducibly: the plots are sorted by \code{plot_id}, then drawn with
-\code{set.seed(graine)}, so the same plan and seed give the same draw.
+\code{set.seed(graine)}, so the same plan and seed give the same draw. Unless
+\code{graine} is given, the seed is derived from \code{code} (see \code{graine}): the same
+round code gives the same draw, different codes give independent draws. The
+seed is not written in \code{deperis.gpkg} (the \code{tournee} table has no column for
+it); it is recomputed from the \code{code_tournee} already written.
 }
 \seealso{
 \code{\link[=importer_deperis]{importer_deperis()}}
