@@ -30,7 +30,9 @@ creer_projet_inventaire_video(
   project_name = "inventaire_video",
   region = "BFC",
   lang = "fr",
-  overwrite = TRUE
+  overwrite = TRUE,
+  n_workers = .iv_workers_defaut(),
+  progress_callback = NULL
 )
 ```
 
@@ -136,6 +138,42 @@ creer_projet_inventaire_video(
 - overwrite:
 
   Logical. Overwrite an existing `.qgz`. Default `TRUE`.
+
+- n_workers:
+
+  Integer (\\\ge 1\\). Number of worker processes used to segment the
+  crowns tile by tile. Default
+  `getOption("nemeton.iv_workers", min(4, parallel::detectCores() - 1))`
+  (`1` when the number of cores cannot be detected). `1` segments
+  sequentially, in this process. Workers are PSOCK processes (never
+  forks, which hang with terra); each one reads the CHM from its file,
+  so the parallel path is used only when the CHM is a file (a path, or a
+  `SpatRaster` backed by one file already in EPSG:2154); an in-memory
+  CHM is segmented sequentially. The crowns are identical whatever
+  `n_workers` (same rows, same order, same `houppier_id`). If the
+  cluster cannot be started, a warning is raised and the segmentation
+  runs sequentially.
+
+- progress_callback:
+
+  Optional function called with a single list
+  `list(etape, i, n, secondes)` at the start of each stage (`i = 0`) and
+  after each of its units, never fatal (an error raised by the callback
+  is ignored). `etape` is the stable stage name, `i` the units done out
+  of `n`, `secondes` the time elapsed since the stage started (so the
+  last call of a stage, with `i == n`, gives its duration). Stages, in
+  order: `"sources"` (project tables and forest extent; `n = 1`),
+  `"placettes"` (per-plot rasters and topography; `n` = plots),
+  `"dalles_mnt"` (1 km DTM tiles; `n` = tiles), `"houppiers"` (crown
+  segmentation; `n` = 1 km tiles, counted per tile when sequential, per
+  batch of `n_workers` tiles when parallel; if the parallel run fails
+  midway and falls back to sequential, the stage restarts with a new
+  `i = 0` call and `secondes` restarts from 0), `"cvat"` (`n = 1`),
+  `"geopackage"` (layers, triggers, indexes; `n = 1`) and `"qgz"`
+  (`.qgs`, archive and project folder; `n = 1`). `"placettes"`,
+  `"dalles_mnt"` and `"houppiers"` occur only with `avec_lidar` (the
+  last two also need a DTM, respectively a CHM); `"cvat"` only with
+  `cvat_path`.
 
 ## Value
 

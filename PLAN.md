@@ -189,6 +189,46 @@ pins de Norvège seulement. Branche par défaut de `forptnemeton` et
 100 sites × 100 placettes × 50 ans en 21 s de CPU. Reste l’étape 3
 (calibration sur placettes IFN, D-7).
 
+### 2026-11-25 — `creer_projet_inventaire_video()` : houppiers en parallèle, rasters ouverts une fois, progression (mission 056 de nemetonplateforme, fiche `056-nemeton-projet-video-rapide-et-suivi`)
+
+- **Constat** (chronométrage synthétique de la mission) : la
+  segmentation des houppiers domine (~12 s/km², un cœur), puis la boucle
+  des placettes (~9 s) et le `.qgz` (7 à 11 s) ; aucune progression par
+  étape.
+- **Fait** (`R/inventaire_video.R`) : `.iv_houppiers_emprise()` répartit
+  les dalles sur un cluster PSOCK (`.iv_houppiers_paralleles()`,
+  `n_workers`, lots de `n_workers` dalles, les plus lourdes d’abord,
+  réassemblage dans l’ordre des dalles : résultat identique) ;
+  `.iv_chm_fichier()` décide si le MNH est relisible par les workers
+  (fichier unique en 2154, géométrie identique), sinon séquentiel ;
+  échec du cluster : avertissement et séquentiel. MNT et MNH ouverts une
+  fois avant la boucle des placettes. `progress_callback` via
+  `.iv_emetteur()` (patron `emit` de
+  [`regen_bilan_hydrique()`](https://pobsteta.github.io/nemeton/reference/regen_bilan_hydrique.md)),
+  étapes `sources`, `placettes`, `dalles_mnt`, `houppiers`, `cvat`,
+  `geopackage`, `qgz` (contrat pour nemetonshiny, documenté en roxygen
+  et dans `man/`). `.qgz` : `zip -n .tif` (GeoTIFF stockés, déjà
+  DEFLATE).
+- **Tests** `tests/testthat/test-inventaire-video-rapide.R` (cas 1 à 5
+  de la fiche, plus repli et arguments invalides) ; contre-épreuve sur
+  le code d’`origin/main` (ae887f6) : les tests d’API échouent (argument
+  inconnu), « ouverts une seule fois » et « GeoTIFF stockés » échouent
+  sur le comportement.
+- **Mesure** (scénario B, 441 ha, 62 placettes, 4 cœurs) : 74,2 s avant
+  ; 71,9 s avec `n_workers = 1` ; 54,7 s avec `n_workers = 3` (houppiers
+  48,7 s puis 32,3 s, dont ~6 s de `load_all` des workers en dev). Reste
+  séquentiel : placettes ~8 s, dalles MNT ~5 s, `.qgz` ~8 s ; viser «
+  deux fois moins » demande de paralléliser aussi ces étapes (hors
+  fiche).
+- Choix (délégation) : lots de `n_workers` dalles (progression par lot)
+  plutôt qu’un équilibrage dynamique, qui exigerait les fonctions
+  internes de `parallel` ; `-n .tif` plutôt que `-0` (GeoPackage et
+  `.qgs` restent compressés) ; MNH reprojeté ou en mémoire : séquentiel
+  ; `n_workers` invalide : erreur. Pas de changement de schéma ni de
+  contenu.
+- `DESCRIPTION` en `2026.11.45.9000`, pas de release. Reste côté
+  nemetonshiny (mission suivante) : afficher la progression.
+
 ### 2026-11-25 — CVAT de `creer_projet_inventaire_video()` : codage exact de Groma (mission 051 de nemetonplateforme, fiche `051-nemeton-cvat-conversion-foretaccess`)
 
 - **Constat** : `.iv_ecrire_cvat()` calculait `1 + round(v / 255 * 254)`

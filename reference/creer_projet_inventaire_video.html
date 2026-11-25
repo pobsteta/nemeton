@@ -165,7 +165,9 @@ like <code><a href="create_qgis_project.html">create_qgis_project</a></code>.</p
 <span>  project_name <span class="op">=</span> <span class="st">"inventaire_video"</span>,</span>
 <span>  region <span class="op">=</span> <span class="st">"BFC"</span>,</span>
 <span>  lang <span class="op">=</span> <span class="st">"fr"</span>,</span>
-<span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  overwrite <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  n_workers <span class="op">=</span> <span class="fu">.iv_workers_defaut</span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -277,6 +279,43 @@ the BD Foret V2 reference); kept for symmetry with
 <dt id="arg-overwrite">overwrite<a class="anchor" aria-label="anchor" href="#arg-overwrite"></a></dt>
 <dd><p>Logical. Overwrite an existing <code>.qgz</code>. Default
 <code>TRUE</code>.</p></dd>
+
+
+<dt id="arg-n-workers">n_workers<a class="anchor" aria-label="anchor" href="#arg-n-workers"></a></dt>
+<dd><p>Integer (\(\ge 1\)). Number of worker processes used
+to segment the crowns tile by tile. Default
+<code>getOption("nemeton.iv_workers", min(4, parallel::detectCores() - 1))</code>
+(<code>1</code> when the number of cores cannot be detected).
+<code>1</code> segments sequentially, in this process. Workers are PSOCK
+processes (never forks, which hang with <span class="pkg">terra</span>); each one reads the
+CHM from its file, so the parallel path is used only when the CHM is a
+file (a path, or a <code>SpatRaster</code> backed by one file already in
+EPSG:2154); an in-memory CHM is segmented sequentially. The crowns are
+identical whatever <code>n_workers</code> (same rows, same order, same
+<code>houppier_id</code>). If the cluster cannot be started, a warning is
+raised and the segmentation runs sequentially.</p></dd>
+
+
+<dt id="arg-progress-callback">progress_callback<a class="anchor" aria-label="anchor" href="#arg-progress-callback"></a></dt>
+<dd><p>Optional function called with a single list
+<code>list(etape, i, n, secondes)</code> at the start of each stage
+(<code>i = 0</code>) and after each of its units, never fatal (an error raised
+by the callback is ignored). <code>etape</code> is the stable stage name,
+<code>i</code> the units done out of <code>n</code>, <code>secondes</code> the time
+elapsed since the stage started (so the last call of a stage, with
+<code>i == n</code>, gives its duration). Stages, in order: <code>"sources"</code>
+(project tables and forest extent; <code>n = 1</code>), <code>"placettes"</code>
+(per-plot rasters and topography; <code>n</code> = plots), <code>"dalles_mnt"</code>
+(1 km DTM tiles; <code>n</code> = tiles), <code>"houppiers"</code> (crown
+segmentation; <code>n</code> = 1 km tiles, counted per tile when sequential,
+per batch of <code>n_workers</code> tiles when parallel; if the parallel run
+fails midway and falls back to sequential, the stage restarts with a new
+<code>i = 0</code> call and <code>secondes</code> restarts from 0), <code>"cvat"</code>
+(<code>n = 1</code>), <code>"geopackage"</code> (layers, triggers, indexes;
+<code>n = 1</code>) and <code>"qgz"</code> (<code>.qgs</code>, archive and project
+folder; <code>n = 1</code>). <code>"placettes"</code>, <code>"dalles_mnt"</code> and
+<code>"houppiers"</code> occur only with <code>avec_lidar</code> (the last two also
+need a DTM, respectively a CHM); <code>"cvat"</code> only with <code>cvat_path</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

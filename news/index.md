@@ -2,6 +2,30 @@
 
 ## nemeton 2026.11.45.9000 (development)
 
+- **perf :
+  [`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md)
+  segmente les houppiers en parallèle, ouvre ses rasters une fois et
+  annonce chaque étape** (mission 056). Nouvel argument `n_workers`
+  (défaut
+  `getOption("nemeton.iv_workers", min(4, parallel::detectCores() - 1))`,
+  `1` = séquentiel) : les dalles de 1 km sont segmentées sur un cluster
+  PSOCK (jamais de fork, qui bloque avec terra), chaque worker relisant
+  le MNH par son fichier ; un MNH en mémoire, ou reprojeté, reste
+  séquentiel, et un cluster qui ne démarre pas laisse un avertissement
+  puis le séquentiel. Résultat identique à `n_workers = 1` (mêmes
+  lignes, même ordre, mêmes `houppier_id`). Le MNT et le MNH sont
+  ouverts une seule fois avant la boucle des placettes. Nouvel argument
+  `progress_callback`
+
+  : appelé avec `list(etape, i, n, secondes)` au début de chaque étape
+  (`i = 0`) puis après chaque unité, jamais fatal ; étapes `sources`,
+  `placettes`, `dalles_mnt`, `houppiers`, `cvat`, `geopackage`, `qgz`
+  (noms stables, voir l’aide). Le `.qgz` stocke les GeoTIFF sans les
+  recompresser (`zip -n .tif`, contenu inchangé). Ni le schéma 1.7.0 ni
+  le contenu produit ne changent. Mesure (441 ha, 62 placettes, 19 060
+  houppiers, 4 cœurs) : 74,2 s avant, 54,7 s avec `n_workers = 3`
+  (houppiers : 48,7 s à 32,3 s).
+
 - **fix :
   [`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md)
   écrit le CVAT au codage exact de Groma, et refuse tout autre codage**
