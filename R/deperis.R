@@ -20,12 +20,12 @@
 # Constantes et referentiels lus dans le schema copie
 # ---------------------------------------------------------------------------
 
-.dp_application_id <- 1196444487L # 0x47504B47, « GPKG » (OGC 12-128, Req. 2)
+.dp_application_id <- 1196444487L # 0x47504B47, " GPKG " (OGC 12-128, Req. 2)
 .dp_user_version <- 10400L # GeoPackage 1.4, comme le GeoPackage d'exemple de Groma
 .dp_seuil_centre_eloigne_m <- 30 # PROVISOIRE (ADR 0004 de Ramulus, non tranche par Pascal)
 .dp_emprise_2154 <- c(ouest = -9.86, sud = 41.15, est = 10.38, nord = 51.56) # lon/lat, EPSG:2154
 .dp_tables_notes <- c("notations", "contre_notations")
-.dp_regle_choix_defaut <- "Kraft 1 à 3, tour d'horizon depuis le nord, sens horaire"
+.dp_regle_choix_defaut <- "Kraft 1 \u00e0 3, tour d'horizon depuis le nord, sens horaire"
 
 .dp_ou <- function(a, b) if (is.null(a)) b else a
 
@@ -241,7 +241,7 @@
     xy <- readBin(wkb[6:21], "double", n = 2L, size = 8L, endian = wfin)
     if (is.nan(xy[1L]) && is.nan(xy[2L])) return(NULL)
     list(x = xy[1L], y = xy[2L])
-  }, error = function(e) paste0("géométrie illisible : ", conditionMessage(e)))
+  }, error = function(e) paste0("g\u00e9om\u00e9trie illisible : ", conditionMessage(e)))
   r
 }
 
@@ -380,7 +380,7 @@
     noms <- tryCatch(utils::unzip(chemin, list = TRUE)$Name, error = function(e) NULL)
     sures <- if (is.null(noms)) character() else .dp_entrees_sures(noms[!grepl("/$", noms)])
     if (!"deperis.gpkg" %in% sures) {
-      return(list(erreur = c("pas_un_geopackage", "le .zip ne contient pas deperis.gpkg à la racine")))
+      return(list(erreur = c("pas_un_geopackage", "le .zip ne contient pas deperis.gpkg \u00e0 la racine")))
     }
     utils::unzip(chemin, files = sures, exdir = tmp, junkpaths = FALSE)
     gpkg <- file.path(tmp, "deperis.gpkg")
@@ -459,14 +459,14 @@
   }
   for (nom in names(citees)) {
     if (!nom %in% names(photos)) {
-      ajouter("photo_absente", sprintf("%s citée mais absente du paquet", nom))
+      ajouter("photo_absente", sprintf("%s cit\u00e9e mais absente du paquet", nom))
     } else if (!identical(unname(photos[[nom]]), unname(citees[[nom]]))) {
       ajouter("empreinte_photo_differente",
               sprintf("%s : SHA-256 %s au lieu de %s", nom, photos[[nom]], citees[[nom]]))
     }
   }
   for (nom in setdiff(names(photos), names(citees))) {
-    ajouter("photo_non_citee", sprintf("%s présente dans le paquet mais citée par aucune notation", nom))
+    ajouter("photo_non_citee", sprintf("%s pr\u00e9sente dans le paquet mais cit\u00e9e par aucune notation", nom))
   }
 }
 
@@ -479,19 +479,19 @@
     t0 <- depart$tables[[table]]
     t1 <- inst$tables[[table]]
     if (is.null(t0) || is.null(t1)) {
-      if (!identical(is.null(t0), is.null(t1))) ajouter("plan_modifie", sprintf("%s présente d'un côté seulement", table))
+      if (!identical(is.null(t0), is.null(t1))) ajouter("plan_modifie", sprintf("%s pr\u00e9sente d'un c\u00f4t\u00e9 seulement", table))
       next
     }
     libres <- .dp_ou(.dp_ecrit_par_ramulus[[table]], character())
     c0 <- t0$colonnes[setdiff(names(t0$colonnes), libres)]
     c1 <- t1$colonnes[setdiff(names(t1$colonnes), libres)]
     if (!.dp_egal(c0, c1)) {
-      ajouter("plan_modifie", sprintf("%s : colonnes changées (disparues %s, apparues %s)", table,
+      ajouter("plan_modifie", sprintf("%s : colonnes chang\u00e9es (disparues %s, apparues %s)", table,
                                       paste(setdiff(names(c0), names(c1)), collapse = "/"),
                                       paste(setdiff(names(c1), names(c0)), collapse = "/")))
       next
     }
-    if (!.dp_egal(t0$geometrie, t1$geometrie)) ajouter("plan_modifie", sprintf("%s : géométrie ou repère changés", table))
+    if (!.dp_egal(t0$geometrie, t1$geometrie)) ajouter("plan_modifie", sprintf("%s : g\u00e9om\u00e9trie ou rep\u00e8re chang\u00e9s", table))
     cle <- function(l) {
       if (identical(table, "placettes")) l[["plot_id"]] else .dp_ou(l[["uuid"]], l[["fid"]])
     }
@@ -502,13 +502,13 @@
     l0 <- garder(t0$lignes)
     l1 <- garder(t1$lignes)
     if (!setequal(names(l0), names(l1))) {
-      ajouter("plan_modifie", sprintf("%s : lignes ajoutées ou retirées (%s)", table,
+      ajouter("plan_modifie", sprintf("%s : lignes ajout\u00e9es ou retir\u00e9es (%s)", table,
                                       paste(sort(setdiff(union(names(l0), names(l1)), intersect(names(l0), names(l1)))), collapse = ", ")))
     }
     for (k in sort(intersect(names(l0), names(l1)))) {
       if (!.dp_egal(l0[[k]], l1[[k]])) {
         ecarts <- names(l0[[k]])[!vapply(names(l0[[k]]), function(c) .dp_egal(l0[[k]][[c]], l1[[k]][[c]]), logical(1))]
-        ajouter("plan_modifie", sprintf("%s %s : %s modifiés", table, k, paste(ecarts, collapse = "/")))
+        ajouter("plan_modifie", sprintf("%s %s : %s modifi\u00e9s", table, k, paste(ecarts, collapse = "/")))
       }
     }
   }
@@ -581,7 +581,7 @@
       if (is.null(v)) next # repere facultatif : deux NULL ne sont pas le meme arbre
       k <- paste(l[["plot_id"]], cle, v, sep = "\u001f")
       if (!is.null(arbres[[k]]) && !identical(arbres[[k]], l[["uuid"]])) {
-        ajouter("doublon_arbre", sprintf("notations : %s %s %s noté deux fois (%s, %s)", l[["plot_id"]], cle, v, arbres[[k]], l[["uuid"]]))
+        ajouter("doublon_arbre", sprintf("notations : %s %s %s not\u00e9 deux fois (%s, %s)", l[["plot_id"]], cle, v, arbres[[k]], l[["uuid"]]))
       }
       if (is.null(arbres[[k]])) arbres[[k]] <- .dp_ou(l[["uuid"]], "")
     }
@@ -595,7 +595,7 @@
       if (i %in% hors_france_centres || is.null(p) || !(.dp_point(c[["geom"]]) && .dp_point(p[["geom"]]))) next
       d <- sqrt((c$geom$x - p$geom$x)^2 + (c$geom$y - p$geom$y)^2)
       if (d > .dp_seuil_centre_eloigne_m) {
-        ajouter("centre_eloigne", sprintf("centres : %s à %.1f m du point prévu (seuil provisoire %.0f m)", pid, d, .dp_seuil_centre_eloigne_m))
+        ajouter("centre_eloigne", sprintf("centres : %s \u00e0 %.1f m du point pr\u00e9vu (seuil provisoire %.0f m)", pid, d, .dp_seuil_centre_eloigne_m))
       }
     }
   }
@@ -671,7 +671,7 @@
             if (!all(vapply(vus, function(o) .dp_egal(o[[c]], vus[[1L]][[c]]), logical(1)))) c
           }))
         }))))
-        nouveau(t, u, sprintf("%s : uuid %s porte %d contenus différents (colonnes %s) ; aucune version gardée",
+        nouveau(t, u, sprintf("%s : uuid %s porte %d contenus diff\u00e9rents (colonnes %s) ; aucune version gard\u00e9e",
                               t, u, length(vus), paste(cols, collapse = "/")),
                 .dp_ou(vus[[1L]][["plot_id"]], NA_character_))
         ecartes[[t]] <- c(ecartes[[t]], u)
@@ -680,14 +680,14 @@
   }
   en_conflit <- names(photos_v)[vapply(photos_v, length, integer(1)) > 1L]
   for (n in sort(en_conflit, method = "radix")) {
-    nouveau("photos", n, sprintf("photo %s : %d contenus différents ; aucune version gardée, ni la note qui la cite", n, length(photos_v[[n]])))
+    nouveau("photos", n, sprintf("photo %s : %d contenus diff\u00e9rents ; aucune version gard\u00e9e, ni la note qui la cite", n, length(photos_v[[n]])))
   }
   for (t in intersect(.dp_tables_notes, tables)) {
     for (u in names(versions[[t]])) {
       noms <- unique(unlist(lapply(versions[[t]][[u]], .dp_noms_photos)))
       if (!u %in% ecartes[[t]] && length(intersect(noms, en_conflit))) {
         ecartes[[t]] <- c(ecartes[[t]], u)
-        nouveau(t, u, sprintf("%s : uuid %s écartée avec sa photo en conflit (%s)", t, u, paste(sort(intersect(noms, en_conflit), method = "radix"), collapse = ", ")),
+        nouveau(t, u, sprintf("%s : uuid %s \u00e9cart\u00e9e avec sa photo en conflit (%s)", t, u, paste(sort(intersect(noms, en_conflit), method = "radix"), collapse = ", ")),
                 .dp_ou(versions[[t]][[u]][[1L]][["plot_id"]], NA_character_))
       }
     }
@@ -699,7 +699,7 @@
     }
   }
   for (n in sort(setdiff(photos_ecartees, en_conflit), method = "radix")) {
-    if (n %in% names(photos_v)) nouveau("photos", n, sprintf("photo %s écartée avec la note qui la cite", n))
+    if (n %in% names(photos_v)) nouveau("photos", n, sprintf("photo %s \u00e9cart\u00e9e avec la note qui la cite", n))
   }
 
   for (t in tables) {
@@ -742,7 +742,7 @@
   if (nrow(cf)) {
     motifs <- sort(union(r$motifs, "uuid_contenu_different"), method = "radix")
     messages <- c(r$messages, paste0("uuid_contenu_different : ", cf$message),
-                  sprintf("uuid_contenu_different : placette %s signalée, gardée avec ses notes et sans centre ; dire quel centre fait foi, puis rendre de nouveau", signalees))
+                  sprintf("uuid_contenu_different : placette %s signal\u00e9e, gard\u00e9e avec ses notes et sans centre ; dire quel centre fait foi, puis rendre de nouveau", signalees))
     r <- list(statut = .dp_statut(motifs, .dp_motifs(schema)), motifs = motifs, messages = messages)
   }
   c(r, list(paquet = f$paquet, conflits = cf, placettes_signalees = signalees))
@@ -919,7 +919,7 @@ print.deperis_import <- function(x, ...) {
     cat(nrow(x$placettes), " placette(s), ", nrow(x$centres), " centre(s), ",
         if (is.null(x$notes)) 0L else nrow(x$notes), " note(s), ", nrow(x$photos), " photo(s)\n", sep = "")
   } else {
-    cat("refus : rien n'est importé\n")
+    cat("refus : rien n'est import\u00e9\n")
   }
   invisible(x)
 }
