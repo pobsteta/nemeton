@@ -119,3 +119,11 @@ test_that("reconfort_comparer_amont rase l'amont sur la grille de la carte (fich
   expect_gte(r$accord, 0)
   expect_error(reconfort_comparer_amont(1, 2), "SpatRaster")
 })
+
+test_that("reconfort_entrainer refuse clairement l'absence de ranger", {
+  local_mocked_bindings(.reconfort_ranger_disponible = function() FALSE)
+  expect_error(
+    reconfort_entrainer(data.frame(), data.frame()),
+    class = "reconfort_ranger_absent"
+  )
+})

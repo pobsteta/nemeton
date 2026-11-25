@@ -95,6 +95,13 @@
 #' }
 reconfort_entrainer <- function(serie, etiquettes, k = 5L, taille_bloc = 1000,
                                 seed = 42L, num_arbres = 300L) {
+  # ranger est en Suggests : message clair s'il manque
+  if (!.reconfort_ranger_disponible()) {
+    cli::cli_abort(c(
+      "Package {.pkg ranger} is required to train a RECONFORT model.",
+      "i" = "Install it with {.code install.packages(\"ranger\")}."
+    ), class = "reconfort_ranger_absent")
+  }
   if (!is.data.frame(etiquettes) ||
       !all(c("id_unique", "annee", "dep_cor", "x", "y") %in% names(etiquettes))) {
     cli::cli_abort("{.arg etiquettes} must come from {.fn reconfort_etiquettes} and carry {.field x} and {.field y}.")
@@ -230,4 +237,9 @@ reconfort_comparer_amont <- function(carte, amont, placettes = NULL) {
     )
   }
   out
+}
+
+# Disponibilite de ranger (Suggests), isolee pour etre simulee dans les tests.
+.reconfort_ranger_disponible <- function() {
+  requireNamespace("ranger", quietly = TRUE)
 }
