@@ -235,13 +235,28 @@ nor <code>parcelles</code>. Default 10.</p></dd>
 <dd><p>Optional path of a CVAT relief raster (as computed by
 nemetonshiny with <code>foretaccess::vat_combined()</code>). When given, it is
 cropped to the forest extent and written as <code>rasters/cvat.tif</code>
-(Byte, 2 m, EPSG:2154, DEFLATE; <code>1 + round(v * 254)</code> for a relief
-<code>v</code> in \([0, 1]\), <code>0</code> = nodata; a float value outside
-\([0, 1]\) is clamped, <code>NA</code> gives <code>0</code>). A Byte input (the
-8-bit CVAT of nemetonshiny, <code>v = b / 255</code>) is rescaled the same way,
-its value <code>255</code> being foretaccess' marker for <code>NA</code> and giving
-<code>0</code>. Reprojected when not in EPSG:2154. <code>NULL</code> (default): no
-<code>cvat.tif</code>. A missing or unreadable file only raises a warning.</p></dd>
+(Byte, 2 m, EPSG:2154, DEFLATE, <code>0</code> = nodata), in Groma's coding.
+Accepted codings, recognised by the declared nodata: Byte with nodata
+<code>255</code> (foretaccess, relief <code>0</code> to <code>254</code>) written as
+<code>value + 1</code>, <code>255</code> giving <code>0</code>; Byte with nodata <code>0</code>
+(already Groma, <code>1</code> to <code>255</code>) copied as is; a float relief
+<code>v</code> in \([0, 1]\) (cache of <code>generate_rvt()</code>) written as
+<code>1 + round(v * 254)</code>, <code>NA</code> giving <code>0</code>. Whatever the
+resolution or CRS, the nodata is set to <code>NA</code> first, then the raster
+is reprojected (when not in EPSG:2154) and resampled to the 2 m grid
+(nearest neighbour for Byte, bilinear for float), then coded. This is a
+deliberate departure from section 2.3 of the Groma brief, which refused
+any resolution other than 2 m: the CVAT of nemetonshiny keeps the
+resolution of the DTM (often 0.5 m), and refusing it would break real use.
+Known limit: <code>foretaccess::vat_combined(as_byte = TRUE)</code> codes
+<code>0</code> to <code>255</code> with <code>NA</code> as <code>255</code>; a valid maximal
+relief pixel (\(v \ge 0.996\)) is therefore indistinguishable from
+nodata and becomes <code>0</code> (fix planned in foretaccess). <code>NULL</code>
+(default): no <code>cvat.tif</code>. A missing file only raises a warning; an
+unreadable or otherwise coded file (Byte without nodata <code>0</code> or
+<code>255</code> declared, Int16, float outside \([0, 1]\)) is an error of
+class <code>nemeton_erreur_cvat_codage</code>, raised before anything is
+written.</p></dd>
 
 
 <dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>

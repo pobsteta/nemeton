@@ -2,6 +2,28 @@
 
 ## nemeton 2026.11.45.9000 (development)
 
+- **fix :
+  [`creer_projet_inventaire_video()`](https://pobsteta.github.io/nemeton/reference/creer_projet_inventaire_video.md)
+  écrit le CVAT au codage exact de Groma, et refuse tout autre codage**
+  (mission 051). Un CVAT Byte foretaccess (nodata 255, relief 0 à 254)
+  devient `source + 1` (0 donne 1, 254 donne 255, 255 donne 0), au lieu
+  de `1 + round(v / 255 * 254)` (254 donnait 254, un décalage de un
+  niveau de gris). Un CVAT déjà au format Groma (Byte, nodata 0, 1
+  à 255) est recopié sans changement. Un flottant `[0, 1]` reste mis à
+  l’échelle `1 + round(v * 254)`. Le codage Byte est reconnu par le
+  nodata déclaré. **Changement de comportement** : un Byte sans nodata
+  déclaré, un Int16, un flottant hors `[0, 1]` (auparavant ramené aux
+  bornes) ou un fichier illisible lèvent maintenant l’erreur
+  `nemeton_erreur_cvat_codage`, avant toute écriture (aucun projet à
+  moitié écrit) ; seul un fichier absent reste un avertissement. Un Byte
+  au codage reconnu est accepté quelle que soit sa résolution ou son CRS
+  (nodata mis à NA, reprojection et plus proche voisin vers la grille de
+  2 m, au pixel près, puis codage) : écart assumé au § 2.3 du brief de
+  Groma, car le CVAT de nemetonshiny garde la résolution du MNT (souvent
+  0,5 m). **Limite connue** : les pixels de relief maximal du CVAT
+  foretaccess, codés 255 comme le nodata, sont perdus (ils deviennent 0)
+  ; correctif prévu dans foretaccess. Signature inchangée.
+
 - **fix : ERA5 `timeseries`, un NetCDF incomplet n’est plus pris pour un
   cache** (mission 049). Un fichier de la forme réelle du CDS auquel il
   manquait l’une des 10 variables, ou portant des valeurs non écrites

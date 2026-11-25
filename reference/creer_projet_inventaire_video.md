@@ -97,13 +97,26 @@ creer_projet_inventaire_video(
   Optional path of a CVAT relief raster (as computed by nemetonshiny
   with `foretaccess::vat_combined()`). When given, it is cropped to the
   forest extent and written as `rasters/cvat.tif` (Byte, 2 m, EPSG:2154,
-  DEFLATE; `1 + round(v * 254)` for a relief `v` in \\\[0, 1\]\\, `0` =
-  nodata; a float value outside \\\[0, 1\]\\ is clamped, `NA` gives
-  `0`). A Byte input (the 8-bit CVAT of nemetonshiny, `v = b / 255`) is
-  rescaled the same way, its value `255` being foretaccess' marker for
-  `NA` and giving `0`. Reprojected when not in EPSG:2154. `NULL`
-  (default): no `cvat.tif`. A missing or unreadable file only raises a
-  warning.
+  DEFLATE, `0` = nodata), in Groma's coding. Accepted codings,
+  recognised by the declared nodata: Byte with nodata `255`
+  (foretaccess, relief `0` to `254`) written as `value + 1`, `255`
+  giving `0`; Byte with nodata `0` (already Groma, `1` to `255`) copied
+  as is; a float relief `v` in \\\[0, 1\]\\ (cache of `generate_rvt()`)
+  written as `1 + round(v * 254)`, `NA` giving `0`. Whatever the
+  resolution or CRS, the nodata is set to `NA` first, then the raster is
+  reprojected (when not in EPSG:2154) and resampled to the 2 m grid
+  (nearest neighbour for Byte, bilinear for float), then coded. This is
+  a deliberate departure from section 2.3 of the Groma brief, which
+  refused any resolution other than 2 m: the CVAT of nemetonshiny keeps
+  the resolution of the DTM (often 0.5 m), and refusing it would break
+  real use. Known limit: `foretaccess::vat_combined(as_byte = TRUE)`
+  codes `0` to `255` with `NA` as `255`; a valid maximal relief pixel
+  (\\v \ge 0.996\\) is therefore indistinguishable from nodata and
+  becomes `0` (fix planned in foretaccess). `NULL` (default): no
+  `cvat.tif`. A missing file only raises a warning; an unreadable or
+  otherwise coded file (Byte without nodata `0` or `255` declared,
+  Int16, float outside \\\[0, 1\]\\) is an error of class
+  `nemeton_erreur_cvat_codage`, raised before anything is written.
 
 - output_dir:
 
