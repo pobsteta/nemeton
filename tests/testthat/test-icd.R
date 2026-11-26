@@ -649,3 +649,18 @@ test_that("ingestion : avril a octobre seulement, pas le mois en cours non termi
   expect_equal(vapply(appels, `[[`, "", "end"), c("2022-10-31", "2023-06-30"))
   expect_match(appels[[1]][["bands"]], "SCL")
 })
+
+test_that("mediane par ligne : le repli sans matrixStats donne les memes valeurs", {
+  set.seed(3)
+  M <- matrix(stats::rnorm(60), 12, 5)
+  M[sample(60, 15)] <- NA
+  M[2, ] <- NA; M[5, ] <- c(NA, NA, NA, NA, 1)
+  base <- .icd_med_lignes_base(M)
+  expect_true(is.na(base[2])); expect_equal(base[5], 1)
+  if (requireNamespace("matrixStats", quietly = TRUE)) {
+    expect_equal(base, matrixStats::rowMedians(M, na.rm = TRUE))
+  }
+  # chemin complet avec matrixStats declare absent
+  testthat::local_mocked_bindings(.icd_a_matrixstats = function() FALSE)
+  expect_equal(.icd_med_lignes(M), base)
+})

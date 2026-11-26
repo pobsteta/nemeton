@@ -78,6 +78,7 @@ Suggests:
     lasR (>= 0.10.0),
     lidaRtRee,
     ranger,
+    matrixStats,
     learnr (>= 0.11.0),
     fmsb,
     corrplot,

@@ -1,12 +1,19 @@
 # ICD : calculs purs (matrices et vecteurs), sans disque ni reseau (spec 071).
 
 # Mediane par ligne, NA ignores ; NA si la ligne est entierement NA.
+# matrixStats (Suggests) si installe, sinon repli base ; memes valeurs.
 .icd_med_lignes <- function(M) {
   if (!is.matrix(M)) M <- matrix(M, ncol = 1L)
-  if (requireNamespace("matrixStats", quietly = TRUE)) {
+  if (.icd_a_matrixstats()) {
     return(matrixStats::rowMedians(M, na.rm = TRUE))
   }
-  apply(M, 1L, function(v) if (all(is.na(v))) NA_real_ else stats::median(v))
+  .icd_med_lignes_base(M)
+}
+
+.icd_a_matrixstats <- function() requireNamespace("matrixStats", quietly = TRUE)
+
+.icd_med_lignes_base <- function(M) {
+  apply(M, 1L, function(v) if (all(is.na(v))) NA_real_ else stats::median(v, na.rm = TRUE))
 }
 
 # Composite mensuel (note, section 5) : mediane des valeurs valides des
