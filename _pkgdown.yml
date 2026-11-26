@@ -751,6 +751,7 @@ reference:
     - reconfort_entrainer
     - reconfort_predire
     - reconfort_comparer_amont
+    - reconfort_carte_spike
 
   - subtitle: "Suivi sanitaire - indicateur composite de decoloration ICD (spec 071)"
     desc: >

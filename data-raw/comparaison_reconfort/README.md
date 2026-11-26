@@ -27,11 +27,43 @@ Rscript data-raw/comparaison_reconfort/comparer_cartes.R \
 ```
 
 `carte_iota2.tif` : `rasters$classif_masked` rendu par `run_reconfort_dieback()`.
-`carte_spike.tif` : carte de classes 1 à 3 du spike (le spike s'arrête aux tables
-de séries : la carte vient de la chaîne image de la mission 060). Les deux nombres
+`carte_spike.tif` : carte de classes 1 à 3 du spike, produite par
+`reconfort_carte_spike()` (mission 076, voir la section c ci-dessous). Les deux nombres
 sont les durées en secondes. Rend la matrice de confusion (lignes IOTA², colonnes
 spike), l'accord global, le kappa (indicateur seulement), rappel et précision par
 classe, les surfaces par classe en ha.
+
+## c) Produire la carte du spike sur la grille IOTA² (mission 076)
+
+```bash
+cd ~/dev/nemeton
+Rscript data-raw/comparaison_reconfort/carte_spike.R \
+  modele.rds ~/tmp/scenes/extracted 2023 carte_iota2.tif ~/tmp/cmp076 \
+  [chenaie.tif] [coupes.tif] [duree_iota2_s]
+```
+
+- `modele.rds` : `saveRDS(reconfort_entrainer(...), "modele.rds")` (un `reconfort_modele`).
+- Dossier des scènes : celui des voies archive et fenêtre (`extracted/<tuile>/<scène>/`,
+  bandes `*_FRE_B*.tif` et `MASKS/`), cherché récursivement ; seules les scènes de
+  l'année demandée servent.
+- `carte_iota2.tif` : la carte IOTA² de la **même zone et de la même année** ; elle sert
+  de gabarit (CRS, origine, résolution, étendue de la carte du spike). Sa grille doit
+  tomber sur celle des scènes (au pixel près) ; sinon la commande refuse.
+- Masques MAJA : CLM, SAT, EDG (toute valeur non nulle est masquée), puis indices, puis
+  les 36 pas de 10 jours, comme `reconfort_predire()`. `chenaie.tif` et `coupes.tif`
+  (YYDDD) facultatifs : `NA` hors chênaie et à partir de l'année de coupe.
+- Sorties : `carte_spike_<année>.tif`, puis celles de la section b (`confusion.csv`,
+  `par_classe.csv`, `resume.csv`) et `LIRE_AVANT_DE_CONCLURE.txt`.
+- **Durée** : le calcul passe par la table de caractéristiques du spike (réutilisée, non
+  réécrite), pixel par pixel. Mesuré en session sur données synthétiques : environ
+  0,6 ms par pixel pour 36 dates, soit de l'ordre de 10 minutes par million de pixels,
+  **hors lecture des rasters** (non mesurée sur scènes MUSCATE réelles). La mémoire reste
+  bornée par blocs de lignes (au plus 2·10⁵ pixels).
+
+> **À lire avant de conclure.** Tant que le modèle n'est entraîné que sur des étiquettes
+> `synth_` ou propagées, l'accord avec IOTA² mesure une **ressemblance** entre deux
+> méthodes, pas une **justesse**. La règle reste la spec 070 (« Critère pour amender la
+> spec 021 ») : des placettes de terrain tenues à l'écart.
 
 ## Lancer le run complet par fenêtre
 
