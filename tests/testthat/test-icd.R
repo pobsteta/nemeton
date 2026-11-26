@@ -219,7 +219,9 @@ test_that("S2 : les bandes ajoutees pour l'ICD ne changent pas ce que lit FAST",
 # --- Chaine complete sur un cache fabrique (sans reseau) ---------------------
 
 fabriquer_cache <- function(racine, annees = 2019:2023, mois = 7:8,
-                            degrade = list(annee = 2023, pixels = c(1L, 2L))) {
+                            degrade = list(annee = 2023, pixels = c(1L, 2L)),
+                            bruit = 0.003,
+                            facteurs = c(B04 = 1.5, B08 = 0.6, B07 = 0.6, B8A = 0.6)) {
   g <- terra::rast(xmin = 850000, xmax = 850200, ymin = 6700000, ymax = 6700200,
                    resolution = 20, crs = "EPSG:2154")
   base <- c(B03 = 600, B04 = 400, B05 = 800, B06 = 2000, B07 = 3000,
@@ -229,12 +231,12 @@ fabriquer_cache <- function(racine, annees = 2019:2023, mois = 7:8,
     sid <- sprintf("S2A_MSIL2A_%04d%02d%02dT103031_N0214_R108_T31TFM_%04d%02d%02dT133000",
                    a, m, jour, a, m, jour)
     d <- file.path(racine, sid); dir.create(d, recursive = TRUE)
-    f <- 1 + stats::rnorm(1, 0, 0.003)
+    f <- 1 + stats::rnorm(1, 0, bruit)
     for (b in names(base)) {
       v <- rep(base[[b]] * f, terra::ncell(g))
       if (a == degrade$annee) {
         k <- degrade$pixels
-        v[k] <- v[k] * switch(b, B04 = 1.5, B08 = 0.6, B07 = 0.6, B8A = 0.6, 1)
+        v[k] <- v[k] * (if (b %in% names(facteurs)) facteurs[[b]] else 1)
       }
       terra::writeRaster(terra::setValues(g, v), file.path(d, paste0(b, ".tif")),
                          overwrite = TRUE, datatype = "FLT4S")
@@ -278,7 +280,7 @@ test_that("run_icd_decoloration : chaine complete, alertes, serie d'un pixel, po
   # composites : un par mois avec image (juillet, aout) et par annee
   zdir <- res$zone_dir
   expect_length(list.files(file.path(zdir, "composites"), "\\.tif$"), 10L)
-  # niveau 2023 : pixels 1 et 2 dégrades (alerte forte), le reste normal ;
+  # niveau 2023 : pixels 1 et 2 degrades (alerte forte), le reste normal ;
   # le pixel 3 (nuage le 5) reste normal grace a l'autre image du mois
   niv <- read_icd_raster(7L, 2023L, file.path(tmp, "icd"), "niveau")
   v <- terra::values(niv, mat = FALSE)
@@ -543,4 +545,107 @@ test_that("ingest_s2_raw_bands_to_cache : SCL accepte, annulation sondee par sce
   expect_false(r2$cancelled); expect_equal(evts2[length(evts2)], "s2:complete")
   expect_error(ingest_s2_raw_bands_to_cache(NULL, 1L, bands = "NDVI", start = "2023-07-01",
                                             end = "2023-07-31", cache_dir = tmp), "raw Sentinel-2")
+})
+
+# --- Verrous demandes a la relecture ------------------------------------------
+
+# Une scene de 12 pixels dont la SCL porte les classes `scl`, reflectances
+# constantes = bandes_ref() (DN = reflectance * 10000 + offset).
+scene_scl <- function(racine, sid, scl, offset = 0) {
+  g <- terra::rast(xmin = 0, xmax = 80, ymin = 0, ymax = 60, resolution = 20, crs = "EPSG:2154")
+  d <- file.path(racine, sid); dir.create(d, recursive = TRUE)
+  for (b in names(bandes_ref())) {
+    terra::writeRaster(terra::setValues(g, bandes_ref()[[b]] * 10000 + offset),
+                       file.path(d, paste0(b, ".tif")), overwrite = TRUE, datatype = "FLT4S")
+  }
+  terra::writeRaster(terra::setValues(g, scl), file.path(d, "SCL.tif"),
+                     overwrite = TRUE, datatype = "INT1U")
+  g
+}
+
+test_that("masque SCL : classes 0, 1, 3, 8, 9, 10, 11 masquent, les autres non", {
+  tmp <- withr::local_tempdir()
+  expect_equal(.ICD_SCL_MASQUE, c(0L, 1L, 3L, 8L, 9L, 10L, 11L))
+  scl <- c(0, 1, 3, 8, 9, 10, 11, 4, 5, 6, 7, 2)
+  sid <- "S2A_MSIL2A_20230715T103031_N0214_R108_T31TFM_20230715T133000"
+  g <- scene_scl(tmp, sid, scl)
+  r <- .icd_indices_scene(file.path(tmp, sid), sid, g)
+  v <- terra::values(r[["NDVI"]], mat = FALSE)
+  expect_true(all(is.na(v[1:7])))
+  expect_false(anyNA(v[8:12]))              # classe 4 (vegetation) et 2, 5, 6, 7 : gardees
+  expect_true(all(terra::values(r, mat = TRUE)[1:7, ] |> is.na()))
+})
+
+test_that("offset BOA : une scene posterieure au 25 janvier 2022 est corrigee", {
+  tmp <- withr::local_tempdir()
+  attendu <- icd_indices(bandes_ref())
+  apres <- "S2B_MSIL2A_20230715T103031_N0509_R108_T31TFM_20230715T133000"   # N0500 ou plus
+  avant <- "S2A_MSIL2A_20210715T103031_N0214_R108_T31TFM_20210715T133000"
+  g <- scene_scl(tmp, apres, rep(4, 12), offset = 1000)
+  scene_scl(tmp, avant, rep(4, 12), offset = 0)
+  expect_equal(.s2_boa_offset(apres), -1000); expect_equal(.s2_boa_offset(avant), 0)
+  ra <- .icd_indices_scene(file.path(tmp, apres), apres, g)
+  rb <- .icd_indices_scene(file.path(tmp, avant), avant, g)
+  expect_equal(unname(unlist(terra::values(ra, mat = TRUE)[1, ])), unname(unlist(attendu)), tolerance = 1e-5)
+  expect_equal(unname(unlist(terra::values(rb, mat = TRUE)[1, ])), unname(unlist(attendu)), tolerance = 1e-5)
+})
+
+test_that("planchers de l'ecart-type robuste : valeurs de la note, et effet de bout en bout", {
+  expect_equal(.ICD_PLANCHERS, c(GRVI = 0.01, CIre = 0.05, CRSWIR = 0.02, CRre = 0.01, NDVI = 0.01))
+  tmp <- withr::local_tempdir()
+  cache <- file.path(tmp, "cache"); dir.create(cache)
+  # annees identiques (MAD nul), seule B07 baisse de 10 % en 2023 : seul CIre bouge
+  g <- fabriquer_cache(cache, bruit = 0, facteurs = c(B07 = 0.9))
+  zf <- zone_et_foret(g)
+  r <- run_icd_decoloration(NULL, 1L, cache, file.path(tmp, "icd"), bdforet = zf$bdforet,
+                            aoi = zf$zone, ingest = FALSE, write_alerts = FALSE,
+                            start_year = 2019L, end_year = 2023L, today = as.Date("2023-11-15"))
+  z <- terra::values(terra::rast(file.path(r$zone_dir, "z", "2023-07.tif")), mat = TRUE)
+  d_cire <- 3000 * 0.9 / 800 - 3000 / 800                 # variation de CIre (B05 = 800)
+  expect_equal(unname(z[1, "CIre"]), d_cire / 0.05, tolerance = 1e-4)   # plancher 0,05, pas 0,01
+  expect_equal(unname(z[3, "CIre"]), 0)
+})
+
+test_that("persistance : la suite de k mois consecutifs vient de la constante", {
+  mois <- 4:9
+  M <- rbind(c(-2.5, -2.5, 0, 0, 0, 0),          # 2 mois seulement
+             c(0, -2.5, -2.5, -2.5, 0, 0),       # 3 mois a partir de mai
+             c(-2.5, -2.5, -2.5, 0, 0, 0))       # 3 mois a partir d'avril
+  a2 <- .icd_classe_annuelle(M, mois, persistance = 2L)
+  expect_equal(a2$classe, c(2, 2, 2)); expect_equal(a2$mois_alerte, c(4L, 5L, 4L))
+  a3 <- .icd_classe_annuelle(M, mois, persistance = 3L)
+  expect_equal(a3$classe, c(1, 2, 2)); expect_equal(a3$mois_alerte, c(NA, 5L, 4L))
+  expect_equal(.icd_classe_annuelle(M, mois)$classe, a2$classe)     # defaut = .ICD_PERSISTANCE (2)
+  expect_equal(.ICD_PERSISTANCE, 2L)
+  a7 <- .icd_classe_annuelle(M, mois, persistance = 7L)            # plus que de mois : jamais d'alerte
+  expect_equal(a7$classe, c(1, 1, 1))
+})
+
+test_that("ingestion : avril a octobre seulement, pas le mois en cours non termine depuis 5 jours", {
+  f <- .icd_fenetres_ingestion(2022:2023, as.Date("2023-07-10"), "garder")
+  # 2022 : avril a octobre ; 2023 : juin est termine depuis plus de 5 jours, pas juillet
+  expect_equal(f$start, c("2022-04-01", "2023-04-01"))
+  expect_equal(f$end, c("2022-10-31", "2023-06-30"))
+  # juin termine depuis moins de 5 jours : encore en cours
+  expect_equal(.icd_fenetres_ingestion(2023L, as.Date("2023-07-03"), "garder")$end, "2023-05-31")
+  expect_equal(.icd_fenetres_ingestion(2023L, as.Date("2023-07-10"), "refaire")$end, "2023-07-10")
+  expect_equal(nrow(.icd_fenetres_ingestion(2023L, as.Date("2023-04-03"), "garder")), 0L)
+  expect_equal(.icd_fenetres_ingestion(2023L, as.Date("2023-12-01"), "garder")$end, "2023-10-31")
+
+  # dates reellement passees a ingest_s2_raw_bands_to_cache
+  tmp <- withr::local_tempdir()
+  cache <- file.path(tmp, "cache"); dir.create(cache)
+  g <- fabriquer_cache(cache); zf <- zone_et_foret(g)
+  appels <- list()
+  testthat::local_mocked_bindings(
+    ingest_s2_raw_bands_to_cache = function(con, zone_id, bands, start, end, ...) {
+      appels[[length(appels) + 1L]] <<- c(start = start, end = end, bands = paste(bands, collapse = ","))
+      list(cancelled = FALSE)
+    })
+  run_icd_decoloration(structure(list(), class = "fausse_con"), 1L, cache, file.path(tmp, "icd"),
+                       bdforet = zf$bdforet, aoi = zf$zone, ingest = TRUE, write_alerts = FALSE,
+                       start_year = 2022L, end_year = 2023L, today = as.Date("2023-07-10"))
+  expect_equal(vapply(appels, `[[`, "", "start"), c("2022-04-01", "2023-04-01"))
+  expect_equal(vapply(appels, `[[`, "", "end"), c("2022-10-31", "2023-06-30"))
+  expect_match(appels[[1]][["bands"]], "SCL")
 })

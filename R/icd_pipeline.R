@@ -188,6 +188,29 @@
                class = "nemeton_cancelled", phase = phase)
 }
 
+# Fenetres de telechargement : par annee, d'avril au dernier mois utile. Avec
+# "garder", un mois non termine depuis 5 jours n'est ni telecharge ni refait ;
+# avec "refaire", on va jusqu'a aujourd'hui. Annee sans mois utile : omise.
+.icd_fenetres_ingestion <- function(annees, today, mois_en_cours = "garder") {
+  today <- as.Date(today)
+  out <- list()
+  for (y in annees) {
+    ms <- .ICD_MOIS_SAISON[as.Date(sprintf("%04d-%02d-01", y, .ICD_MOIS_SAISON)) <= today]
+    if (identical(mois_en_cours, "garder")) {
+      ms <- ms[!vapply(ms, function(m) .icd_mois_en_cours(y, m, today), logical(1))]
+    }
+    if (!length(ms)) next
+    dernier <- max(ms)
+    fin <- as.Date(sprintf("%04d-%02d-01", y + (dernier == 12L),
+                           if (dernier == 12L) 1L else dernier + 1L)) - 1
+    out[[length(out) + 1L]] <- data.frame(
+      start = sprintf("%04d-04-01", y), end = as.character(min(fin, today)),
+      stringsAsFactors = FALSE)
+  }
+  if (length(out)) do.call(rbind, out)
+  else data.frame(start = character(0), end = character(0))
+}
+
 # --- Chaine ------------------------------------------------------------------
 
 #' Composite discoloration indicator (ICD) for a monitoring zone
@@ -348,13 +371,18 @@ run_icd_decoloration <- function(con = NULL, zone_id, cache_dir,
       if (is.null(con)) {
         cli::cli_warn("{.arg ingest} needs {.arg con}; skipped.")
       } else {
-        ing <- ingest_s2_raw_bands_to_cache(
-          con, zid, bands = .ICD_BANDES,
-          start = sprintf("%d-04-01", as.integer(start_year)),
-          end = as.character(min(today, as.Date(sprintf("%d-10-31", as.integer(end_year))))),
-          cache_dir = cache_dir, max_cloud = max_cloud,
-          progress_callback = progress_callback, cancel_path = cancel_path)
-        if (isTRUE(ing$cancelled)) .icd_signal_cancel("ingest")
+        # Avril a octobre de chaque annee seulement, et pas le mois en cours
+        # (note, section 5) ; une fenetre par annee.
+        fen <- .icd_fenetres_ingestion(annees, today, mois_en_cours)
+        for (i in seq_len(nrow(fen))) {
+          if (cancelled()) .icd_signal_cancel("ingest")
+          ing <- ingest_s2_raw_bands_to_cache(
+            con, zid, bands = .ICD_BANDES,
+            start = fen$start[i], end = fen$end[i],
+            cache_dir = cache_dir, max_cloud = max_cloud,
+            progress_callback = progress_callback, cancel_path = cancel_path)
+          if (isTRUE(ing$cancelled)) .icd_signal_cancel("ingest")
+        }
       }
     }
 

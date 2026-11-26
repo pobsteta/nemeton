@@ -77,7 +77,7 @@
 # pendant au moins 2 mois consecutifs valides (un mois NA rompt la suite) ;
 # date d'alerte = premier mois de la premiere suite ; Surveillance : ICD < -1,5
 # au moins un mois ; Normal sinon. 0 / 1 / 2 ; NA si aucun mois valide.
-.icd_classe_annuelle <- function(M, mois) {
+.icd_classe_annuelle <- function(M, mois, persistance = .ICD_PERSISTANCE) {
   M <- as.matrix(M)
   n <- nrow(M); k <- ncol(M)
   icd_min <- rep(NA_real_, n)
@@ -89,10 +89,16 @@
   surv  <- if (k) rowSums(M < .ICD_SEUIL_SURVEILLANCE, na.rm = TRUE) > 0 else rep(FALSE, n)
   mois_alerte <- rep(NA_integer_, n)
   alerte <- rep(FALSE, n)
-  if (k >= .ICD_PERSISTANCE) {
+  if (k >= persistance) {
     bas <- M < .ICD_SEUIL_ALERTE
     bas[is.na(bas)] <- FALSE
-    suite <- bas[, seq_len(k - 1L), drop = FALSE] & bas[, 2:k, drop = FALSE]
+    # suites de `persistance` mois consecutifs sous le seuil : une colonne par
+    # mois de depart possible
+    debuts <- seq_len(k - persistance + 1L)
+    suite <- bas[, debuts, drop = FALSE]
+    for (d in seq_len(persistance - 1L)) {
+      suite <- suite & bas[, debuts + d, drop = FALSE]
+    }
     alerte <- rowSums(suite) > 0
     prem <- max.col(suite, ties.method = "first")
     mois_alerte[alerte] <- as.integer(mois[prem[alerte]])

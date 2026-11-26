@@ -33,8 +33,15 @@ série d'un pixel pour le clic de l'app, comparaison avec FAST. Aucune logique d
   et un `cancel_path` optionnel, sondé avant chaque scène, événement `s2:cancelled`). Les
   bandes B03, B06, B07 et SCL sont ajoutées à l'union `.S2_STAC_BANDS` ; elles sont
   **tolérantes** (href vide accepté) : `.S2_STAC_REQUIRED_BANDS` (B04, B08, B12) ne change pas,
-  donc ce que lit FAST ne change pas. Le test d'un schéma de colonnes (`test-sentinel2-muscate.R`)
-  suit la liste élargie : c'est le seul test existant modifié.
+  donc ce que lit FAST ne change pas. L'élargissement modifie le tibble STAC partagé : deux
+  tests de son schéma de colonnes suivent la liste élargie (`test-sentinel2.R`,
+  `test-sentinel2-muscate.R`) ; aucun test de FAST n'est modifié.
+- **Backends** : MUSCATE ne fournit pas la couche SCL (`.muscate_remap_feature()` ne
+  la remappe pas : href vide, la scène est écartée par l'ICD). L'ICD ne fonctionne donc, pour
+  l'instant, que sur **Planetary Computer**.
+- **Ingestion** : une recherche par année, d'avril au dernier mois utile (jamais novembre à mars) ;
+  avec `mois_en_cours = "garder"`, le mois non terminé depuis 5 jours n'est pas téléchargé
+  (note § 5) ; avec `"refaire"`, on va jusqu'à aujourd'hui.
 - Réflectance : offset de la scène retiré par `.s2_harmonize_band()` (spec 055), puis ÷ 10 000.
   DN 0 = donnée absente.
 - Masque SCL : classes 0, 1, 3, 8, 9, 10, 11 (`.ICD_SCL_MASQUE`, distinct de
