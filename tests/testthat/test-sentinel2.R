@@ -79,10 +79,12 @@ test_that("stac_search_s2 returns empty tibble when all backends are silent", {
   )
   out <- stac_search_s2(c(4, 47, 5, 48), "2025-06-01", "2025-06-30")
   expect_equal(nrow(out), 0)
-  # v0.24.1 widened the band set from 3 (FAST) to 7 (FAST + FORDEAD).
+  # v0.24.1 widened the band set from 3 (FAST) to 7 (FAST + FORDEAD) ;
+  # spec 071 (ICD) adds B03, B06, B07 and the SCL layer (tolerant bands).
   expect_named(out, c("scene_id", "obs_date", "cloud_pct",
-                      "href_B02", "href_B04", "href_B05", "href_B08",
-                      "href_B8A", "href_B11", "href_B12", "source"))
+                      "href_B02", "href_B03", "href_B04", "href_B05",
+                      "href_B06", "href_B07", "href_B08", "href_B8A",
+                      "href_B11", "href_B12", "href_SCL", "source"))
 })
 
 test_that("stac_search_s2 rejects end < start", {

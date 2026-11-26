@@ -65,8 +65,10 @@ test_that("anomalie z : plancher, annee retiree, moins de 4 annees = NA", {
   U <- matrix(c(0.8, 0.8, 0.8, 0.8, 0.2, 0.7), nrow = 1)
   zu <- .icd_z(U, 2018:2023, 0.01, annees_reference = 2018:2021)
   expect_equal(zu[1, 6], (0.7 - 0.8) / 0.01)
-  # l'annee evaluee n'entre pas dans sa propre reference
-  expect_equal(zu[1, 1], 0)
+  # l'annee evaluee n'entre pas dans sa propre reference : 2018 n'a que 3 autres
+  # annees de reference (< 4) -> NA ; 2022, hors liste, est jugee contre 4 annees
+  expect_true(is.na(zu[1, 1]))
+  expect_equal(zu[1, 5], (0.2 - 0.8) / 0.01)
 })
 
 test_that("pixel coupe : retire du calcul a partir du mois de la coupe", {
@@ -502,4 +504,43 @@ test_that("comparer_fast_icd : croisement, accord, kappa, surface alertee egale"
   expect_equal(comparer_fast_icd(3L, 2010L, tmp, fast = fast)$statut, "icd_absent")
   expect_equal(comparer_fast_icd(3L, 2023L, tmp,
                                  fast = terra::setValues(g, NA_real_))$statut, "sans_pixel_commun")
+})
+
+test_that("ingest_s2_raw_bands_to_cache : SCL accepte, annulation sondee par scene (s2:cancelled)", {
+  tmp <- withr::local_tempdir()
+  zone <- sf::st_sf(geometry = sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 900000, ymin = 6600000, xmax = 900200, ymax = 6600200), crs = sf::st_crs(2154))))
+  scenes <- data.frame(
+    scene_id = sprintf("S2A_MSIL2A_2023070%dT103031_N0214_R108_T31TFM_2023070%dT133000", 1:4, 1:4),
+    obs_date = as.Date("2023-07-01") + 0:3, cloud_pct = 10, source = "pc",
+    stringsAsFactors = FALSE)
+  appels <- character(0)
+  testthat::local_mocked_bindings(
+    .assert_db_pkgs = function() invisible(NULL),
+    .get_zone_aoi = function(con, zone_id) zone,
+    stac_search_s2 = function(...) scenes,
+    .scene_cogs_cached = function(...) FALSE,
+    .get_s2_band_raster = function(sc, b, ...) { appels <<- c(appels, paste(sc$scene_id, b)); TRUE })
+  flag <- file.path(tmp, "stop")
+  evts <- character(0)
+  res <- ingest_s2_raw_bands_to_cache(
+    NULL, 1L, bands = c("B04", "SCL"), start = "2023-07-01", end = "2023-07-31",
+    cache_dir = tmp, cancel_path = flag,
+    progress_callback = function(p) {
+      evts <<- c(evts, p$current)
+      if (identical(p$current, "s2:scene") && p$completed == 1) file.create(flag)
+    })
+  expect_true(res$cancelled)
+  expect_equal(evts[length(evts)], "s2:cancelled")
+  expect_false("s2:complete" %in% evts)
+  expect_true(any(grepl("SCL$", appels)))
+  expect_length(unique(sub(" .*", "", appels)), 2L)     # 2 scenes lues sur 4
+  # sans cancel_path : comportement inchange, evenement s2:complete
+  evts2 <- character(0)
+  r2 <- ingest_s2_raw_bands_to_cache(NULL, 1L, bands = "SCL", start = "2023-07-01",
+                                     end = "2023-07-31", cache_dir = tmp,
+                                     progress_callback = function(p) evts2 <<- c(evts2, p$current))
+  expect_false(r2$cancelled); expect_equal(evts2[length(evts2)], "s2:complete")
+  expect_error(ingest_s2_raw_bands_to_cache(NULL, 1L, bands = "NDVI", start = "2023-07-01",
+                                            end = "2023-07-31", cache_dir = tmp), "raw Sentinel-2")
 })

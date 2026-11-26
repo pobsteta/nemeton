@@ -70,7 +70,7 @@ icd_poids_valider <- function(poids = icd_poids_defaut()) {
   inconnues <- setdiff(ess, .ICD_ESSENCES)
   attendues <- .ICD_ESSENCES
   if (length(inconnues)) {
-    cli::cli_abort("{.arg poids}: unknown species group{?s} {.val {inconnues}} (expected {.val {attendues}}).")
+    cli::cli_abort("{.arg poids}: unknown species group(s) {.val {inconnues}} (expected {.val {attendues}}).")
   }
   poids <- poids[match(.ICD_ESSENCES, ess), , drop = FALSE]
   rownames(poids) <- NULL
