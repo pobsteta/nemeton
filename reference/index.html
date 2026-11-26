@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.45.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.45.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -2939,6 +2939,64 @@
 
         </dt>
         <dd>Pixel-by-pixel agreement of a class map with the upstream RECONFORT map</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="suivi-sanitaire-indicateur-composite-de-decoloration-icd-spec-">Suivi sanitaire - indicateur composite de decoloration ICD (spec 071)<a class="anchor" aria-label="anchor" href="#suivi-sanitaire-indicateur-composite-de-decoloration-icd-spec-"></a></h3>
+      <div class="section-desc"><p>Quatrieme methode du suivi sanitaire, a comparer a FAST : composites mensuels Sentinel-2, anomalies z, ICD aux poids modifiables, classes et niveaux 0 a 4, serie d’un pixel, comparaison avec FAST.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="run_icd_decoloration.html">run_icd_decoloration()</a></code>
+
+        </dt>
+        <dd>Composite discoloration indicator (ICD) for a monitoring zone</dd>
+
+        <dt>
+
+          <code><a href="icd_indices.html">icd_indices()</a></code>
+
+        </dt>
+        <dd>ICD spectral indices (GRVI, CIre, CRSWIR, CRre, NDVI)</dd>
+
+        <dt>
+
+          <code><a href="icd_poids_defaut.html">icd_poids_defaut()</a></code>
+
+        </dt>
+        <dd>Default weights of the ICD formula</dd>
+
+        <dt>
+
+          <code><a href="icd_poids_valider.html">icd_poids_valider()</a></code>
+
+        </dt>
+        <dd>Validate and normalise the ICD weights</dd>
+
+        <dt>
+
+          <code><a href="read_icd_raster.html">read_icd_raster()</a></code>
+
+        </dt>
+        <dd>Read an ICD result raster</dd>
+
+        <dt>
+
+          <code><a href="read_icd_pixel_series.html">read_icd_pixel_series()</a></code>
+
+        </dt>
+        <dd>Series of one pixel for the ICD charts</dd>
+
+        <dt>
+
+          <code><a href="comparer_fast_icd.html">comparer_fast_icd()</a></code>
+
+        </dt>
+        <dd>Compare FAST and the ICD on a zone and a year</dd>
       </dl></div><div class="section level2">
 
       <h3 id="validation-terrain-du-suivi-sanitaire">Validation terrain du suivi sanitaire<a class="anchor" aria-label="anchor" href="#validation-terrain-du-suivi-sanitaire"></a></h3>

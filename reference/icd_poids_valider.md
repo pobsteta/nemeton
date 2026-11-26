@@ -1,0 +1,44 @@
+# Validate and normalise the ICD weights
+
+Checks a weights table (same shape as \[icd_poids_defaut()\]) and
+returns the weights actually used. Rules: the four species groups are
+all present (and no other); the five index columns are numeric, finite
+and non-negative; CRre is nil for conifers (\`sapin_epicea\`,
+\`douglas\`; the method note uses CRre for broadleaves only); the sum of
+a row is positive. A row whose sum is not 1 is \*\*rescaled to 1\*\*
+(decision of Pascal, 2026-11-26) and the function says so. The month
+columns, if present, are ignored: the months are those of the note.
+
+## Usage
+
+``` r
+icd_poids_valider(poids = icd_poids_defaut())
+```
+
+## Arguments
+
+- poids:
+
+  A \`data.frame\` as returned by \[icd_poids_defaut()\].
+
+## Value
+
+A \`data.frame\` like \[icd_poids_defaut()\], rows summing to 1, with
+attribute \`somme_saisie\` (named numeric: the sum of each row as given)
+and attribute \`renormalise\` (character: the species groups that were
+rescaled, empty if none).
+
+## See also
+
+\[icd_poids_defaut()\], \[run_icd_decoloration()\].
+
+## Examples
+
+``` r
+p <- icd_poids_defaut()
+p$GRVI[1] <- 0.30            # row sums to 1.15: rescaled
+attr(icd_poids_valider(p), "renormalise")
+#> ℹ ICD weights rescaled to sum to 1 (1 species group).
+#> • chene: 1.15 -> 1
+#> [1] "chene"
+```

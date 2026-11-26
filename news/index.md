@@ -2,6 +2,41 @@
 
 ## nemeton 2026.11.45.9001 (development)
 
+- **feat : indicateur composite de décoloration (ICD), quatrième méthode
+  du suivi sanitaire** (spec 071, mission 074). À l’échelle d’une zone
+  de suivi, d’après la note de méthode « Suivi de la décoloration
+  anormale du feuillage » (BFC, v2 du 29 octobre 2026, §§ 3 à 8 et 15) :
+  [`run_icd_decoloration()`](https://pobsteta.github.io/nemeton/reference/run_icd_decoloration.md)
+  (indices GRVI, CIre, CRSWIR, CRre, NDVI à 20 m sur 9 bandes et le
+  masque SCL, composites mensuels avril-octobre depuis 2017, anomalies z
+  « une année retirée », ICD par essence, classes alerte / surveillance
+  / normal et niveaux 0 à 4, indice « à date », alertes
+  `icd_decoloration` dans la table `alert`, événements `icd:*` avec
+  événement terminal `icd:complete`, `icd:cancelled` ou `icd:error`,
+  annulation coopérative par `cancel_path`),
+  [`icd_indices()`](https://pobsteta.github.io/nemeton/reference/icd_indices.md),
+  [`icd_poids_defaut()`](https://pobsteta.github.io/nemeton/reference/icd_poids_defaut.md),
+  [`icd_poids_valider()`](https://pobsteta.github.io/nemeton/reference/icd_poids_valider.md),
+  [`read_icd_raster()`](https://pobsteta.github.io/nemeton/reference/read_icd_raster.md),
+  [`read_icd_pixel_series()`](https://pobsteta.github.io/nemeton/reference/read_icd_pixel_series.md)
+  (série d’un pixel pour le clic de l’app, lecture locale) et
+  [`comparer_fast_icd()`](https://pobsteta.github.io/nemeton/reference/comparer_fast_icd.md)
+  (croisement des classes FAST 0-4 et des niveaux ICD 0-4, accord,
+  kappa, comparaison à surface alertée égale). **Seuls les poids sont
+  des paramètres** ; une somme différente de 1 est renormalisée à 1 et
+  dite ; CRre est nul pour les résineux ; pas d’ICD hors des quatre
+  peuplements purs de la BD Forêt V2 (lisière de 10 m retirée). Seuils,
+  persistance et mois suivis sont ceux de la note. FAST est inchangé.
+  `ingest_s2_raw_bands_to_cache()` accepte `SCL` et un `cancel_path`
+  optionnel (dernier argument, événement `s2:cancelled`) ;
+  `.S2_STAC_BANDS` gagne B03, B06, B07 et SCL, tolérantes
+  (`.S2_STAC_REQUIRED_BANDS` ne change pas ; le test du schéma de
+  colonnes de la recherche MUSCATE suit la liste élargie). Brief côté
+  app : `specs/071-icd-decoloration/brief-nemetonshiny.md`. **Non
+  mesuré** : aucune exécution sur Sentinel-2 réel (réseau STAC absent de
+  la session de développement), noms d’assets SCL/B03/B06/B07 hors
+  Planetary Computer, écriture des alertes en base PostgreSQL.
+
 - **feat : RECONFORT lit les fenêtres utiles des bandes THEIA au lieu de
   télécharger les archives** (mission 071).
   `run_reconfort_dieback(acquisition = c("fenetre", "archive"))` : par

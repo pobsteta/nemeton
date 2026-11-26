@@ -994,6 +994,27 @@ ranger en validation croisee spatiale. Essai, hors production.
   : Pixel-by-pixel agreement of a class map with the upstream RECONFORT
   map
 
+### Suivi sanitaire - indicateur composite de decoloration ICD (spec 071)
+
+Quatrieme methode du suivi sanitaire, a comparer a FAST : composites
+mensuels Sentinel-2, anomalies z, ICD aux poids modifiables, classes et
+niveaux 0 a 4, serie d’un pixel, comparaison avec FAST.
+
+- [`run_icd_decoloration()`](https://pobsteta.github.io/nemeton/reference/run_icd_decoloration.md)
+  : Composite discoloration indicator (ICD) for a monitoring zone
+- [`icd_indices()`](https://pobsteta.github.io/nemeton/reference/icd_indices.md)
+  : ICD spectral indices (GRVI, CIre, CRSWIR, CRre, NDVI)
+- [`icd_poids_defaut()`](https://pobsteta.github.io/nemeton/reference/icd_poids_defaut.md)
+  : Default weights of the ICD formula
+- [`icd_poids_valider()`](https://pobsteta.github.io/nemeton/reference/icd_poids_valider.md)
+  : Validate and normalise the ICD weights
+- [`read_icd_raster()`](https://pobsteta.github.io/nemeton/reference/read_icd_raster.md)
+  : Read an ICD result raster
+- [`read_icd_pixel_series()`](https://pobsteta.github.io/nemeton/reference/read_icd_pixel_series.md)
+  : Series of one pixel for the ICD charts
+- [`comparer_fast_icd()`](https://pobsteta.github.io/nemeton/reference/comparer_fast_icd.md)
+  : Compare FAST and the ICD on a zone and a year
+
 ### Validation terrain du suivi sanitaire
 
 - [`get_health_validation_schema()`](https://pobsteta.github.io/nemeton/reference/get_health_validation_schema.md)

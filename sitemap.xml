@@ -124,6 +124,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/climate_ombrothermic_indices.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/cluster_parcels.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/communes_ser.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/comparer_fast_icd.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/comparer_itineraires.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/completer_volume_ifn.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.html</loc></url>
@@ -263,6 +264,9 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/get_storage_crs.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/groma_envoyer_projet.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/groma_etat_placettes.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/icd_indices.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/icd_poids_defaut.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/icd_poids_valider.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/identify_hotspots.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/identify_pareto_optimal.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/ifn_campagne_disponible.html</loc></url>
@@ -425,6 +429,8 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_fordead_dieback_mask.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_fordead_layer.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_fordead_pixel_series.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/read_icd_pixel_series.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/read_icd_raster.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_knowledge_manifest.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_reconfort_alert_mask.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/read_reconfort_layer.html</loc></url>
@@ -461,6 +467,7 @@
 <url><loc>https://pobsteta.github.io/nemeton/reference/resoudre_espar_bdforet.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/retrieve_knowledge.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/run_fordead_dieback.html</loc></url>
+<url><loc>https://pobsteta.github.io/nemeton/reference/run_icd_decoloration.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/run_memory_capped.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.html</loc></url>
 <url><loc>https://pobsteta.github.io/nemeton/reference/sample_size.html</loc></url>
