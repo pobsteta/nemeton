@@ -160,6 +160,13 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-26 — Mission 085 : dalles MNH/MNT IGN contre produits derives du nuage, SRS equivalents par identite de points (mission 085 de nemetonplateforme), cycle dev `2026.11.45.9005`
+
+- Regression de la #708 sur le poste de Pascal : `resolve_project_chm()` levait `nemeton_mosaique_srs` sur `lidar_mnh/` (28 dalles IGN SRS « EPSG:2154 » sans autorite + `chm.tif` lasR « RGF93 v1 / Lambert-93 »). Reproduite avec une VRAIE dalle MNH IGN (WMS Geoplateforme, `IGNF_LIDAR-HD_MNH_ELEVATION...`, `LHD_FXX_0371_6389_MNH_0M50`) : `.srs_equivalents()` FALSE avant correction (PROJ : ellipsoide WGS84 d'un datum sans nom contre GRS80).
+- `R/project_layers.R` : candidats « LiDAR HD MNH » / « LiDAR HD MNT » sans `chm.tif`, `dtm.tif`, `*_mosaic.tif` (`.LIDAR_DERIVES_EXCLUDE`, champ `exclude` de `.probe_raster_candidate()`), puis « LiDAR HD CHM (nuage, lasR) » (`chm.tif`) et « LiDAR HD MNT (nuage, lasR) » (`dtm.tif`). `R/mosaique_dalles.R` : `.srs_deux_equivalents(a, b, pts)` accepte aussi une transformation identite (1 mm) des coins d'emprise ; 2154/27572, 2154/3035, 32631/32632, x_0 = 700001 restent refuses.
+- Produits ecrits dans `lidar_mnh/` : `chm.tif` (+ `chm.tif.key`, temporaires `.chm.part-*`, sous-dossier `aoi/`) par `compute_dtm_chm_from_laz()` ; `lidar_mnt/` : `dtm.tif` (+ cle). `lidar_<produit>_mosaic.tif` est ecrit par l'app dans `cache/layers/` (pas dans les dossiers), exclu par precaution.
+- Non prouve : `resolve_project_chm()` sur les 28 dalles de Couchey (cas reel reproduit sur une dalle reelle + dalles fabriquees de meme SRS) ; hors `.claude/test-command`, `test-lidar_processing.R` (4 echecs) et `test-indicators-soil/frost`, `test-contrat-indicateurs` (echecs) identiques avant et apres.
+
 ### 2026-11-26 — Mission 082 : mosaique de dalles a SRS ecrit differemment (mission 082 de nemetonplateforme), cycle dev `2026.11.45.9004`
 
 - `R/mosaique_dalles.R` : `.mosaique_dalles()` (interne) remplace `terra::vrt(fichiers)` dans `.open_raster()` (`R/project_layers.R`, appel qui a produit la sortie de Pascal sur `cache/layers/lidar_mnh/`), `.rsen_load_raster()`, `theia_stac` et `fordead_stac` ; `tests/testthat/test-mosaique_dalles.R` (25 attentes, dont la contre-epreuve de l'ancien `terra::vrt`).

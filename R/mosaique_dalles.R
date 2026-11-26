@@ -17,22 +17,51 @@
   trimws(gsub("\\s+", " ", p))
 }
 
-# Deux SRS (WKT) ont-ils le meme sens ? Vrai si terra les juge identiques ou
-# si leurs definitions PROJ normalisees coincident ; deux SRS absents sont
-# equivalents, un SRS absent face a un SRS present ne l'est pas.
-.srs_deux_equivalents <- function(a, b) {
+# La transformation de quelques points du SRS `a` vers le SRS `b` est-elle
+# l'identite (1 mm pres) ? Deux ecritures d'un meme systeme ne deplacent aucun
+# point, meme quand leurs definitions PROJ different par le nom de l'ellipsoide
+# (« EPSG:2154 » des dalles IGN : WGS84 sans datum nomme ; WKT complet : GRS80).
+# `pts` : matrice (x, y) en coordonnees de `a` (coins de l'emprise d'une dalle).
+.srs_transformation_identite <- function(a, b, pts) {
+  if (is.null(pts) || !NROW(pts)) return(FALSE)
+  pts <- as.matrix(pts)
+  res <- tryCatch({
+    v <- terra::vect(pts, type = "points", crs = a)
+    w <- terra::crds(terra::project(v, b))
+    tol <- if (isTRUE(terra::is.lonlat(a))) 1e-8 else 1e-3
+    all(is.finite(w)) && all(abs(w - pts) <= tol)
+  }, error = function(e) FALSE)
+  isTRUE(res)
+}
+
+# Coins de l'emprise d'un raster (matrice x, y), dans son propre SRS.
+.srs_points_emprise <- function(fichier) {
+  e <- terra::ext(terra::rast(fichier))
+  cbind(x = c(e$xmin, e$xmax, e$xmin, e$xmax),
+        y = c(e$ymin, e$ymin, e$ymax, e$ymax))
+}
+
+# Deux SRS (WKT) ont-ils le meme sens ? Vrai si terra les juge identiques, si
+# leurs definitions PROJ normalisees coincident, ou si la transformation des
+# points `pts` (coordonnees de `a`) de `a` vers `b` est l'identite a 1 mm pres ;
+# deux SRS absents sont equivalents, un SRS absent face a un SRS present ne
+# l'est pas.
+.srs_deux_equivalents <- function(a, b, pts = NULL) {
   a_vide <- is.na(a) || !nzchar(a)
   b_vide <- is.na(b) || !nzchar(b)
   if (a_vide || b_vide) return(a_vide && b_vide)
   if (isTRUE(terra::same.crs(a, b))) return(TRUE)
   na <- .srs_normalise(a)
   nb <- .srs_normalise(b)
-  !is.na(na) && !is.na(nb) && identical(na, nb)
+  if (!is.na(na) && !is.na(nb) && identical(na, nb)) return(TRUE)
+  .srs_transformation_identite(a, b, pts)
 }
 
 # Pour chaque fichier, son SRS a-t-il le meme sens que celui du premier ?
 # (vecteur logique nomme par fichier ; predicat reutilise par les appelants
-# qui veulent decider eux-memes quoi faire d'un SRS different.)
+# qui veulent decider eux-memes quoi faire d'un SRS different.) Les points de
+# l'epreuve d'identite sont les coins de l'emprise de chaque fichier, exprimes
+# dans son propre SRS.
 .srs_equivalents <- function(fichiers) {
   srs <- vapply(fichiers, function(f) {
     tryCatch(terra::crs(terra::rast(f)),
@@ -40,7 +69,13 @@
                cli::cli_abort("Cannot read the CRS of tile {.path {f}}.", parent = e)
              })
   }, character(1))
-  vapply(srs, .srs_deux_equivalents, logical(1), b = srs[[1L]])
+  ok <- vapply(seq_along(fichiers), function(i) {
+    if (i == 1L) return(TRUE)
+    # SRS du fichier i vers celui du premier, sur l'emprise du fichier i.
+    .srs_deux_equivalents(srs[[i]], srs[[1L]], .srs_points_emprise(fichiers[[i]]))
+  }, logical(1))
+  names(ok) <- names(srs)
+  ok
 }
 
 # Nombre de fichiers sources distincts effectivement retenus par un VRT.

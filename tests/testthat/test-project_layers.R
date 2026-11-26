@@ -434,3 +434,74 @@ test_that("validate sees the mosaic, once per candidate — not once per tile", 
   expect_identical(attr(out, "nemeton_chm_layer"), "LiDAR HD MNH")
   expect_length(out, 2L)                  # les deux chemins sont rendus
 })
+
+
+# ---- mission 085 : dalles IGN contre produits derives du nuage ------------
+
+.fab_lidar <- function(dossier, nom, xmin, valeur, res = 0.5, crs = "EPSG:2154") {
+  dir.create(dossier, recursive = TRUE, showWarnings = FALSE)
+  r <- terra::rast(xmin = xmin, xmax = xmin + 10, ymin = 0, ymax = 10,
+                   resolution = res, crs = crs)
+  terra::values(r) <- valeur
+  terra::writeRaster(r, file.path(dossier, nom), overwrite = TRUE)
+  file.path(dossier, nom)
+}
+
+test_that("085 : dalles MNH IGN + chm.tif : le CHM rendu est la mosaique des dalles seules", {
+  skip_if_no_terra()
+  skip_if_not_installed("sf")
+  proj <- withr::local_tempdir()
+  d <- file.path(proj, "cache", "layers", "lidar_mnh")
+  .fab_lidar(d, "LHD_FXX_0843_6686_MNH_0M50_LAMB93_IGN69.tif", 0, 1)
+  .fab_lidar(d, "LHD_FXX_0844_6686_MNH_0M50_LAMB93_IGN69.tif", 10, 2)
+  .fab_lidar(d, "chm.tif", 0, 9, res = 1)
+  .fab_lidar(d, "lidar_mnh_mosaic.tif", 0, 8)
+  chm <- resolve_project_chm(proj)
+  expect_identical(attr(chm, "nemeton_chm_layer"), "LiDAR HD MNH")
+  expect_equal(unname(as.vector(terra::ext(chm))), c(0, 20, 0, 10))
+  expect_equal(terra::res(chm), c(0.5, 0.5))
+  expect_equal(terra::extract(chm, cbind(15, 5))[[1]], 2)
+  chemins <- resolve_project_chm(proj, load = FALSE)
+  expect_length(chemins, 2L)
+  expect_false(any(grepl("chm\\.tif$|_mosaic", chemins)))
+})
+
+test_that("085 : chm.tif seul dans lidar_mnh : rendu avec le libelle du candidat nuage", {
+  skip_if_no_terra()
+  proj <- withr::local_tempdir()
+  d <- file.path(proj, "cache", "layers", "lidar_mnh")
+  .fab_lidar(d, "chm.tif", 0, 9, res = 1)
+  chm <- resolve_project_chm(proj)
+  expect_identical(attr(chm, "nemeton_chm_layer"), "LiDAR HD CHM (nuage, lasR)")
+  expect_equal(terra::res(chm), c(1, 1))
+})
+
+test_that("085 : lidar_mnt : dtm.tif seul, puis dalles IGN + dtm.tif", {
+  skip_if_no_terra()
+  skip_if_not_installed("sf")
+  proj <- withr::local_tempdir()
+  d <- file.path(proj, "cache", "layers", "lidar_mnt")
+  .fab_lidar(d, "dtm.tif", 0, 9, res = 1)
+  dem <- resolve_project_dem(proj)
+  expect_identical(attr(dem, "nemeton_dem_layer"), "LiDAR HD MNT (nuage, lasR)")
+  .fab_lidar(d, "LHD_FXX_0843_6686_MNT_0M50_LAMB93_IGN69.tif", 0, 1)
+  .fab_lidar(d, "LHD_FXX_0844_6686_MNT_0M50_LAMB93_IGN69.tif", 10, 2)
+  dem <- resolve_project_dem(proj)
+  expect_identical(attr(dem, "nemeton_dem_layer"), "LiDAR HD MNT")
+  expect_equal(unname(as.vector(terra::ext(dem))), c(0, 20, 0, 10))
+  expect_equal(terra::res(dem), c(0.5, 0.5))
+})
+
+test_that("085 : cas reel de Pascal : dalles IGN (SRS EPSG:2154 sans autorite) + chm.tif", {
+  skip_if_no_terra()
+  skip_if_not_installed("sf")
+  proj <- withr::local_tempdir()
+  d <- file.path(proj, "cache", "layers", "lidar_mnh")
+  dir.create(d, recursive = TRUE)
+  .ecrire_dalle_ign(d, "LHD_FXX_0843_6686_MNH_0M50_LAMB93_IGN69.tif", 0, 1)
+  .ecrire_dalle_ign(d, "LHD_FXX_0844_6686_MNH_0M50_LAMB93_IGN69.tif", 10, 2)
+  .fab_lidar(d, "chm.tif", 0, 9, res = 1)
+  chm <- resolve_project_chm(proj)
+  expect_equal(unname(as.vector(terra::ext(chm))), c(0, 20, 0, 10))
+  expect_identical(attr(chm, "nemeton_chm_layer"), "LiDAR HD MNH")
+})

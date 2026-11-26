@@ -154,3 +154,38 @@ test_that(".srs_deux_equivalents distingue le sens, pas l'ecriture", {
   decale <- w(sub("+x_0=700000", "+x_0=700001", .proj_l93_ecrit_autrement, fixed = TRUE))
   expect_false(.srs_deux_equivalents(w("EPSG:2154"), decale))
 })
+
+
+# --- Mission 085 : equivalence semantique des SRS --------------------------
+
+test_that("cas reel : SRS « EPSG:2154 » sans autorite contre WKT complet : equivalents", {
+  skip_if_not_installed("terra")
+  skip_if_not_installed("sf")
+  d <- withr::local_tempdir()
+  a <- .ecrire_dalle_ign(d, "LHD_FXX_0000_0000_MNH_0M50_LAMB93_IGN69.tif", 0, 1)
+  b <- .ecrire_dalle_ign(d, "LHD_FXX_0000_0001_MNH_0M50_LAMB93_IGN69.tif", 10, 2)
+  c1 <- .fab_dalle(d, "chm.tif", 0, 3, "EPSG:2154")
+  # les trois faits du poste de Pascal
+  expect_equal(terra::crs(terra::rast(a), describe = TRUE)$name, "EPSG:2154")
+  expect_equal(terra::crs(terra::rast(c1), describe = TRUE)$name, "RGF93 v1 / Lambert-93")
+  expect_false(terra::same.crs(terra::rast(a), terra::rast(c1)))
+  expect_true(all(.srs_equivalents(c(a, c1))))
+  expect_true(all(.srs_equivalents(c(c1, a))))
+  m <- .mosaique_dalles(c(a, b, c1))
+  expect_equal(unname(as.vector(terra::ext(m))), c(0, 20, 0, 10))
+})
+
+test_that("identite des points : les SRS reellement differents restent refuses", {
+  skip_if_not_installed("terra")
+  w <- function(x) terra::crs(x)
+  pts <- cbind(x = c(370999, 371999), y = c(6388000, 6389000))
+  expect_true(.srs_deux_equivalents(w(.wkt_dalle_ign), w("EPSG:2154"), pts))
+  expect_false(.srs_deux_equivalents(w("EPSG:2154"), w("EPSG:27572"), pts))
+  expect_false(.srs_deux_equivalents(w("EPSG:2154"), w("EPSG:3035"), pts))
+  expect_false(.srs_deux_equivalents(w("EPSG:32631"), w("EPSG:32632"),
+                                     cbind(500000, 5000000)))
+  decale <- w(sub("+x_0=700000", "+x_0=700001", .proj_l93_ecrit_autrement, fixed = TRUE))
+  expect_false(.srs_deux_equivalents(w("EPSG:2154"), decale, pts))
+  # sans point : repli sur terra::same.crs et la chaine PROJ, jamais d'erreur
+  expect_false(.srs_deux_equivalents(w(.wkt_dalle_ign), w("EPSG:2154")))
+})
