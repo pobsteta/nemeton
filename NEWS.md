@@ -1,4 +1,16 @@
-# nemeton 2026.11.45.9000 (development)
+# nemeton 2026.11.45.9001 (development)
+
+- **feat : RECONFORT lit les fenêtres utiles des bandes THEIA au lieu de télécharger les archives** (mission 071).
+  `run_reconfort_dieback(acquisition = c("fenetre", "archive"))` : par défaut `"fenetre"`, qui cherche les
+  scènes dans le STAC THEIA (`sentinel2-l2a-theia`), lit à distance (`/vsicurl/`, URL signées, reprises) la
+  fenêtre de la zone de chaque bande FRE et masque MAJA (CLM, EDG, MG2, SAT, plus ATB) et écrit les mêmes
+  fichiers que le recadrage des archives (mêmes noms, `extracted/<tuile>/<scène>/…`, grille, type, valeurs :
+  c'est le même `gdalwarp`). IOTA² reste la méthode qui produit la carte. `"archive"` est conservé tel quel
+  (GEODES, ~2 Go par scène). Ni conda ni compte GEODES pour la voie fenêtre, mais `TLD_ACCESS_KEY` /
+  `TLD_SECRET_KEY` : sans argument explicite et sans clés, repli sur `"archive"` avec un avertissement.
+  Pas de changement de signature (argument ajouté en dernier). Outils de comparaison hors dépôt dans
+  `data-raw/comparaison_reconfort/` (archive contre fenêtre ; carte IOTA² contre carte du spike).
+  **Non mesuré** : la durée et le volume réels, faute de clés THEIA dans la session de développement.
 
 - **fix : tournée DEPERIS, trois décisions de Pascal du 2026-11-25** (mission 064, suite de la 061).
   Aucun délai de contre-notation (`delai_contre_notation_jours` reste vide par défaut, dit comme
