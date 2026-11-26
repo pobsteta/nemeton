@@ -55,7 +55,8 @@ test_that("une dalle en EPSG:4326 parmi des dalles Lambert-93 : erreur qui la no
   b <- .fab_dalle(d, "b.tif", 10, 2, "EPSG:2154")
   z <- .fab_dalle(d, "etrangere.tif", 0, 3, "EPSG:4326")
   expect_error(.mosaique_dalles(c(a, b, z)), "etrangere\\.tif")
-  expect_error(.mosaique_dalles(c(a, b, z)), "coordinate\\s+system")
+  expect_error(.mosaique_dalles(c(a, b, z)), "coordinate\\s+system",
+               class = "nemeton_mosaique_srs")
 })
 
 test_that("une seule dalle : comportement inchange", {
@@ -87,7 +88,8 @@ test_that("le controle du nombre de dalles utilisees echoue clairement", {
   a <- .fab_dalle(d, "a.tif", 0, 1, "EPSG:2154")
   b <- .fab_dalle(d, "b.tif", 10, 2, "EPSG:2154")
   testthat::local_mocked_bindings(.vrt_sources_utilisees = function(...) 1L)
-  expect_error(.mosaique_dalles(c(a, b)), "uses\\s+1\\s+of\\s+2")
+  expect_error(.mosaique_dalles(c(a, b)), "uses\\s+1\\s+of\\s+2",
+               class = "nemeton_mosaique_sources")
 })
 
 test_that(".open_raster passe par la mosaique et garde les deux dalles", {
@@ -137,5 +139,18 @@ test_that("FORDEAD : deux scenes de meme date sur deux fuseaux UTM : avertisseme
                  "different\\s+CRSs")
   expect_equal(out$sid, "S1")
   # contre-epreuve : le helper de mosaique, lui, refuse (erreur claire)
-  expect_error(.mosaique_dalles(c(f1, f2)), "s2_B04\\.tif")
+  expect_error(.mosaique_dalles(c(f1, f2)), "s2_B04\\.tif",
+               class = "nemeton_mosaique_srs")
+})
+
+test_that(".srs_deux_equivalents distingue le sens, pas l'ecriture", {
+  skip_if_not_installed("terra")
+  w <- function(x) terra::crs(x)
+  l93_proj <- w(.proj_l93_ecrit_autrement)
+  expect_true(.srs_deux_equivalents(w("EPSG:2154"), l93_proj))
+  expect_false(.srs_deux_equivalents(w("EPSG:2154"), w("EPSG:27572")))
+  expect_false(.srs_deux_equivalents(w("EPSG:32631"), w("EPSG:32632")))
+  expect_false(.srs_deux_equivalents(w("EPSG:2154"), w("EPSG:3035")))
+  decale <- w(sub("+x_0=700000", "+x_0=700001", .proj_l93_ecrit_autrement, fixed = TRUE))
+  expect_false(.srs_deux_equivalents(w("EPSG:2154"), decale))
 })

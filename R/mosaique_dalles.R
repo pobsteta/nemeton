@@ -89,7 +89,7 @@
       "Tiles do not share one coordinate system: {length(autres)} of {length(fichiers)} differ from the first tile {.path {basename(fichiers[[1L]])}}.",
       x = "Different CRS: {.path {basename(autres)}}.",
       i = "No implicit reprojection; reproject these tiles first."
-    ))
+    ), class = "nemeton_mosaique_srs")
   }
 
   opts <- c("-allow_projection_difference", options)
@@ -102,7 +102,7 @@
     cli::cli_abort(c(
       "The mosaic uses {utilises} of {attendus} tile{?s}.",
       i = "Mosaic file: {.path {sortie}}."
-    ))
+    ), class = "nemeton_mosaique_sources")
   }
   terra::rast(sortie)
 }
