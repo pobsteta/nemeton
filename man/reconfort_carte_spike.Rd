@@ -12,6 +12,7 @@ reconfort_carte_spike(
   sortie,
   chenaie = NULL,
   coupes = NULL,
+  reprojeter = FALSE,
   px_par_bloc = NULL,
   memory_max = .memory_ceiling(),
   quiet = FALSE
@@ -27,16 +28,29 @@ recursively.}
 \item{annee}{Observation year (the 36 steps are those of this year).}
 
 \item{gabarit}{Template map (a [terra::SpatRaster] or a path): its CRS, origin,
-resolution and extent are those of the output. When it has the CRS of the
-scenes, its grid must be aligned on the grid of the scenes (offset a multiple
-of the pixel); a template shifted by a fraction of a pixel is refused.}
+resolution and extent are those of the output. By default its grid must be
+the grid of the scenes (same CRS, same resolution as the 10 m band `B04`,
+origin offset by a whole number of pixels): a different CRS (error class
+`reconfort_carte_crs`), a different resolution (`reconfort_carte_resolution`)
+or an offset of a fraction of a pixel (`reconfort_carte_alignement`) is
+refused, because the comparison would no longer be made on the same pixels.
+The 20 m bands (B5, B6, B8A, B11, B12) are the only ones resampled
+(bilinear) onto the 10 m grid, as in the RECONFORT feature stacks (not
+checked against IOTA2 itself).}
 
 \item{sortie}{Path of the GeoTIFF to write.}
 
 \item{chenaie, coupes}{Masks of [reconfort_masquer()] (`NULL` for none).}
 
+\item{reprojeter}{`FALSE` (default): refuse as above. `TRUE`: accept a
+gabarit of another CRS, resolution or offset, resampling every band
+(bilinear, masks nearest) onto it, with a single warning (class
+`reconfort_carte_reprojection`) saying that the comparison is then no longer
+pixel to pixel.}
+
 \item{px_par_bloc}{Maximum pixels per block (default: the RECONFORT memory
-budget, capped).}
+budget divided by the number of scenes of the year, capped: the memory of a
+block scales with pixels times scenes).}
 
 \item{memory_max}{Memory ceiling in the format of the RECONFORT chain
 (default: the session ceiling).}

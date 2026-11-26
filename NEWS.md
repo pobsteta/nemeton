@@ -5,8 +5,8 @@
   `reconfort_modele` pixel par pixel aux scenes MUSCATE deja decoupees (masques MAJA CLM, SAT, EDG, puis
   CRswir et CRre, puis les 36 pas de 10 jours de `reconfort_predire()`), par blocs de lignes a memoire
   bornee, et ecrit un GeoTIFF de classes aligne au pixel sur `gabarit` (`NA` hors chenaie, apres coupe
-  rase ou sans serie utilisable). Un gabarit decale d'une fraction de pixel par rapport aux scenes est
-  refuse. `data-raw/comparaison_reconfort/carte_spike.R` enchaine modele, carte du spike et
+  rase ou sans serie utilisable). Un gabarit d'un autre CRS, d'une autre resolution ou decale d'une fraction de
+  pixel est refuse (erreurs classees), sauf `reprojeter = TRUE` (avertissement). `data-raw/comparaison_reconfort/carte_spike.R` enchaine modele, carte du spike et
   `comparer_cartes.R`. Tant que le modele n'est entraine que sur des etiquettes `synth_` ou propagees,
   l'accord avec IOTA2 est une ressemblance, pas une justesse (spec 070).
 

@@ -48,7 +48,11 @@ Rscript data-raw/comparaison_reconfort/carte_spike.R \
   l'année demandée servent.
 - `carte_iota2.tif` : la carte IOTA² de la **même zone et de la même année** ; elle sert
   de gabarit (CRS, origine, résolution, étendue de la carte du spike). Sa grille doit
-  tomber sur celle des scènes (au pixel près) ; sinon la commande refuse.
+  être celle des scènes (même CRS, même résolution que B04, décalage d'un nombre entier de
+  pixels) ; un CRS, une résolution ou un décalage différents sont **refusés** (le calcul
+  ne serait plus au pixel). Seules les bandes à 20 m sont rééchantillonnées (bilinéaire)
+  vers la grille 10 m ; non vérifié contre IOTA² lui-même. `reprojeter = TRUE` (argument
+  de `reconfort_carte_spike()`, pas du script) accepte l'écart avec un avertissement.
 - Masques MAJA : CLM, SAT, EDG (toute valeur non nulle est masquée), puis indices, puis
   les 36 pas de 10 jours, comme `reconfort_predire()`. `chenaie.tif` et `coupes.tif`
   (YYDDD) facultatifs : `NA` hors chênaie et à partir de l'année de coupe.
@@ -58,7 +62,9 @@ Rscript data-raw/comparaison_reconfort/carte_spike.R \
   réécrite), pixel par pixel. Mesuré en session sur données synthétiques : environ
   0,6 ms par pixel pour 36 dates, soit de l'ordre de 10 minutes par million de pixels,
   **hors lecture des rasters** (non mesurée sur scènes MUSCATE réelles). La mémoire reste
-  bornée par blocs de lignes (au plus 2·10⁵ pixels).
+  bornée par blocs de lignes : le nombre de pixels d'un bloc est le budget mémoire de la
+  chaîne divisé par le nombre de scènes de l'année (plafond 7,2·10⁶ pixels × scènes,
+  soit 2·10⁵ pixels pour 36 scènes).
 
 > **À lire avant de conclure.** Tant que le modèle n'est entraîné que sur des étiquettes
 > `synth_` ou propagées, l'accord avec IOTA² mesure une **ressemblance** entre deux

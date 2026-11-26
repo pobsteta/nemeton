@@ -81,7 +81,7 @@ test_that("cas 1 : la carte est alignee sur le gabarit, un gabarit decale d'un d
 
   decale <- terra::shift(gab, dx = 5, dy = 0)
   expect_error(reconfort_carte_spike(m, dir, 2022L, decale, file.path(dir, "x.tif"), quiet = TRUE),
-               "not aligned")
+               class = "reconfort_carte_alignement")
   expect_false(file.exists(file.path(dir, "x.tif")))
 })
 
@@ -137,13 +137,13 @@ test_that("cas 4 : plusieurs blocs donnent la meme carte qu'un seul", {
   reconfort_carte_spike(m, dir, 2022L, gab, un, px_par_bloc = 1e6, quiet = TRUE)
   expect_message(
     reconfort_carte_spike(m, dir, 2022L, gab, deux, px_par_bloc = 2 * nc),
-    "3 blocks of 2 rows")
+    "3\\s+blocks\\s+of\\s+2\\s+rows")
   expect_identical(terra::values(terra::rast(deux), mat = FALSE),
                    terra::values(terra::rast(un), mat = FALSE))
   # un budget memoire minuscule (en octets) force aussi des blocs d'une ligne
   trois <- file.path(dir, "budget.tif")
   expect_message(reconfort_carte_spike(m, dir, 2022L, gab, trois, memory_max = "1M"),
-                 "block")
+                 "blocks?\\s+of")
   expect_identical(terra::values(terra::rast(trois), mat = FALSE),
                    terra::values(terra::rast(un), mat = FALSE))
 })
@@ -152,17 +152,17 @@ test_that("cas 5 : modele absent ou d'une autre classe, annee sans scene -> erre
   dir <- withr::local_tempdir()
   gab <- synth_scenes_carte(dir)
   expect_error(reconfort_carte_spike(NULL, dir, 2022L, gab, file.path(dir, "c.tif")),
-               "reconfort_modele")
+               class = "reconfort_carte_modele")
   expect_error(reconfort_carte_spike(list(modele = 1), dir, 2022L, gab, file.path(dir, "c.tif")),
-               "reconfort_modele")
+               class = "reconfort_carte_modele")
   skip_if_not_installed("ranger")
   m <- synth_modele_carte()
   expect_error(reconfort_carte_spike(m, dir, 2019L, gab, file.path(dir, "c.tif")),
-               "No complete scene")
+               class = "reconfort_carte_sans_scene")
   expect_error(reconfort_carte_spike(m, dir, 2022L, "pas_un_raster.tif", file.path(dir, "c.tif")),
-               "does not exist")
+               class = "reconfort_carte_gabarit")
   expect_error(reconfort_carte_spike(m, dir, "2022", gab, file.path(dir, "c.tif")),
-               "single year")
+               class = "reconfort_carte_annee")
 })
 
 test_that("une bande a 20 m (B5) est reechantillonnee sur la grille 10 m sans erreur", {
@@ -174,4 +174,72 @@ test_that("une bande a 20 m (B5) est reechantillonnee sur la grille 10 m sans er
   reconfort_carte_spike(m, dir, 2022L, gab, sortie, quiet = TRUE)
   v <- terra::values(terra::rast(sortie), mat = FALSE)
   expect_gt(sum(!is.na(v)), 0L)
+})
+
+test_that("A/B : un CRS ou une resolution differents sont refuses, acceptes avec reprojeter = TRUE et un avertissement", {
+  skip_if_not_installed("ranger")
+  dir <- withr::local_tempdir()
+  gab <- synth_scenes_carte(dir)
+  m <- synth_modele_carte()
+  sortie <- file.path(dir, "c.tif")
+
+  autre_crs <- terra::project(gab, "EPSG:32631")
+  expect_error(reconfort_carte_spike(m, dir, 2022L, autre_crs, sortie, quiet = TRUE),
+               class = "reconfort_carte_crs")
+  expect_false(file.exists(sortie))
+  expect_warning(
+    reconfort_carte_spike(m, dir, 2022L, autre_crs, sortie, reprojeter = TRUE, quiet = TRUE),
+    class = "reconfort_carte_reprojection")
+  carte <- terra::rast(sortie)
+  expect_true(terra::same.crs(carte, autre_crs))
+  expect_gt(sum(!is.na(terra::values(carte, mat = FALSE))), 0L)
+
+  gros <- terra::aggregate(gab, 3L)   # 30 m, emboite dans la grille 10 m
+  expect_error(reconfort_carte_spike(m, dir, 2022L, gros, sortie, quiet = TRUE),
+               class = "reconfort_carte_resolution")
+  expect_warning(
+    reconfort_carte_spike(m, dir, 2022L, gros, sortie, reprojeter = TRUE, quiet = TRUE),
+    class = "reconfort_carte_reprojection")
+  expect_equal(terra::res(terra::rast(sortie)), terra::res(gros))
+})
+
+test_that("B : une bande d'une grille non emboitee dans celle de B04 est refusee", {
+  skip_if_not_installed("ranger")
+  dir <- withr::local_tempdir()
+  gab <- synth_scenes_carte(dir)
+  m <- synth_modele_carte()
+  # B11 de toutes les scenes decalee d'un demi-pixel : sa grille n'est plus emboitee
+  for (f in list.files(dir, "_FRE_B11\\.tif$", recursive = TRUE, full.names = TRUE)) {
+    r <- terra::shift(terra::rast(f) * 1, dx = 5)
+    unlink(f)
+    terra::writeRaster(r, f, overwrite = TRUE)
+  }
+  expect_error(reconfort_carte_spike(m, dir, 2022L, gab, file.path(dir, "c.tif"), quiet = TRUE),
+               class = "reconfort_carte_resolution")
+})
+
+test_that("C/D : le bloc se divise par le nombre de scenes ; l'avertissement SCL est unique", {
+  skip_if_not_installed("ranger")
+  dir <- withr::local_tempdir()
+  gab <- synth_scenes_carte(dir)
+  m <- synth_modele_carte()
+  nc <- terra::ncol(gab)
+  # 37 scenes : plafond (7.2e6 px x scenes) / 37 = 194 594 px, donc tout tient en un bloc ;
+  # un plafond de memoire minuscule, divise par 37, force des blocs d'une ligne
+  expect_message(reconfort_carte_spike(m, dir, 2022L, gab, file.path(dir, "a.tif")),
+                 "1\\s+blocks?\\s+of")
+  expect_message(reconfort_carte_spike(m, dir, 2022L, gab, file.path(dir, "b.tif"), memory_max = "1M"),
+                 "6\\s+blocks\\s+of\\s+1\\s+row")
+  # scenes sans CLM mais avec SCL : un seul avertissement pour toutes
+  for (f in list.files(dir, "_CLM_R1\\.tif$", recursive = TRUE, full.names = TRUE)) {
+    file.rename(f, sub("_CLM_R1", "_SCL", f))
+  }
+  n <- 0L
+  withCallingHandlers(
+    reconfort_carte_spike(m, dir, 2022L, gab, file.path(dir, "c.tif"), quiet = TRUE),
+    reconfort_carte_scl = function(w) {
+      n <<- n + 1L
+      invokeRestart("muffleWarning")
+    })
+  expect_equal(n, 1L)
 })

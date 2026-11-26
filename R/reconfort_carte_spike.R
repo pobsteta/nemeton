@@ -3,9 +3,10 @@
 # MUSCATE deja decoupees, et ecrit un GeoTIFF aligne sur la carte IOTA2 de la
 # meme zone, pour la comparaison de la mission 071 (data-raw/comparaison_reconfort/).
 
-# Plafond de pixels par bloc : la table longue (pixel x date) passe par
-# `.reconfort_caracteristiques()`, bien plus gourmande que le chunk IOTA2.
-.RECONFORT_CARTE_PX_MAX <- 2e5
+# Plafond de pixels x scenes par bloc : la table longue (pixel x date) passe par
+# `.reconfort_caracteristiques()`, bien plus gourmande que le chunk IOTA2 ; le
+# nombre de pixels d'un bloc est donc ce plafond divise par le nombre de scenes.
+.RECONFORT_CARTE_PX_SCENES_MAX <- 7.2e6  # pixels x scenes par bloc (2e5 px, 36 dates)
 
 #' Class map of the RECONFORT spike model on the grid of a template map
 #'
@@ -38,13 +39,25 @@
 #'   recursively.
 #' @param annee Observation year (the 36 steps are those of this year).
 #' @param gabarit Template map (a [terra::SpatRaster] or a path): its CRS, origin,
-#'   resolution and extent are those of the output. When it has the CRS of the
-#'   scenes, its grid must be aligned on the grid of the scenes (offset a multiple
-#'   of the pixel); a template shifted by a fraction of a pixel is refused.
+#'   resolution and extent are those of the output. By default its grid must be
+#'   the grid of the scenes (same CRS, same resolution as the 10 m band `B04`,
+#'   origin offset by a whole number of pixels): a different CRS (error class
+#'   `reconfort_carte_crs`), a different resolution (`reconfort_carte_resolution`)
+#'   or an offset of a fraction of a pixel (`reconfort_carte_alignement`) is
+#'   refused, because the comparison would no longer be made on the same pixels.
+#'   The 20 m bands (B5, B6, B8A, B11, B12) are the only ones resampled
+#'   (bilinear) onto the 10 m grid, as in the RECONFORT feature stacks (not
+#'   checked against IOTA2 itself).
+#' @param reprojeter `FALSE` (default): refuse as above. `TRUE`: accept a
+#'   gabarit of another CRS, resolution or offset, resampling every band
+#'   (bilinear, masks nearest) onto it, with a single warning (class
+#'   `reconfort_carte_reprojection`) saying that the comparison is then no longer
+#'   pixel to pixel.
 #' @param sortie Path of the GeoTIFF to write.
 #' @param chenaie,coupes Masks of [reconfort_masquer()] (`NULL` for none).
 #' @param px_par_bloc Maximum pixels per block (default: the RECONFORT memory
-#'   budget, capped).
+#'   budget divided by the number of scenes of the year, capped: the memory of a
+#'   block scales with pixels times scenes).
 #' @param memory_max Memory ceiling in the format of the RECONFORT chain
 #'   (default: the session ceiling).
 #' @param quiet Silence progress messages.
@@ -53,21 +66,23 @@
 #' @export
 reconfort_carte_spike <- function(modele, scenes_dir, annee, gabarit, sortie,
                                   chenaie = NULL, coupes = NULL,
-                                  px_par_bloc = NULL, memory_max = .memory_ceiling(),
-                                  quiet = FALSE) {
+                                  reprojeter = FALSE, px_par_bloc = NULL,
+                                  memory_max = .memory_ceiling(), quiet = FALSE) {
   if (!inherits(modele, "reconfort_modele")) {
-    cli::cli_abort("{.arg modele} must be a {.cls reconfort_modele} (see {.fn reconfort_entrainer}).")
+    cli::cli_abort("{.arg modele} must be a {.cls reconfort_modele} (see {.fn reconfort_entrainer}).",
+                   class = "reconfort_carte_modele")
   }
   if (!is.numeric(annee) || length(annee) != 1L || is.na(annee)) {
-    cli::cli_abort("{.arg annee} must be a single year.")
+    cli::cli_abort("{.arg annee} must be a single year.", class = "reconfort_carte_annee")
   }
   annee <- as.integer(annee)
   if (is.character(gabarit)) {
-    if (!file.exists(gabarit)) cli::cli_abort("{.arg gabarit} {.path {gabarit}} does not exist.")
+    if (!file.exists(gabarit)) cli::cli_abort("{.arg gabarit} {.path {gabarit}} does not exist.",
+                                              class = "reconfort_carte_gabarit")
     gabarit <- terra::rast(gabarit)
   }
   if (!inherits(gabarit, "SpatRaster")) {
-    cli::cli_abort("{.arg gabarit} must be a SpatRaster or a path.")
+    cli::cli_abort("{.arg gabarit} must be a SpatRaster or a path.", class = "reconfort_carte_gabarit")
   }
   gabarit <- terra::rast(gabarit[[1L]])  # grille seule, sans valeurs
 
@@ -75,16 +90,23 @@ reconfort_carte_spike <- function(modele, scenes_dir, annee, gabarit, sortie,
   an_s <- vapply(scenes, function(s) as.integer(format(s$obs_date, "%Y")), integer(1))
   scenes <- scenes[an_s == annee]
   if (!length(scenes)) {
-    cli::cli_abort("No complete scene (six FRE bands) of {annee} under {.path {scenes_dir}}.")
+    cli::cli_abort("No complete scene (six FRE bands) of {annee} under {.path {scenes_dir}}.",
+                   class = "reconfort_carte_sans_scene")
   }
-  .reconfort_carte_verifier_grille(gabarit, scenes[[1L]]$B04)
+  .reconfort_carte_verifier_grille(gabarit, scenes, reprojeter)
+  seul_scl <- vapply(scenes, function(x) is.null(x$clm) && !is.null(x$scl), logical(1))
+  if (any(seul_scl)) {
+    cli::cli_warn("{sum(seul_scl)} scene{?s} {?has/have} a Sen2Cor SCL mask but no MAJA CLM: SCL classes 3, 8, 9, 10, 11 are not masked here.",
+                  class = "reconfort_carte_scl")
+  }
 
   nr <- terra::nrow(gabarit)
   nc <- terra::ncol(gabarit)
   px_max <- px_par_bloc
   if (is.null(px_max)) {
     budget <- .reconfort_chunk_px_budget(memory_max)
-    px_max <- min(.RECONFORT_CARTE_PX_MAX, if (is.na(budget)) Inf else budget)
+    px_max <- min(.RECONFORT_CARTE_PX_SCENES_MAX, if (is.na(budget)) Inf else budget) /
+      length(scenes)
   }
   lignes <- max(1L, as.integer(floor(px_max / nc)))
   debuts <- seq.int(1L, nr, by = lignes)
@@ -100,7 +122,8 @@ reconfort_carte_spike <- function(modele, scenes_dir, annee, gabarit, sortie,
   on.exit(if (!fini) try(terra::writeStop(out), silent = TRUE), add = TRUE)
   for (d in debuts) {
     n <- min(lignes, nr - d + 1L)
-    cl <- .reconfort_carte_bloc(modele, scenes, annee, gabarit, d, n, chenaie, coupes)
+    cl <- .reconfort_carte_bloc(modele, scenes, annee, gabarit, d, n, chenaie, coupes,
+                                reprojeter)
     terra::writeValues(out, as.numeric(cl), d, n)
   }
   out <- terra::writeStop(out)
@@ -108,39 +131,83 @@ reconfort_carte_spike <- function(modele, scenes_dir, annee, gabarit, sortie,
 
   if (!isTRUE(terra::compareGeom(out, gabarit, crs = TRUE, ext = TRUE, rowcol = TRUE,
                                  res = TRUE, stopOnError = FALSE))) {
-    cli::cli_abort("The written map is not aligned on {.arg gabarit}; this is a bug.")
+    cli::cli_abort("The written map is not aligned on {.arg gabarit}; this is a bug.",
+                   class = "reconfort_carte_alignement")
   }
   invisible(sortie)
 }
 
-# La grille du gabarit doit tomber sur celle des scenes (meme CRS) : sinon la
-# serie de chaque pixel serait un melange interpole de pixels voisins, et la
-# comparaison pixel a pixel avec IOTA2 ne porterait plus sur les memes pixels.
-.reconfort_carte_verifier_grille <- function(gabarit, chemin_b04) {
-  ref <- terra::rast(chemin_b04)
-  if (!terra::same.crs(ref, gabarit)) return(invisible(TRUE))
-  r <- terra::res(ref)
-  tol <- 1e-3 * min(r)
-  dec <- function(a, b, p) {
-    d <- (a - b) %% p
-    min(d, p - d)
-  }
-  e1 <- terra::ext(gabarit)
+# La grille du gabarit doit etre celle des scenes (meme CRS, meme resolution que
+# B04, origine decalee d'un nombre entier de pixels), pour TOUTES les bandes
+# utilisees : une bande a 20 m est admise si sa resolution est un multiple de
+# celle de B04 et sa grille emboitee ; sinon la serie de chaque pixel serait un
+# melange interpole, et la comparaison pixel a pixel avec IOTA2 ne porterait plus
+# sur les memes pixels. `reprojeter = TRUE` accepte l'ecart, avec un seul avertissement.
+.reconfort_carte_verifier_grille <- function(gabarit, scenes, reprojeter = FALSE) {
+  s <- scenes[[1L]]
+  ref <- terra::rast(s$B04)
+  r0 <- terra::res(ref)
   e0 <- terra::ext(ref)
-  dx <- dec(e1$xmin, e0$xmin, r[1L])
-  dy <- dec(e1$ymax, e0$ymax, r[2L])
-  rapport <- terra::res(gabarit) / r
-  if (dx > tol || dy > tol) {
-    cli::cli_abort(c(
-      "{.arg gabarit} is not aligned on the pixel grid of the scenes.",
-      "x" = "Offset of {signif(dx, 4)} (x) and {signif(dy, 4)} (y) from the scene grid, pixel {r[1L]} x {r[2L]}.",
-      "i" = "Use the IOTA2 map of the same zone as template, or resample it on the scene grid first."
-    ))
+  motifs <- character()
+  classe <- NULL
+  refuser <- function(cl, msg) {
+    if (is.null(classe)) classe <<- cl
+    motifs <<- c(motifs, msg)
   }
-  if (any(abs(rapport - round(rapport)) > 1e-6 & abs(1 / rapport - round(1 / rapport)) > 1e-6)) {
-    cli::cli_abort("Resolution of {.arg gabarit} ({paste(terra::res(gabarit), collapse = ' x ')}) is not a multiple or a divisor of the scene resolution.")
+  if (!terra::same.crs(ref, gabarit)) {
+    refuser("reconfort_carte_crs", "the CRS of {.arg gabarit} differs from that of the scenes")
+  } else {
+    rg <- terra::res(gabarit)
+    if (any(abs(rg - r0) > 1e-6 * r0)) {
+      refuser("reconfort_carte_resolution", sprintf(
+        "the resolution of {.arg gabarit} (%s) differs from that of B04 (%s)",
+        paste(signif(rg, 6), collapse = " x "), paste(signif(r0, 6), collapse = " x ")))
+    } else {
+      e1 <- terra::ext(gabarit)
+      dec <- function(a, b, p) {
+        d <- (a - b) %% p
+        min(d, p - d)
+      }
+      dx <- dec(e1$xmin, e0$xmin, r0[1L])
+      dy <- dec(e1$ymax, e0$ymax, r0[2L])
+      if (dx > 1e-3 * r0[1L] || dy > 1e-3 * r0[2L]) {
+        refuser("reconfort_carte_alignement", sprintf(
+          "the grid of {.arg gabarit} is offset from the scene grid by %s (x) and %s (y), pixel %s x %s",
+          signif(dx, 4), signif(dy, 4), r0[1L], r0[2L]))
+      }
+    }
+    # les autres bandes : resolution multiple de celle de B04 et grille emboitee
+    for (b in c("B05", "B06", "B8A", "B11", "B12")) {
+      rb <- terra::rast(s[[b]])
+      if (!terra::same.crs(rb, ref)) {
+        refuser("reconfort_carte_crs", sprintf("band %s has another CRS than B04", b))
+        next
+      }
+      q <- terra::res(rb) / r0
+      eb <- terra::ext(rb)
+      ox <- ((eb$xmin - e0$xmin) / r0[1L]) %% 1
+      oy <- ((eb$ymax - e0$ymax) / r0[2L]) %% 1
+      if (any(abs(q - round(q)) > 1e-6) || any(round(q) < 1) ||
+          min(ox, 1 - ox) > 1e-3 || min(oy, 1 - oy) > 1e-3) {
+        refuser("reconfort_carte_resolution", sprintf(
+          "band %s is not on a grid nested in the 10 m grid of B04 (resolution %s)",
+          b, paste(signif(terra::res(rb), 6), collapse = " x ")))
+      }
+    }
   }
-  invisible(TRUE)
+  if (!length(motifs)) return(invisible(TRUE))
+  if (isTRUE(reprojeter)) {
+    cli::cli_warn(c(
+      "The scenes are resampled onto {.arg gabarit}: the comparison with IOTA2 is no longer pixel to pixel.",
+      stats::setNames(motifs, rep("!", length(motifs)))),
+      class = "reconfort_carte_reprojection")
+    return(invisible(FALSE))
+  }
+  cli::cli_abort(c(
+    "{.arg gabarit} is not on the pixel grid of the scenes.",
+    stats::setNames(motifs, rep("x", length(motifs))),
+    "i" = "Use the IOTA2 map of the same zone as template, or set {.code reprojeter = TRUE} to resample (the comparison is then no longer pixel to pixel)."),
+    class = c(classe, "reconfort_carte_grille"))
 }
 
 # Une bande lue sur la grille `tpl` (bloc du gabarit). Meme grille alignee :
@@ -160,16 +227,23 @@ reconfort_carte_spike <- function(modele, scenes_dir, annee, gabarit, sortie,
     if (is.null(inter)) return(rep(NA_real_, terra::ncell(tpl)))
     return(terra::values(terra::extend(terra::crop(r, tpl), tpl), mat = FALSE))
   }
-  tryCatch({
-    marge <- 3 * max(terra::res(r))
-    p <- terra::project(terra::ext(tpl), terra::crs(tpl), terra::crs(r))
-    rc <- terra::crop(r, terra::ext(p) + marge)
-    terra::values(terra::project(rc, tpl, method = methode), mat = FALSE)
-  }, error = function(e) rep(NA_real_, terra::ncell(tpl)))
+  p <- terra::project(terra::ext(tpl), terra::crs(tpl), terra::crs(r))
+  inter <- terra::intersect(terra::ext(p), terra::ext(r))
+  if (is.null(inter)) return(rep(NA_real_, terra::ncell(tpl)))
+  rc <- tryCatch(terra::crop(r, terra::ext(p) + 3 * max(terra::res(r))),
+                 error = function(e) {
+                   cli::cli_abort("Cannot read {.path {chemin}} on the block: {conditionMessage(e)}",
+                                  class = "reconfort_carte_lecture", parent = e)
+                 })
+  tryCatch(terra::values(terra::project(rc, tpl, method = methode), mat = FALSE),
+           error = function(e) {
+             cli::cli_abort("Cannot resample {.path {chemin}} onto the template: {conditionMessage(e)}",
+                            class = "reconfort_carte_lecture", parent = e)
+           })
 }
 
 # Serie longue (pixel x date) d'un bloc : masques MAJA, puis indices.
-.reconfort_carte_serie <- function(scenes, tpl, ids) {
+.reconfort_carte_serie <- function(scenes, tpl, ids, reprojeter = FALSE) {
   bandes <- c("B04", "B05", "B06", "B8A", "B11", "B12")
   morceaux <- vector("list", length(scenes))
   for (i in seq_along(scenes)) {
@@ -202,15 +276,13 @@ reconfort_carte_spike <- function(modele, scenes_dir, annee, gabarit, sortie,
                ignore.case = TRUE)
       if (!identical(f, scene$clm) && file.exists(f)) out <- c(out, f)
     }
-  } else if (!is.null(scene$scl)) {
-    cli::cli_warn("Scene of {scene$obs_date} has a Sen2Cor SCL mask, not MAJA CLM: classes 3, 8, 9, 10, 11 are not masked here.")
   }
   out
 }
 
 # Classes (entiers, NA) des `n` lignes du gabarit a partir de la ligne `debut`.
 .reconfort_carte_bloc <- function(modele, scenes, annee, gabarit, debut, n,
-                                  chenaie, coupes) {
+                                  chenaie, coupes, reprojeter) {
   e <- terra::ext(gabarit)
   r <- terra::res(gabarit)
   nc <- terra::ncol(gabarit)
@@ -219,7 +291,7 @@ reconfort_carte_spike <- function(modele, scenes_dir, annee, gabarit, sortie,
                      ymax = e$ymax - (debut - 1L) * r[2L], crs = terra::crs(gabarit))
   cellules <- (debut - 1L) * nc + seq_len(n * nc)
   ids <- as.character(cellules)
-  serie <- .reconfort_carte_serie(scenes, tpl, ids)
+  serie <- .reconfort_carte_serie(scenes, tpl, ids, reprojeter)
   utile <- !(is.na(serie$CRswir) & is.na(serie$CRre))
   serie <- serie[utile, , drop = FALSE]
   classes <- rep(NA_integer_, n * nc)
