@@ -160,6 +160,13 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-26 — Mission 074 : indicateur composite de décoloration (ICD), spec 071 (mission 074 de nemetonplateforme), cycle dev `2026.11.45.9002`
+
+- `specs/071-icd-decoloration/` (spec, note de méthode en PDF, brief côté app) ; `R/icd_constantes.R`, `icd_indices.R`, `icd_poids.R`, `icd_calcul.R`, `icd_pipeline.R`, `icd_lecture.R` ; 7 fonctions exportées (`run_icd_decoloration()`, `icd_indices()`, `icd_poids_defaut()`, `icd_poids_valider()`, `read_icd_raster()`, `read_icd_pixel_series()`, `comparer_fast_icd()`), `tests/testthat/test-icd.R`.
+- Décisions de Pascal (2026-11-26) : FAST inchangé ; seuls les poids modifiables, somme renormalisée à 1 ; pas d'ICD hors des 4 peuplements purs ; ICD dans « Tout calculer » (côté app).
+- Lectures retenues (à confirmer, voir la spec) : « mois consécutifs » = deux mois du calendrier tous deux valides ; classe de l'année précédente pour le niveau 4 = saison complète dans les deux jeux (annuel et « à date »).
+- Non prouvé : exécution sur Sentinel-2 réel, durée et volume, noms d'assets SCL/B03/B06/B07 hors Planetary Computer, écriture des alertes en base PostgreSQL, pas de comparaison avec la sortie des scripts de la note (non fournis).
+
 ### 2026-11-26 — Mission 071 : RECONFORT lit les fenêtres utiles des bandes THEIA (mission 071 de nemetonplateforme), cycle dev `2026.11.45.9001`
 
 - `R/reconfort_fenetre.R` : voie `acquisition = "fenetre"` (recherche STAC par tuile et dates, signature des URL, `gdalwarp` distant avec reprise, écriture dans un dossier de préparation puis promotion atomique, marqueur d'idempotence commun avec la voie archive). `R/reconfort_comparaison.R` : accord entre deux cartes de classes. `data-raw/comparaison_reconfort/` : scripts et README pour la comparaison chez Pascal.

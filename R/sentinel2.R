@@ -434,7 +434,11 @@ stac_search_s2_theia_muscate <- function(bbox, start, end,
 # pipeline) can pick what it needs without re-querying STAC. Adding a
 # band here is essentially free: one more `href` lookup per feature,
 # no extra HTTP call.
-.S2_STAC_BANDS <- c("B02", "B04", "B05", "B08", "B8A", "B11", "B12")
+# Spec 071 (ICD) ajoute B03, B06, B07 et la couche de classification SCL :
+# elles restent tolerantes (href vide = ""), seules B04/B08/B12 sont exigees,
+# donc ce que lit FAST ne change pas.
+.S2_STAC_BANDS <- c("B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A",
+                    "B11", "B12", "SCL")
 
 # Bands required to keep a scene in the result set. FAST builds NDVI
 # from (B04, B08) and NBR from (B08, B12), so a scene missing any of
