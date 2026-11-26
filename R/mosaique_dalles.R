@@ -20,7 +20,7 @@
 # Deux SRS (WKT) ont-ils le meme sens ? Vrai si terra les juge identiques ou
 # si leurs definitions PROJ normalisees coincident ; deux SRS absents sont
 # equivalents, un SRS absent face a un SRS present ne l'est pas.
-.srs_equivalents <- function(a, b) {
+.srs_deux_equivalents <- function(a, b) {
   a_vide <- is.na(a) || !nzchar(a)
   b_vide <- is.na(b) || !nzchar(b)
   if (a_vide || b_vide) return(a_vide && b_vide)
@@ -28,6 +28,19 @@
   na <- .srs_normalise(a)
   nb <- .srs_normalise(b)
   !is.na(na) && !is.na(nb) && identical(na, nb)
+}
+
+# Pour chaque fichier, son SRS a-t-il le meme sens que celui du premier ?
+# (vecteur logique nomme par fichier ; predicat reutilise par les appelants
+# qui veulent decider eux-memes quoi faire d'un SRS different.)
+.srs_equivalents <- function(fichiers) {
+  srs <- vapply(fichiers, function(f) {
+    tryCatch(terra::crs(terra::rast(f)),
+             error = function(e) {
+               cli::cli_abort("Cannot read the CRS of tile {.path {f}}.", parent = e)
+             })
+  }, character(1))
+  vapply(srs, .srs_deux_equivalents, logical(1), b = srs[[1L]])
 }
 
 # Nombre de fichiers sources distincts effectivement retenus par un VRT.
@@ -69,14 +82,7 @@
   existe <- file.exists(fichiers)
   fichiers[existe] <- normalizePath(fichiers[existe], winslash = "/", mustWork = FALSE)
 
-  srs <- vapply(fichiers, function(f) {
-    tryCatch(terra::crs(terra::rast(f)),
-             error = function(e) {
-               cli::cli_abort("Cannot read the CRS of tile {.path {f}}.", parent = e)
-             })
-  }, character(1))
-  ref <- srs[[1L]]
-  ok <- vapply(srs, .srs_equivalents, logical(1), b = ref)
+  ok <- .srs_equivalents(fichiers)
   if (!all(ok)) {
     autres <- fichiers[!ok]
     cli::cli_abort(c(

@@ -120,3 +120,22 @@ test_that("plus aucun terra::vrt() direct sur une liste de dalles dans R/", {
                        }))
   expect_false(any(grepl("terra::vrt\\(", src)))
 })
+
+test_that("FORDEAD : deux scenes de meme date sur deux fuseaux UTM : avertissement, une scene gardee", {
+  skip_if_not_installed("terra")
+  d <- withr::local_tempdir()
+  # la scene 31T est plus etendue : c'est elle qui est gardee
+  r1 <- terra::rast(xmin = 0, xmax = 20, ymin = 0, ymax = 20, resolution = 1, crs = "EPSG:32631")
+  r2 <- terra::rast(xmin = 0, xmax = 10, ymin = 0, ymax = 10, resolution = 1, crs = "EPSG:32632")
+  terra::values(r1) <- 1; terra::values(r2) <- 2
+  f1 <- file.path(d, "s1_B04.tif"); f2 <- file.path(d, "s2_B04.tif")
+  terra::writeRaster(r1, f1); terra::writeRaster(r2, f2)
+  dt <- as.Date("2023-06-15")
+  grp <- list(list(sid = "S1", dt = dt, band_paths = f1),
+              list(sid = "S2", dt = dt, band_paths = f2))
+  expect_warning(out <- .fordead_mosaic_same_date(grp, "B04"),
+                 "different\\s+CRSs")
+  expect_equal(out$sid, "S1")
+  # contre-epreuve : le helper de mosaique, lui, refuse (erreur claire)
+  expect_error(.mosaique_dalles(c(f1, f2)), "s2_B04\\.tif")
+})

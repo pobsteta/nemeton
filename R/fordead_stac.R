@@ -376,8 +376,8 @@ NULL
 .fordead_mosaic_same_date <- function(grp, bands_required) {
   sids <- vapply(grp, `[[`, character(1), "sid")
   r1   <- lapply(grp, function(s) terra::rast(s$band_paths[[1L]]))
-  same_crs <- all(vapply(r1, function(r) terra::same.crs(r, r1[[1L]]),
-                         logical(1)))
+  same_crs <- all(.srs_equivalents(vapply(grp, function(s) s$band_paths[[1L]],
+                                          character(1))))
   if (!same_crs) {
     aires <- vapply(r1, function(r) {
       e <- terra::ext(r)
