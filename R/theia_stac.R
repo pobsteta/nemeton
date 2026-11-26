@@ -636,7 +636,7 @@ load_theia_source <- function(source_key, aoi, asset = NULL,
     rast <- if (length(hrefs) == 1L) {
       terra::rast(hrefs)
     } else {
-      terra::vrt(hrefs)
+      .mosaique_dalles(hrefs)
     }
   }
 

@@ -416,9 +416,8 @@ NULL
   vrts <- vapply(seq_along(bands_required), function(k) {
     srcs <- vapply(grp, function(s) s$band_paths[[k]], character(1))
     out  <- file.path(d, paste0(bands_required[k], ".vrt"))
-    terra::vrt(srcs, filename = out,
-               options = c("-srcnodata", "0", "-vrtnodata", "0"),
-               overwrite = TRUE, return_filename = TRUE)
+    .mosaique_dalles(srcs, filename = out,
+                     options = c("-srcnodata", "0", "-vrtnodata", "0"))
     out
   }, character(1))
   list(sid = paste(sids, collapse = "+"), dt = grp[[1L]]$dt,
