@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 2026.11.45.9002
+Version: 2026.11.45.9003
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
@@ -136,3 +136,4 @@ Remotes:
     dklinges9/mcera5,
     pobsteta/biljouR
 Config/roxygen2/version: 8.0.0
+RoxygenNote: 7.3.1

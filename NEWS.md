@@ -1,5 +1,15 @@
 # nemeton 2026.11.45.9001 (development)
 
+- **feat : carte de classes du spike RECONFORT sur la grille de la carte IOTA2** (mission 076).
+  `reconfort_carte_spike(modele, scenes_dir, annee, gabarit, sortie, chenaie, coupes)` applique un
+  `reconfort_modele` pixel par pixel aux scenes MUSCATE deja decoupees (masques MAJA CLM, SAT, EDG, puis
+  CRswir et CRre, puis les 36 pas de 10 jours de `reconfort_predire()`), par blocs de lignes a memoire
+  bornee, et ecrit un GeoTIFF de classes aligne au pixel sur `gabarit` (`NA` hors chenaie, apres coupe
+  rase ou sans serie utilisable). Un gabarit d'un autre CRS, d'une autre resolution ou decale d'une fraction de
+  pixel est refuse (erreurs classees), sauf `reprojeter = TRUE` (avertissement). `data-raw/comparaison_reconfort/carte_spike.R` enchaine modele, carte du spike et
+  `comparer_cartes.R`. Tant que le modele n'est entraine que sur des etiquettes `synth_` ou propagees,
+  l'accord avec IOTA2 est une ressemblance, pas une justesse (spec 070).
+
 - **feat : indicateur composite de décoloration (ICD), quatrième méthode du suivi sanitaire** (spec 071,
   mission 074). À l'échelle d'une zone de suivi, d'après la note de méthode « Suivi de la décoloration
   anormale du feuillage » (BFC, v2 du 29 octobre 2026, §§ 3 à 8 et 15) :
