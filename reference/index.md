@@ -993,6 +993,8 @@ ranger en validation croisee spatiale. Essai, hors production.
 - [`reconfort_comparer_amont()`](https://pobsteta.github.io/nemeton/reference/reconfort_comparer_amont.md)
   : Pixel-by-pixel agreement of a class map with the upstream RECONFORT
   map
+- [`reconfort_carte_spike()`](https://pobsteta.github.io/nemeton/reference/reconfort_carte_spike.md)
+  : Class map of the RECONFORT spike model on the grid of a template map
 
 ### Suivi sanitaire - indicateur composite de decoloration ICD (spec 071)
 

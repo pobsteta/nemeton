@@ -1,0 +1,114 @@
+# Class map of the RECONFORT spike model on the grid of a template map
+
+Applies a model trained by \[reconfort_entrainer()\] to every pixel of a
+zone and writes a GeoTIFF of classes (1 healthy, 2 declining, 3 severely
+declining) \*\*aligned to the pixel\*\* on \`gabarit\` (in practice the
+IOTA2 map of the same zone and year), so that the two methods can be
+compared pixel by pixel
+(\`data-raw/comparaison_reconfort/comparer_cartes.R\`).
+
+## Usage
+
+``` r
+reconfort_carte_spike(
+  modele,
+  scenes_dir,
+  annee,
+  gabarit,
+  sortie,
+  chenaie = NULL,
+  coupes = NULL,
+  reprojeter = FALSE,
+  px_par_bloc = NULL,
+  memory_max = .memory_ceiling(),
+  quiet = FALSE
+)
+```
+
+## Arguments
+
+- modele:
+
+  A \`reconfort_modele\` from \[reconfort_entrainer()\].
+
+- scenes_dir:
+
+  Directory of the already clipped MUSCATE scenes
+  (\`extracted/\<tile\>/\<scene\>/\*\_FRE_B\*.tif\` and \`MASKS/\`),
+  searched recursively.
+
+- annee:
+
+  Observation year (the 36 steps are those of this year).
+
+- gabarit:
+
+  Template map (a \[terra::SpatRaster\] or a path): its CRS, origin,
+  resolution and extent are those of the output. By default its grid
+  must be the grid of the scenes (same CRS, same resolution as the 10 m
+  band \`B04\`, origin offset by a whole number of pixels): a different
+  CRS (error class \`reconfort_carte_crs\`), a different resolution
+  (\`reconfort_carte_resolution\`) or an offset of a fraction of a pixel
+  (\`reconfort_carte_alignement\`) is refused, because the comparison
+  would no longer be made on the same pixels. The 20 m bands (B5, B6,
+  B8A, B11, B12) are the only ones resampled (bilinear) onto the 10 m
+  grid, as in the RECONFORT feature stacks (not checked against IOTA2
+  itself).
+
+- sortie:
+
+  Path of the GeoTIFF to write.
+
+- chenaie, coupes:
+
+  Masks of \[reconfort_masquer()\] (\`NULL\` for none).
+
+- reprojeter:
+
+  \`FALSE\` (default): refuse as above. \`TRUE\`: accept a gabarit of
+  another CRS, resolution or offset, resampling every band (bilinear,
+  masks nearest) onto it, with a single warning (class
+  \`reconfort_carte_reprojection\`) saying that the comparison is then
+  no longer pixel to pixel.
+
+- px_par_bloc:
+
+  Maximum pixels per block (default: the RECONFORT memory budget divided
+  by the number of scenes of the year, capped: the memory of a block
+  scales with pixels times scenes).
+
+- memory_max:
+
+  Memory ceiling in the format of the RECONFORT chain (default: the
+  session ceiling).
+
+- quiet:
+
+  Silence progress messages.
+
+## Value
+
+The path \`sortie\`, invisibly. The map has one layer of classes
+(\`INT1U\`, \`NA\` flag 255).
+
+## Details
+
+Order of operations, as in IOTA2: MAJA masks (\`CLM\` clouds, shadows
+and cirrus, plus \`SAT\` saturation and \`EDG\` edge when present; any
+non-zero value is masked) then the indices \[reconfort_indices()\]
+(CRswir, CRre), then the 36 ten-day steps and the gap rules of the
+training table (the very code of \[reconfort_predire()\], not a copy),
+then the class. Pixels are processed by blocks of rows so that memory
+stays bounded; a map made of several blocks is identical to a one-block
+map.
+
+A pixel is \`NA\` in the map when its series is unusable (no valid value
+of an index in the year), when it lies outside the oak stand
+(\`chenaie\`) or when it was clear-cut in or before \`annee\`
+(\`coupes\`), see \[reconfort_masquer()\].
+
+\*\*What the agreement with IOTA2 means.\*\* While the model is trained
+only on \`synth\_\` or propagated labels, agreement with the IOTA2 map
+measures a \*\*resemblance\*\*, not an \*\*accuracy\*\*: only field
+plots kept aside can say which map is right (spec 070, criterion to
+amend spec 021).

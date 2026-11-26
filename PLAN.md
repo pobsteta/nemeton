@@ -189,6 +189,23 @@ pins de Norvège seulement. Branche par défaut de `forptnemeton` et
 100 sites × 100 placettes × 50 ans en 21 s de CPU. Reste l’étape 3
 (calibration sur placettes IFN, D-7).
 
+### 2026-11-26 — Mission 076 : carte de classes du spike RECONFORT sur la grille IOTA2 (mission 076 de nemetonplateforme), cycle dev `2026.11.45.9003`
+
+- `R/reconfort_carte_spike.R` :
+  [`reconfort_carte_spike()`](https://pobsteta.github.io/nemeton/reference/reconfort_carte_spike.md)
+  (exportee) ; `tests/testthat/test-reconfort-carte-spike.R` (cinq cas
+  de la fiche plus une bande a 20 m, scenes `synth_` ecrites sur disque)
+  ; `data-raw/comparaison_reconfort/carte_spike.R` et `README.md`
+  (commande chez Pascal).
+- Les caracteristiques sont celles de
+  [`reconfort_predire()`](https://pobsteta.github.io/nemeton/reference/reconfort_predire.md)
+  / `.reconfort_caracteristiques()`, reutilisees telles quelles (table
+  longue pixel x date par bloc), pas une reecriture vectorisee : exact,
+  mais lent a grande echelle.
+- Non prouve : run sur scenes MUSCATE reelles, duree reelle, accord avec
+  une vraie carte IOTA2. L’accord mesure une ressemblance, pas une
+  justesse (spec 070).
+
 ### 2026-11-26 — Mission 074 : indicateur composite de décoloration (ICD), spec 071 (mission 074 de nemetonplateforme), cycle dev `2026.11.45.9002`
 
 - `specs/071-icd-decoloration/` (spec, note de méthode en PDF, brief
