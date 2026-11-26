@@ -301,7 +301,7 @@ regen_bilan_hydrique <- function(units, meteo = NULL, sol = NULL,
   if (inherits(x, "SpatRaster")) return(terra::crop(x, emprise))
   fich <- list.files(x, pattern = "\\.tif$", full.names = TRUE, ignore.case = TRUE)
   if (!length(fich)) cli::cli_abort("No .tif tiles for {what} in {.path {x}}.")
-  terra::crop(terra::vrt(fich), emprise)
+  terra::crop(.mosaique_dalles(fich), emprise)
 }
 
 # Réduit une couche microclimf hétérogène à une grille constante = sa moyenne.

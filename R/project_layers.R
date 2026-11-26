@@ -151,7 +151,7 @@ NULL
     terra::rast(paths)
   } else {
     # Virtual mosaic — zero-copy, all downstream terra ops work.
-    terra::vrt(paths)
+    .mosaique_dalles(paths)
   }
 }
 
