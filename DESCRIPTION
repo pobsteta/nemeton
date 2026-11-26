@@ -1,7 +1,7 @@
 Package: nemeton
 Type: Package
 Title: Systemic Forest Analysis Using the Nemeton Method
-Version: 2026.11.45.9001
+Version: 2026.11.45.9002
 Authors@R: c(
     person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
   )
@@ -78,6 +78,7 @@ Suggests:
     lasR (>= 0.10.0),
     lidaRtRee,
     ranger,
+    matrixStats,
     learnr (>= 0.11.0),
     fmsb,
     corrplot,

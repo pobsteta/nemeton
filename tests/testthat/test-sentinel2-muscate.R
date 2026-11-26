@@ -99,8 +99,9 @@ test_that("stac_search_s2_theia_muscate returns a normalised scene tibble", {
   expect_identical(out$href_B04, "/vsis3/sm1-gdc-ext/muscate/b4.tif")
   # Same column contract as the cdse/pc backends.
   expect_named(out, c("scene_id", "obs_date", "cloud_pct",
-                      "href_B02", "href_B04", "href_B05", "href_B08",
-                      "href_B8A", "href_B11", "href_B12", "source"))
+                      "href_B02", "href_B03", "href_B04", "href_B05",
+                      "href_B06", "href_B07", "href_B08", "href_B8A",
+                      "href_B11", "href_B12", "href_SCL", "source"))
 })
 
 test_that("stac_search_s2_theia_muscate applies the scene-level cloud filter", {

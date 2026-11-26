@@ -752,6 +752,20 @@ reference:
     - reconfort_predire
     - reconfort_comparer_amont
 
+  - subtitle: "Suivi sanitaire - indicateur composite de decoloration ICD (spec 071)"
+    desc: >
+      Quatrieme methode du suivi sanitaire, a comparer a FAST : composites
+      mensuels Sentinel-2, anomalies z, ICD aux poids modifiables, classes et
+      niveaux 0 a 4, serie d'un pixel, comparaison avec FAST.
+    contents:
+    - run_icd_decoloration
+    - icd_indices
+    - icd_poids_defaut
+    - icd_poids_valider
+    - read_icd_raster
+    - read_icd_pixel_series
+    - comparer_fast_icd
+
   - subtitle: "Validation terrain du suivi sanitaire"
     contents:
     - get_health_validation_schema

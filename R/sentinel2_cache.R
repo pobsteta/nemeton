@@ -67,7 +67,8 @@
 ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
                                          start, end, cache_dir,
                                          max_cloud = 20,
-                                         progress_callback = NULL) {
+                                         progress_callback = NULL,
+                                         cancel_path = NULL) {
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
@@ -76,7 +77,8 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
   if (!is.character(bands) || !length(bands)) {
     cli::cli_abort("{.arg bands} must be a non-empty character vector.")
   }
-  bad <- bands[!grepl("^B[0-9]{1,2}A?$", bands)]
+  # Codes bruts B02..B12/B8A, plus la couche de classification SCL (spec 071).
+  bad <- bands[!grepl("^(B[0-9]{1,2}A?|SCL)$", bands)]
   if (length(bad)) {
     cli::cli_abort(c(
       "{.arg bands} contains values that are not raw Sentinel-2 codes.",
@@ -164,8 +166,19 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
   n_bands_cached  <- 0L
   n_skipped       <- 0L
   total_cached    <- 0L
+  # Annulation cooperative (spec 071) : sondee avant chaque scene ; les COG
+  # deja ecrits restent valides. Sans `cancel_path`, aucun sondage.
+  cancelled     <- .make_cancel_checker(cancel_path)
+  was_cancelled <- FALSE
 
   for (i in seq_len(total_scenes)) {
+    if (cancelled()) {
+      was_cancelled <- TRUE
+      emit(list(current = "s2:cancelled",
+                tile_index = as.integer(i),
+                n_total    = as.integer(total_scenes)))
+      break
+    }
     sc <- scenes[i, , drop = FALSE]
 
     # Fully-cached scene → emit scene_cached, skip the band loop. Same
@@ -224,14 +237,16 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
     if (scene_failed) n_skipped <- n_skipped + 1L
   }
 
-  emit(list(current         = "s2:complete",
-            completed       = as.integer(total_scenes),
-            total           = as.integer(total_scenes),
-            n_scenes_cached = as.integer(total_cached),
-            n_bands_fetched = as.integer(n_bands_fetched),
-            n_bands_cached  = as.integer(n_bands_cached)))
+  if (!was_cancelled) {
+    emit(list(current         = "s2:complete",
+              completed       = as.integer(total_scenes),
+              total           = as.integer(total_scenes),
+              n_scenes_cached = as.integer(total_cached),
+              n_bands_fetched = as.integer(n_bands_fetched),
+              n_bands_cached  = as.integer(n_bands_cached)))
+  }
 
-  list(
+  list(cancelled = was_cancelled,
     scenes_df       = scenes[, intersect(c("scene_id", "obs_date",
                                            "cloud_pct", "source"),
                                          names(scenes)),
