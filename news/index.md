@@ -2,6 +2,24 @@
 
 ## nemeton 2026.11.45.9001 (development)
 
+- **fix : mosaique de dalles qui jetait les dalles au SRS ecrit
+  autrement** (mission 082).
+  [`terra::vrt()`](https://rspatial.github.io/terra/reference/vrt.html)
+  sur une liste de dalles (LiDAR HD IGN, MNT/MNH de la reGeneration,
+  scenes Theia, scenes FORDEAD) abandonnait en silence toute dalle dont
+  l’ecriture du SRS differait de la premiere
+  (`gdalbuildvrt does not support heterogeneous projection ... Skipping`,
+  puis `vrt did not use 28 of the 29 files`) : la couche ne couvrait
+  qu’une dalle, sans erreur. Un helper interne unique,
+  `.mosaique_dalles()`, remplace les quatre appels (`.open_raster()`,
+  `.rsen_load_raster()`, `theia_stac`, `fordead_stac`) : il compare le
+  sens des SRS, construit le VRT avec `-allow_projection_difference`
+  (via `sf::gdal_utils("buildvrt")`, car `terra::vrt(options=)`
+  n’applique pas l’option dans terra 1.7.65), refuse par une erreur
+  nommant les dalles toute dalle au SRS reellement different (pas de
+  reprojection implicite) et echoue si le VRT n’utilise pas toutes les
+  dalles. Un fichier unique : inchange.
+
 - **feat : carte de classes du spike RECONFORT sur la grille de la carte
   IOTA2** (mission 076).
   `reconfort_carte_spike(modele, scenes_dir, annee, gabarit, sortie, chenaie, coupes)`

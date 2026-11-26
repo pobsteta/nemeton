@@ -189,6 +189,27 @@ pins de Norvège seulement. Branche par défaut de `forptnemeton` et
 100 sites × 100 placettes × 50 ans en 21 s de CPU. Reste l’étape 3
 (calibration sur placettes IFN, D-7).
 
+### 2026-11-26 — Mission 082 : mosaique de dalles a SRS ecrit differemment (mission 082 de nemetonplateforme), cycle dev `2026.11.45.9004`
+
+- `R/mosaique_dalles.R` : `.mosaique_dalles()` (interne) remplace
+  `terra::vrt(fichiers)` dans `.open_raster()` (`R/project_layers.R`,
+  appel qui a produit la sortie de Pascal sur
+  `cache/layers/lidar_mnh/`), `.rsen_load_raster()`, `theia_stac` et
+  `fordead_stac` ; `tests/testthat/test-mosaique_dalles.R` (25 attentes,
+  dont la contre-epreuve de l’ancien
+  [`terra::vrt`](https://rspatial.github.io/terra/reference/vrt.html)).
+- Observe : `terra::vrt(options = "-allow_projection_difference")` n’est
+  pas applique par terra 1.7.65 ; le VRT est donc construit par
+  `sf::gdal_utils("buildvrt")`.
+  [`terra::same.crs()`](https://rspatial.github.io/terra/reference/same.crs.html)
+  ne suffit pas (la meme Lambert-93 ecrite en chaine PROJ est jugee
+  differente) : equivalence = `same.crs` ou chaine PROJ normalisee
+  identique.
+- Non prouve : les vraies dalles IGN (l’ecriture exacte « EPSG:2154 »
+  n’a pas pu etre fabriquee ; la reproduction fidele est une Lambert-93
+  en chaine PROJ) ; FORDEAD sur deux fuseaux UTM (erreur desormais,
+  silence avant).
+
 ### 2026-11-26 — Mission 076 : carte de classes du spike RECONFORT sur la grille IOTA2 (mission 076 de nemetonplateforme), cycle dev `2026.11.45.9003`
 
 - `R/reconfort_carte_spike.R` :
