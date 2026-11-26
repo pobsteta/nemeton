@@ -966,6 +966,8 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
           i = "Set the keys to read only the AOI windows."))
         acq <- "archive"
       }
+      # Voie fenetre explicite sans cles : erreur claire avant tout travail.
+      if (identical(acq, "fenetre")) .reconfort_fenetre_verifier_acces()
       ing <- reconfort_ingest_s2(aoi = if (do_crop) aoi else NULL,
                                  acquisition = acq,
                                  tiles = tiles, date_from = date_from,

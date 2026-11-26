@@ -69,6 +69,8 @@ test_that("fenetre ecrit les memes fichiers que la voie archive (cas 1)", {
   expect_gt(cmp$resume$n_communs, 20L)
   expect_true(cmp$resume$conforme)
   expect_equal(cmp$resume$ecart_max, 0)
+  expect_equal(cmp$resume$n_meme_type, cmp$resume$n_communs)
+  expect_true(all(cmp$fichiers$meme_type[grepl("tif$", cmp$fichiers$fichier)]))
   expect_true(all(cmp$fichiers$meme_grille[cmp$fichiers$archive & cmp$fichiers$fenetre &
                                              grepl("tif$", cmp$fichiers$fichier)]))
   # Arborescence : masques sous MASKS/, bandes a la racine.
@@ -97,6 +99,22 @@ test_that("la comparaison detecte une difference de valeur et un fichier en trop
   expect_false(cmp$resume$conforme)
   expect_equal(cmp$resume$ecart_max, 3)
   expect_match(cmp$resume$seulement_fenetre, "extra.tif")
+})
+
+test_that("un type de donnees different rend la comparaison non conforme", {
+  skip_if_not_installed("terra"); skip_if_not_installed("sf")
+  d <- .fen_decor()
+  win <- .reconfort_aoi_window(d$aoi, 2154, 0)
+  a <- file.path(d$root, "a"); b <- file.path(d$root, "b")
+  .reconfort_crop_scene_to_aoi(d$archive, file.path(a, .fen_nom), win, 2154)
+  .reconfort_crop_scene_to_aoi(d$archive, file.path(b, .fen_nom), win, 2154)
+  f <- file.path(b, .fen_nom, paste0(.fen_nom, "_FRE_B4.tif"))
+  tmp <- file.path(d$root, "flt.tif")
+  terra::writeRaster(terra::rast(f), tmp, datatype = "FLT4S")  # memes valeurs
+  file.copy(tmp, f, overwrite = TRUE)
+  cmp <- .reconfort_comparer_acquisitions(a, b)
+  expect_equal(cmp$resume$ecart_max, 0)
+  expect_false(cmp$resume$conforme)
 })
 
 test_that("un asset absent est nomme et rien n'est ecrit (cas 2)", {

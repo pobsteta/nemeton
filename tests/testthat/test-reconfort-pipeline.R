@@ -31,7 +31,8 @@ mock_pipeline <- function(calls_env, write_score = TRUE, exit = 0L) {
     },
     reconfort_ingest_s2 = function(aoi = NULL, tiles = NULL, date_from, date_to,
                                    s2_root, geodes_config = NULL, quiet = FALSE,
-                                   ...) {
+                                   acquisition = NA_character_, ...) {
+      calls_env$ingest_acq <- acquisition
       ex <- file.path(s2_root, "extracted", tiles)
       for (e in ex) dir.create(e, recursive = TRUE, showWarnings = FALSE)
       calls_env$ingest <- TRUE
@@ -705,4 +706,58 @@ test_that("run_reconfort_dieback avertit quand l'env n'est pas repare (#9/#10)",
                           s2_year = 2024L, tiles = "T31UDP", quiet = TRUE))
   expect_true(any(grepl("#9", warns) & grepl("#10", warns) &
                     grepl("repair", warns)))
+})
+
+
+# --- Choix de l'acquisition (mission 071) : voie reellement passee a l'ingest -
+
+.aoi_zone_acq <- function() sf::st_sfc(sf::st_polygon(list(rbind(
+  c(900000, 6500000), c(900400, 6500000), c(900400, 6500400),
+  c(900000, 6500400), c(900000, 6500000)))), crs = 2154)
+
+run_acq <- function(calls, ..., aoi = .aoi_zone_acq()) {
+  testthat::local_mocked_bindings(
+    .get_zone_aoi = function(con, zone_id) aoi, .env = calls$env)
+  run_reconfort_dieback(con = local_con(env = calls$env), zone_id = 7L,
+                        cache_dir = withr::local_tempdir(.local_envir = calls$env),
+                        s2_year = 2024L, tiles = "T31UDP", binary_mask = FALSE,
+                        quiet = TRUE, ...)
+}
+
+test_that("acquisition non explicite sans cles THEIA : avertissement puis archive", {
+  skip_if_terra_write_broken()
+  withr::local_envvar(TLD_ACCESS_KEY = "", TLD_SECRET_KEY = "")
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  expect_warning(run_acq(calls), "falling back")
+  expect_identical(calls$ingest_acq, "archive")
+})
+
+test_that("acquisition non explicite avec cles THEIA : voie fenetre", {
+  skip_if_terra_write_broken()
+  withr::local_envvar(TLD_ACCESS_KEY = "a", TLD_SECRET_KEY = "b")
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  run_acq(calls)
+  expect_identical(calls$ingest_acq, "fenetre")
+})
+
+test_that("acquisition 'fenetre' explicite sans cles : erreur, ingest jamais appele", {
+  skip_if_terra_write_broken()
+  withr::local_envvar(TLD_ACCESS_KEY = "", TLD_SECRET_KEY = "")
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  expect_error(run_acq(calls, acquisition = "fenetre"),
+               class = "reconfort_fenetre_sans_cles")
+  expect_null(calls$ingest_acq)
+})
+
+test_that("aoi_crop = FALSE : voie archive, meme avec cles et 'fenetre' explicite", {
+  skip_if_terra_write_broken()
+  withr::local_envvar(TLD_ACCESS_KEY = "a", TLD_SECRET_KEY = "b")
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  run_acq(calls, aoi_crop = FALSE, acquisition = "fenetre")
+  expect_identical(calls$ingest_acq, "archive")
+  expect_null(calls$ingest_aoi)
 })

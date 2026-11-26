@@ -384,7 +384,10 @@
     n_identiques = sum(fichiers$identique[communs] %in% TRUE),
     ecart_max = if (any(communs & !is.na(fichiers$ecart_max)))
       max(fichiers$ecart_max[communs & !is.na(fichiers$ecart_max)]) else NA_real_)
+  resume$n_meme_type <- sum(fichiers$meme_type[communs] %in% TRUE |
+                              grepl("\\.xml$", fichiers$fichier[communs]))
   resume$conforme <- resume$n_communs > 0L &&
-    resume$n_identiques == resume$n_communs
+    resume$n_identiques == resume$n_communs &&
+    resume$n_meme_type == resume$n_communs
   list(fichiers = fichiers, resume = resume)
 }
