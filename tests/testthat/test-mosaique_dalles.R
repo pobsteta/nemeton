@@ -175,17 +175,41 @@ test_that("cas reel : SRS « EPSG:2154 » sans autorite contre WKT complet : equ
   expect_equal(unname(as.vector(terra::ext(m))), c(0, 20, 0, 10))
 })
 
+test_that("critere deterministe seul (sans PROJ) : dalle IGN, refus conserves", {
+  skip_if_not_installed("terra")
+  w <- function(x) terra::crs(x)
+  info <- paste(capture.output(print(sf::sf_extSoftVersion())), collapse = " | ")
+  expect_true(.srs_memes_parametres(w(.wkt_dalle_ign), w("EPSG:2154")), info = info)
+  expect_true(.srs_memes_parametres(w("EPSG:2154"), w(.wkt_dalle_ign)), info = info)
+  expect_true(.srs_memes_parametres(w(.proj_l93_ecrit_autrement), w(.wkt_dalle_ign)))
+  expect_false(.srs_memes_parametres(w("EPSG:2154"), w("EPSG:27572")))
+  expect_false(.srs_memes_parametres(w("EPSG:2154"), w("EPSG:3035")))
+  expect_false(.srs_memes_parametres(w("EPSG:32631"), w("EPSG:32632")))
+  l93 <- "+proj=lcc +lat_0=46.5 +lon_0=3 +lat_1=49 +lat_2=44 +x_0=700000 +y_0=6600000 +ellps=GRS80 +units=m +no_defs"
+  expect_true(.srs_memes_parametres(w(l93), w("EPSG:2154")))
+  expect_false(.srs_memes_parametres(w(sub("x_0=700000", "x_0=700001", l93)), w("EPSG:2154")))
+  expect_false(.srs_memes_parametres(w(sub("GRS80", "intl", l93)), w("EPSG:2154")))
+  expect_false(.srs_memes_parametres(w(paste(l93, "+towgs84=100,0,0,0,0,0,0")), w("EPSG:2154")))
+})
+
 test_that("identite des points : les SRS reellement differents restent refuses", {
   skip_if_not_installed("terra")
   w <- function(x) terra::crs(x)
   pts <- cbind(x = c(370999, 371999), y = c(6388000, 6389000))
-  expect_true(.srs_deux_equivalents(w(.wkt_dalle_ign), w("EPSG:2154"), pts))
+  # l'ecart depend de la version de PROJ/GDAL : le diagnostic le dit en cas d'echec
+  v <- terra::vect(pts, type = "points", crs = w(.wkt_dalle_ign))
+  ecart <- tryCatch(max(abs(terra::crds(terra::project(v, w("EPSG:2154"))) - pts)),
+                    error = function(e) NA_real_)
+  info <- paste0("ecart max (m) = ", format(ecart), " ; ",
+                 paste(capture.output(print(sf::sf_extSoftVersion())), collapse = " | "))
+  expect_true(.srs_deux_equivalents(w(.wkt_dalle_ign), w("EPSG:2154"), pts), info = info)
   expect_false(.srs_deux_equivalents(w("EPSG:2154"), w("EPSG:27572"), pts))
   expect_false(.srs_deux_equivalents(w("EPSG:2154"), w("EPSG:3035"), pts))
   expect_false(.srs_deux_equivalents(w("EPSG:32631"), w("EPSG:32632"),
                                      cbind(500000, 5000000)))
   decale <- w(sub("+x_0=700000", "+x_0=700001", .proj_l93_ecrit_autrement, fixed = TRUE))
   expect_false(.srs_deux_equivalents(w("EPSG:2154"), decale, pts))
-  # sans point : repli sur terra::same.crs et la chaine PROJ, jamais d'erreur
-  expect_false(.srs_deux_equivalents(w(.wkt_dalle_ign), w("EPSG:2154")))
+  # sans point : le critere deterministe (parametres + ellipsoides) suffit
+  expect_true(.srs_deux_equivalents(w(.wkt_dalle_ign), w("EPSG:2154")))
+  expect_false(.srs_deux_equivalents(w("EPSG:2154"), decale))
 })
