@@ -27,7 +27,8 @@ run_reconfort_dieback(
   keep_workdir = TRUE,
   quiet = FALSE,
   progress_callback = NULL,
-  cancel_path = NULL
+  cancel_path = NULL,
+  acquisition = c("fenetre", "archive")
 )
 }
 \arguments{
@@ -148,6 +149,15 @@ and rasters already produced stay usable (a resumed run reads them
 back with `skip_ingest = TRUE`). A flag already present at entry is
 ignored as a stale leftover — the caller must delete it before each
 call. A `reconfort:cancelled` progress event is emitted.}
+
+\item{acquisition}{w the Sentinel-2 scenes are acquired. `"fenetre"`
+  (default) reads only the AOI window of each band and mask from the THEIA
+  STAC catalogue (needs `TLD_ACCESS_KEY` / `TLD_SECRET_KEY`; no GEODES
+  download) and writes the same files as `"archive"`, which downloads each
+  full ~2 GB archive from GEODES. When left unset and the THEIA keys are
+  missing, the run falls back to `"archive"` with a warning; an explicit
+  `"fenetre"` without keys aborts. Without an AOI (`aoi_crop = FALSE`) the
+  archive route is used. IOTA2 is unchanged either way.}
 }
 \value{
 Invisibly, a list: `status` (`"completed"` or

@@ -700,6 +700,12 @@ reconfort_aoi_tiles <- function(aoi, prefix = TRUE) {
 #'   soon as it is extracted, capping peak disk). In AOI-streaming mode the
 #'   archives are always streamed and removed.
 #' @param quiet Suppress progress + subprocess output. Default `FALSE`.
+#' @param acquisition `"archive"` (default here, historical behaviour) downloads
+#'   each full MUSCATE archive from GEODES; `"fenetre"` reads only the AOI window
+#'   of each band and mask from the THEIA STAC catalogue (needs `aoi`, and the
+#'   `TLD_ACCESS_KEY` / `TLD_SECRET_KEY` credentials; no conda, no GEODES) and
+#'   writes the same files. The pipeline [run_reconfort_dieback()] defaults to
+#'   `"fenetre"`.
 #' @param progress_callback Optional function called with a named list at
 #'   each step of the AOI-streaming ingest, so a caller (e.g. the Shiny
 #'   app) can surface per-scene progress. Events: `reconfort:ingest_listed`
@@ -721,11 +727,36 @@ reconfort_ingest_s2 <- function(aoi = NULL, tiles = NULL,
                                 buffer_m = .RECONFORT_AOI_BUFFER_M,
                                 keep_zips = FALSE,
                                 quiet = FALSE,
-                                progress_callback = NULL) {
+                                progress_callback = NULL,
+                                acquisition = c("archive", "fenetre")) {
+  acquisition <- match.arg(acquisition)
   if (is.null(tiles)) {
     if (is.null(aoi)) cli::cli_abort("Provide either {.arg aoi} or {.arg tiles}.")
     tiles <- reconfort_aoi_tiles(aoi, prefix = TRUE)
     if (length(tiles) == 0L) cli::cli_abort("No Sentinel-2 tile resolved for the AOI.")
+  }
+
+  if (identical(acquisition, "fenetre")) {
+    if (is.null(aoi)) {
+      cli::cli_abort(c(
+        "{.code acquisition = \"fenetre\"} needs an {.arg aoi}.",
+        i = "A full tile has no window to read; use {.code acquisition = \"archive\"}."))
+    }
+    .reconfort_fenetre_verifier_acces()
+    extracted <- character(0)
+    for (tile in tiles) {
+      out_dir <- file.path(s2_root, "extracted", tile)
+      dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+      extracted <- c(extracted, .reconfort_ingest_tile_fenetre(
+        tile = tile, bare = sub("^T", "", tile), aoi = aoi,
+        date_from = date_from, date_to = date_to, s2_root = s2_root,
+        out_dir = out_dir, target_crs = target_crs, buffer_m = buffer_m,
+        quiet = quiet, progress_callback = progress_callback))
+    }
+    if (!quiet) cli::cli_alert_success(
+      "RECONFORT: S2 ready for {length(tiles)} tile{?s} (windowed).")
+    return(invisible(list(tiles = tiles, s2_root = s2_root,
+                          extracted = extracted, acquisition = acquisition)))
   }
 
   env       <- .ensure_reconfort_python(require_pygeodes = TRUE, quiet = quiet)

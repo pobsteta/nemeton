@@ -696,6 +696,15 @@
 #'   ignored as a stale leftover — the caller must delete it before each
 #'   call. A `reconfort:cancelled` progress event is emitted.
 #'
+#' @param acquisition How the Sentinel-2 scenes are acquired. `"fenetre"`
+#'   (default) reads only the AOI window of each band and mask from the THEIA
+#'   STAC catalogue (needs `TLD_ACCESS_KEY` / `TLD_SECRET_KEY`; no GEODES
+#'   download) and writes the same files as `"archive"`, which downloads each
+#'   full ~2 GB archive from GEODES. When left unset and the THEIA keys are
+#'   missing, the run falls back to `"archive"` with a warning; an explicit
+#'   `"fenetre"` without keys aborts. Without an AOI (`aoi_crop = FALSE`) the
+#'   archive route is used. IOTA2 is unchanged either way.
+#'
 #' @section Temporal window (`s2_year` -> analysis dates):
 #' RECONFORT does not diff two dates: it classifies a pixel's ~2-year
 #' index trajectory with a pre-trained model. One run is driven entirely
@@ -760,8 +769,11 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
                                   keep_workdir      = TRUE,
                                   quiet             = FALSE,
                                   progress_callback = NULL,
-                                  cancel_path       = NULL) {
+                                  cancel_path       = NULL,
+                                  acquisition       = c("fenetre", "archive")) {
   t0 <- Sys.time()
+  acq_explicite <- !missing(acquisition)
+  acquisition <- match.arg(acquisition)
 
   # --- argument validation ----------------------------------------
   if (!inherits(con, "DBIConnection")) {
@@ -845,7 +857,9 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
   result <- tryCatch({
     # PHASE 1 — env (locate + validate conda/IOTA2) -----------------
     begin("env")
-    env <- .ensure_reconfort_python(require_pygeodes = !skip_ingest, quiet = quiet)
+    env <- .ensure_reconfort_python(
+      require_pygeodes = !skip_ingest && identical(acquisition, "archive"),
+      quiet = quiet)
     conda_bin <- .reconfort_conda_binary()
     # defects #9 / #10: unpatched, IOTA2 crashes at its first steps (label
     # parsing, dask task launch). Warn up front rather than let it fail later.
@@ -941,7 +955,21 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
         ))
       }
     } else {
+      acq <- acquisition
+      if (identical(acq, "fenetre") && !do_crop) {
+        cli::cli_alert_info("No AOI crop: reading full archives ({.code acquisition = \"archive\"}).")
+        acq <- "archive"
+      } else if (identical(acq, "fenetre") && !acq_explicite &&
+                 !.reconfort_fenetre_cles_presentes()) {
+        cli::cli_warn(c(
+          "THEIA keys ({.envvar TLD_ACCESS_KEY} / {.envvar TLD_SECRET_KEY}) not set: falling back to {.code acquisition = \"archive\"} (full GEODES archives).",
+          i = "Set the keys to read only the AOI windows."))
+        acq <- "archive"
+      }
+      # Voie fenetre explicite sans cles : erreur claire avant tout travail.
+      if (identical(acq, "fenetre")) .reconfort_fenetre_verifier_acces()
       ing <- reconfort_ingest_s2(aoi = if (do_crop) aoi else NULL,
+                                 acquisition = acq,
                                  tiles = tiles, date_from = date_from,
                                  date_to = date_to, s2_root = s2_dl_root,
                                  geodes_config = geodes_config, quiet = quiet,
