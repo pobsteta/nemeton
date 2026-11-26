@@ -189,6 +189,25 @@ pins de Norvège seulement. Branche par défaut de `forptnemeton` et
 100 sites × 100 placettes × 50 ans en 21 s de CPU. Reste l’étape 3
 (calibration sur placettes IFN, D-7).
 
+### 2026-11-26 — Mission 071 : RECONFORT lit les fenêtres utiles des bandes THEIA (mission 071 de nemetonplateforme), cycle dev `2026.11.45.9001`
+
+- `R/reconfort_fenetre.R` : voie `acquisition = "fenetre"` (recherche
+  STAC par tuile et dates, signature des URL, `gdalwarp` distant avec
+  reprise, écriture dans un dossier de préparation puis promotion
+  atomique, marqueur d’idempotence commun avec la voie archive).
+  `R/reconfort_comparaison.R` : accord entre deux cartes de classes.
+  `data-raw/comparaison_reconfort/` : scripts et README pour la
+  comparaison chez Pascal.
+- Décision de la fiche : IOTA² gardé, seule l’acquisition change ;
+  défaut `"fenetre"` dans
+  [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md),
+  défaut `"archive"` dans l’interne `reconfort_ingest_s2()` (ses tests
+  existants l’appellent sans argument).
+- Non prouvé : durée et volume réels, besoin éventuel d’IOTA² en
+  fichiers que le STAC n’expose pas (DFP, IAB, WGT), place d’ATB (racine
+  de la scène supposée) : à lever par la comparaison de
+  `data-raw/comparaison_reconfort/`.
+
 ### 2026-11-25 — Mission 064 : décisions de Pascal sur la tournée DEPERIS (suite de la 061), cycle dev `2026.11.45.9000`
 
 Trois décisions appliquées dans `R/deperis.R` : aucun délai de

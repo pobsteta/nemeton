@@ -23,7 +23,7 @@ continuous-score rasters (EPSG:2154) plus a `run_meta.json`."><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.45.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.45.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -171,7 +171,8 @@ continuous-score rasters (EPSG:2154) plus a `run_meta.json`.</p>
 <span>  keep_workdir <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cancel_path <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  cancel_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  acquisition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fenetre"</span>, <span class="st">"archive"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -337,6 +338,17 @@ and rasters already produced stay usable (a resumed run reads them
 back with `skip_ingest = TRUE`). A flag already present at entry is
 ignored as a stale leftover — the caller must delete it before each
 call. A `reconfort:cancelled` progress event is emitted.</p></dd>
+
+
+<dt id="arg-acquisition">acquisition<a class="anchor" aria-label="anchor" href="#arg-acquisition"></a></dt>
+<dd><p>w the Sentinel-2 scenes are acquired. `"fenetre"`
+  (default) reads only the AOI window of each band and mask from the THEIA
+  STAC catalogue (needs `TLD_ACCESS_KEY` / `TLD_SECRET_KEY`; no GEODES
+  download) and writes the same files as `"archive"`, which downloads each
+  full ~2 GB archive from GEODES. When left unset and the THEIA keys are
+  missing, the run falls back to `"archive"` with a warning; an explicit
+  `"fenetre"` without keys aborts. Without an AOI (`aoi_crop = FALSE`) the
+  archive route is used. IOTA2 is unchanged either way.</p></dd>
 
 </dl></div>
     <div class="section level2">
