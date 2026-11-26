@@ -2,6 +2,36 @@
 
 ## nemeton 2026.11.45.9001 (development)
 
+- **fix : regression de la
+  [\#708](https://github.com/pobsteta/nemeton/issues/708) sur un projet
+  reel : dalles MNH IGN + `chm.tif` melanges** (mission 085). Sur un
+  projet reel (Couchey),
+  [`resolve_project_chm()`](https://pobsteta.github.io/nemeton/reference/resolve_project_layers.md)
+  levait `nemeton_mosaique_srs` : `cache/layers/lidar_mnh/` contient 28
+  dalles MNH IGN (SRS nomme « EPSG:2154 », sans bloc d’autorite) et
+  `chm.tif`, calcule depuis le nuage par
+  [`compute_dtm_chm_from_laz()`](https://pobsteta.github.io/nemeton/reference/compute_dtm_chm_from_laz.md)
+  (lasR, 1 m, SRS « RGF93 v1 / Lambert-93 »). Avant la
+  [\#708](https://github.com/pobsteta/nemeton/issues/708), GDAL ne
+  gardait que le premier fichier ; la
+  [\#708](https://github.com/pobsteta/nemeton/issues/708) refusait a
+  juste titre un SRS different… mais ces deux ecritures ont le meme
+  sens. Deux causes corrigees. (1) Les produits derives du nuage ne sont
+  plus mosaiques avec les dalles : decision de Pascal, **les dalles IGN
+  (0,5 m) priment**, `chm.tif` (`dtm.tif` pour le MNT) n’est qu’un
+  candidat suivant, sans dalles, libelle « LiDAR HD CHM (nuage, lasR) »
+  (« LiDAR HD MNT (nuage, lasR) ») ; `*_mosaic.tif` est ecarte des
+  dossiers LiDAR.
+
+  2.  L’equivalence des SRS devient semantique : en plus de
+      [`terra::same.crs()`](https://rspatial.github.io/terra/reference/same.crs.html)
+      et de la chaine PROJ, deux SRS sont equivalents si la
+      transformation des coins de l’emprise de la dalle de l’un vers
+      l’autre est l’identite a 1 mm pres (les dalles IGN declarent un
+      ellipsoide WGS84 sans datum nomme, le WKT complet GRS80). Les SRS
+      reellement differents (2154/27572, 2154/3035, UTM 31/32,
+      Lambert-93 a `x_0 = 700001`) restent refuses.
+
 - **fix : mosaique de dalles qui jetait les dalles au SRS ecrit
   autrement** (mission 082).
   [`terra::vrt()`](https://rspatial.github.io/terra/reference/vrt.html)

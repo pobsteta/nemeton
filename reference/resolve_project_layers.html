@@ -29,7 +29,7 @@ calls transparently cover the full footprint."><meta property="og:image" content
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.45.9004</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.45.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -234,7 +234,8 @@ yourself if a broken file should mean "skip" rather than "stop".</p></dd>
 
 
 <ol><li><p>`&lt;project&gt;/cache/layers/drone_mnt/mnt.tif` — drone, <code><a href="traiter_nuage_points.html">traiter_nuage_points</a></code> (spec 059)</p></li>
-<li><p>`&lt;project&gt;/cache/layers/lidar_mnt/*.tif`  — LiDAR HD (1 m)</p></li>
+<li><p>`&lt;project&gt;/cache/layers/lidar_mnt/*.tif`  — LiDAR HD IGN tiles (`dtm.tif` and `*_mosaic.tif` excluded)</p></li>
+<li><p>`&lt;project&gt;/cache/layers/lidar_mnt/dtm.tif`  — DTM derived from the point cloud (lasR), only when no IGN tile</p></li>
 <li><p>`&lt;project&gt;/cache/layers/ign_mnt/mnt.tif`  — LiDAR HD point cloud, <code><a href="traiter_nuage_points.html">traiter_nuage_points</a></code></p></li>
 <li><p>`&lt;project&gt;/cache/layers/dem/*.tif`        — generic DEM cache</p></li>
 <li><p>`&lt;project&gt;/cache/layers/bd_alti/*.tif`    — IGN BD ALTI (25 m)</p></li>
@@ -256,7 +257,8 @@ yourself if a broken file should mean "skip" rather than "stop".</p></dd>
 
 
 <ol><li><p>`&lt;project&gt;/cache/layers/drone_mnh/mnh.tif` — drone, <code><a href="traiter_nuage_points.html">traiter_nuage_points</a></code> (spec 059)</p></li>
-<li><p>`&lt;project&gt;/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH</p></li>
+<li><p>`&lt;project&gt;/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH IGN tiles (`chm.tif` and `*_mosaic.tif` excluded)</p></li>
+<li><p>`&lt;project&gt;/cache/layers/lidar_mnh/chm.tif`  — CHM derived from the point cloud (lasR), only when no IGN tile</p></li>
 <li><p>`&lt;project&gt;/cache/layers/ign_mnh/mnh.tif`  — LiDAR HD point cloud, <code><a href="traiter_nuage_points.html">traiter_nuage_points</a></code></p></li>
 <li><p>`&lt;project&gt;/cache/layers/mnh/*.tif`        — generic MNH cache</p></li>
 <li><p>`&lt;project&gt;/cache/layers/opencanopy/chm_predicted_0_2m.tif`

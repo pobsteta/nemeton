@@ -449,7 +449,7 @@ sessionInfo()
 #> 
 #> other attached packages:
 #> [1] sf_1.1-3                dplyr_1.2.1             ggplot2_4.0.4          
-#> [4] nemeton_2026.11.45.9004
+#> [4] nemeton_2026.11.45.9005
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] utf8_1.2.6         sass_0.5.0         generics_0.1.4     tidyr_1.3.2       
