@@ -17,22 +17,109 @@
   trimws(gsub("\\s+", " ", p))
 }
 
-# Deux SRS (WKT) ont-ils le meme sens ? Vrai si terra les juge identiques ou
-# si leurs definitions PROJ normalisees coincident ; deux SRS absents sont
+# La transformation de quelques points du SRS `a` vers le SRS `b` est-elle
+# l'identite (1 mm pres) ? Deux ecritures d'un meme systeme ne deplacent aucun
+# point, meme quand leurs definitions PROJ different par le nom de l'ellipsoide
+# (« EPSG:2154 » des dalles IGN : WGS84 sans datum nomme ; WKT complet : GRS80).
+# `pts` : matrice (x, y) en coordonnees de `a` (coins de l'emprise d'une dalle).
+.srs_transformation_identite <- function(a, b, pts) {
+  if (is.null(pts) || !NROW(pts)) return(FALSE)
+  pts <- as.matrix(pts)
+  res <- tryCatch({
+    v <- terra::vect(pts, type = "points", crs = a)
+    w <- terra::crds(terra::project(v, b))
+    tol <- if (isTRUE(terra::is.lonlat(a))) 1e-8 else 1e-3
+    all(is.finite(w)) && all(abs(w - pts) <= tol)
+  }, error = function(e) FALSE)
+  isTRUE(res)
+}
+
+# Coins de l'emprise d'un raster (matrice x, y), dans son propre SRS.
+.srs_points_emprise <- function(fichier) {
+  e <- terra::ext(terra::rast(fichier))
+  cbind(x = c(e$xmin, e$xmax, e$xmin, e$xmax),
+        y = c(e$ymin, e$ymin, e$ymax, e$ymax))
+}
+
+# Lecture deterministe d'un SRS projete : methode et parametres numeriques
+# (chaine PROJ), ellipsoide (WKT : demi-grand axe, aplatissement inverse),
+# unites, +towgs84. Independante de la version de PROJ pour les operations de
+# transformation ; NULL si la definition n'est pas lisible.
+.srs_parametres <- function(crs_wkt) {
+  p <- tryCatch(terra::crs(crs_wkt, proj = TRUE), error = function(e) "")
+  if (is.na(p) || !nzchar(p)) return(NULL)
+  jetons <- strsplit(trimws(p), "\\s+")[[1L]]
+  jetons <- sub("^\\+", "", jetons)
+  kv <- strsplit(jetons, "=", fixed = TRUE)
+  cle <- vapply(kv, `[`, character(1), 1L)
+  val <- vapply(kv, function(x) if (length(x) > 1L) x[[2L]] else "", character(1))
+  names(val) <- cle
+  if (!"proj" %in% cle) return(NULL)
+  ell <- regmatches(crs_wkt, regexec(
+    "(?:ELLIPSOID|SPHEROID)\\[\\s*\"[^\"]*\"\\s*,\\s*([-0-9.eE+]+)\\s*,\\s*([-0-9.eE+]+)",
+    crs_wkt, perl = TRUE))[[1L]]
+  if (length(ell) < 3L) return(NULL)
+  num <- c("lat_0", "lon_0", "lat_1", "lat_2", "lat_ts", "x_0", "y_0", "k", "k_0",
+           "alpha", "gamma", "lonc", "zone")
+  par <- suppressWarnings(as.numeric(val[names(val) %in% num]))
+  names(par) <- names(val)[names(val) %in% num]
+  names(par)[names(par) == "k_0"] <- "k"
+  tw <- if ("towgs84" %in% cle) suppressWarnings(as.numeric(strsplit(val[["towgs84"]], ",")[[1L]])) else numeric()
+  autres <- val[!names(val) %in% c(num, "ellps", "datum", "towgs84", "no_defs", "type", "proj",
+                                    "a", "b", "rf", "f", "R", "units")]
+  list(proj = val[["proj"]], par = par,
+       units = if ("units" %in% cle) val[["units"]] else "m",
+       a = as.numeric(ell[[2L]]), invf = as.numeric(ell[[3L]]),
+       towgs84 = if (length(tw) && any(is.na(tw) | tw != 0)) tw else numeric(),
+       autres = autres[order(names(autres))])
+}
+
+# Meme sens, sans PROJ : meme methode et memes parametres (1e-9), ellipsoides de
+# meme demi-grand axe (1e-3 m) et d'aplatissement inverse a 1e-6 relatif pres
+# (GRS80 et WGS84 : 0,1 mm sur le demi-petit axe, physiquement equivalents), pas
+# de +towgs84 non nul, memes unites.
+.srs_memes_parametres <- function(a, b) {
+  pa <- .srs_parametres(a)
+  pb <- .srs_parametres(b)
+  if (is.null(pa) || is.null(pb)) return(FALSE)
+  if (!identical(pa$proj, pb$proj) || !identical(pa$units, pb$units)) return(FALSE)
+  defaut <- c(x_0 = 0, y_0 = 0, k = 1)
+  cles <- union(names(pa$par), names(pb$par))
+  for (k in cles) {
+    va <- if (k %in% names(pa$par)) pa$par[[k]] else unname(defaut[k])
+    vb <- if (k %in% names(pb$par)) pb$par[[k]] else unname(defaut[k])
+    if (is.na(va) || is.na(vb) || abs(va - vb) > 1e-9) return(FALSE)
+  }
+  if (!identical(pa$autres, pb$autres)) return(FALSE)
+  if (abs(pa$a - pb$a) > 1e-3) return(FALSE)
+  if (abs(pa$invf - pb$invf) > 1e-6 * max(abs(pa$invf), abs(pb$invf), 1)) return(FALSE)
+  # un +towgs84 non nul d'un seul cote, ou different : pas le meme systeme
+  identical(pa$towgs84, pb$towgs84)
+}
+
+# Deux SRS (WKT) ont-ils le meme sens ? Vrai si terra les juge identiques, si
+# leurs definitions PROJ normalisees coincident, si la transformation des
+# points `pts` (coordonnees de `a`) de `a` vers `b` est l'identite a 1 mm pres,
+# ou si leurs parametres de projection et ellipsoides concordent (critere
+# deterministe, independant de la version de PROJ) ; deux SRS absents sont
 # equivalents, un SRS absent face a un SRS present ne l'est pas.
-.srs_deux_equivalents <- function(a, b) {
+.srs_deux_equivalents <- function(a, b, pts = NULL) {
   a_vide <- is.na(a) || !nzchar(a)
   b_vide <- is.na(b) || !nzchar(b)
   if (a_vide || b_vide) return(a_vide && b_vide)
-  if (isTRUE(terra::same.crs(a, b))) return(TRUE)
+  if (isTRUE(tryCatch(terra::same.crs(a, b), error = function(e) FALSE))) return(TRUE)
   na <- .srs_normalise(a)
   nb <- .srs_normalise(b)
-  !is.na(na) && !is.na(nb) && identical(na, nb)
+  if (!is.na(na) && !is.na(nb) && identical(na, nb)) return(TRUE)
+  if (.srs_transformation_identite(a, b, pts)) return(TRUE)
+  isTRUE(tryCatch(.srs_memes_parametres(a, b), error = function(e) FALSE))
 }
 
 # Pour chaque fichier, son SRS a-t-il le meme sens que celui du premier ?
 # (vecteur logique nomme par fichier ; predicat reutilise par les appelants
-# qui veulent decider eux-memes quoi faire d'un SRS different.)
+# qui veulent decider eux-memes quoi faire d'un SRS different.) Les points de
+# l'epreuve d'identite sont les coins de l'emprise de chaque fichier, exprimes
+# dans son propre SRS.
 .srs_equivalents <- function(fichiers) {
   srs <- vapply(fichiers, function(f) {
     tryCatch(terra::crs(terra::rast(f)),
@@ -40,7 +127,13 @@
                cli::cli_abort("Cannot read the CRS of tile {.path {f}}.", parent = e)
              })
   }, character(1))
-  vapply(srs, .srs_deux_equivalents, logical(1), b = srs[[1L]])
+  ok <- vapply(seq_along(fichiers), function(i) {
+    if (i == 1L) return(TRUE)
+    # SRS du fichier i vers celui du premier, sur l'emprise du fichier i.
+    .srs_deux_equivalents(srs[[i]], srs[[1L]], .srs_points_emprise(fichiers[[i]]))
+  }, logical(1))
+  names(ok) <- names(srs)
+  ok
 }
 
 # Nombre de fichiers sources distincts effectivement retenus par un VRT.

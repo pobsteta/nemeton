@@ -18,7 +18,8 @@
 #' @section Search order (DEM):
 #' \enumerate{
 #'   \item `<project>/cache/layers/drone_mnt/mnt.tif` — drone, [traiter_nuage_points()] (spec 059)
-#'   \item `<project>/cache/layers/lidar_mnt/*.tif`  — LiDAR HD (1 m)
+#'   \item `<project>/cache/layers/lidar_mnt/*.tif`  — LiDAR HD IGN tiles (`dtm.tif` and `*_mosaic.tif` excluded)
+#'   \item `<project>/cache/layers/lidar_mnt/dtm.tif`  — DTM derived from the point cloud (lasR), only when no IGN tile
 #'   \item `<project>/cache/layers/ign_mnt/mnt.tif`  — LiDAR HD point cloud, [traiter_nuage_points()]
 #'   \item `<project>/cache/layers/dem/*.tif`        — generic DEM cache
 #'   \item `<project>/cache/layers/bd_alti/*.tif`    — IGN BD ALTI (25 m)
@@ -39,7 +40,8 @@
 #' @section Search order (CHM):
 #' \enumerate{
 #'   \item `<project>/cache/layers/drone_mnh/mnh.tif` — drone, [traiter_nuage_points()] (spec 059)
-#'   \item `<project>/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH
+#'   \item `<project>/cache/layers/lidar_mnh/*.tif`  — LiDAR HD MNH IGN tiles (`chm.tif` and `*_mosaic.tif` excluded)
+#'   \item `<project>/cache/layers/lidar_mnh/chm.tif`  — CHM derived from the point cloud (lasR), only when no IGN tile
 #'   \item `<project>/cache/layers/ign_mnh/mnh.tif`  — LiDAR HD point cloud, [traiter_nuage_points()]
 #'   \item `<project>/cache/layers/mnh/*.tif`        — generic MNH cache
 #'   \item `<project>/cache/layers/opencanopy/chm_predicted_0_2m.tif`
@@ -106,6 +108,12 @@
 NULL
 
 
+# Produits derives ecrits dans lidar_mnh/ et lidar_mnt/ : `chm.tif` / `dtm.tif`
+# (compute_dtm_chm_from_laz(), lasR, 1 m) et toute mosaique `*_mosaic.tif`
+# (cache de l'app). Les dalles IGN (0,5 m) priment ; ces produits ne servent
+# que sans dalles (mission 085).
+.LIDAR_DERIVES_EXCLUDE <- "^(chm|dtm)\\.tif$|_mosaic\\.tif$"
+
 # Probe one candidate location. Returns:
 #   - NULL when nothing matches
 #   - A character vector of file paths otherwise (length >= 1)
@@ -122,11 +130,17 @@ NULL
                full.names  = TRUE,
                ignore.case = TRUE)
   } else {
-    list.files(cand$dir,
-               pattern     = "\\.tif$",
-               full.names  = TRUE,
-               ignore.case = TRUE,
-               recursive   = isTRUE(cand$recursive))
+    h <- list.files(cand$dir,
+                    pattern     = "\\.tif$",
+                    full.names  = TRUE,
+                    ignore.case = TRUE,
+                    recursive   = isTRUE(cand$recursive))
+    # `exclude` : produits derives du nuage (chm.tif, dtm.tif) ou mosaiques
+    # ecrites par l'app, qu'on ne melange jamais aux dalles du repertoire.
+    if (!is.null(cand$exclude)) {
+      h <- h[!grepl(cand$exclude, basename(h), ignore.case = TRUE)]
+    }
+    h
   }
   if (!length(hits)) {
     if (verbose) {
@@ -253,7 +267,11 @@ resolve_project_dem <- function(project_path,
          dir   = file.path(project_path, "cache", "layers", "drone_mnt"),
          file  = "mnt.tif"),
     list(label = "LiDAR HD MNT",
-         dir   = file.path(project_path, "cache", "layers", "lidar_mnt")),
+         dir   = file.path(project_path, "cache", "layers", "lidar_mnt"),
+         exclude = .LIDAR_DERIVES_EXCLUDE),
+    list(label = "LiDAR HD MNT (nuage, lasR)",
+         dir   = file.path(project_path, "cache", "layers", "lidar_mnt"),
+         file  = "dtm.tif"),
     list(label = "LiDAR HD MNT (point cloud)",
          dir   = file.path(project_path, "cache", "layers", "ign_mnt"),
          file  = "mnt.tif"),
@@ -347,7 +365,11 @@ resolve_project_chm <- function(project_path,
          dir   = file.path(project_path, "cache", "layers", "drone_mnh"),
          file  = "mnh.tif"),
     list(label = "LiDAR HD MNH",
-         dir   = file.path(project_path, "cache", "layers", "lidar_mnh")),
+         dir   = file.path(project_path, "cache", "layers", "lidar_mnh"),
+         exclude = .LIDAR_DERIVES_EXCLUDE),
+    list(label = "LiDAR HD CHM (nuage, lasR)",
+         dir   = file.path(project_path, "cache", "layers", "lidar_mnh"),
+         file  = "chm.tif"),
     list(label = "LiDAR HD MNH (point cloud)",
          dir   = file.path(project_path, "cache", "layers", "ign_mnh"),
          file  = "mnh.tif"),
