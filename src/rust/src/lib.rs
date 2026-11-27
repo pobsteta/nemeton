@@ -71,6 +71,68 @@ fn rust_cr_re(b4: &[f64], b5: &[f64], b6: &[f64]) -> extendr_api::Result<Vec<f64
         .collect())
 }
 
+/// Votes d'une foret SharkRF (mission 095) : pour chaque ligne de `x` (matrice
+/// n x nvar, colonne par colonne), un vote par arbre pour la classe de la
+/// feuille atteinte. Representation compacte de `reconfort_sharkrf_lire()` :
+/// index globaux 1-based, `attr` = -1 pour une feuille, `gauche` = classe
+/// (0-based) pour une feuille. Descente : x[attr] <= seuil -> gauche, sinon droite.
+/// @param attr Attribut de chaque noeud (0-based), -1 pour une feuille.
+/// @param seuil Seuil de chaque noeud.
+/// @param gauche Fils gauche (1-based) ou classe de la feuille.
+/// @param droite Fils droit (1-based).
+/// @param racines Racine (1-based) de chaque arbre.
+/// @param x Matrice des caracteristiques, colonne par colonne.
+/// @param n Nombre de lignes de `x`.
+/// @param k Nombre de classes.
+/// @return Matrice n x k des votes, colonne par colonne.
+/// @noRd
+#[extendr]
+fn rust_sharkrf_votes(
+    attr: &[i32],
+    seuil: &[f64],
+    gauche: &[i32],
+    droite: &[i32],
+    racines: &[i32],
+    x: &[f64],
+    n: i32,
+    k: i32,
+) -> extendr_api::Result<Vec<i32>> {
+    let n = n as usize;
+    let k = k as usize;
+    if n == 0 || x.len() % n != 0 {
+        return Err(Error::Other("x doit avoir n lignes".into()));
+    }
+    if attr.len() != seuil.len() || attr.len() != gauche.len() || attr.len() != droite.len() {
+        return Err(Error::Other("vecteurs du modele de longueurs differentes".into()));
+    }
+    let nvar = x.len() / n;
+    let mut votes = vec![0i32; n * k];
+    for i in 0..n {
+        for &r in racines {
+            let mut nd = (r - 1) as usize;
+            loop {
+                let a = attr[nd];
+                if a < 0 {
+                    break;
+                }
+                let a = a as usize;
+                if a >= nvar {
+                    return Err(Error::Other("attribut hors de x".into()));
+                }
+                let v = x[i + n * a];
+                let suivant = if v <= seuil[nd] { gauche[nd] } else { droite[nd] };
+                nd = (suivant - 1) as usize;
+            }
+            let c = gauche[nd] as usize;
+            if c >= k {
+                return Err(Error::Other("classe hors du nombre de classes".into()));
+            }
+            votes[i + n * c] += 1;
+        }
+    }
+    Ok(votes)
+}
+
 /// Version du crate (preuve que la chaine R <-> Rust fonctionne).
 /// @noRd
 #[extendr]
@@ -83,4 +145,5 @@ extendr_module! {
     fn rust_cr_swir;
     fn rust_cr_re;
     fn rust_version;
+    fn rust_sharkrf_votes;
 }
