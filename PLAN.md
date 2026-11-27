@@ -173,6 +173,16 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-27 — Release 2026.11.46 (mission 087 de nemetonplateforme), version stable posee
+
+DESCRIPTION, NEWS.md (`# nemeton 2026.11.46 (2026-11-27)`) et CITATION.cff alignes sur `2026.11.46` ; le tag et la
+release sont poses par `release.yml` a la fusion sur `main`, le passage en `.9000` suit la release. Contenu depuis
+`v2026.11.45` (PR #694 a #709) : ICD, spec 071 (#706) ; RECONFORT par fenetres THEIA (#705), spike et premier noyau
+Rust (#702), carte de classes du spike (#707) ; tournee DEPERIS (#703, #704) ; inventaire video (#699 a #701) ;
+mosaique de dalles unique et dalles IGN avant les produits derives (#708, #709) ; ERA5 timeseries (#697, #698) ;
+etude FAST hors paquet (#694, sans entree NEWS) ; docs `skip_cached` (#696). Aucun retrait d'export ; comportements
+plus stricts listes en tete de NEWS. Aucun chantier clos par cette release.
+
 ### 2026-11-26 — Mission 085 : dalles MNH/MNT IGN contre produits derives du nuage, SRS equivalents par identite de points (mission 085 de nemetonplateforme), cycle dev `2026.11.45.9005`
 
 - Regression de la #708 sur le poste de Pascal : `resolve_project_chm()` levait `nemeton_mosaique_srs` sur `lidar_mnh/` (28 dalles IGN SRS « EPSG:2154 » sans autorite + `chm.tif` lasR « RGF93 v1 / Lambert-93 »). Reproduite avec une VRAIE dalle MNH IGN (WMS Geoplateforme, `IGNF_LIDAR-HD_MNH_ELEVATION...`, `LHD_FXX_0371_6389_MNH_0M50`) : `.srs_equivalents()` FALSE avant correction (PROJ : ellipsoide WGS84 d'un datum sans nom contre GRS80).

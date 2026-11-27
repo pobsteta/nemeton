@@ -28,7 +28,9 @@ run_reconfort_dieback(
   quiet = FALSE,
   progress_callback = NULL,
   cancel_path = NULL,
-  acquisition = c("fenetre", "archive")
+  acquisition = c("fenetre", "archive", "sen2cor"),
+  correction_sen2cor = c("aucune", "biais"),
+  s2_cache_dir = NULL
 )
 }
 \arguments{
@@ -150,7 +152,8 @@ back with `skip_ingest = TRUE`). A flag already present at entry is
 ignored as a stale leftover — the caller must delete it before each
 call. A `reconfort:cancelled` progress event is emitted.}
 
-\item{acquisition}{w the Sentinel-2 scenes are acquired. `"fenetre"`
+\item{acquisition}{w the Sentinel-2 scenes are acquired. `"sen2cor"`
+  (see the Sen2Cor section) needs neither conda nor THEIA nor GEODES. `"fenetre"`
   (default) reads only the AOI window of each band and mask from the THEIA
   STAC catalogue (needs `TLD_ACCESS_KEY` / `TLD_SECRET_KEY`; no GEODES
   download) and writes the same files as `"archive"`, which downloads each
@@ -158,6 +161,14 @@ call. A `reconfort:cancelled` progress event is emitted.}
   missing, the run falls back to `"archive"` with a warning; an explicit
   `"fenetre"` without keys aborts. Without an AOI (`aoi_crop = FALSE`) the
   archive route is used. IOTA2 is unchanged either way.}
+
+\item{correction_sen2cor}{Only for the Sen2Cor route. `"aucune"` (default)
+uses the Sen2Cor reflectances as they are; `"biais"` subtracts the mean
+Sen2Cor - MAJA biases of CRswir and CRre measured on a single site
+(Couchey, study 092): not validated elsewhere.}
+
+\item{s2_cache_dir}{Sentinel-2 band cache of the Sen2Cor route (the one of
+FAST / FORDEAD). Default `<cache_dir>/s2_bands`.}
 }
 \value{
 Invisibly, a list: `status` (`"completed"` or
@@ -190,6 +201,22 @@ conda environment, a GEODES account, tens of GB of Sentinel-2 and an
 OTB/Shark batch execution. It is never exercised in CI; unit tests
 mock every external step.
 }
+\section{Sen2Cor route (indicative, not validated)}{
+
+`acquisition = "sen2cor"` skips conda, IOTA2, THEIA and GEODES: the
+Sentinel-2 L2A (Sen2Cor) scenes of Planetary Computer are read through the
+FAST/FORDEAD band cache, a 134-feature stack (CRswir then CRre over 67
+dates) is built and the v3 forest is applied in R
+(\code{\link[=reconfort_sharkrf_lire]{reconfort_sharkrf_lire()}}, \code{\link[=reconfort_caracteristiques_v3]{reconfort_caracteristiques_v3()}}). Outputs have
+the names and formats of the IOTA2 route; `run_meta.json` carries
+`source_reflectances = "sen2cor"` and `validee = false`, and the GeoTIFFs carry
+the tags `SOURCE_REFLECTANCES` and `VALIDEE`. The model was trained on MAJA
+reflectances: with Sen2Cor about 24 \% of pixels change class on the test
+site (study 093), mostly towards class 3. The route is also the last resort,
+with a warning of class `nemeton_reconfort_repli_sen2cor`, when `acquisition`
+is left at its default and the IOTA2 routes are unavailable or fail.
+}
+
 \section{Temporal window (\code{s2_year} -> analysis dates)}{
 
 RECONFORT does not diff two dates: it classifies a pixel's ~2-year index
