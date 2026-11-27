@@ -704,7 +704,15 @@
 #'   full ~2 GB archive from GEODES. When left unset and the THEIA keys are
 #'   missing, the run falls back to `"archive"` with a warning; an explicit
 #'   `"fenetre"` without keys aborts. Without an AOI (`aoi_crop = FALSE`) the
-#'   archive route is used. IOTA2 is unchanged either way.
+#'   archive route is used. When left unset and the THEIA STAC catalogue does
+#'   not answer (timeout, connection error, HTTP 5xx), the run also falls back
+#'   to `"archive"`, with a warning of class `nemeton_reconfort_repli_archive`;
+#'   an explicit `"fenetre"` then aborts with class
+#'   `nemeton_reconfort_stac_indisponible`, and an HTTP 401/403 from the
+#'   catalogue aborts with `nemeton_reconfort_stac_refuse` (never a silent
+#'   fallback). The route taken is recorded as `acquisition` in
+#'   `run_meta.json`, with the `causes_repli` of each fallback. IOTA2 is
+#'   unchanged either way.
 #'
 #' @param correction_sen2cor Only for the Sen2Cor route. `"aucune"` (default)
 #'   uses the Sen2Cor reflectances as they are; `"biais"` subtracts the mean
@@ -805,6 +813,9 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
   # `.reconfort_voie_suivante()` quand les routes THEIA/GEODES sont hors d'usage.
   voie_sen2cor <- identical(acquisition, "sen2cor")
   causes_voies <- list()
+  # Voie finalement empruntee (mission 089) : inscrite dans `run_meta.json` et
+  # dans la progression pour que l'app puisse la dire.
+  voie_retenue <- acquisition
 
   # --- argument validation ----------------------------------------
   if (!inherits(con, "DBIConnection")) {
@@ -904,6 +915,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
           paste("conda/IOTA2 environment unavailable:", conditionMessage(env_essai))
         .reconfort_avertir_repli_sen2cor(causes_voies)
         voie_sen2cor <- TRUE
+        voie_retenue <- "sen2cor"
       } else {
         env <- env_essai
       }
@@ -1023,29 +1035,59 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       }
       # Voie fenetre explicite sans cles : erreur claire avant tout travail.
       if (identical(acq, "fenetre")) .reconfort_fenetre_verifier_acces()
-      ing <- tryCatch(
-        reconfort_ingest_s2(aoi = if (do_crop) aoi else NULL,
-                            acquisition = acq,
-                            tiles = tiles, date_from = date_from,
-                            date_to = date_to, s2_root = s2_dl_root,
-                            geodes_config = geodes_config, quiet = quiet,
-                            progress_callback = progress_callback),
-        error = function(e) e)
+      # Sonde du catalogue THEIA (mission 089) : indisponible -> repli GEODES
+      # (voie non imposee) ou erreur lisible (voie imposee) ; 401/403 -> erreur,
+      # jamais de repli silencieux.
+      if (identical(acq, "fenetre")) {
+        sonde <- .reconfort_stac_sonde()
+        if (identical(sonde$etat, "refuse")) {
+          .reconfort_stac_abort_refuse(sonde$hote, sonde$cause)
+        } else if (identical(sonde$etat, "indisponible")) {
+          if (acq_explicite) .reconfort_stac_abort_indisponible(sonde$hote, sonde$cause)
+          causes_voies$fenetre <- sprintf("THEIA STAC catalogue unavailable (%s): %s",
+                                          sonde$hote, sonde$cause)
+          .reconfort_avertir_repli_archive(sonde$cause)
+          suivante <- .reconfort_voie_suivante("fenetre")
+          if (!is.na(suivante)) acq <- suivante
+        }
+      }
+      ingerer <- function(voie) {
+        voie_retenue <<- voie
+        emit(list(current = "reconfort:voie", acquisition = voie,
+                  causes_repli = causes_voies))
+        tryCatch(
+          reconfort_ingest_s2(aoi = if (do_crop) aoi else NULL,
+                              acquisition = voie,
+                              tiles = tiles, date_from = date_from,
+                              date_to = date_to, s2_root = s2_dl_root,
+                              geodes_config = geodes_config, quiet = quiet,
+                              progress_callback = progress_callback),
+          error = function(e) e)
+      }
+      ing <- ingerer(acq)
+      # Le catalogue a lache en cours d'ingest alors que la sonde passait : meme
+      # traitement que la sonde (repli GEODES, ou erreur lisible si imposee).
+      if (inherits(ing, "error") && identical(acq, "fenetre") &&
+          identical(.reconfort_stac_classer_erreur(ing), "indisponible")) {
+        cause <- sub("\n.*$", "", conditionMessage(ing))
+        if (acq_explicite) {
+          .reconfort_stac_abort_indisponible(
+            .reconfort_url_hote(.theia_stac_api("FR")), cause)
+        }
+        causes_voies$fenetre <- cause
+        .reconfort_avertir_repli_archive(cause)
+        acq <- .reconfort_voie_suivante("fenetre")
+        if (!is.na(acq)) ing <- ingerer(acq) else acq <- "fenetre"
+      }
       if (inherits(ing, "error")) {
         # Derniere voie IOTA2 en echec : Sen2Cor, sauf voie imposee par l'appelant.
-        # A AJOUTER PAR LA MISSION 089 : quand `acq` est "fenetre" et que
-        # `.reconfort_voie_suivante("fenetre")` rend "archive" (repli THEIA ->
-        # GEODES), il faut ici re-ingerer avec `acquisition = "archive"` (appel de
-        # `reconfort_ingest_s2()` repris, cause consignee dans `causes_voies$fenetre`),
-        # puis, si cette ingestion echoue a son tour, retomber sur le test ci-dessous
-        # (boucle : tant que `.reconfort_voie_suivante(acq)` rend une voie IOTA2).
-        # Aujourd'hui une voie "fenetre" en echec leve l'erreur, comme avant.
         if (acq_explicite || !identical(.reconfort_voie_suivante(acq), "sen2cor")) {
           stop(ing)
         }
         causes_voies[[acq]] <- conditionMessage(ing)
         .reconfort_avertir_repli_sen2cor(causes_voies)
         voie_sen2cor <- TRUE
+        voie_retenue <- "sen2cor"
         extracted <- NULL
       } else {
         extracted <- ing$extracted
@@ -1293,12 +1335,13 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       features_bundle = features_bundle, elapsed_sec = elapsed,
       generated_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z")
     )
+    meta$acquisition <- voie_retenue
+    if (length(causes_voies)) meta$causes_repli <- causes_voies
     if (voie_sen2cor) {
       meta$source_reflectances <- "sen2cor"
       meta$validee <- FALSE
       meta$mention <- .RECONFORT_SEN2COR_MENTION
       meta$correction_sen2cor <- correction_sen2cor
-      meta$causes_repli <- causes_voies
     }
     meta_path <- .reconfort_write_run_meta(
       file.path(rasters$final_dir, "run_meta.json"), meta)

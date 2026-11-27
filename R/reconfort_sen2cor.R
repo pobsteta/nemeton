@@ -28,7 +28,7 @@
 # suivante apres un echec ; le repli fenetre -> archive sur indisponibilite
 # THEIA est l'objet de la mission 089 (il s'y raccorde en retournant TRUE
 # ci-dessous). Isole pour les tests.
-.reconfort_repli_fenetre_archive <- function() FALSE
+.reconfort_repli_fenetre_archive <- function() TRUE
 
 # Voie suivante apres l'echec (ou l'indisponibilite) de `voie`, ou NA quand il
 # n'y en a pas. Les causes d'echec par voie sont tenues par l'appelant
@@ -39,6 +39,14 @@
   }
   if (identical(voie, "archive")) return("sen2cor")
   NA_character_
+}
+
+# Avertissement de repli THEIA -> GEODES (mission 089), classe
+# `nemeton_reconfort_repli_archive`.
+.reconfort_avertir_repli_archive <- function(cause) {
+  cli::cli_warn(
+    "catalogue THEIA indisponible ({cause}) : passage par les archives GEODES (~2 Go par sc\u00e8ne)",
+    class = "nemeton_reconfort_repli_archive")
 }
 
 # Avertissement de repli, classe `nemeton_reconfort_repli_sen2cor`, qui dit les

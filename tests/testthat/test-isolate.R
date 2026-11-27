@@ -309,3 +309,70 @@ test_that("a stale progress journal is truncated, not replayed", {
     expect_length(seen, 0L)
   })
 })
+
+# --- Fifos du superviseur processx (mission 089, point 4) ---------------------
+# `supervise = TRUE` ouvre, une fois par session R, deux fifos (supervisor_stdin /
+# supervisor_stdout) que `future` signale comme « connexions ajoutees » dans un
+# worker. `run_memory_capped()` les rend quand c'est lui qui a demarre le
+# superviseur, sans perdre l'arret du fils sur mort du parent.
+
+test_that("run_memory_capped ne laisse pas de fifo de superviseur ouvert dans le worker", {
+  skip_on_cran()
+  skip_if_not_installed("processx")
+  skip_if_not_installed("jsonlite")
+  skip_on_os("windows")
+  processx::supervisor_kill()          # depart propre : aucun superviseur
+  expect_length(.capped_supervisor_fifos(), 0L)
+
+  out <- suppressWarnings(run_memory_capped(
+    "toJSON", args = list(x = list(a = 1L)), package = "jsonlite",
+    memory_max = FALSE, quiet = TRUE))
+  expect_equal(as.character(out), "{\"a\":[1]}")
+  expect_length(.capped_supervisor_fifos(), 0L)
+})
+
+test_that("run_memory_capped laisse en place un superviseur qu'il n'a pas demarre", {
+  skip_on_cran()
+  skip_if_not_installed("processx")
+  skip_if_not_installed("jsonlite")
+  skip_on_os("windows")
+  processx::supervisor_kill()
+  # Un autre usager de processx a deja demarre le superviseur.
+  p <- processx::process$new("sleep", "0", supervise = TRUE)
+  p$wait()
+  avant <- .capped_supervisor_fifos()
+  expect_length(avant, 2L)
+  on.exit(processx::supervisor_kill(), add = TRUE)
+
+  suppressWarnings(run_memory_capped(
+    "toJSON", args = list(x = list(a = 1L)), package = "jsonlite",
+    memory_max = FALSE, quiet = TRUE))
+  expect_identical(.capped_supervisor_fifos(), avant)
+})
+
+test_that("l'arret du fils sur mort du parent survit a la liberation du superviseur", {
+  skip_on_cran()
+  skip_if_not_installed("processx")
+  skip_on_os("windows")
+  skip_if_not(nzchar(Sys.which("sleep")), "sleep absent")
+  # Un parent R supervise un `sleep` long ; on le tue (SIGKILL, sans nettoyage) :
+  # le superviseur doit tuer le fils. C'est la garantie de la mission 075 que la
+  # liberation du superviseur en sortie de run ne remet pas en cause tant que le
+  # fils tourne.
+  script <- withr::local_tempfile(fileext = ".R")
+  pidfile <- withr::local_tempfile()
+  writeLines(sprintf(
+    'p <- processx::process$new("sleep", "300", supervise = TRUE); writeLines(as.character(p$get_pid()), "%s"); Sys.sleep(300)',
+    pidfile), script)
+  parent <- processx::process$new(file.path(R.home("bin"), "Rscript"), script)
+  withr::defer(if (parent$is_alive()) parent$kill())
+  for (i in 1:100) { if (file.exists(pidfile) && length(readLines(pidfile, warn = FALSE))) break; Sys.sleep(0.1) }
+  enfant <- as.integer(readLines(pidfile, warn = FALSE))
+  vivant <- function(pid) {
+    suppressWarnings(system2("kill", c("-0", pid), stdout = FALSE, stderr = FALSE)) == 0L
+  }
+  expect_true(vivant(enfant))
+  parent$kill()
+  for (i in 1:50) { if (!vivant(enfant)) break; Sys.sleep(0.2) }
+  expect_false(vivant(enfant))
+})

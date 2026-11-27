@@ -1,3 +1,24 @@
+# nemeton 2026.11.46.9001 (development)
+
+- **feat : `run_reconfort_dieback()` bascule sur les archives GEODES quand le catalogue STAC THEIA est indisponible** (mission 089).
+  Avant l'ingest par fenetre, une sonde legere du catalogue (racine de l'API, delai de 15 s, une nouvelle tentative) classe
+  la reponse : **indisponible** (delai depasse, connexion impossible, HTTP 5xx, 408, 429) -> repli ; **refus** (HTTP 401 / 403)
+  -> erreur de classe `nemeton_reconfort_stac_refuse`, jamais de repli silencieux (les cles sont en cause, une autre voie
+  n'y changerait rien) ; sinon voie fenetre inchangee, sans avertissement. Le repli n'a lieu que si `acquisition` n'a pas ete
+  donnee : avertissement de classe `nemeton_reconfort_repli_archive` (« catalogue THEIA indisponible (cause) : passage par
+  les archives GEODES (~2 Go par scene) »). `acquisition = "fenetre"` explicite avec un catalogue en panne : erreur de classe
+  `nemeton_reconfort_stac_indisponible` (hote et cause). Meme traitement quand le catalogue lache en cours d'ingest, sonde
+  passee (erreur `httr2` de connexion ou 5xx). L'ordre de repli est THEIA -> GEODES -> Sen2Cor (`.reconfort_voie_suivante()`) ;
+  le repli Sen2Cor « conda absent » est inchange. La voie retenue est inscrite dans `run_meta.json` (`acquisition`) et dans la
+  progression (`current = "reconfort:voie"`) ; `causes_repli` porte desormais chaque cause de repli, dans l'ordre (THEIA puis
+  GEODES), pour toutes les voies et plus seulement pour Sen2Cor.
+- **fix : `run_memory_capped()` ne laisse plus ouverts les deux fifos du superviseur `processx`** (mission 089, point 4).
+  `supervise = TRUE` demarre, au premier appel de la session R, le superviseur global de `processx` et garde ses fifos
+  `supervisor_stdin` / `supervisor_stdout` ouverts toute la vie du processus ; dans un worker `future`, ils sortaient en
+  avertissement « added connections » a chaque run RECONFORT. Quand c'est `run_memory_capped()` qui demarre le superviseur,
+  il le rend en sortie (`processx::supervisor_kill()`), apres l'arret du fils ; l'arret du fils sur mort du parent reste
+  garanti tant qu'il tourne (mission 075, teste). Un superviseur deja demarre par un autre usager n'est pas touche.
+
 # nemeton 2026.11.46.9000 (development)
 
 - **feat : RECONFORT sur reflectances Sen2Cor, voie `acquisition = "sen2cor"` (INDICATIF, NON VALIDE)** (mission 095).
@@ -14,7 +35,7 @@
   `SOURCE_REFLECTANCES` et `VALIDEE`. Voie choisie explicitement, ou **en dernier recours** (avertissement de classe
   `nemeton_reconfort_repli_sen2cor`, qui dit les causes THEIA et GEODES) quand `acquisition` est laisse par defaut et que
   la voie GEODES echoue ou que l'environnement conda manque ; une seule voie en echec ne declenche pas le repli. Le repli
-  THEIA -> GEODES sur indisponibilite reste a faire (mission 089, `.reconfort_repli_fenetre_archive()`). Parametre
+  THEIA -> GEODES sur indisponibilite du catalogue est livre par la mission 089 (voir ci-dessus). Parametre
   `correction_sen2cor = c("aucune", "biais")` : `"aucune"` par defaut ; `"biais"` retire les biais moyens de l'etude 092
   (CRswir 0,0112, CRre 0,0258), **ajustes sur un seul site (Couchey)**.
   **Validation sur le vrai run IOTA2 de Couchey (zone 63, v3, 2025, T31TFN, 520 591 pixels feuillus, tout le masque,
