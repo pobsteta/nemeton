@@ -545,6 +545,7 @@ reference:
     contents:
     - monitoring_ingest
     - ingest_sentinel2_timeseries
+    - s2_source_resoudre
     - build_ndvi_season_composite
     - build_index_stack
     - read_s2_band_raster

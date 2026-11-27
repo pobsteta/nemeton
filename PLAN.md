@@ -173,6 +173,18 @@ tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
 
+### 2026-11-27 — Mission 096 : une source Sentinel-2 choisie pour FAST, FORDEAD, RECONFORT et l'ICD, cycle dev `2026.11.46.9002`
+
+Partie d'`origin/main` 2fae116 (089 + 095). `source_s2 = NULL | "theia" | "sen2cor"` ; defaut par methode (RECONFORT theia, FAST
+FORDEAD ICD sen2cor, decision de Pascal apres les etudes 092/093). Fichier `R/source_s2.R` (resolution, cache par source,
+repli de serie, metadonnees) ; branchements dans `R/monitoring.R`, `R/sentinel2_cache.R`, `R/fast_alert_raster.R`,
+`R/fordead_pipeline.R`, `R/icd_pipeline.R`, `R/reconfort_pipeline.R`. Tests : `tests/testthat/test-source-s2.R`.
+Non fait : comparaison Couchey FAST/FORDEAD/ICD entre sources (pas de cache Sen2Cor, pas de PostGIS ni de Python fordead ici).
+Corrections apres relecture (meme jour) : sans `source_s2`, l'appel historique `stac_search_s2()` (MUSCATE compris) et aucune
+cle nouvelle dans les sorties ; `validee` supprime partout (decision de Pascal) ; mention en anglais et ASCII ; detection de
+panne en cours de lecture bornee, 401/403 en cours de serie -> `nemeton_s2_theia_refuse` ; recherche THEIA en echec -> repli de
+la serie ; meta.json de l'ICD a plat et fidele apres repli ; resultats FORDEAD par source.
+
 ### 2026-11-27 — Mission 089 : repli automatique THEIA -> GEODES quand le catalogue STAC est indisponible (mission 089 de nemetonplateforme), cycle dev `2026.11.46.9001`
 
 Premier essai reel de la voie fenetre (Couchey, T31TFN, 2026) en echec : `api.stac.teledetection.fr` injoignable (« Timeout was

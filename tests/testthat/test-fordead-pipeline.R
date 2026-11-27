@@ -1075,3 +1075,110 @@ test_that("FORDEAD completion message uses qty() (no 'Multiple quantities')", {
   expect_match(msg(7L, 9),  "7 pixel alerts")
 })
 
+
+
+# ---- source_s2 (mission 096) -----------------------------------------
+
+# Lance run_fordead_dieback() avec tout mocke ; `...` = arguments de plus.
+# Rend ce que l'ingestion et la persistance du modele ont vu.
+.run_fordead_s2 <- function(..., sonde = NULL, cles = TRUE) {
+  fk <- make_fake_fordead_2x_module()
+  helpers <- .mock_pipeline_helpers()
+  helpers$.ensure_fordead_python <- function(env_name = "x", verbose = FALSE) fk$fd
+  vu <- new.env()
+  vu$ingest <- list()
+  helpers$ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands, start, end,
+                                                   cache_dir, max_cloud = 20,
+                                                   progress_callback = NULL, ...) {
+    vu$ingest[[length(vu$ingest) + 1L]] <- list(cache_dir = cache_dir,
+                                                extra = names(list(...)),
+                                                source_effective = list(...)$source_effective)
+    list(scenes_df = make_scenes_df(), n_scenes = 2L, n_bands_fetched = 0L,
+         n_bands_cached = 12L, n_scenes_skipped = 0L)
+  }
+  helpers$.write_fordead_model_bundle <- function(output_dir, model_dir, first_anomaly = NULL,
+                                                  run_meta = NULL, verbose = FALSE, ...) {
+    vu$run_meta <- run_meta; vu$model_dir <- model_dir
+    dir.create(model_dir, recursive = TRUE, showWarnings = FALSE)
+    invisible(model_dir)
+  }
+  helpers$.reconfort_stac_sonde <- sonde %||% function(...) stop("la sonde ne doit pas etre appelee")
+  helpers$.reconfort_fenetre_cles_presentes <- function() cles
+  testthat::local_mocked_bindings(!!!helpers, .package = "nemeton",
+                                  .env = parent.frame())
+  vu$cache <- make_cache_dir()
+  vu$out <- run_fordead_dieback(
+    con = make_fake_con(), zone_id = 1L, cache_dir = vu$cache,
+    dates_training = c("2016-01-01", "2017-12-31"),
+    dates_monitoring = c("2018-01-01", "2018-12-31"),
+    verbose = FALSE, ...)
+  vu
+}
+
+.cles_run_meta_fordead_main <- c("run_id", "zone_id", "vegetation_index",
+  "threshold_anomaly", "dates_training", "dates_monitoring", "fordead_version",
+  "crs_epsg", "n_scenes")
+.cles_retour_fordead_main <- c("status", "message", "output_dir", "zone_id",
+  "n_scenes", "rasters", "alerts_sf", "n_alerts_inserted", "duration_sec",
+  "python_env", "fordead_version")
+
+test_that("FORDEAD sans source_s2 : memes cles, meme appel d'ingestion, aucun avertissement (retro 096)", {
+  skip_if_not_installed("terra"); skip_if_no_reticulate(); skip_if_no_sf()
+  expect_no_warning(vu <- .run_fordead_s2())
+  expect_identical(vu$out$status, "success")
+  expect_identical(names(vu$out), .cles_retour_fordead_main)
+  expect_identical(names(vu$run_meta), .cles_run_meta_fordead_main)
+  # appel d'avant : aucun argument de plus, cache tel quel, dossier de resultats tel quel
+  expect_length(vu$ingest, 1L)
+  expect_identical(vu$ingest[[1]]$extra, NULL)
+  expect_identical(vu$ingest[[1]]$cache_dir, vu$cache)
+  expect_identical(vu$model_dir,
+                   file.path(dirname(vu$cache), "fordead", "zone_1",
+                             paste0("model_", vu$run_meta$run_id)))
+})
+
+test_that("FORDEAD source_s2 = 'theia' : cache et resultats THEIA, calage dit, source inscrite", {
+  skip_if_not_installed("terra"); skip_if_no_reticulate(); skip_if_no_sf()
+  ok <- function(...) list(etat = "ok", hote = "h", cause = NA_character_)
+  expect_warning(vu <- .run_fordead_s2(source_s2 = "theia", sonde = ok),
+                 class = "nemeton_s2_source_non_calee")
+  expect_identical(vu$out$source_s2, "theia")
+  expect_identical(vu$ingest[[1]]$cache_dir, paste0(vu$cache, "_theia"))
+  expect_identical(vu$ingest[[1]]$source_effective, "theia")
+  # resultats dans un dossier propre a THEIA : un run THEIA n'efface pas Sen2Cor
+  expect_identical(vu$model_dir,
+                   file.path(paste0(dirname(vu$cache), "/fordead_theia"), "zone_1",
+                             paste0("model_", vu$run_meta$run_id)))
+  m <- vu$run_meta
+  expect_identical(m$source_s2, "theia")
+  expect_identical(m$source_s2_demandee, "theia")
+  expect_identical(m$calee_sur, "sen2cor")
+  expect_false(m$repli_sen2cor)
+  expect_false("validee" %in% names(m))
+  expect_true(all(.cles_run_meta_fordead_main %in% names(m)))
+})
+
+test_that("FORDEAD source_s2 = 'theia', THEIA en panne : serie sur Sen2Cor, resultats Sen2Cor, repli dit", {
+  skip_if_not_installed("terra"); skip_if_no_reticulate(); skip_if_no_sf()
+  ko <- function(...) list(etat = "indisponible", hote = "h", cause = "HTTP 503")
+  vu <- NULL
+  suppressWarnings(expect_warning(
+    vu <- .run_fordead_s2(source_s2 = "theia", sonde = ko, keep_output = TRUE),
+    class = "nemeton_s2_repli_sen2cor"))
+  expect_identical(vu$out$source_s2, "sen2cor")
+  expect_identical(vu$ingest[[1]]$cache_dir, vu$cache)
+  expect_identical(vu$ingest[[1]]$source_effective, "sen2cor")
+  expect_identical(vu$model_dir,
+                   file.path(dirname(vu$cache), "fordead", "zone_1",
+                             paste0("model_", vu$run_meta$run_id)))
+  # le dossier de run suit la source effective, sans laisser de dossier THEIA vide
+  expect_match(vu$out$output_dir, "/fordead/zone_1/run_", fixed = TRUE)
+  expect_false(dir.exists(file.path(dirname(vu$cache), "fordead_theia")) &&
+                 length(list.files(file.path(dirname(vu$cache), "fordead_theia"),
+                                   recursive = TRUE)) > 0L)
+  m <- vu$run_meta
+  expect_identical(m$source_s2, "sen2cor")
+  expect_identical(m$source_s2_demandee, "theia")
+  expect_true(m$repli_sen2cor)
+  expect_match(m$cause_repli, "503")
+})

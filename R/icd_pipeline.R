@@ -300,6 +300,16 @@
 #'   inserted) and `message`.
 #' @seealso [read_icd_raster()], [read_icd_pixel_series()],
 #'   [comparer_fast_icd()], [icd_poids_defaut()].
+#' @param source_s2 Sentinel-2 reflectance source (mission 096): `NULL`
+#'   (default: nothing changes, same search, same cache, same outputs as before),
+#'   `"theia"` (MAJA, THEIA STAC catalogue, cache `<cache_dir>_theia`) or
+#'   `"sen2cor"` (CDSE then Planetary Computer, without the MUSCATE fallback).
+#'   This method is calibrated on Sen2Cor: `"theia"` warns (class
+#'   `nemeton_s2_source_non_calee`) and records `calee_sur` and `mention_source`.
+#'   THEIA unavailable switches the WHOLE series to Sen2Cor (class
+#'   `nemeton_s2_repli_sen2cor`); a 401/403 or missing keys is an error. The
+#'   effective source is written in the outputs as `source_s2` only when this
+#'   argument is given. THEIA results go to `<result_dir>_theia`. See [s2_source_resoudre()].
 #' @export
 run_icd_decoloration <- function(con = NULL, zone_id, cache_dir,
                                  result_dir = NULL,
@@ -317,8 +327,64 @@ run_icd_decoloration <- function(con = NULL, zone_id, cache_dir,
                                  progress_callback = NULL,
                                  cancel_path = NULL,
                                  today = Sys.Date(),
-                                 aoi = NULL) {
+                                 aoi = NULL,
+                                 source_s2 = NULL) {
   mois_en_cours <- match.arg(mois_en_cours)
+  source_s2 <- .s2_source_valider(source_s2)
+  args_src <- function(src, cache_dir, result_dir, meta_source) {
+    list(
+      con = con, zone_id = zone_id, cache_dir = cache_dir,
+      result_dir = result_dir,
+      poids = poids, bdforet = bdforet, sufosat_dates = sufosat_dates,
+      sufosat_proba = sufosat_proba, annees_reference = annees_reference,
+      buffer_interieur = buffer_interieur, start_year = start_year,
+      end_year = end_year, ingest = ingest, max_cloud = max_cloud,
+      mois_en_cours = mois_en_cours, apply_zone_mask = apply_zone_mask,
+      write_alerts = write_alerts, progress_callback = progress_callback,
+      cancel_path = cancel_path, today = today, aoi = aoi,
+      source_effective = src, meta_source = meta_source)
+  }
+  # Sans `source_s2` : l'appel d'avant, tel quel (recherche par defaut, cache et
+  # dossier de resultats inchanges, meta.json et retour sans cle nouvelle).
+  if (is.null(source_s2)) {
+    return(do.call(.run_icd_decoloration_src,
+                   args_src(NULL, cache_dir, result_dir, NULL)))
+  }
+  if (!isTRUE(ingest) || is.null(con)) {
+    # Aucune acquisition : pas de sonde, pas de repli possible.
+    sel <- list(demandee = source_s2, effective = source_s2, repli = FALSE,
+                cause = NA_character_)
+  } else {
+    sel <- .s2_choisir_source("icd", source_s2)
+  }
+  .s2_avertir_non_calee("icd", sel$effective)
+  r <- .s2_avec_repli("icd", sel$effective, function(src, info) {
+    meta_source <- list(
+      demandee = sel$demandee,
+      repli = isTRUE(sel$repli) || isTRUE(info$repli),
+      cause = if (isTRUE(info$repli)) info$cause else sel$cause)
+    do.call(.run_icd_decoloration_src, args_src(
+      src, .s2_cache_dir_source(cache_dir, src),
+      if (!is.null(result_dir) && nzchar(result_dir))
+        .s2_cache_dir_source(result_dir, src) else NULL,
+      meta_source))
+  })
+  res <- r$valeur
+  # Un cache THEIA donne un dossier de resultats THEIA : jamais de melange.
+  res$source_s2 <- r$source
+  res$repli_sen2cor <- isTRUE(sel$repli) || isTRUE(r$repli)
+  res
+}
+
+.run_icd_decoloration_src <- function(con, zone_id, cache_dir, result_dir,
+                                      poids, bdforet, sufosat_dates,
+                                      sufosat_proba, annees_reference,
+                                      buffer_interieur, start_year, end_year,
+                                      ingest, max_cloud, mois_en_cours,
+                                      apply_zone_mask, write_alerts,
+                                      progress_callback, cancel_path, today,
+                                      aoi, source_effective = NULL,
+                                      meta_source = NULL) {
   emit <- function(payload) {
     if (!is.null(progress_callback)) {
       tryCatch(progress_callback(payload), error = function(e) invisible(NULL))
@@ -349,7 +415,9 @@ run_icd_decoloration <- function(con = NULL, zone_id, cache_dir,
     zone <- aoi %||% .get_zone_aoi(con, zid)
     zone <- sf::st_transform(zone, 2154)
     grille <- .icd_grille(zone)
-    zdir <- .icd_dossier_zone(.icd_resoudre_result_dir(result_dir, cache_dir), zid)
+    zdir <- .icd_dossier_zone(
+      .s2_cache_dir_source(.icd_resoudre_result_dir(result_dir, cache_dir),
+                           source_effective %||% "sen2cor"), zid)
     dir.create(zdir, recursive = TRUE, showWarnings = FALSE)
     res$zone_dir <- zdir
     emit(list(current = "icd:start", zone_id = zid,
@@ -376,11 +444,16 @@ run_icd_decoloration <- function(con = NULL, zone_id, cache_dir,
         fen <- .icd_fenetres_ingestion(annees, today, mois_en_cours)
         for (i in seq_len(nrow(fen))) {
           if (cancelled()) .icd_signal_cancel("ingest")
-          ing <- ingest_s2_raw_bands_to_cache(
+          args <- list(
             con, zid, bands = .ICD_BANDES,
             start = fen$start[i], end = fen$end[i],
             cache_dir = cache_dir, max_cloud = max_cloud,
             progress_callback = progress_callback, cancel_path = cancel_path)
+          # Sans `source_s2` : appel strictement celui d'avant.
+          if (!is.null(source_effective)) {
+            args$source_effective <- source_effective
+          }
+          ing <- do.call(ingest_s2_raw_bands_to_cache, args)
           if (isTRUE(ing$cancelled)) .icd_signal_cancel("ingest")
         }
       }
@@ -524,7 +597,7 @@ run_icd_decoloration <- function(con = NULL, zone_id, cache_dir,
       res$alertes <- .insert_health_alerts(con, al, zid, .ICD_ALERT_TYPE)
     }
 
-    .icd_ecrire_meta(zdir, list(
+    .icd_ecrire_meta(zdir, c(list(
       zone_hash = zhash, annees = annees, annee_provisoire = as.integer(format(today, "%Y")),
       calcule_le = as.character(today), coupes_retirees = res$coupes_retirees,
       buffer_interieur = buffer_interieur,
@@ -535,7 +608,14 @@ run_icd_decoloration <- function(con = NULL, zone_id, cache_dir,
       mois_utilisables_a_date = mois_date,
       poids = pw[, c("essence", .ICD_INDICES)],
       somme_saisie = as.list(attr(pw, "somme_saisie")),
-      renormalise = attr(pw, "renormalise")))
+      renormalise = attr(pw, "renormalise")),
+      # Source inscrite (a plat, comme FORDEAD et RECONFORT) seulement quand
+      # l'appelant l'a choisie (mission 096).
+      if (!is.null(meta_source)) {
+        .s2_meta_source("icd", source_effective,
+                        demandee = meta_source$demandee,
+                        repli = meta_source$repli, cause = meta_source$cause)
+      }))
     res$status <- "success"
     emit(list(current = "icd:complete", zone_id = zid,
               annees = annees, n_pixels_icd = res$n_pixels_icd,
@@ -546,6 +626,10 @@ run_icd_decoloration <- function(con = NULL, zone_id, cache_dir,
     res$message <<- conditionMessage(cnd)
     emit(list(current = "icd:cancelled", phase = cnd$phase))
   }, error = function(e) {
+    # Panne THEIA (la serie entiere sera refaite sur Sen2Cor) ou refus 401/403
+    # (erreur claire, jamais de repli) : remontent a l'appelant. `stop()` est ici
+    # dans le DERNIER gestionnaire du tryCatch, donc hors de la portee des autres.
+    if (inherits(e, c("nemeton_s2_theia_panne", "nemeton_s2_theia_refuse"))) stop(e)
     res$status <<- "error"
     res$message <<- conditionMessage(e)
     emit(list(current = "icd:error", error_message = conditionMessage(e)))

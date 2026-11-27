@@ -16,7 +16,8 @@ ingest_sentinel2_timeseries(
   progress_callback = NULL,
   cancel_path = NULL,
   prewarm_alerts = FALSE,
-  prewarm_mask_cache_dir = NULL
+  prewarm_mask_cache_dir = NULL,
+  source_s2 = NULL
 )
 }
 \arguments{
@@ -183,6 +184,17 @@ COGs land under `<dir>/zone_<id>/fast_<INDEX>_<MODE>_thr<threshold>_
 <from>_<to>_w<window>_<hash8>.tif`.
 Point it at `<project>/cache/layers/fast_alert`. Ignored when
 `prewarm_alerts = FALSE`.}
+
+\item{source_s2}{Sentinel-2 reflectance source (mission 096): `NULL`
+(default: nothing changes, same search, same cache, same outputs as before),
+`"theia"` (MAJA, THEIA STAC catalogue, cache `<cache_dir>_theia`) or
+`"sen2cor"` (CDSE then Planetary Computer, without the MUSCATE fallback).
+This method is calibrated on Sen2Cor: `"theia"` warns (class
+`nemeton_s2_source_non_calee`) and records `calee_sur` and `mention_source`.
+THEIA unavailable switches the WHOLE series to Sen2Cor (class
+`nemeton_s2_repli_sen2cor`); a 401/403 or missing keys is an error. The
+effective source is written in the outputs as `source_s2` only when this
+argument is given. See [s2_source_resoudre()].}
 }
 \value{
 A one-row `data.frame` summarising the ingestion: number of

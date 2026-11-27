@@ -409,6 +409,16 @@ stac_search_s2_theia_muscate <- function(bbox, start, end,
   for (b in .S2_STAC_BANDS) {
     new_assets[[b]] <- list(href = .muscate_asset_href(assets, b, product))
   }
+  # MAJA n'a pas de SCL : son masque de nuages (CLM, 20 m) en tient lieu ; il
+  # est converti a l'ecriture dans le cache (`.s2_clm_vers_scl()`, mission 096).
+  # Seulement sur demande de la source THEIA du suivi sanitaire (option posee par
+  # `.s2_chercher_scenes()`) : le repli MUSCATE historique de `stac_search_s2()`
+  # reste ce qu'il etait.
+  if (isTRUE(getOption("nemeton.s2_muscate_clm", FALSE)) &&
+      !nzchar(new_assets[["SCL"]]$href %||% "")) {
+    h <- assets[["CLM_R2"]]$href %||% ""
+    if (nzchar(h)) new_assets[["SCL"]] <- list(href = .theia_href_to_gdal(h))
+  }
   ft$assets <- new_assets
   ft
 }

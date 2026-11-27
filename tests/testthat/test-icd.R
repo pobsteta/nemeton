@@ -664,3 +664,114 @@ test_that("mediane par ligne : le repli sans matrixStats donne les memes valeurs
   testthat::local_mocked_bindings(.icd_a_matrixstats = function() FALSE)
   expect_equal(.icd_med_lignes(M), base)
 })
+
+# --- source_s2 (mission 096) -------------------------------------------------
+
+.cles_meta_icd_main <- c("zone_hash", "annees", "annee_provisoire", "calcule_le",
+  "coupes_retirees", "buffer_interieur", "annees_reference", "n_pixels_zone",
+  "n_pixels_icd", "n_pixels_sans_icd", "par_essence", "mois_utilisables_a_date",
+  "poids", "somme_saisie", "renormalise")
+.cles_retour_icd_main <- c("status", "zone_id", "annees", "message", "poids",
+  "zone_dir", "n_pixels_zone", "n_pixels_icd", "n_pixels_sans_icd", "par_essence",
+  "coupes_retirees", "alertes")
+
+test_that("ICD sans source_s2 : memes cles et memes dossiers qu'avant, aucun avertissement (retro 096)", {
+  skip_if_not_installed("terra"); skip_if_not_installed("sf")
+  tmp <- withr::local_tempdir()
+  cache <- file.path(tmp, "cache"); dir.create(cache)
+  g <- fabriquer_cache(cache); zf <- zone_et_foret(g)
+  vus <- list()
+  testthat::local_mocked_bindings(
+    ingest_s2_raw_bands_to_cache = function(con, zone_id, bands, start, end, cache_dir, ...) {
+      vus[[length(vus) + 1L]] <<- list(cache_dir = cache_dir, extra = names(list(...)))
+      list(cancelled = FALSE)
+    },
+    .reconfort_stac_sonde = function(...) stop("la sonde ne doit pas etre appelee"))
+  # sans ingestion
+  expect_no_warning(res <- run_icd_decoloration(
+    con = NULL, zone_id = 7L, cache_dir = cache, result_dir = file.path(tmp, "icd"),
+    bdforet = zf$bdforet, aoi = zf$zone, ingest = FALSE, write_alerts = FALSE,
+    start_year = 2019L, end_year = 2023L, today = as.Date("2023-11-15")))
+  expect_equal(res$status, "success")
+  expect_identical(names(res), .cles_retour_icd_main)
+  expect_identical(normalizePath(dirname(res$zone_dir)), normalizePath(file.path(tmp, "icd")))
+  expect_false(dir.exists(file.path(tmp, "icd_theia")))
+  meta <- jsonlite::read_json(file.path(res$zone_dir, "meta.json"), simplifyVector = TRUE)
+  expect_identical(names(meta), .cles_meta_icd_main)
+  expect_equal(res$n_pixels_icd, 100L)
+  # avec ingestion : meme appel qu'avant (aucun argument de plus), cache tel quel
+  expect_no_warning(run_icd_decoloration(
+    structure(list(), class = "fausse_con"), 7L, cache, file.path(tmp, "icd"),
+    bdforet = zf$bdforet, aoi = zf$zone, ingest = TRUE, write_alerts = FALSE,
+    start_year = 2022L, end_year = 2023L, today = as.Date("2023-07-10")))
+  expect_gt(length(vus), 0L)
+  expect_false(any(vapply(vus, function(v) "source_effective" %in% v$extra, NA)))
+  expect_true(all(vapply(vus, function(v) identical(v$cache_dir, cache), NA)))
+})
+
+test_that("ICD source_s2 = 'theia' : avertit, resultats THEIA, meta.json a plat avec la source", {
+  skip_if_not_installed("terra"); skip_if_not_installed("sf")
+  tmp <- withr::local_tempdir()
+  cache <- file.path(tmp, "cache"); dir.create(cache)
+  g <- fabriquer_cache(paste0(cache, "_theia")); zf <- zone_et_foret(g)
+  res <- NULL
+  expect_warning(
+    res <- run_icd_decoloration(
+      con = NULL, zone_id = 7L, cache_dir = cache, result_dir = file.path(tmp, "icd"),
+      bdforet = zf$bdforet, aoi = zf$zone, ingest = FALSE, write_alerts = FALSE,
+      start_year = 2019L, end_year = 2023L, today = as.Date("2023-11-15"),
+      source_s2 = "theia"),
+    class = "nemeton_s2_source_non_calee")
+  expect_equal(res$status, "success")
+  expect_equal(res$source_s2, "theia")
+  expect_false(res$repli_sen2cor)
+  expect_identical(normalizePath(dirname(res$zone_dir)),
+                   normalizePath(file.path(tmp, "icd_theia")))
+  meta <- jsonlite::read_json(file.path(res$zone_dir, "meta.json"), simplifyVector = TRUE)
+  # a plat, comme FORDEAD et RECONFORT : pas de liste imbriquee `source_s2`
+  expect_identical(meta$source_s2, "theia")
+  expect_identical(meta$source_s2_demandee, "theia")
+  expect_identical(meta$calee_sur, "sen2cor")
+  expect_false(meta$repli_sen2cor)
+  expect_false("validee" %in% names(meta))
+  expect_true(all(.cles_meta_icd_main %in% names(meta)))
+})
+
+test_that("ICD : THEIA en panne en cours de serie -> serie refaite sur Sen2Cor, meta.json dit le repli", {
+  skip_if_not_installed("terra"); skip_if_not_installed("sf")
+  tmp <- withr::local_tempdir()
+  cache <- file.path(tmp, "cache"); dir.create(cache)
+  g <- fabriquer_cache(cache); zf <- zone_et_foret(g)
+  vus <- character(0)
+  testthat::local_mocked_bindings(
+    .reconfort_stac_sonde = function(...) list(etat = "ok", hote = "h", cause = NA_character_),
+    .reconfort_fenetre_cles_presentes = function() TRUE,
+    ingest_s2_raw_bands_to_cache = function(con, zone_id, bands, start, end, cache_dir,
+                                            source_effective = NULL, ...) {
+      vus <<- c(vus, source_effective)
+      if (identical(source_effective, "theia")) {
+        .s2_signaler_panne_theia(simpleError("curl: Connection timed out"))
+      }
+      list(cancelled = FALSE)
+    })
+  res <- NULL
+  suppressWarnings(expect_warning(
+    res <- run_icd_decoloration(
+      structure(list(), class = "fausse_con"), 7L, cache, file.path(tmp, "icd"),
+      bdforet = zf$bdforet, aoi = zf$zone, ingest = TRUE, write_alerts = FALSE,
+      start_year = 2019L, end_year = 2023L, today = as.Date("2023-11-15"),
+      source_s2 = "theia"),
+    class = "nemeton_s2_repli_sen2cor"))
+  expect_identical(vus[1], "theia")
+  expect_true(all(vus[-1] == "sen2cor"))
+  expect_equal(res$status, "success")
+  expect_equal(res$source_s2, "sen2cor")
+  expect_true(res$repli_sen2cor)
+  expect_identical(normalizePath(dirname(res$zone_dir)),
+                   normalizePath(file.path(tmp, "icd")))
+  meta <- jsonlite::read_json(file.path(res$zone_dir, "meta.json"), simplifyVector = TRUE)
+  expect_identical(meta$source_s2, "sen2cor")
+  expect_identical(meta$source_s2_demandee, "theia")
+  expect_true(meta$repli_sen2cor)
+  expect_match(meta$cause_repli, "timed out")
+})

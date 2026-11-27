@@ -30,39 +30,42 @@ run_reconfort_dieback(
   cancel_path = NULL,
   acquisition = c("fenetre", "archive", "sen2cor"),
   correction_sen2cor = c("aucune", "biais"),
-  s2_cache_dir = NULL
+  s2_cache_dir = NULL,
+  source_s2 = NULL
 )
 }
 \arguments{
 \item{con}{A `DBIConnection` to the monitoring database.}
 
-\item{zone_id}{Scalar monitoring-zone id (resolved to an AOI via the
-`monitoring_zone` table). Must be a strictly positive integer.}
+\item{zone_id}{Scalar monitoring-zone id (see
+[`.get_zone_aoi`][nemeton] resolution via `monitoring_zone`). Must be a
+strictly positive integer.}
 
 \item{cache_dir}{Project cache root. The per-run working directory is
 created under `<cache_dir>/reconfort/` (same caller-supplied
 convention as FORDEAD's `cache_dir`).}
 
-\item{s2_year}{Integer, the \strong{last} year of the two-year Sentinel-2
-series -- the single temporal control of a run (the app exposes only this,
-as a year picker). Default the current year. The download window, the
-analysis window and the output names all derive from it; see
-\emph{Temporal window} below. A future year is refused; a year whose
+\item{s2_year}{Integer, the **last** year of the two-year Sentinel-2
+series — the single temporal control of a run (the app exposes only
+this, as a year picker). Default the current year. The download
+window, the analysis window and the output names all derive from it;
+see *Temporal window* below. A future year is refused; a year whose
 model analysis window has not yet elapsed (see
-\code{\link[=reconfort_latest_complete_year]{reconfort_latest_complete_year()}}) runs with a warning
-(truncated last season). The alert trigger date never lies after the day
-of the run.}
+[reconfort_latest_complete_year()]) runs with a warning (truncated
+last season). The alert trigger date never lies after the day of the
+run.}
 
-\item{date_from, date_to}{Sentinel-2 \strong{download} window
-(`"YYYY-MM-DD"`). `NULL` (default) derives a two-calendar-year window from
-`s2_year`: `date_from = (s2_year-1)-01-01`, `date_to = s2_year-12-31`. This
-only bounds what is fetched from Theia; IOTA2 then re-clips to the model's
-seasonal \emph{analysis} window (`S2_start`/`S2_end`), so a custom download
-window cannot widen the analysis beyond what the pre-trained model expects.
-See \emph{Temporal window}.}
+\item{date_from, date_to}{Sentinel-2 **download** window
+(`"YYYY-MM-DD"`). `NULL` (default) derives a two-calendar-year window
+from `s2_year`: `date_from = (s2_year-1)-01-01`,
+`date_to = s2_year-12-31`. This only bounds what is fetched from
+Theia; IOTA2 then re-clips to the model's seasonal *analysis* window
+(`S2_start`/`S2_end`), so a custom download window cannot widen the
+analysis beyond what the pre-trained model expects. See
+*Temporal window*.}
 
-\item{v_model}{RF model version (see \code{RECONFORT_MODELS}).
-Default `"v3"` (oak, 2-year series).}
+\item{v_model}{RF model version (see `RECONFORT_MODELS`). Default
+`"v3"` (oak, 2-year series).}
 
 \item{binary_mask}{Broadleaf mask control. `NULL` (default) fetches
 and uses the OSO 2021 deciduous mask; a path uses a custom mask;
@@ -73,15 +76,16 @@ cut from the national OSO (`oso_national`) for the AOI instead.}
 \item{aoi_crop}{Logical. When `TRUE` (default) the Sentinel-2 scenes are
 streamed and clipped + reprojected to the zone AOI (+ buffer) in the
 output projection during ingestion (spec 021) — each archive is
-downloaded, extracted, cropped and deleted in turn: a multi-hour
-full-tile run becomes minutes, IOTA2's reference-grid handling is fixed,
-the broadleaf mask + ground truth are AOI-local, and peak disk stays
-near a single archive. All operations are per-pixel, so clipping does
-not change the result for the kept pixels.}
+downloaded, extracted, cropped and deleted in turn. This turns a
+multi-hour full-tile run into minutes, fixes IOTA2's reference-grid
+handling, makes the broadleaf mask + ground truth AOI-local, and caps
+peak disk near a single archive. All operations are per-pixel, so
+clipping does not change the result for the kept pixels.}
 
 \item{oso_national}{Character or `NULL`. National OSO land-cover raster
-used to cut the AOI broadleaf mask (default `<global cache>/oso/oso.tif`,
-overridable via `options(nemeton.reconfort_oso_national)`).}
+used to cut the AOI broadleaf mask (default
+`<global cache>/oso/oso.tif`, overridable via
+`options(nemeton.reconfort_oso_national)`).}
 
 \item{number_of_chunks}{IOTA2 RAM-saving chunk count. Default `200`; when
 `aoi_crop = TRUE` it is derived from the cropped raster height (~240 rows
@@ -107,13 +111,13 @@ PENDING : à revoir après alignement de la version d'iota2.}
 \item{nb_parallel_tasks}{IOTA2 parallel-task count. Default `1`.}
 
 \item{output_dir}{Explicit per-run working directory. Default
-`<cache_dir>/reconfort/run_z<zone_id>_S2<s2_year>`. The directory is locked
-(`.lock`, holding the PID) for the duration of the run; a second run on a
-directory held by a live process aborts. A pre-existing `output_dir` is never
-deleted, whatever `keep_workdir` says.}
+`<cache_dir>/reconfort/run_z<zone_id>_S2<s2_year>`. The directory is
+locked (`.lock`, holding the PID) for the duration of the run; a second
+run on a directory held by a live process aborts. A pre-existing
+`output_dir` is never deleted, whatever `keep_workdir` says.}
 
 \item{geodes_config}{Path to `pygeodes-config.json` (see
-\code{reconfort_ingest_s2()}). Default resolves the option / user dir.}
+`reconfort_ingest_s2()`). Default resolves the option / user dir.}
 
 \item{model_cache_dir, mask_cache_dir}{Override caches for the model /
 mask fetches. Default per-user nemeton caches.}
@@ -126,9 +130,9 @@ working dir instead of downloading. Default `FALSE`. Aborts before
 staging when a tile has no extracted scene.}
 
 \item{keep_workdir}{Keep the staged working directory after the run.
-Default `TRUE` (the rasters live there). With `FALSE`, only a directory
-created (or, for the default path, owned) by nemeton is removed, never
-`cache_dir` or one of its ancestors.}
+Default `TRUE` (the rasters live there). With `FALSE`, only a
+directory created (or, for the default path, owned) by nemeton is
+removed, never `cache_dir` or one of its ancestors.}
 
 \item{quiet}{Suppress progress + subprocess output. Default `FALSE`.}
 
@@ -152,23 +156,23 @@ back with `skip_ingest = TRUE`). A flag already present at entry is
 ignored as a stale leftover — the caller must delete it before each
 call. A `reconfort:cancelled` progress event is emitted.}
 
-\item{acquisition}{w the Sentinel-2 scenes are acquired. `"sen2cor"`
-  (see the Sen2Cor section) needs neither conda nor THEIA nor GEODES. `"fenetre"`
-  (default) reads only the AOI window of each band and mask from the THEIA
-  STAC catalogue (needs `TLD_ACCESS_KEY` / `TLD_SECRET_KEY`; no GEODES
-  download) and writes the same files as `"archive"`, which downloads each
-  full ~2 GB archive from GEODES. When left unset and the THEIA keys are
-  missing, the run falls back to `"archive"` with a warning; an explicit
-  `"fenetre"` without keys aborts. Without an AOI (`aoi_crop = FALSE`) the
-  archive route is used. When left unset and the THEIA STAC catalogue does
-  not answer (timeout, connection error, HTTP 5xx), the run also falls back
-  to `"archive"`, with a warning of class `nemeton_reconfort_repli_archive`;
-  an explicit `"fenetre"` then aborts with class
-  `nemeton_reconfort_stac_indisponible`, and an HTTP 401/403 from the
-  catalogue aborts with `nemeton_reconfort_stac_refuse` (never a silent
-  fallback). The route taken is recorded as `acquisition` in
-  `run_meta.json`, with the `causes_repli` of each fallback. IOTA2 is
-  unchanged either way.}
+\item{acquisition}{How the Sentinel-2 scenes are acquired. `"sen2cor"`
+(see the Sen2Cor section) needs neither conda nor THEIA nor GEODES. `"fenetre"`
+(default) reads only the AOI window of each band and mask from the THEIA
+STAC catalogue (needs `TLD_ACCESS_KEY` / `TLD_SECRET_KEY`; no GEODES
+download) and writes the same files as `"archive"`, which downloads each
+full ~2 GB archive from GEODES. When left unset and the THEIA keys are
+missing, the run falls back to `"archive"` with a warning; an explicit
+`"fenetre"` without keys aborts. Without an AOI (`aoi_crop = FALSE`) the
+archive route is used. When left unset and the THEIA STAC catalogue does
+not answer (timeout, connection error, HTTP 5xx), the run also falls back
+to `"archive"`, with a warning of class `nemeton_reconfort_repli_archive`;
+an explicit `"fenetre"` then aborts with class
+`nemeton_reconfort_stac_indisponible`, and an HTTP 401/403 from the
+catalogue aborts with `nemeton_reconfort_stac_refuse` (never a silent
+fallback). The route taken is recorded as `acquisition` in
+`run_meta.json`, with the `causes_repli` of each fallback. IOTA2 is
+unchanged either way.}
 
 \item{correction_sen2cor}{Only for the Sen2Cor route. `"aucune"` (default)
 uses the Sen2Cor reflectances as they are; `"biais"` subtracts the mean
@@ -179,35 +183,45 @@ Sen2Cor - MAJA biases of CRswir and CRre measured on a single site
 FAST / FORDEAD, `<project>/cache/layers/sentinel2`). Default: `<cache_dir>/layers/sentinel2`
 when `cache_dir` is the project `cache` folder or already holds that folder,
 otherwise `<cache_dir>/s2_bands` (a separate cache, not shared with FAST/FORDEAD).}
+
+\item{source_s2}{Sentinel-2 reflectance source (mission 096): `NULL` (default:
+nothing changes, `acquisition` decides), `"theia"` (MAJA: the `"fenetre"` /
+`"archive"` routes) or `"sen2cor"` (Planetary Computer, same as
+`acquisition = "sen2cor"`). Contradicting `acquisition` is an error of class
+`nemeton_s2_source_incoherente`. When given, `source_s2 = "sen2cor"` warns
+(class `nemeton_s2_source_non_calee`: RECONFORT is calibrated on MAJA) and
+`run_meta.json` records `source_s2`, `source_s2_demandee`, `calee_sur`,
+`repli_sen2cor` and `mention_source`. Without `source_s2` none of these keys
+is written. See [s2_source_resoudre()].}
 }
 \value{
 Invisibly, a list: `status` (`"completed"` or
-`"cancelled"`), `zone_id`, `tiles`, `s2_year`, `v_model`,
-`species`, `workdir`, `rasters` (the collected output paths),
-`meta` (path to `run_meta.json`) and `elapsed_sec`. A
-`"cancelled"` result carries an extra `phase` field (the last
-completed phase) and `NA` / `NULL` in place of the outputs the
-cancelled phases would have produced. A genuine failure still
-aborts rather than returning a status.
+  `"cancelled"`), `zone_id`, `tiles`, `s2_year`, `v_model`,
+  `species`, `workdir`, `rasters` (the collected output paths),
+  `meta` (path to `run_meta.json`) and `elapsed_sec`. A
+  `"cancelled"` result carries an extra `phase` field (the last
+  completed phase) and `NA` / `NULL` in place of the outputs the
+  cancelled phases would have produced. A genuine failure still
+  aborts rather than returning a status.
 }
 \description{
 Orchestrates a full RECONFORT run for one monitoring zone: validate
 the conda/IOTA2 environment, fetch the Random-Forest model
-(\code{ensure_reconfort_model()}) and the broadleaf mask
-(\code{ensure_reconfort_oso_mask()}), resolve the AOI to
-Sentinel-2 MGRS tile(s) (\code{reconfort_aoi_tiles()}), ingest
-the S2 archives (\code{reconfort_ingest_s2()}), then drive the
-vendored IOTA2 map-production (sampling + classification + OSO masking
-+ continuous score). Produces the classification, probability and
-continuous-score rasters (EPSG:2154) plus a `run_meta.json`.
+(`ensure_reconfort_model()`) and the broadleaf mask
+(`ensure_reconfort_oso_mask()`), resolve the AOI to Sentinel-2 MGRS
+tile(s) (`reconfort_aoi_tiles()`), ingest the S2 archives
+(`reconfort_ingest_s2()`), then drive the vendored IOTA2
+map-production (sampling + classification + OSO masking + continuous
+score). Produces the classification, probability and continuous-score
+rasters (EPSG:2154) plus a `run_meta.json`.
 }
 \details{
 The downstream conversion of these rasters into `alert` rows (patch
-centroids, `confidence_class`, `stress_index`) is lot L3 and is
-\strong{not} performed here.
+centroids, `confidence_class`, `stress_index`) is lot L3 and is **not**
+performed here.
 
-\strong{Heavy and opt-in.} A real run needs the `nemeton-reconfort`
-conda environment, a GEODES account, tens of GB of Sentinel-2 and an
+**Heavy and opt-in.** A real run needs the `nemeton-reconfort` conda
+environment, a GEODES account, tens of GB of Sentinel-2 and an
 OTB/Shark batch execution. It is never exercised in CI; unit tests
 mock every external step.
 }
@@ -217,49 +231,52 @@ mock every external step.
 Sentinel-2 L2A (Sen2Cor) scenes of Planetary Computer are read through the
 FAST/FORDEAD band cache, a 134-feature stack (CRswir then CRre over 67
 dates) is built and the v3 forest is applied in R
-(\code{\link[=reconfort_sharkrf_lire]{reconfort_sharkrf_lire()}}, \code{\link[=reconfort_caracteristiques_v3]{reconfort_caracteristiques_v3()}}). Outputs have
+([reconfort_sharkrf_lire()], [reconfort_caracteristiques_v3()]). Outputs have
 the names and formats of the IOTA2 route; `run_meta.json` carries
-`source_reflectances = "sen2cor"` and `validee = false`, and the GeoTIFFs carry
-the tags `SOURCE_REFLECTANCES` and `VALIDEE`. The model was trained on MAJA
-reflectances: with Sen2Cor about 24 \% of pixels change class on the test
+`source_reflectances = "sen2cor"` and the indicative `mention`, and the GeoTIFFs
+carry the tags `SOURCE_REFLECTANCES` and `MENTION`. The model was trained on MAJA
+reflectances: with Sen2Cor about 24 % of pixels change class on the test
 site (study 093), mostly towards class 3. The route is also the last resort,
 with a warning of class `nemeton_reconfort_repli_sen2cor`, when `acquisition`
 is left at its default and the IOTA2 routes are unavailable or fail.
 }
 
-\section{Temporal window (\code{s2_year} -> analysis dates)}{
+\section{Temporal window (`s2_year` -> analysis dates)}{
 
-RECONFORT does not diff two dates: it classifies a pixel's ~2-year index
-trajectory with a pre-trained model. One run is driven entirely by
-`s2_year` (the last year of the series). The dates flow as:
+RECONFORT does not diff two dates: it classifies a pixel's ~2-year
+index trajectory with a pre-trained model. One run is driven entirely
+by `s2_year` (the last year of the series). The dates flow as:
 
 \enumerate{
   \item \strong{Download window} (this function): from `s2_year`,
-    `date_from = (s2_year-1)-01-01` and `date_to = s2_year-12-31` unless
-    overridden -- two calendar years fetched from Theia.
+    `date_from = (s2_year-1)-01-01` and `date_to = s2_year-12-31`
+    unless overridden -- two calendar years fetched from Theia.
   \item \strong{Analysis window} (IOTA2 cfg, derived from `s2_year` +
     `v_model`, \emph{not} from `date_from`/`date_to`):
     `S2_start = (s2_year-1)<sdate>`, `S2_end = s2_year<edate>` with
     `sdate`/`edate` fixed by the model --
-    \code{v3}/\code{v3_chestnut}/\code{v3_pine}: `0101` -> `1029` (Jan of
-    `s2_year-1` to 29 Oct of `s2_year`, ~22 months, the "2y_nov"
-    calibration); \code{v3_early_may}: `0101` -> `0531` (~1.5 year).
+    \code{v3}/\code{v3_chestnut}/\code{v3_pine}: `0101` -> `1029`
+    (Jan of `s2_year-1` to 29 Oct of `s2_year`, ~22 months, the
+    "2y_nov" calibration); \code{v3_early_may}: `0101` -> `0531`
+    (~1.5 year).
   \item \strong{Features}: IOTA2 gap-fills the cloud-masked S2
     acquisitions of the analysis window onto a regular date grid, then
-    computes CRswir + CRre per date. The per-pixel feature vector is the
-    full two-year trajectory of both indices.
-  \item \strong{Classification}: the SharkRF `v_model` labels each pixel
-    classes 1 healthy, 2 declining, 3 severely declining (2 classes for pine)
-    plus a continuous score.
+    computes CRswir + CRre per date. The per-pixel feature vector is
+    the full two-year trajectory of both indices.
+  \item \strong{Classification}: the SharkRF `v_model` labels each
+    pixel classes 1 healthy, 2 declining, 3 severely declining (2 classes
+    for pine) plus a continuous score.
 }
 
-Because the analysis window is model-bound, a custom `date_from`/`date_to`
-only changes \emph{what is downloaded}, never the window the model sees.
-To cover several years, call once per `s2_year` (each run = a 2-year
-window ending end-October of its `s2_year`); the app stacks the resulting
-yearly maps.
+Because the analysis window is model-bound, a custom
+`date_from`/`date_to` only changes \emph{what is downloaded}, never the
+window the model sees. To cover several years, call once per `s2_year`
+(each run = a 2-year window ending end-October of its `s2_year`); the
+app stacks the resulting yearly maps.
 }
+
 \section{Lifecycle}{
 
 Experimental: may change in any release, without deprecation (spec 057).
 }
+

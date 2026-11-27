@@ -371,6 +371,16 @@ NULL
 #' res$rasters
 #' }
 #'
+#' @param source_s2 Sentinel-2 reflectance source (mission 096): `NULL`
+#'   (default: nothing changes, same search, same cache, same outputs as before),
+#'   `"theia"` (MAJA, THEIA STAC catalogue, cache `<cache_dir>_theia`) or
+#'   `"sen2cor"` (CDSE then Planetary Computer, without the MUSCATE fallback).
+#'   This method is calibrated on Sen2Cor: `"theia"` warns (class
+#'   `nemeton_s2_source_non_calee`) and records `calee_sur` and `mention_source`.
+#'   THEIA unavailable switches the WHOLE series to Sen2Cor (class
+#'   `nemeton_s2_repli_sen2cor`); a 401/403 or missing keys is an error. The
+#'   effective source is written in the outputs as `source_s2` only when this
+#'   argument is given. FORDEAD results of a THEIA run go to `<mask_cache_dir>_theia`. See [s2_source_resoudre()].
 #' @export
 run_fordead_dieback <- function(con,
                                 zone_id,
@@ -392,8 +402,10 @@ run_fordead_dieback <- function(con,
                                 connectivity = 8L,
                                 verbose = TRUE,
                                 progress_callback = NULL,
-                                cancel_path = NULL) {
+                                cancel_path = NULL,
+                                source_s2 = NULL) {
   t0 <- Sys.time()
+  source_s2 <- .s2_source_valider(source_s2)
 
   dates_ok <- .validate_fordead_args(dates_training, dates_monitoring,
                                      vegetation_index, threshold_anomaly,
@@ -437,14 +449,23 @@ run_fordead_dieback <- function(con,
     mask_cache_dir <- file.path(dirname(cache_dir), "fordead")
   }
   run_ts   <- format(t0, "%Y%m%dT%H%M%S")
-  zone_dir <- file.path(mask_cache_dir, paste0("zone_", zone_id))
+  # Mission 096 : les resultats d'une source THEIA vont dans `<mask_cache_dir>_theia`
+  # (comme l'ICD), pour qu'un run THEIA n'efface pas un resultat Sen2Cor. Sans
+  # `source_s2`, ou sur Sen2Cor, le chemin est celui d'avant.
+  mask_cache_dir_base <- mask_cache_dir
+  .fordead_zone_dir <- function(src) {
+    file.path(.s2_cache_dir_source(mask_cache_dir_base, src),
+              paste0("zone_", zone_id))
+  }
+  zone_dir <- .fordead_zone_dir(source_s2 %||% "sen2cor")
 
   # When `keep_output` is requested and the caller left `output_dir`
   # at its default tempfile, run FORDEAD directly inside the project
   # cache so the full working set (≈1000+ rasters) survives the
   # session instead of being wiped with `tempdir()`. An explicit
   # `output_dir` always wins — the caller owns its persistence.
-  if (isTRUE(keep_output) && missing(output_dir)) {
+  output_dir_auto <- isTRUE(keep_output) && missing(output_dir)
+  if (output_dir_auto) {
     output_dir <- file.path(zone_dir, paste0("run_", run_ts))
   }
 
@@ -528,16 +549,60 @@ run_fordead_dieback <- function(con,
     .train_start  <- as.Date(dates_training[1L])
     .mon_end      <- if (is.na(dates_monitoring[2L]))
                        Sys.Date() else as.Date(dates_monitoring[2L])
-    ingest_res <- ingest_s2_raw_bands_to_cache(
-      con               = con,
-      zone_id           = zone_id,
-      bands             = FORDEAD_BANDS,
-      start             = .train_start,
-      end               = .mon_end,
-      cache_dir         = cache_dir,
-      max_cloud         = max_cloud,
-      progress_callback = progress_callback
-    )
+    # Source Sentinel-2 (mission 096). Sans `source_s2` : l'appel d'avant, tel
+    # quel (recherche `stac_search_s2()` par defaut, cache inchange, aucune sonde,
+    # aucun avertissement).
+    if (is.null(source_s2)) {
+      sel_s2 <- NULL
+      src_effective <- "sen2cor"
+      repli_s2 <- FALSE
+      cause_s2 <- NA_character_
+      ingest_res <- ingest_s2_raw_bands_to_cache(
+        con               = con,
+        zone_id           = zone_id,
+        bands             = FORDEAD_BANDS,
+        start             = .train_start,
+        end               = .mon_end,
+        cache_dir         = cache_dir,
+        max_cloud         = max_cloud,
+        progress_callback = progress_callback
+      )
+    } else {
+      sel_s2 <- .s2_choisir_source("fordead", source_s2)
+      .s2_avertir_non_calee("fordead", sel_s2$effective)
+      cache_dir_base <- cache_dir
+      r_ing <- .s2_avec_repli("fordead", sel_s2$effective, function(src) {
+        ingest_s2_raw_bands_to_cache(
+          con               = con,
+          zone_id           = zone_id,
+          bands             = FORDEAD_BANDS,
+          start             = .train_start,
+          end               = .mon_end,
+          cache_dir         = .s2_cache_dir_source(cache_dir_base, src),
+          max_cloud         = max_cloud,
+          progress_callback = progress_callback,
+          source_effective  = src
+        )
+      })
+      ingest_res <- r_ing$valeur
+      src_effective <- r_ing$source
+      repli_s2 <- isTRUE(sel_s2$repli) || isTRUE(r_ing$repli)
+      cause_s2 <- if (isTRUE(r_ing$repli)) r_ing$cause else sel_s2$cause
+      cache_dir <- .s2_cache_dir_source(cache_dir_base, src_effective)
+      # Le dossier de resultats suit la source EFFECTIVE (repli compris).
+      if (!identical(src_effective, source_s2)) {
+        zone_dir <- .fordead_zone_dir(src_effective)
+        if (output_dir_auto) {
+          vieux <- output_dir
+          output_dir <- file.path(zone_dir, paste0("run_", run_ts))
+          dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+          if (dir.exists(vieux) && !length(list.files(vieux, all.files = TRUE,
+                                                      no.. = TRUE))) {
+            unlink(vieux, recursive = TRUE)
+          }
+        }
+      }
+    }
     scenes_df <- ingest_res$scenes_df
     if (!nrow(scenes_df)) {
       window_str <- paste(as.character(.train_start),
@@ -759,7 +824,7 @@ run_fordead_dieback <- function(con,
         output_dir    = output_dir,
         model_dir     = file.path(zone_dir, paste0("model_", run_ts)),
         first_anomaly = fdd_raster,
-        run_meta      = list(
+        run_meta      = c(list(
           run_id            = run_ts,
           zone_id           = zone_id,
           vegetation_index  = vegetation_index,
@@ -769,7 +834,11 @@ run_fordead_dieback <- function(con,
           fordead_version   = fordead_version,
           crs_epsg          = crs_epsg,
           n_scenes          = nrow(scenes_df)
-        ),
+        ), if (!is.null(sel_s2)) {
+          .s2_meta_source("fordead", src_effective,
+                          demandee = sel_s2$demandee, repli = repli_s2,
+                          cause = cause_s2)
+        }),
         verbose       = verbose
       )
     }, error = function(e) {
@@ -846,7 +915,7 @@ run_fordead_dieback <- function(con,
 
     # Échec partiel : même forme de résultat (rasters persistés compris),
     # statut "error" et message explicite.
-    list(
+    out <- list(
       status            = if (run_ok) "success" else "error",
       message           = if (run_ok) NA_character_ else
                             paste(echecs, collapse = "; "),
@@ -860,6 +929,9 @@ run_fordead_dieback <- function(con,
       python_env        = env_name,
       fordead_version   = fordead_version
     )
+    # Source inscrite seulement quand l'appelant l'a choisie (mission 096).
+    if (!is.null(source_s2)) out$source_s2 <- src_effective
+    out
   }, nemeton_cancelled = function(cnd) {
     # Cooperative cancellation requested at a phase boundary. The
     # current phase was allowed to finish; we exit before the next one.
