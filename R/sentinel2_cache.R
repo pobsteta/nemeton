@@ -68,7 +68,8 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
                                          start, end, cache_dir,
                                          max_cloud = 20,
                                          progress_callback = NULL,
-                                         cancel_path = NULL) {
+                                         cancel_path = NULL,
+                                         source_effective = "sen2cor") {
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
@@ -126,7 +127,8 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
             bands   = bands))
 
   bbox <- sf::st_as_sfc(sf::st_bbox(sf::st_transform(aoi_zone, 4326)))
-  scenes <- stac_search_s2(bbox, start, end, max_cloud = max_cloud)
+  scenes <- .s2_chercher_scenes(source_effective, bbox, start, end,
+                                max_cloud = max_cloud)
   if (!nrow(scenes)) {
     cli::cli_alert_info("No Sentinel-2 scene found between {start} and {end}.")
     emit(list(current = "s2:search_done", total = 0L, bands = bands))
@@ -219,6 +221,10 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
         .get_s2_band_raster(sc, b, crop_geom, cache_dir, band_emit)
         TRUE
       }, error = function(e) {
+        # Panne THEIA : la serie entiere sera refaite sur Sen2Cor.
+        if (identical(source_effective, "theia") && .s2_erreur_panne_theia(e)) {
+          .s2_signaler_panne_theia(e)
+        }
         cli::cli_warn("Scene {.val {sc$scene_id}} band {.val {b}} skipped: {conditionMessage(e)}")
         emit(list(current       = "s2:scene_skipped",
                   completed     = as.integer(i - 1L),
@@ -254,7 +260,8 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
     n_scenes        = as.integer(total_scenes),
     n_bands_fetched = as.integer(n_bands_fetched),
     n_bands_cached  = as.integer(n_bands_cached),
-    n_scenes_skipped = as.integer(n_skipped)
+    n_scenes_skipped = as.integer(n_skipped),
+    source_s2        = source_effective
   )
 }
 

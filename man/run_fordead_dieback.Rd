@@ -23,7 +23,8 @@ run_fordead_dieback(
   connectivity = 8L,
   verbose = TRUE,
   progress_callback = NULL,
-  cancel_path = NULL
+  cancel_path = NULL,
+  source_s2 = NULL
 )
 }
 \arguments{
@@ -54,8 +55,9 @@ The 18-month span is long enough to capture a full vegetation
 cycle plus the early stages of a slow dieback, and short enough
 to keep the diagnostic actionable.}
 
-\item{vegetation_index}{One of `"CRSWIR"`, `"NDVI"`, `"NDWI"`.
-Default `"CRSWIR"`.}
+\item{vegetation_index}{Only `"CRSWIR"` (calibrated ONF/DSF 2024).
+FORDEAD is mono-index; any other value is rejected. Default
+`"CRSWIR"`.}
 
 \item{threshold_anomaly}{Numeric in `[0.05, 0.50]`. Default
 `0.16` (calibrated).}
@@ -90,13 +92,12 @@ temporary directory). Ignored when `output_dir` is supplied
 explicitly. The categorical dieback mask is persisted regardless
 of this flag.}
 
-\item{replace}{Logical. When `TRUE` (default) the run is
-**idempotent**: the zone's prior `fordead_dieback` alerts are
-deleted before the new ones are inserted (same DB transaction),
-and stale on-disk outputs of the zone (older `dieback_mask_*.tif`
-and `model_*/` bundles) are pruned after the new ones are written.
-When `FALSE`, results accumulate (and a re-run can hit the alert
-UNIQUE constraint).}
+\item{replace}{Logical. When `TRUE` (default) the run is **idempotent**:
+the zone's prior `fordead_dieback` alerts are deleted before the new
+ones are inserted (same DB transaction), and stale on-disk outputs of
+the zone (older `dieback_mask_*.tif` and `model_*/` bundles) are
+pruned after the new ones are written. When `FALSE`, results
+accumulate (and a re-run can hit the alert UNIQUE constraint).}
 
 \item{python_env}{Character. Virtualenv name. Defaults to
 `Sys.getenv("NEMETON_FORDEAD_ENV", "nemeton-fordead")`.}
@@ -113,7 +114,7 @@ the pipeline. Receives a single named list with `current` (event
 key) and, when meaningful, `completed`, `total`, `phase_name`.
 Phases emitted, in order: `"ingest"`, `"stac_assembly"`, `"fit"`,
 `"predict"`, `"postprocess"`, `"persist"`. During `"ingest"` the
-`s2:*` events from [ingest_s2_raw_bands_to_cache()] also pass
+`s2:*` events from `ingest_s2_raw_bands_to_cache()` also pass
 through verbatim (search / scene / band_cached / band_fetched /
 complete). Exceptions raised inside the callback are swallowed
 so a buggy UI never aborts the pipeline. Default `NULL` (silent).}
@@ -128,6 +129,15 @@ phase reached. The Python subprocess is **not** force-killed
 (reticulate has no reliable interrupt). A flag already present at
 entry is ignored as a stale leftover — the caller must delete it
 before each call. A `fordead:cancelled` progress event is emitted.}
+
+\item{source_s2}{Sentinel-2 reflectance source (mission 096): `NULL` (the
+method's default: Sen2Cor), `"theia"` (MAJA, THEIA STAC catalogue, cache
+`<cache_dir>_theia`) or `"sen2cor"` (Planetary Computer). A method running
+off its calibration source warns (class `nemeton_s2_source_non_calee`) and
+records `calee_sur` and `validee = FALSE`; THEIA unavailable switches the
+WHOLE series to Sen2Cor (class `nemeton_s2_repli_sen2cor`); a 401/403 or
+missing keys is an error. The effective source is written in the outputs
+as `source_s2`. See [s2_source_resoudre()].}
 }
 \value{
 A list with the following fields:
@@ -160,13 +170,13 @@ A list with the following fields:
 \description{
 Orchestrates fordead 2.x via \pkg{reticulate}. The pipeline derives
 its AOI from `monitoring_zone.zone_wkt`, ensures the Sentinel-2 COG
-cache contains every required band ([FORDEAD_BANDS]), assembles a
+cache contains every required band (`FORDEAD_BANDS`), assembles a
 STAC `ItemCollection` over local hrefs, and runs FORDEAD `fit()` +
 `predict()` on top. Six phases :
 }
 \details{
 \enumerate{
-  \item **ingest** ([ingest_s2_raw_bands_to_cache()]) — partial-
+  \item **ingest** (`ingest_s2_raw_bands_to_cache()`) — partial-
     coverage-aware download of missing raw bands into `cache_dir`.
     Re-uses bands already cached by [ingest_sentinel2_timeseries()]
     (FAST pipeline) so a zone with FAST already run skips the
@@ -189,9 +199,10 @@ STAC `ItemCollection` over local hrefs, and runs FORDEAD `fit()` +
   \item **persist** — write the categorical 0-4 dieback mask and
     the diagnostic bundle (`model_<run_id>/`: harmonic coefficients,
     masked CRSWIR stack, first-anomaly date, `run_meta.json` — spec
-    008 §14.3) to the project cache, then snap centroids to the
-    nearest registered plot of the zone and insert them via
-    [.insert_fordead_alerts()] (idempotent `ON CONFLICT DO NOTHING`).
+    008 §14.3) to the project cache, then insert the cluster
+    centroids as pixel/zone alert entities via
+    [.insert_fordead_alerts()] — idempotent when `replace = TRUE`
+    (the zone's prior `fordead_dieback` alerts are replaced).
 }
 
 Calibration is frozen on the ONF/DSF reference values

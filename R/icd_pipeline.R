@@ -300,6 +300,14 @@
 #'   inserted) and `message`.
 #' @seealso [read_icd_raster()], [read_icd_pixel_series()],
 #'   [comparer_fast_icd()], [icd_poids_defaut()].
+#' @param source_s2 Sentinel-2 reflectance source (mission 096): `NULL` (the
+#'   method's default: Sen2Cor; THEIA results go to `<result_dir>_theia`), `"theia"` (MAJA, THEIA STAC catalogue, cache
+#'   `<cache_dir>_theia`) or `"sen2cor"` (Planetary Computer). A method running
+#'   off its calibration source warns (class `nemeton_s2_source_non_calee`) and
+#'   records `calee_sur` and `validee = FALSE`; THEIA unavailable switches the
+#'   WHOLE series to Sen2Cor (class `nemeton_s2_repli_sen2cor`); a 401/403 or
+#'   missing keys is an error. The effective source is written in the outputs
+#'   as `source_s2`. See [s2_source_resoudre()].
 #' @export
 run_icd_decoloration <- function(con = NULL, zone_id, cache_dir,
                                  result_dir = NULL,
@@ -317,8 +325,50 @@ run_icd_decoloration <- function(con = NULL, zone_id, cache_dir,
                                  progress_callback = NULL,
                                  cancel_path = NULL,
                                  today = Sys.Date(),
-                                 aoi = NULL) {
+                                 aoi = NULL,
+                                 source_s2 = NULL) {
   mois_en_cours <- match.arg(mois_en_cours)
+  source_s2 <- .s2_source_valider(source_s2)
+  # Sans `source_s2` : Sen2Cor (source de calage de l'ICD), aucune sonde.
+  if (is.null(source_s2) || !isTRUE(ingest) || is.null(con)) {
+    src0 <- source_s2 %||% "sen2cor"
+    sel <- list(demandee = src0, effective = src0, repli = FALSE,
+                cause = NA_character_)
+  } else {
+    sel <- .s2_choisir_source("icd", source_s2)
+  }
+  .s2_avertir_non_calee("icd", sel$effective)
+  r <- .s2_avec_repli("icd", sel$effective, function(src) {
+    .run_icd_decoloration_src(
+      con = con, zone_id = zone_id, cache_dir = .s2_cache_dir_source(cache_dir, src),
+      result_dir = if (!is.null(result_dir) && nzchar(result_dir))
+        .s2_cache_dir_source(result_dir, src) else NULL,
+      poids = poids, bdforet = bdforet, sufosat_dates = sufosat_dates,
+      sufosat_proba = sufosat_proba, annees_reference = annees_reference,
+      buffer_interieur = buffer_interieur, start_year = start_year,
+      end_year = end_year, ingest = ingest, max_cloud = max_cloud,
+      mois_en_cours = mois_en_cours, apply_zone_mask = apply_zone_mask,
+      write_alerts = write_alerts, progress_callback = progress_callback,
+      cancel_path = cancel_path, today = today, aoi = aoi,
+      source_effective = src)
+  })
+  res <- r$valeur
+  # Un cache THEIA donne un dossier de resultats THEIA : jamais de melange.
+  if (!is.null(source_s2)) {
+    res$source_s2 <- r$source
+    res$repli_sen2cor <- isTRUE(sel$repli) || isTRUE(r$repli)
+  }
+  res
+}
+
+.run_icd_decoloration_src <- function(con, zone_id, cache_dir, result_dir,
+                                      poids, bdforet, sufosat_dates,
+                                      sufosat_proba, annees_reference,
+                                      buffer_interieur, start_year, end_year,
+                                      ingest, max_cloud, mois_en_cours,
+                                      apply_zone_mask, write_alerts,
+                                      progress_callback, cancel_path, today,
+                                      aoi, source_effective = "sen2cor") {
   emit <- function(payload) {
     if (!is.null(progress_callback)) {
       tryCatch(progress_callback(payload), error = function(e) invisible(NULL))
@@ -349,7 +399,9 @@ run_icd_decoloration <- function(con = NULL, zone_id, cache_dir,
     zone <- aoi %||% .get_zone_aoi(con, zid)
     zone <- sf::st_transform(zone, 2154)
     grille <- .icd_grille(zone)
-    zdir <- .icd_dossier_zone(.icd_resoudre_result_dir(result_dir, cache_dir), zid)
+    zdir <- .icd_dossier_zone(
+      .s2_cache_dir_source(.icd_resoudre_result_dir(result_dir, cache_dir),
+                           source_effective), zid)
     dir.create(zdir, recursive = TRUE, showWarnings = FALSE)
     res$zone_dir <- zdir
     emit(list(current = "icd:start", zone_id = zid,
@@ -376,11 +428,16 @@ run_icd_decoloration <- function(con = NULL, zone_id, cache_dir,
         fen <- .icd_fenetres_ingestion(annees, today, mois_en_cours)
         for (i in seq_len(nrow(fen))) {
           if (cancelled()) .icd_signal_cancel("ingest")
-          ing <- ingest_s2_raw_bands_to_cache(
+          args <- list(
             con, zid, bands = .ICD_BANDES,
             start = fen$start[i], end = fen$end[i],
             cache_dir = cache_dir, max_cloud = max_cloud,
             progress_callback = progress_callback, cancel_path = cancel_path)
+          # Sen2Cor : appel strictement celui d'avant.
+          if (!identical(source_effective, "sen2cor")) {
+            args$source_effective <- source_effective
+          }
+          ing <- do.call(ingest_s2_raw_bands_to_cache, args)
           if (isTRUE(ing$cancelled)) .icd_signal_cancel("ingest")
         }
       }
@@ -535,11 +592,14 @@ run_icd_decoloration <- function(con = NULL, zone_id, cache_dir,
       mois_utilisables_a_date = mois_date,
       poids = pw[, c("essence", .ICD_INDICES)],
       somme_saisie = as.list(attr(pw, "somme_saisie")),
-      renormalise = attr(pw, "renormalise")))
+      renormalise = attr(pw, "renormalise"),
+      source_s2 = .s2_meta_source("icd", source_effective)))
     res$status <- "success"
     emit(list(current = "icd:complete", zone_id = zid,
               annees = annees, n_pixels_icd = res$n_pixels_icd,
               n_pixels_sans_icd = res$n_pixels_sans_icd))
+  }, nemeton_s2_theia_panne = function(e) {
+    stop(e)   # remonte : la serie entiere sera refaite sur Sen2Cor
   }, nemeton_cancelled = function(cnd) {
     res$status <<- "cancelled"
     res$phase  <<- cnd$phase

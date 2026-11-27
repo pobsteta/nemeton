@@ -330,7 +330,8 @@ reconfort_caracteristiques_v3 <- function(obs, dates_obs, dates_grille,
   p3 <- if (K >= 3L) proba[, 3L] else 0
   score <- pmin(pmax(floor((1001 - proba[, 1L] + proba[, 2L] + 2 * p3) / 30), 1), 100)
   score[!nz] <- 0
-  tags <- c(SOURCE_REFLECTANCES = "sen2cor", VALIDEE = "FALSE",
+  tags <- c(SOURCE_S2 = "sen2cor", CALEE_SUR = "theia",
+            SOURCE_REFLECTANCES = "sen2cor", VALIDEE = "FALSE",
             MENTION = .RECONFORT_SEN2COR_MENTION)
   ecrire <- function(vals, nom, type, nlyr = 1L) {
     r <- terra::rast(grille, nlyrs = nlyr)

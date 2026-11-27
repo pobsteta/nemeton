@@ -780,6 +780,14 @@
 #' @section Lifecycle:
 #' Experimental: may change in any release, without deprecation (spec 057).
 #'
+#' @param source_s2 Sentinel-2 reflectance source (mission 096): `NULL` (the
+#'   method's default: THEIA/MAJA), `"theia"` (MAJA, THEIA STAC catalogue, cache
+#'   `<cache_dir>_theia`) or `"sen2cor"` (Planetary Computer). A method running
+#'   off its calibration source warns (class `nemeton_s2_source_non_calee`) and
+#'   records `calee_sur` and `validee = FALSE`; THEIA unavailable switches the
+#'   WHOLE series to Sen2Cor (class `nemeton_s2_repli_sen2cor`); a 401/403 or
+#'   missing keys is an error. The effective source is written in the outputs
+#'   as `source_s2`. See [s2_source_resoudre()].
 #' @export
 run_reconfort_dieback <- function(con, zone_id, cache_dir,
                                   s2_year           = as.integer(format(Sys.Date(), "%Y")),
@@ -804,10 +812,29 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
                                   cancel_path       = NULL,
                                   acquisition       = c("fenetre", "archive", "sen2cor"),
                                   correction_sen2cor = c("aucune", "biais"),
-                                  s2_cache_dir      = NULL) {
+                                  s2_cache_dir      = NULL,
+                                  source_s2         = NULL) {
   t0 <- Sys.time()
   acq_explicite <- !missing(acquisition)
   acquisition <- match.arg(acquisition)
+  # Source Sentinel-2 (mission 096). NULL = defaut de RECONFORT (THEIA/MAJA, le
+  # comportement d'avant) ; "sen2cor" = voie Sen2Cor ; "theia" = voies THEIA.
+  source_s2 <- .s2_source_valider(source_s2)
+  if (identical(source_s2, "sen2cor")) {
+    if (acq_explicite && !identical(acquisition, "sen2cor")) {
+      cli::cli_abort(
+        "{.code source_s2 = \"sen2cor\"} contradicts {.code acquisition = \"{acquisition}\"}.",
+        class = "nemeton_s2_source_incoherente")
+    }
+    acquisition <- "sen2cor"
+    acq_explicite <- TRUE
+  } else if (identical(source_s2, "theia") && acq_explicite &&
+             identical(acquisition, "sen2cor")) {
+    cli::cli_abort(
+      "{.code source_s2 = \"theia\"} contradicts {.code acquisition = \"sen2cor\"}.",
+      class = "nemeton_s2_source_incoherente")
+  }
+  .s2_avertir_non_calee("reconfort", if (identical(acquisition, "sen2cor")) "sen2cor" else "theia")
   correction_sen2cor <- match.arg(correction_sen2cor)
   # Voie Sen2Cor (mission 095) : choisie, ou decidee plus bas par
   # `.reconfort_voie_suivante()` quand les routes THEIA/GEODES sont hors d'usage.
@@ -1337,6 +1364,13 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     )
     meta$acquisition <- voie_retenue
     if (length(causes_voies)) meta$causes_repli <- causes_voies
+    # Source effective (mission 096) : sen2cor si la voie finale l'est (choisie
+    # ou par repli), theia sinon (fenetre ou archive : meme MAJA).
+    meta <- c(meta, .s2_meta_source(
+      "reconfort", if (voie_sen2cor) "sen2cor" else "theia",
+      demandee = source_s2 %||% "theia",
+      repli = voie_sen2cor && !identical(acquisition, "sen2cor"),
+      cause = if (length(causes_voies)) paste(unlist(causes_voies), collapse = "; ") else NA_character_))
     if (voie_sen2cor) {
       meta$source_reflectances <- "sen2cor"
       meta$validee <- FALSE

@@ -165,6 +165,14 @@
 #'   terra::plot(r)
 #' }
 #'
+#' @param source_s2 Sentinel-2 reflectance source (mission 096): `NULL` (the
+#'   method's default: Sen2Cor; read from the cache folder when `NULL`), `"theia"` (MAJA, THEIA STAC catalogue, cache
+#'   `<cache_dir>_theia`) or `"sen2cor"` (Planetary Computer). A method running
+#'   off its calibration source warns (class `nemeton_s2_source_non_calee`) and
+#'   records `calee_sur` and `validee = FALSE`; THEIA unavailable switches the
+#'   WHOLE series to Sen2Cor (class `nemeton_s2_repli_sen2cor`); a 401/403 or
+#'   missing keys is an error. The effective source is written in the outputs
+#'   as `source_s2`. See [s2_source_resoudre()].
 #' @export
 read_fast_alert_raster <- function(con, zone_id,
                                    index          = c("NDVI", "NBR", "NDMI", "NDRE"),
@@ -182,8 +190,19 @@ read_fast_alert_raster <- function(con, zone_id,
                                    mask_polygon     = NULL,
                                    cache_result     = TRUE,
                                    result_cache_dir = NULL,
-                                   parallel         = FALSE) {
+                                   parallel         = FALSE,
+                                   source_s2        = NULL) {
   mode  <- match.arg(mode)
+  # Source Sentinel-2 (mission 096) : sans `source_s2`, elle se lit sur le
+  # dossier de cache (`<cache>_theia` = THEIA, sinon Sen2Cor) ; avec, le dossier
+  # de la source demandee est lu. Aucun reseau ici.
+  source_s2 <- .s2_source_valider(source_s2)
+  if (is.null(source_s2)) {
+    source_s2 <- if (missing(cache_dir)) "sen2cor" else .s2_source_du_cache(cache_dir)
+  } else if (!missing(cache_dir)) {
+    cache_dir <- .s2_cache_dir_source(cache_dir, source_s2)
+  }
+  .s2_avertir_non_calee("fast", source_s2)
   # Mode-dependent default index: NDVI for count/rolling (back-compat),
   # NDMI for trend (moisture decouples first under chronic stress). An
   # explicit `index` always wins.
@@ -334,6 +353,7 @@ read_fast_alert_raster <- function(con, zone_id,
       attr(cached, "mode")  <- mode
       attr(cached, "index") <- index
       attr(cached, "cached") <- TRUE
+      attr(cached, "source_s2") <- source_s2
       return(cached)
     }
   }
@@ -412,6 +432,7 @@ read_fast_alert_raster <- function(con, zone_id,
   names(out)         <- .fast_layer_name(mode)
   attr(out, "mode")  <- mode
   attr(out, "index") <- index
+  attr(out, "source_s2") <- source_s2
 
   # spec 016 (v0.49.0) — apply the UGF zone mask (resolved above). Pixels
   # outside the UGFs become NA, so downstream counts / displays reflect
@@ -427,7 +448,7 @@ read_fast_alert_raster <- function(con, zone_id,
     if (!dir.exists(zone_dir)) {
       dir.create(zone_dir, recursive = TRUE, showWarnings = FALSE)
     }
-    .fast_raster_cache_write(out, cpath)
+    .fast_raster_cache_write(out, cpath, source_s2 = source_s2)
   }
   out
 }
@@ -438,8 +459,14 @@ read_fast_alert_raster <- function(con, zone_id,
 # nom adressé par contenu, qui serait ensuite servi comme cache valide. Le
 # point initial soustrait le temporaire au motif du GC (`^fast_[A-Z]`).
 # `writer` n'existe que pour les tests (simulation d'écriture partielle).
-.fast_raster_cache_write <- function(out, cpath, writer = terra::writeRaster) {
+.fast_raster_cache_write <- function(out, cpath, writer = terra::writeRaster,
+                                      source_s2 = NULL) {
   zone_dir <- dirname(cpath)
+  # La source du COG voyage avec lui (tag GeoTIFF `source_s2`), sans toucher a
+  # la cle de cache : la valeur ecrite est celle qu'on lit en cache-hit.
+  if (!is.null(source_s2)) {
+    try(terra::metags(out) <- c(source_s2 = source_s2), silent = TRUE)
+  }
   tmp <- tempfile(".fast_raster_tmp_", tmpdir = zone_dir, fileext = ".tif")
   tryCatch({
     writer(out, tmp, filetype = "GTiff", overwrite = TRUE,

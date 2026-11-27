@@ -1,3 +1,24 @@
+# nemeton 2026.11.46.9002 (development)
+
+- **feat : une source Sentinel-2 choisie pour FAST, FORDEAD, RECONFORT et l'ICD** (mission 096). Nouveau parametre `source_s2`
+  (`NULL`, `"theia"` ou `"sen2cor"`) sur `ingest_sentinel2_timeseries()`, `read_fast_alert_raster()`, `run_fordead_dieback()`,
+  `run_icd_decoloration()` et `run_reconfort_dieback()`, et `s2_source_resoudre()` (exportee) qui dit la source et son calage.
+  **Le defaut est propre a chaque methode** (decision de Pascal du 2026-11-27, apres les etudes 092 et 093) : RECONFORT =
+  `"theia"` (MAJA), FAST, FORDEAD et ICD = `"sen2cor"`. Sans `source_s2`, FAST, FORDEAD et l'ICD rendent les memes resultats
+  qu'avant (meme cache, aucune sonde reseau). `"theia"` = scenes MAJA du catalogue STAC THEIA, cache frere
+  `<cache_dir>_theia` (le cache Sen2Cor ne bouge pas), masque CLM range comme une SCL (9 nuage, 4 clair, 0 absent) pour l'ICD ;
+  `"sen2cor"` = Planetary Computer (CDSE avant lui), **sans** le repli MUSCATE de `stac_search_s2()` (il aurait mele deux
+  sources dans un cache). L'ICD ecrit ses resultats THEIA dans `<result_dir>_theia`.
+  **Attention, calage** : FAST, FORDEAD et l'ICD sont calibres sur Sen2Cor ; lances sur `"theia"`, et RECONFORT sur `"sen2cor"`,
+  ils avertissent (classe `nemeton_s2_source_non_calee`) et inscrivent `calee_sur`, `validee = FALSE` et `mention_source`
+  (seuils a revoir, etudes 092 et 093).
+  Jamais deux sources dans une meme serie : THEIA indisponible (sonde `.reconfort_stac_sonde()`) ou en panne en cours de serie
+  -> la serie ENTIERE est refaite sur Sen2Cor, avertissement `nemeton_s2_repli_sen2cor`. 401/403 -> erreur
+  `nemeton_s2_theia_refuse` ; cles absentes -> `nemeton_s2_theia_sans_cles` ; `source_s2` contraire a `acquisition` ->
+  `nemeton_s2_source_incoherente`. Le repli de RECONFORT (THEIA -> GEODES -> Sen2Cor, 089) ne change pas. La source effective
+  est inscrite : `run_meta.json` (FORDEAD, RECONFORT), `meta.json` (ICD), tag GeoTIFF `source_s2` (cache FAST, RECONFORT
+  Sen2Cor), colonne `source_s2` du resume d'ingestion FAST (sur demande seulement), champ `source_s2` des resultats.
+
 # nemeton 2026.11.46.9001 (development)
 
 - **feat : `run_reconfort_dieback()` bascule sur les archives GEODES quand le catalogue STAC THEIA est indisponible** (mission 089).

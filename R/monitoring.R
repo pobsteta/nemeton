@@ -294,6 +294,14 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #' )
 #' }
 #'
+#' @param source_s2 Sentinel-2 reflectance source (mission 096): `NULL` (the
+#'   method's default: Sen2Cor), `"theia"` (MAJA, THEIA STAC catalogue, cache
+#'   `<cache_dir>_theia`) or `"sen2cor"` (Planetary Computer). A method running
+#'   off its calibration source warns (class `nemeton_s2_source_non_calee`) and
+#'   records `calee_sur` and `validee = FALSE`; THEIA unavailable switches the
+#'   WHOLE series to Sen2Cor (class `nemeton_s2_repli_sen2cor`); a 401/403 or
+#'   missing keys is an error. The effective source is written in the outputs
+#'   as `source_s2`. See [s2_source_resoudre()].
 #' @export
 ingest_sentinel2_timeseries <- function(con, zone_id,
                                         start, end,
@@ -304,7 +312,45 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
                                         progress_callback = NULL,
                                         cancel_path = NULL,
                                         prewarm_alerts = FALSE,
-                                        prewarm_mask_cache_dir = NULL) {
+                                        prewarm_mask_cache_dir = NULL,
+                                        source_s2 = NULL) {
+  source_s2 <- .s2_source_valider(source_s2)
+  # Sans `source_s2` : source par defaut de FAST (Sen2Cor), aucune sonde,
+  # aucun avertissement, comportement inchange.
+  if (is.null(source_s2)) {
+    sel <- list(demandee = "sen2cor", effective = "sen2cor", repli = FALSE,
+                cause = NA_character_)
+  } else {
+    sel <- .s2_choisir_source("fast", source_s2)
+  }
+  .s2_avertir_non_calee("fast", sel$effective)
+  r <- .s2_avec_repli("fast", sel$effective, function(src) {
+    .ingest_sentinel2_timeseries_src(
+      con, zone_id, start, end, bands, max_cloud, skip_cached,
+      .s2_cache_dir_source(cache_dir, src), progress_callback, cancel_path,
+      prewarm_alerts, prewarm_mask_cache_dir, source_effective = src)
+  })
+  out <- r$valeur
+  # Colonnes ajoutees seulement sur demande : sans `source_s2`, le resume est
+  # strictement celui d'avant.
+  if (!is.null(source_s2)) {
+    out$source_s2 <- r$source
+    out$repli_sen2cor <- isTRUE(sel$repli) || isTRUE(r$repli)
+  }
+  out
+}
+
+.ingest_sentinel2_timeseries_src <- function(con, zone_id,
+                                        start, end,
+                                        bands,
+                                        max_cloud,
+                                        skip_cached,
+                                        cache_dir,
+                                        progress_callback,
+                                        cancel_path,
+                                        prewarm_alerts,
+                                        prewarm_mask_cache_dir,
+                                        source_effective = "sen2cor") {
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
@@ -397,7 +443,8 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
             bands   = bands))
 
   bbox <- sf::st_as_sfc(sf::st_bbox(sf::st_transform(aoi_zone, 4326)))
-  scenes <- stac_search_s2(bbox, start, end, max_cloud = max_cloud)
+  scenes <- .s2_chercher_scenes(source_effective, bbox, start, end,
+                                max_cloud = max_cloud)
   if (!nrow(scenes)) {
     cli::cli_alert_info("No Sentinel-2 scene found for zone_id {zone_id} between {start} and {end} (max_cloud = {max_cloud}%).")
     emit(list(current = "s2:search_done",
@@ -474,6 +521,10 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
                          cache_dir = cache_dir, emit = emit,
                          optional_bands = c("B11", "B05", "B8A")),
       error = function(e) {
+        # Panne THEIA : la serie entiere sera refaite sur Sen2Cor (jamais deux sources).
+        if (identical(source_effective, "theia") && .s2_erreur_panne_theia(e)) {
+          .s2_signaler_panne_theia(e)
+        }
         cli::cli_warn("Scene {.val {sc$scene_id}} skipped: {conditionMessage(e)}")
         emit(list(current       = "s2:scene_skipped",
                   completed     = as.integer(i - 1L),
@@ -1535,6 +1586,10 @@ diagnose_s2_cache <- function(cache_dir, verbose = TRUE) {
       r_cropped + 0
     }
   )
+  # Scene MAJA (source "theia") : le masque CLM est range comme une SCL.
+  if (identical(band, "SCL") && identical(as.character(scene$source[1L]), "muscate")) {
+    r <- .s2_clm_vers_scl(r)
+  }
   .s2_cache_log("FETCH+MATERIALIZE ok dim=",
                 paste(dim(r)[1:2], collapse = "x"),
                 " ext=",

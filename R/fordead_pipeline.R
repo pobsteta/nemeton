@@ -371,6 +371,14 @@ NULL
 #' res$rasters
 #' }
 #'
+#' @param source_s2 Sentinel-2 reflectance source (mission 096): `NULL` (the
+#'   method's default: Sen2Cor), `"theia"` (MAJA, THEIA STAC catalogue, cache
+#'   `<cache_dir>_theia`) or `"sen2cor"` (Planetary Computer). A method running
+#'   off its calibration source warns (class `nemeton_s2_source_non_calee`) and
+#'   records `calee_sur` and `validee = FALSE`; THEIA unavailable switches the
+#'   WHOLE series to Sen2Cor (class `nemeton_s2_repli_sen2cor`); a 401/403 or
+#'   missing keys is an error. The effective source is written in the outputs
+#'   as `source_s2`. See [s2_source_resoudre()].
 #' @export
 run_fordead_dieback <- function(con,
                                 zone_id,
@@ -392,8 +400,10 @@ run_fordead_dieback <- function(con,
                                 connectivity = 8L,
                                 verbose = TRUE,
                                 progress_callback = NULL,
-                                cancel_path = NULL) {
+                                cancel_path = NULL,
+                                source_s2 = NULL) {
   t0 <- Sys.time()
+  source_s2 <- .s2_source_valider(source_s2)
 
   dates_ok <- .validate_fordead_args(dates_training, dates_monitoring,
                                      vegetation_index, threshold_anomaly,
@@ -528,16 +538,33 @@ run_fordead_dieback <- function(con,
     .train_start  <- as.Date(dates_training[1L])
     .mon_end      <- if (is.na(dates_monitoring[2L]))
                        Sys.Date() else as.Date(dates_monitoring[2L])
-    ingest_res <- ingest_s2_raw_bands_to_cache(
-      con               = con,
-      zone_id           = zone_id,
-      bands             = FORDEAD_BANDS,
-      start             = .train_start,
-      end               = .mon_end,
-      cache_dir         = cache_dir,
-      max_cloud         = max_cloud,
-      progress_callback = progress_callback
-    )
+    # Source Sentinel-2 (mission 096). Sans `source_s2` : Sen2Cor, cache et
+    # comportement inchanges, aucune sonde.
+    sel_s2 <- if (is.null(source_s2)) {
+      list(demandee = "sen2cor", effective = "sen2cor", repli = FALSE,
+           cause = NA_character_)
+    } else .s2_choisir_source("fordead", source_s2)
+    .s2_avertir_non_calee("fordead", sel_s2$effective)
+    cache_dir_base <- cache_dir
+    r_ing <- .s2_avec_repli("fordead", sel_s2$effective, function(src) {
+      args <- list(
+        con               = con,
+        zone_id           = zone_id,
+        bands             = FORDEAD_BANDS,
+        start             = .train_start,
+        end               = .mon_end,
+        cache_dir         = .s2_cache_dir_source(cache_dir_base, src),
+        max_cloud         = max_cloud,
+        progress_callback = progress_callback
+      )
+      # Sen2Cor : appel strictement celui d'avant.
+      if (!identical(src, "sen2cor")) args$source_effective <- src
+      do.call(ingest_s2_raw_bands_to_cache, args)
+    })
+    ingest_res <- r_ing$valeur
+    src_effective <- r_ing$source
+    repli_s2 <- isTRUE(sel_s2$repli) || isTRUE(r_ing$repli)
+    cache_dir <- .s2_cache_dir_source(cache_dir_base, src_effective)
     scenes_df <- ingest_res$scenes_df
     if (!nrow(scenes_df)) {
       window_str <- paste(as.character(.train_start),
@@ -759,7 +786,7 @@ run_fordead_dieback <- function(con,
         output_dir    = output_dir,
         model_dir     = file.path(zone_dir, paste0("model_", run_ts)),
         first_anomaly = fdd_raster,
-        run_meta      = list(
+        run_meta      = c(list(
           run_id            = run_ts,
           zone_id           = zone_id,
           vegetation_index  = vegetation_index,
@@ -769,7 +796,9 @@ run_fordead_dieback <- function(con,
           fordead_version   = fordead_version,
           crs_epsg          = crs_epsg,
           n_scenes          = nrow(scenes_df)
-        ),
+        ), .s2_meta_source("fordead", src_effective,
+                           demandee = sel_s2$demandee, repli = repli_s2,
+                           cause = r_ing$cause %||% sel_s2$cause)),
         verbose       = verbose
       )
     }, error = function(e) {
@@ -858,7 +887,8 @@ run_fordead_dieback <- function(con,
       n_alerts_inserted = n_inserted,
       duration_sec      = duration_sec,
       python_env        = env_name,
-      fordead_version   = fordead_version
+      fordead_version   = fordead_version,
+      source_s2         = src_effective
     )
   }, nemeton_cancelled = function(cnd) {
     # Cooperative cancellation requested at a phase boundary. The

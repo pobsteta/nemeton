@@ -23,7 +23,8 @@ read_fast_alert_raster(
   mask_polygon = NULL,
   cache_result = TRUE,
   result_cache_dir = NULL,
-  parallel = FALSE
+  parallel = FALSE,
+  source_s2 = NULL
 )
 }
 \arguments{
@@ -72,34 +73,46 @@ Default `2`.}
 
 \item{alpha}{Numeric scalar in `(0, 1)`. Trend mode only: the
 Mann-Kendall significance level. A pixel is flagged only when its
-Mann-Kendall \strong{two-sided} p-value is below `alpha` \strong{and} its
+Mann-Kendall **two-sided** p-value is below `alpha` **and** its
 Theil-Sen slope is negative. Because that negative-slope gate keeps
-a single tail, the \strong{effective false-positive rate for a declared
-decline is `alpha / 2`} — the default `0.05` is a 2.5\% one-sided
+a single tail, the **effective false-positive rate for a declared
+decline is `alpha / 2`** — the default `0.05` is a 2.5% one-sided
 risk. Pixels above the threshold are treated as noise (output `0`).
 Default `0.05`.}
 
-\item{min_slope}{Numeric `>= 0`. Trend mode only: the \strong{minimum
-decline magnitude} (index units per year) for a pixel to be flagged. A
-pixel is an alert only when its Theil-Sen slope is negative, Mann-Kendall
-is significant \strong{and} `abs(slope) >= min_slope`. This is the
-calibration lever against Mann-Kendall's sensitivity on long series, where
-a tiny but perfectly monotonic drift (e.g. 0.0001 NDRE/yr) is statistically
+\item{min_slope}{Numeric `>= 0`. Trend mode only: the **minimum decline
+magnitude** (index units per year) for a pixel to be flagged. A pixel
+is an alert only when its Theil-Sen slope is negative, Mann-Kendall is
+significant **and** `abs(slope) >= min_slope`. This is the calibration
+lever against Mann-Kendall's sensitivity on long series, where a tiny
+but perfectly monotonic drift (e.g. 0.0001 NDRE/yr) is statistically
 "significant" yet ecologically negligible. Default `0.005` (≈ a 0.03–0.05
 total NDRE drop over a typical window); set `0` to restore the pure
-significance test. \strong{Provisional} — to be calibrated against ground
+significance test. **Provisional** — to be calibrated against ground
 truth (ONF/DSF). Folded into the D6 cache hash, so a change invalidates
 trend COGs.}
 
 \item{cache_dir}{Character scalar. Path to the COG cache root
 (typically `<project>/cache/layers/sentinel2`). Must exist.}
 
+\item{apply_zone_mask}{Logical. When `TRUE` (default), pixels outside the
+monitoring zone polygon (the managed UGF perimeter) are set to `NA`.}
+
+\item{mask_polygon}{Optional `sf`/`sfc` polygon used as the zone mask
+instead of the polygon stored for the zone in the database.}
+
 \item{cache_result}{Logical. When `TRUE` (default, spec 017 D6) the
 continuous result raster is persisted as a content-addressed COG
 and a subsequent call with the same inputs is served instantly from
 disk (zero recompute). A new scene in `cache_dir`, any parameter
 change, or a zone re-registration changes the content hash and
-triggers a fresh compute. `FALSE` disables the persistence entirely.}
+triggers a fresh compute. `FALSE` disables the persistence entirely.
+The cache is keyed on the **effective Sentinel-2 coverage** (min/max
+acquisition date of the selected scenes), not on `date_from`/`date_to`
+themselves (v0.105.0): a rolling window anchored on "today" therefore
+reuses the cached COG day-to-day until a genuinely new scene lands,
+instead of recomputing on every date shift. In `rolling` mode the
+trailing window is likewise anchored on the last real acquisition.}
 
 \item{result_cache_dir}{Character scalar or `NULL`. Root of the result
 COG cache. When `NULL` (default) it is `file.path(dirname(cache_dir),
@@ -113,11 +126,15 @@ cache hit is preserved). At most
 when `TRUE` and \pkg{furrr} is installed, the per-scene raster
 compute fans across cores (set a `future::plan()` first). Default
 `FALSE`; results are identical to sequential.}
-\item{apply_zone_mask}{Logical. When \code{TRUE} (default), pixels outside the
-monitoring zone polygon (the managed UGF perimeter) are set to \code{NA}.}
 
-\item{mask_polygon}{Optional \code{sf}/\code{sfc} polygon used as the zone mask
-instead of the polygon stored for the zone in the database.}
+\item{source_s2}{Sentinel-2 reflectance source (mission 096): `NULL` (the
+method's default: Sen2Cor; read from the cache folder when `NULL`), `"theia"` (MAJA, THEIA STAC catalogue, cache
+`<cache_dir>_theia`) or `"sen2cor"` (Planetary Computer). A method running
+off its calibration source warns (class `nemeton_s2_source_non_calee`) and
+records `calee_sur` and `validee = FALSE`; THEIA unavailable switches the
+WHOLE series to Sen2Cor (class `nemeton_s2_repli_sen2cor`); a 401/403 or
+missing keys is an error. The effective source is written in the outputs
+as `source_s2`. See [s2_source_resoudre()].}
 }
 \value{
 A `terra::SpatRaster` (single layer, EPSG:2154) when at least
@@ -162,14 +179,14 @@ via `mode`:
   rolling. Built for chronic dieback (slow multi-year decline, e.g.
   broadleaf oak / beech) that the short-horizon modes cannot see.
 
-\strong{Tile-overlap caveat (trend).} When an AOI straddles MGRS tiles, the
+**Tile-overlap caveat (trend).** When an AOI straddles MGRS tiles, the
 slope is fitted independently per tile (each from that tile's own scene
 set) and the per-tile rasters are combined with `mosaic(fun = "max")`,
 as for `count` / `rolling`. In the ~10 km overlap strip the two tiles
 can yield slightly different slopes (different acquisition dates), and
-`max` keeps the \strong{larger decline magnitude} — a mild high bias on those
+`max` keeps the **larger decline magnitude** — a mild high bias on those
 seams. It is bounded (a single tile's estimate, never a sum) and
-conservative for \emph{detection}; treat the magnitude on tile boundaries as
+conservative for *detection*; treat the magnitude on tile boundaries as
 an upper bound. A single-tile AOI is unaffected.
 
 The raster is computed in the native Sentinel-2 CRS (typically
@@ -179,7 +196,7 @@ consistent with the rest of the project. Use [terra::project()]
 downstream if a different output CRS is needed.
 
 Source data: this function reads from the on-disk COG cache populated
-by [ingest_sentinel2_timeseries()] (or [ingest_s2_raw_bands_to_cache()]
+by [ingest_sentinel2_timeseries()] (or `ingest_s2_raw_bands_to_cache()`
 on the FORDEAD path). The list of scenes to process is enumerated
 directly from the cache directory and filtered by
 `(date_from, date_to)` (spec 017), so the diagnostic is fully
