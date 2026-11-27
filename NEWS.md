@@ -22,8 +22,10 @@ Le paquet declare desormais du code compile optionnel (Cargo, rustc) : sans eux,
   IGN (0,5 m) priment**, `chm.tif` (`dtm.tif` pour le MNT) n'est qu'un candidat suivant, sans dalles, libelle
   « LiDAR HD CHM (nuage, lasR) » (« LiDAR HD MNT (nuage, lasR) ») ; `*_mosaic.tif` est ecarte des dossiers LiDAR.
   (2) L'equivalence des SRS devient semantique : en plus de `terra::same.crs()` et de la chaine PROJ, deux SRS sont
-  equivalents si la transformation des coins de l'emprise de la dalle de l'un vers l'autre est l'identite a 1 mm
-  pres (les dalles IGN declarent un ellipsoide WGS84 sans datum nomme, le WKT complet GRS80). Les SRS reellement
+  equivalents si leurs parametres concordent (meme methode et memes parametres de projection a 1e-9, ellipsoides de meme
+  demi-grand axe a 1 mm et d'aplatissement inverse a 1e-6 relatif, GRS80 et WGS84 confondus, pas de `+towgs84` non nul d'un
+  seul cote), critere independant de la version de PROJ ; une transformation de points qui est l'identite a 1 mm pres suffit aussi
+  (les dalles IGN declarent un ellipsoide WGS84 sans datum nomme, le WKT complet GRS80). Les SRS reellement
   differents (2154/27572, 2154/3035, UTM 31/32, Lambert-93 a `x_0 = 700001`) restent refuses.
 
 - **fix : mosaique de dalles qui jetait les dalles au SRS ecrit autrement** (mission 082).
