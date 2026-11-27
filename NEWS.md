@@ -5,8 +5,11 @@
   Planetary Computer sont lues par le cache de FAST/FORDEAD (`.get_s2_band_raster()`, offset BOA, masque SCL 4 et 5),
   mises sur une grille de 10 m (plus proche voisin), interpolees sur les 67 dates du modele (pas de 10 jours depuis le
   1er janvier de N-1, `reconfort_caracteristiques_v3()` : bandes interpolees puis CRswir_1..67 et CRre_1..67, bords
-  constants), puis classees par le modele v3 lu en R (`reconfort_sharkrf_lire()` / `reconfort_sharkrf_predire()`, noyau
-  Rust `rust_sharkrf_votes` et repli R aux memes votes ; environ dix fois plus rapide en Rust). Sorties aux noms et formats
+  constants), puis classees par le modele v3 lu en R (`reconfort_sharkrf_lire()` / `reconfort_sharkrf_predire()`, R vectorise ; le lecteur refuse par une erreur de classe
+  `nemeton_sharkrf_format` tout fichier tronque, mal forme, cyclique ou a classe de feuille hors 0..K-1). Une routine Rust
+  (arbre puis pixels) a ete essayee puis **retiree** : sur le vrai v3, 134 variables, elle n'etait que 2,6 fois plus rapide
+  que le R (5 000 lignes : 1,3 s contre 3,3 s ; 20 000 lignes : 6,5 s contre 13,8 s ; 3 mesures Rust, 2 mesures R), sous le
+  seuil de 3 fois retenu. Compter ~15 min de classification pour 520 000 pixels. Sorties aux noms et formats
   de la voie IOTA2 ; `run_meta.json` porte `source_reflectances = "sen2cor"` et `validee = false`, les GeoTIFF les tags
   `SOURCE_REFLECTANCES` et `VALIDEE`. Voie choisie explicitement, ou **en dernier recours** (avertissement de classe
   `nemeton_reconfort_repli_sen2cor`, qui dit les causes THEIA et GEODES) quand `acquisition` est laisse par defaut et que

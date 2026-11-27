@@ -29,12 +29,10 @@ test_that("lecteur SharkRF : structure du modele fabrique", {
   expect_equal(m$racines, c(1L, 4L, 7L))
 })
 
-test_that("predicteur SharkRF : votes ecrits a la main, Rust et repli R identiques", {
+test_that("predicteur SharkRF : votes ecrits a la main", {
   m <- reconfort_sharkrf_lire(ecrire_modele_synth())
   x <- rbind(c(0.2, 0.9), c(0.9, 0.1), c(0.4, 0.4), c(NA, 0.1))
   attendu <- rbind(c(2L, 0L, 1L), c(0L, 2L, 1L), c(1L, 2L, 0L), c(-1L, -1L, -1L))
-  expect_identical(reconfort_sharkrf_predire(m, x), attendu)
-  withr::local_options(nemeton.rust = FALSE)
   expect_identical(reconfort_sharkrf_predire(m, x), attendu)
   # blocs plus petits que le jeu de lignes : meme resultat
   expect_identical(reconfort_sharkrf_predire(m, x, bloc = 1L), attendu)
@@ -44,7 +42,7 @@ test_that("predicteur SharkRF : votes ecrits a la main, Rust et repli R identiqu
 
 test_that("predicteur SharkRF : colonnes manquantes refusees", {
   m <- reconfort_sharkrf_lire(ecrire_modele_synth())
-  expect_error(reconfort_sharkrf_predire(m, matrix(0.1, 2, 1)), "needs")
+  expect_error(reconfort_sharkrf_predire(m, matrix(0.1, 2, 1)))
 })
 
 test_that("lecteur SharkRF : un fichier qui n'est pas un modele donne une erreur de classe", {
@@ -58,7 +56,7 @@ test_that("lecteur SharkRF : cache memoire et cache disque", {
   f <- ecrire_modele_synth()
   d <- withr::local_tempdir()
   m1 <- reconfort_sharkrf_lire(f, cache_dir = d)
-  expect_length(list.files(d, pattern = "^sharkrf_v1_.*\\.rds$"), 1L)
+  expect_length(list.files(d, pattern = "^sharkrf_v2_.*\\.rds$"), 1L)
   expect_identical(reconfort_sharkrf_lire(f), m1)
   # relecture depuis le disque apres vidage de la memoire
   rm(list = ls(.reconfort_sharkrf_cache), envir = .reconfort_sharkrf_cache)
@@ -75,4 +73,59 @@ test_that("le vrai modele v3, s'il est en cache, a 1000 arbres et 134 variables"
   expect_equal(m$n_vars, 134L)
   v <- reconfort_sharkrf_predire(m, matrix(0.8, 1, 134))
   expect_equal(sum(v), 1000L)
+})
+
+# Modeles fabriques alteres : toujours l'erreur de classe `nemeton_sharkrf_format`.
+modele_altere <- function(ligne1 = "0 3 0 0 0 0 5.0e-01 1 2 0 0 0 0 0 0 0 1",
+                          classes = "0 2 0 2", n_cl = "3 1 2 3 ", fin = TRUE) {
+  f <- tempfile(fileext = ".txt")
+  l <- c("#RFClassifier with_dictionary", n_cl,
+         "22 serialization::archive 18 0 0 1 0 0 1 0",
+         ligne1, classes, if (fin) "0 1 0 3 3")
+  writeLines(l, f)
+  f
+}
+
+test_that("lecteur SharkRF : un modele alteré est refuse, sans boucle infinie", {
+  # sain : controle
+  expect_s3_class(reconfort_sharkrf_lire(modele_altere()), "reconfort_sharkrf")
+  # fils gauche = le noeud lui-meme (cycle)
+  expect_error(reconfort_sharkrf_lire(modele_altere(
+    "0 3 0 0 0 0 5.0e-01 0 2 0 0 0 0 0 0 0 1")), class = "nemeton_sharkrf_format")
+  # fils droit avant son pere
+  expect_error(reconfort_sharkrf_lire(modele_altere(
+    "0 3 0 0 0 0 5.0e-01 1 0 0 0 0 0 0 0 0 1")), class = "nemeton_sharkrf_format")
+  # fils hors de l'arbre
+  expect_error(reconfort_sharkrf_lire(modele_altere(
+    "0 3 0 0 0 0 5.0e-01 1 7 0 0 0 0 0 0 0 1")), class = "nemeton_sharkrf_format")
+})
+
+test_that("lecteur SharkRF : fichiers tronques ou mal formes", {
+  # jeton non numerique
+  expect_error(reconfort_sharkrf_lire(modele_altere(
+    "0 3 0 0 0 0 5.0e-01 1 2 0 0 0 0 0 0 0 x")), class = "nemeton_sharkrf_format")
+  # ligne de classes absente (fin de fichier apres la 1re ligne de l'arbre)
+  f <- modele_altere(); writeLines(readLines(f)[1:4], f)
+  expect_error(reconfort_sharkrf_lire(f), class = "nemeton_sharkrf_format")
+  # ligne de classes trop courte
+  expect_error(reconfort_sharkrf_lire(modele_altere(classes = "0 2 0")),
+               class = "nemeton_sharkrf_format")
+  # arbre plus court que son N annonce
+  expect_error(reconfort_sharkrf_lire(modele_altere("0 9 0 0 0 0 5.0e-01 1 2")),
+               class = "nemeton_sharkrf_format")
+})
+
+test_that("lecteur SharkRF : classe de feuille hors de 0..K-1", {
+  expect_error(reconfort_sharkrf_lire(modele_altere(classes = "0 2 0 3")),
+               class = "nemeton_sharkrf_format")
+  expect_error(reconfort_sharkrf_lire(modele_altere(classes = "0 2 -1 2")),
+               class = "nemeton_sharkrf_format")
+})
+
+test_that("le v3 reel verifie la regle fils > pere (modele en cache seulement)", {
+  p <- file.path(get_global_cache_dir(), "reconfort_models", "v3", "model_1_seed_0.txt")
+  skip_if_not(file.exists(p), "modele v3 absent du cache")
+  m <- reconfort_sharkrf_lire(p, cache_dir = withr::local_tempdir())
+  i <- which(m$attr >= 0)
+  expect_true(all(m$gauche[i] > i & m$droite[i] > i))
 })

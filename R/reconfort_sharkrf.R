@@ -70,7 +70,7 @@ reconfort_sharkrf_lire <- function(path, cache_dir = NULL) {
   rds <- NULL
   if (!is.null(cache_dir)) {
     dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
-    rds <- file.path(cache_dir, sprintf("sharkrf_v1_%s.rds",
+    rds <- file.path(cache_dir, sprintf("sharkrf_v2_%s.rds",
                                         .reconfort_sharkrf_empreinte(info)))
     if (file.exists(rds)) {
       m <- tryCatch(readRDS(rds), error = function(e) NULL)
@@ -139,35 +139,16 @@ reconfort_sharkrf_lire <- function(path, cache_dir = NULL) {
     if (!length(ligne) || !length(lcl)) {
       .reconfort_sharkrf_erreur(sprintf("file ends inside tree %d.", k))
     }
-    p <- regexpr(motif, ligne)
-    if (p < 0L) .reconfort_sharkrf_erreur(sprintf("no threshold in tree %d.", k))
-    # Position (1-based) du jeton `attribut` du premier quadruplet = nombre de
-    # jetons du prefixe qui precede le premier seuil.
-    debut <- length(strsplit(trimws(substr(ligne, 1L, p - 1L)), " +")[[1L]])
-    tok <- scan(text = ligne, what = double(), quiet = TRUE)
-    n <- as.integer(tok[[2L]])
-    if (debut + 4L * n - 1L > length(tok)) {
-      .reconfort_sharkrf_erreur(sprintf("tree %d is shorter than announced.", k))
-    }
-    q <- matrix(tok[debut:(debut + 4L * n - 1L)], ncol = 4L, byrow = TRUE)
-    dl <- scan(text = lcl, what = integer(), quiet = TRUE)
-    nl <- dl[[2L]]
-    cls <- dl[3:(2L + nl)]
-    feuille <- q[, 3L] == 0
-    if (sum(feuille) != nl || anyNA(cls)) {
-      .reconfort_sharkrf_erreur(sprintf("leaf count of tree %d does not match its class line.", k))
-    }
-    if (any(q[!feuille, 3:4] < 0 | q[!feuille, 3:4] >= n)) {
-      .reconfort_sharkrf_erreur(sprintf("child index out of tree %d.", k))
-    }
-    g <- as.integer(q[, 3L]) + base + 1L   # local 0-based -> global 1-based
-    d <- as.integer(q[, 4L]) + base + 1L
-    a <- as.integer(q[, 1L])
-    a[feuille] <- -1L
-    g[feuille] <- cls[as.integer(q[feuille, 4L]) + 1L]   # classe de la feuille
-    d[feuille] <- 0L
+    arbre <- tryCatch(
+      .reconfort_sharkrf_arbre(ligne, lcl, k, base, n_cl, motif),
+      nemeton_sharkrf_format = function(e) stop(e),
+      error = function(e) {
+        .reconfort_sharkrf_erreur(sprintf("tree %d cannot be parsed (%s).", k,
+                                          conditionMessage(e)))
+      })
+    n <- arbre$n; a <- arbre$a; g <- arbre$g; d <- arbre$d
     attr_l[[k]] <- a
-    seuil_l[[k]] <- q[, 2L]
+    seuil_l[[k]] <- arbre$q
     gauche_l[[k]] <- g
     droite_l[[k]] <- d
     racines[[k]] <- base + 1L
@@ -181,6 +162,52 @@ reconfort_sharkrf_lire <- function(path, cache_dir = NULL) {
     racines = racines, n_arbres = n_arbres, n_vars = max(attr) + 1L,
     classes = classes, source = NULL),
     class = "reconfort_sharkrf")
+}
+
+# Analyse d'un arbre (deux lignes) ; toute anomalie leve `nemeton_sharkrf_format`.
+# Structure exigee, observee sur le v3 reel (2 883 279 noeuds internes, tous les
+# fils ont un index superieur a celui de leur pere) : fils dans (pere, n), donc
+# aucun cycle possible et la descente se termine toujours.
+.reconfort_sharkrf_arbre <- function(ligne, lcl, k, base, n_cl, motif) {
+  p <- regexpr(motif, ligne)
+  if (p < 0L) .reconfort_sharkrf_erreur(sprintf("no threshold in tree %d.", k))
+  # Position (1-based) du jeton `attribut` du premier quadruplet = nombre de
+  # jetons du prefixe qui precede le premier seuil.
+  debut <- length(strsplit(trimws(substr(ligne, 1L, p - 1L)), " +")[[1L]])
+  tok <- scan(text = ligne, what = double(), quiet = TRUE)
+  n <- as.integer(tok[[2L]])
+  if (is.na(n) || n < 1L || debut + 4L * n - 1L > length(tok)) {
+    .reconfort_sharkrf_erreur(sprintf("tree %d is shorter than announced.", k))
+  }
+  q <- matrix(tok[debut:(debut + 4L * n - 1L)], ncol = 4L, byrow = TRUE)
+  dl <- scan(text = lcl, what = integer(), quiet = TRUE)
+  nl <- dl[[2L]]
+  if (is.na(nl) || nl < 1L || length(dl) < 2L + nl) {
+    .reconfort_sharkrf_erreur(sprintf("class line of tree %d is shorter than announced.", k))
+  }
+  cls <- dl[3:(2L + nl)]
+  feuille <- q[, 3L] == 0
+  if (sum(feuille) != nl || anyNA(cls)) {
+    .reconfort_sharkrf_erreur(sprintf("leaf count of tree %d does not match its class line.", k))
+  }
+  if (any(cls < 0L | cls >= n_cl)) {
+    .reconfort_sharkrf_erreur(sprintf("leaf class of tree %d is outside 0..%d.", k, n_cl - 1L))
+  }
+  if (any(q[feuille, 4L] < 0 | q[feuille, 4L] >= nl)) {
+    .reconfort_sharkrf_erreur(sprintf("leaf number out of range in tree %d.", k))
+  }
+  interne <- which(!feuille)
+  if (any(q[interne, 1L] < 0 | is.na(q[interne, 1L])) ||
+      any(q[interne, 3:4] <= (interne - 1L) | q[interne, 3:4] >= n)) {
+    .reconfort_sharkrf_erreur(sprintf("child index of tree %d is out of range or not after its parent (cycle).", k))
+  }
+  g <- as.integer(q[, 3L]) + base + 1L   # local 0-based -> global 1-based
+  d <- as.integer(q[, 4L]) + base + 1L
+  a <- as.integer(q[, 1L])
+  a[feuille] <- -1L
+  g[feuille] <- cls[as.integer(q[feuille, 4L]) + 1L]   # classe de la feuille
+  d[feuille] <- 0L
+  list(n = n, a = a, g = g, d = d, q = q[, 2L])
 }
 
 #' @export
@@ -233,20 +260,12 @@ reconfort_sharkrf_predire <- function(modele, x, bloc = 20000L) {
   sortie
 }
 
-# Votes d'un bloc sans NA : noyau Rust quand il est compile et autorise (gain de
-# deux ordres de grandeur, voir NEWS), repli R vectorise sinon (memes votes).
-.reconfort_sharkrf_bloc <- function(m, x, k) {
-  if (nemeton_rust_disponible() && !is.null(.rust_routine("rust_sharkrf_votes"))) {
-    v <- .Call(.rust_routine("rust_sharkrf_votes"), m$attr, m$seuil, m$gauche,
-               m$droite, m$racines, as.vector(x), nrow(x), as.integer(k))
-    return(matrix(v, nrow(x), k))
-  }
-  .reconfort_sharkrf_bloc_r(m, x, k)
-}
-
-# Repli R pur : une boucle par arbre, une iteration par niveau, sur le
+# Votes d'un bloc sans NA. Une routine Rust (arbre puis pixels) a ete essayee :
+# 2,1 a 2,6 fois plus rapide seulement que ce code R vectorise sur le vrai v3 (voir
+# NEWS), sous le seuil de 3 fois fixe pour la garder ; elle a ete retiree.
+# Une boucle par arbre, une iteration par niveau, sur le
 # sous-ensemble de pixels pas encore arrives a une feuille.
-.reconfort_sharkrf_bloc_r <- function(m, x, k) {
+.reconfort_sharkrf_bloc <- function(m, x, k) {
   p <- nrow(x)
   xf <- as.vector(x)                      # colonne par colonne
   votes <- matrix(0L, p, k)

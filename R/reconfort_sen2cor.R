@@ -30,10 +30,9 @@
 # ci-dessous). Isole pour les tests.
 .reconfort_repli_fenetre_archive <- function() FALSE
 
-.RECONFORT_VOIES <- c("fenetre", "archive", "sen2cor")
-
 # Voie suivante apres l'echec (ou l'indisponibilite) de `voie`, ou NA quand il
-# n'y en a pas. `causes` : liste nommee des causes deja connues par voie.
+# n'y en a pas. Les causes d'echec par voie sont tenues par l'appelant
+# (`causes_voies`) et passees a `.reconfort_avertir_repli_sen2cor()`.
 .reconfort_voie_suivante <- function(voie) {
   if (identical(voie, "fenetre")) {
     return(if (isTRUE(.reconfort_repli_fenetre_archive())) "archive" else NA_character_)
@@ -306,18 +305,20 @@ reconfort_caracteristiques_v3 <- function(obs, dates_obs, dates_grille,
     votes[cel[sel], ] <- v
     if (!quiet) cli::cli_alert_info("Sen2Cor classification: rows {r0}-{r0 + nl - 1L} of {nr}.")
   }
-  .reconfort_sen2cor_ecrire(votes, grille, masque_vals, s2_year, final_dir)
+  .reconfort_sen2cor_ecrire(votes, grille, masque_vals, s2_year, final_dir,
+                            classes = modele$classes)
 }
 
 # Ecrit classif / probabilite (votes en pour mille, somme 1000) / score continu,
 # bruts puis masques. Noms et formats de la voie IOTA2.
-.reconfort_sen2cor_ecrire <- function(votes, grille, masque_vals, s2_year, final_dir) {
+.reconfort_sen2cor_ecrire <- function(votes, grille, masque_vals, s2_year, final_dir,
+                                      classes = seq_len(ncol(votes))) {
   K <- ncol(votes)
   tot <- rowSums(votes)
   proba <- votes
   nz <- tot > 0L
   proba[nz, ] <- round(votes[nz, , drop = FALSE] * 1000 / tot[nz])
-  cl <- ifelse(nz, max.col(votes, ties.method = "first"), 0L)
+  cl <- ifelse(nz, classes[max.col(votes, ties.method = "first")], 0L)
   p3 <- if (K >= 3L) proba[, 3L] else 0
   score <- pmin(pmax(floor((1001 - proba[, 1L] + proba[, 2L] + 2 * p3) / 30), 1), 100)
   score[!nz] <- 0
@@ -403,4 +404,16 @@ reconfort_caracteristiques_v3 <- function(obs, dates_obs, dates_grille,
   .reconfort_sen2cor_classer(scenes, modele, gm$grille, gm$masque, s2_year,
                              dates_grille, final_dir, correction = correction,
                              quiet = quiet)
+}
+
+# Cache Sentinel-2 par defaut de la voie Sen2Cor : celui de FAST/FORDEAD
+# (`<projet>/cache/layers/sentinel2`) quand `cache_dir` est le dossier `cache`
+# du projet ou le contient deja ; sinon un cache a part `<cache_dir>/s2_bands`.
+.reconfort_s2_cache_defaut <- function(cache_dir) {
+  fast <- file.path(cache_dir, "layers", "sentinel2")
+  if (identical(basename(normalizePath(cache_dir, mustWork = FALSE)), "cache") ||
+      dir.exists(fast)) {
+    return(fast)
+  }
+  file.path(cache_dir, "s2_bands")
 }

@@ -168,7 +168,9 @@ Sen2Cor - MAJA biases of CRswir and CRre measured on a single site
 (Couchey, study 092): not validated elsewhere.}
 
 \item{s2_cache_dir}{Sentinel-2 band cache of the Sen2Cor route (the one of
-FAST / FORDEAD). Default `<cache_dir>/s2_bands`.}
+FAST / FORDEAD, `<project>/cache/layers/sentinel2`). Default: `<cache_dir>/layers/sentinel2`
+when `cache_dir` is the project `cache` folder or already holds that folder,
+otherwise `<cache_dir>/s2_bands` (a separate cache, not shared with FAST/FORDEAD).}
 }
 \value{
 Invisibly, a list: `status` (`"completed"` or

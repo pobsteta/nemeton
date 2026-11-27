@@ -114,3 +114,18 @@ test_that("repli : la voie suivante apres 'archive' est Sen2Cor, apres 'fenetre'
   testthat::local_mocked_bindings(.reconfort_repli_fenetre_archive = function() TRUE)
   expect_identical(.reconfort_voie_suivante("fenetre"), "archive")
 })
+
+test_that("etiquettes de classe ecrites depuis les classes du modele, cache S2 par defaut", {
+  skip_if_not_installed("terra")
+  g <- terra::rast(nrows = 1, ncols = 2, xmin = 0, xmax = 20, ymin = 0, ymax = 10, crs = "EPSG:2154")
+  d <- withr::local_tempdir()
+  out <- .reconfort_sen2cor_ecrire(rbind(c(900L, 100L), c(100L, 900L)), g, NULL, 2025L, d,
+                                   classes = c(5L, 9L))
+  expect_equal(terra::values(terra::rast(out$classif), mat = FALSE), c(5, 9))
+  p <- withr::local_tempdir()
+  expect_identical(basename(.reconfort_s2_cache_defaut(p)), "s2_bands")
+  dir.create(file.path(p, "layers", "sentinel2"), recursive = TRUE)
+  expect_identical(basename(.reconfort_s2_cache_defaut(p)), "sentinel2")
+  proj <- file.path(withr::local_tempdir(), "cache"); dir.create(proj)
+  expect_identical(.reconfort_s2_cache_defaut(proj), file.path(proj, "layers", "sentinel2"))
+})

@@ -711,7 +711,9 @@
 #'   Sen2Cor - MAJA biases of CRswir and CRre measured on a single site
 #'   (Couchey, study 092): not validated elsewhere.
 #' @param s2_cache_dir Sentinel-2 band cache of the Sen2Cor route (the one of
-#'   FAST / FORDEAD). Default `<cache_dir>/s2_bands`.
+#'   FAST / FORDEAD, `<project>/cache/layers/sentinel2`). Default: `<cache_dir>/layers/sentinel2`
+#'   when `cache_dir` is the project `cache` folder or already holds that folder,
+#'   otherwise `<cache_dir>/s2_bands` (a separate cache, not shared with FAST/FORDEAD).
 #'
 #' @section Sen2Cor route (indicative, not validated):
 #' `acquisition = "sen2cor"` skips conda, IOTA2, THEIA and GEODES: the
@@ -897,7 +899,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       if (inherits(env_essai, "error")) {
         # Sans environnement conda/IOTA2, ni THEIA ni GEODES ne servent : repli
         # sur Sen2Cor seulement si la voie n'a pas ete imposee.
-        if (acq_explicite || is.na(.reconfort_voie_suivante("archive"))) stop(env_essai)
+        if (acq_explicite) stop(env_essai)
         causes_voies$fenetre <- causes_voies$archive <-
           paste("conda/IOTA2 environment unavailable:", conditionMessage(env_essai))
         .reconfort_avertir_repli_sen2cor(causes_voies)
@@ -1031,6 +1033,13 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
         error = function(e) e)
       if (inherits(ing, "error")) {
         # Derniere voie IOTA2 en echec : Sen2Cor, sauf voie imposee par l'appelant.
+        # A AJOUTER PAR LA MISSION 089 : quand `acq` est "fenetre" et que
+        # `.reconfort_voie_suivante("fenetre")` rend "archive" (repli THEIA ->
+        # GEODES), il faut ici re-ingerer avec `acquisition = "archive"` (appel de
+        # `reconfort_ingest_s2()` repris, cause consignee dans `causes_voies$fenetre`),
+        # puis, si cette ingestion echoue a son tour, retomber sur le test ci-dessous
+        # (boucle : tant que `.reconfort_voie_suivante(acq)` rend une voie IOTA2).
+        # Aujourd'hui une voie "fenetre" en echec leve l'erreur, comme avant.
         if (acq_explicite || !identical(.reconfort_voie_suivante(acq), "sen2cor")) {
           stop(ing)
         }
@@ -1153,7 +1162,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
                               "final"),
         mask_path = if (do_mask) mask_path else NULL, tiles = tiles,
         v_model = v_model,
-        s2_cache_dir = s2_cache_dir %||% file.path(cache_dir, "s2_bands"),
+        s2_cache_dir = s2_cache_dir %||% .reconfort_s2_cache_defaut(cache_dir),
         work_dir = file.path(workdir, "sen2cor"),
         correction = correction_sen2cor, quiet = quiet)
     }

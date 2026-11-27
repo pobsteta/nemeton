@@ -21,8 +21,9 @@ labels announced by the file header) and \code{source} (file size and mtime).
 Reads the text model file used by the RECONFORT v3 classifiers
 (\code{model_1_seed_0.txt}, an OTB/Shark \code{RFClassifier} of 1000 trees) into a
 compact object that \code{\link[=reconfort_sharkrf_predire]{reconfort_sharkrf_predire()}} can apply, without OTB,
-conda or IOTA2. The result is cached in memory for the session, and, when
-\code{cache_dir} is given, on disk as an \code{.rds}.
+conda or IOTA2. The result is cached in memory for the session (reading the
+205 MB file of the \code{v3} model takes tens of seconds), and, when \code{cache_dir}
+is given, on disk as an \code{.rds} next to a checksum of the file's identity.
 }
 \details{
 The format is deduced from observation (studies 091 and 093 of the
@@ -38,4 +39,5 @@ writeLines(c("#RFClassifier with_dictionary", "2 1 2 ",
   "1 2 0 0 1 0 1 1 1 1 1",
   "2 1 0 3 3"), f)
 m <- reconfort_sharkrf_lire(f)
+reconfort_sharkrf_predire(m, matrix(c(0.2, 0.9), ncol = 1))
 }

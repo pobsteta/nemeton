@@ -24,5 +24,8 @@ Vectorised prediction of a \code{\link[=reconfort_sharkrf_lire]{reconfort_sharkr
 casts one vote for the class of the leaf a row reaches. The votes sum to the
 number of trees (1000 for the RECONFORT models); the class is their argmax,
 as in IOTA2's \code{ProbabilityMap_seed_0} (probability in per mille) and
-\code{Classif_Seed_0}. Runs in the Rust core when available, in pure R otherwise.
+\code{Classif_Seed_0}.
+}
+\examples{
+# voir reconfort_sharkrf_lire()
 }

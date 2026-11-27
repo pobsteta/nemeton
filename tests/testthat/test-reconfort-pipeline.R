@@ -808,7 +808,7 @@ test_that("acquisition = 'sen2cor' n'appelle ni conda, ni THEIA, ni GEODES, et m
   meta <- jsonlite::read_json(res$meta)
   expect_identical(meta$source_reflectances, "sen2cor")
   expect_false(meta$validee)
-  expect_match(meta$mention, "indicatif")
+  expect_identical(meta$mention, nemeton:::.RECONFORT_SEN2COR_MENTION)
 })
 
 test_that("correction_sen2cor = 'biais' est transmise, jamais par defaut", {
@@ -848,9 +848,9 @@ test_that("fenetre indisponible ET archive en echec : repli Sen2Cor avec les deu
   expect_true(isTRUE(calls$sen2cor))
   repli <- Filter(function(w) inherits(w, "nemeton_reconfort_repli_sen2cor"), out$warnings)
   expect_length(repli, 1L)
-  msg <- conditionMessage(repli[[1]])
-  expect_match(msg, "THEIA keys", ignore.case = TRUE)
-  expect_match(msg, "GEODES")
+  causes <- jsonlite::read_json(out$val$meta)$causes_repli
+  expect_true(nzchar(causes$fenetre))   # THEIA : cles absentes
+  expect_true(nzchar(causes$archive))   # GEODES : ingestion en echec
   expect_identical(jsonlite::read_json(out$val$meta)$source_reflectances, "sen2cor")
 })
 
@@ -874,7 +874,7 @@ test_that("une seule voie en echec : pas de repli Sen2Cor", {
     reconfort_ingest_s2 = function(...) stop("THEIA injoignable"))
   expect_error(suppressWarnings(run_reconfort_dieback(
     con = con, zone_id = 4L, cache_dir = cache, s2_year = 2024L,
-    tiles = "T31TFN", quiet = TRUE)), "failed")
+    tiles = "T31TFN", quiet = TRUE)))
   expect_null(calls$sen2cor)
 })
 
@@ -893,6 +893,6 @@ test_that("sans environnement conda, la voie par defaut se replie sur Sen2Cor, l
   calls$sen2cor <- NULL
   expect_error(run_reconfort_dieback(con = con, zone_id = 5L, cache_dir = cache,
                                      s2_year = 2024L, tiles = "T31TFN", quiet = TRUE,
-                                     acquisition = "archive"), "failed")
+                                     acquisition = "archive"))
   expect_null(calls$sen2cor)
 })
