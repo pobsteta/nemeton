@@ -696,7 +696,8 @@
 #'   ignored as a stale leftover — the caller must delete it before each
 #'   call. A `reconfort:cancelled` progress event is emitted.
 #'
-#' @param acquisition How the Sentinel-2 scenes are acquired. `"fenetre"`
+#' @param acquisition How the Sentinel-2 scenes are acquired. `"sen2cor"`
+#'   (see the Sen2Cor section) needs neither conda nor THEIA nor GEODES. `"fenetre"`
 #'   (default) reads only the AOI window of each band and mask from the THEIA
 #'   STAC catalogue (needs `TLD_ACCESS_KEY` / `TLD_SECRET_KEY`; no GEODES
 #'   download) and writes the same files as `"archive"`, which downloads each
@@ -704,6 +705,29 @@
 #'   missing, the run falls back to `"archive"` with a warning; an explicit
 #'   `"fenetre"` without keys aborts. Without an AOI (`aoi_crop = FALSE`) the
 #'   archive route is used. IOTA2 is unchanged either way.
+#'
+#' @param correction_sen2cor Only for the Sen2Cor route. `"aucune"` (default)
+#'   uses the Sen2Cor reflectances as they are; `"biais"` subtracts the mean
+#'   Sen2Cor - MAJA biases of CRswir and CRre measured on a single site
+#'   (Couchey, study 092): not validated elsewhere.
+#' @param s2_cache_dir Sentinel-2 band cache of the Sen2Cor route (the one of
+#'   FAST / FORDEAD, `<project>/cache/layers/sentinel2`). Default: `<cache_dir>/layers/sentinel2`
+#'   when `cache_dir` is the project `cache` folder or already holds that folder,
+#'   otherwise `<cache_dir>/s2_bands` (a separate cache, not shared with FAST/FORDEAD).
+#'
+#' @section Sen2Cor route (indicative, not validated):
+#' `acquisition = "sen2cor"` skips conda, IOTA2, THEIA and GEODES: the
+#' Sentinel-2 L2A (Sen2Cor) scenes of Planetary Computer are read through the
+#' FAST/FORDEAD band cache, a 134-feature stack (CRswir then CRre over 67
+#' dates) is built and the v3 forest is applied in R
+#' ([reconfort_sharkrf_lire()], [reconfort_caracteristiques_v3()]). Outputs have
+#' the names and formats of the IOTA2 route; `run_meta.json` carries
+#' `source_reflectances = "sen2cor"` and `validee = false`, and the GeoTIFFs carry
+#' the tags `SOURCE_REFLECTANCES` and `VALIDEE`. The model was trained on MAJA
+#' reflectances: with Sen2Cor about 24 % of pixels change class on the test
+#' site (study 093), mostly towards class 3. The route is also the last resort,
+#' with a warning of class `nemeton_reconfort_repli_sen2cor`, when `acquisition`
+#' is left at its default and the IOTA2 routes are unavailable or fail.
 #'
 #' @section Temporal window (`s2_year` -> analysis dates):
 #' RECONFORT does not diff two dates: it classifies a pixel's ~2-year
@@ -770,10 +794,17 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
                                   quiet             = FALSE,
                                   progress_callback = NULL,
                                   cancel_path       = NULL,
-                                  acquisition       = c("fenetre", "archive")) {
+                                  acquisition       = c("fenetre", "archive", "sen2cor"),
+                                  correction_sen2cor = c("aucune", "biais"),
+                                  s2_cache_dir      = NULL) {
   t0 <- Sys.time()
   acq_explicite <- !missing(acquisition)
   acquisition <- match.arg(acquisition)
+  correction_sen2cor <- match.arg(correction_sen2cor)
+  # Voie Sen2Cor (mission 095) : choisie, ou decidee plus bas par
+  # `.reconfort_voie_suivante()` quand les routes THEIA/GEODES sont hors d'usage.
+  voie_sen2cor <- identical(acquisition, "sen2cor")
+  causes_voies <- list()
 
   # --- argument validation ----------------------------------------
   if (!inherits(con, "DBIConnection")) {
@@ -857,28 +888,47 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
   result <- tryCatch({
     # PHASE 1 — env (locate + validate conda/IOTA2) -----------------
     begin("env")
-    env <- .ensure_reconfort_python(
-      require_pygeodes = !skip_ingest && identical(acquisition, "archive"),
-      quiet = quiet)
-    conda_bin <- .reconfort_conda_binary()
-    # defects #9 / #10: unpatched, IOTA2 crashes at its first steps (label
-    # parsing, dask task launch). Warn up front rather than let it fail later.
-    env_defects <- .reconfort_env_defects(conda_bin, env)
-    if (length(env_defects)) {
-      cli::cli_warn(c(
-        "The RECONFORT env is missing the iota2 repair{?s} {.val {env_defects}} (pandas < 3, task_launcher.py on PATH).",
-        i = "IOTA2 is expected to fail; run {.file repair_iota2_env.sh} on the {.val {env}} env, then re-run."
-      ))
+    env <- NA_character_
+    conda_bin <- NULL
+    if (!voie_sen2cor) {
+      env_essai <- tryCatch(
+        .ensure_reconfort_python(
+          require_pygeodes = !skip_ingest && identical(acquisition, "archive"),
+          quiet = quiet),
+        error = function(e) e)
+      if (inherits(env_essai, "error")) {
+        # Sans environnement conda/IOTA2, ni THEIA ni GEODES ne servent : repli
+        # sur Sen2Cor seulement si la voie n'a pas ete imposee.
+        if (acq_explicite) stop(env_essai)
+        causes_voies$fenetre <- causes_voies$archive <-
+          paste("conda/IOTA2 environment unavailable:", conditionMessage(env_essai))
+        .reconfort_avertir_repli_sen2cor(causes_voies)
+        voie_sen2cor <- TRUE
+      } else {
+        env <- env_essai
+      }
     }
-    # defect #12: unpatched, the probability map is clamped at 255 and the
-    # continuous score comes out compressed (~24..58 instead of 1..100). The
-    # class map and the alerts are unaffected, so warn rather than abort.
-    if (!.reconfort_probamap_fixed(conda_bin, env)) {
-      cli::cli_warn(c(
-        "iota2 is missing the probability-map fix (defect #12) \u2014 probabilities will be clamped at 255.",
-        i = "The continuous score will be compressed (~24..58 instead of 1..100); classes and alerts are unaffected.",
-        i = "Run {.file repair_iota2_env.sh} on the {.val {env}} env, then re-run."
-      ))
+    if (!voie_sen2cor) {
+      conda_bin <- .reconfort_conda_binary()
+      # defects #9 / #10: unpatched, IOTA2 crashes at its first steps (label
+      # parsing, dask task launch). Warn up front rather than let it fail later.
+      env_defects <- .reconfort_env_defects(conda_bin, env)
+      if (length(env_defects)) {
+        cli::cli_warn(c(
+          "The RECONFORT env is missing the iota2 repair{?s} {.val {env_defects}} (pandas < 3, task_launcher.py on PATH).",
+          i = "IOTA2 is expected to fail; run {.file repair_iota2_env.sh} on the {.val {env}} env, then re-run."
+        ))
+      }
+      # defect #12: unpatched, the probability map is clamped at 255 and the
+      # continuous score comes out compressed (~24..58 instead of 1..100). The
+      # class map and the alerts are unaffected, so warn rather than abort.
+      if (!.reconfort_probamap_fixed(conda_bin, env)) {
+        cli::cli_warn(c(
+          "iota2 is missing the probability-map fix (defect #12) \u2014 probabilities will be clamped at 255.",
+          i = "The continuous score will be compressed (~24..58 instead of 1..100); classes and alerts are unaffected.",
+          i = "Run {.file repair_iota2_env.sh} on the {.val {env}} env, then re-run."
+        ))
+      }
     }
 
     # PHASE 2 — model fetch ----------------------------------------
@@ -940,7 +990,10 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     # archive (~GB) instead of whole-tile archives + extracted (~460 GB).
     begin("ingest")
     s2_dl_root <- file.path(workdir, "s2_download")
-    if (skip_ingest) {
+    if (voie_sen2cor) {
+      # Voie Sen2Cor : aucune archive, les scenes se lisent a l'etape suivante.
+      extracted <- NULL
+    } else if (skip_ingest) {
       # Streaming ingest writes the AOI-cropped scenes straight into
       # extracted/<tile>/, so a resumed run reads them as-is.
       extracted <- file.path(s2_dl_root, "extracted", tiles)
@@ -958,9 +1011,11 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       acq <- acquisition
       if (identical(acq, "fenetre") && !do_crop) {
         cli::cli_alert_info("No AOI crop: reading full archives ({.code acquisition = \"archive\"}).")
+        causes_voies$fenetre <- "no AOI crop, window route needs an AOI"
         acq <- "archive"
       } else if (identical(acq, "fenetre") && !acq_explicite &&
                  !.reconfort_fenetre_cles_presentes()) {
+        causes_voies$fenetre <- "THEIA keys (TLD_ACCESS_KEY / TLD_SECRET_KEY) not set"
         cli::cli_warn(c(
           "THEIA keys ({.envvar TLD_ACCESS_KEY} / {.envvar TLD_SECRET_KEY}) not set: falling back to {.code acquisition = \"archive\"} (full GEODES archives).",
           i = "Set the keys to read only the AOI windows."))
@@ -968,14 +1023,35 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       }
       # Voie fenetre explicite sans cles : erreur claire avant tout travail.
       if (identical(acq, "fenetre")) .reconfort_fenetre_verifier_acces()
-      ing <- reconfort_ingest_s2(aoi = if (do_crop) aoi else NULL,
-                                 acquisition = acq,
-                                 tiles = tiles, date_from = date_from,
-                                 date_to = date_to, s2_root = s2_dl_root,
-                                 geodes_config = geodes_config, quiet = quiet,
-                                 progress_callback = progress_callback)
-      extracted <- ing$extracted
+      ing <- tryCatch(
+        reconfort_ingest_s2(aoi = if (do_crop) aoi else NULL,
+                            acquisition = acq,
+                            tiles = tiles, date_from = date_from,
+                            date_to = date_to, s2_root = s2_dl_root,
+                            geodes_config = geodes_config, quiet = quiet,
+                            progress_callback = progress_callback),
+        error = function(e) e)
+      if (inherits(ing, "error")) {
+        # Derniere voie IOTA2 en echec : Sen2Cor, sauf voie imposee par l'appelant.
+        # A AJOUTER PAR LA MISSION 089 : quand `acq` est "fenetre" et que
+        # `.reconfort_voie_suivante("fenetre")` rend "archive" (repli THEIA ->
+        # GEODES), il faut ici re-ingerer avec `acquisition = "archive"` (appel de
+        # `reconfort_ingest_s2()` repris, cause consignee dans `causes_voies$fenetre`),
+        # puis, si cette ingestion echoue a son tour, retomber sur le test ci-dessous
+        # (boucle : tant que `.reconfort_voie_suivante(acq)` rend une voie IOTA2).
+        # Aujourd'hui une voie "fenetre" en echec leve l'erreur, comme avant.
+        if (acq_explicite || !identical(.reconfort_voie_suivante(acq), "sen2cor")) {
+          stop(ing)
+        }
+        causes_voies[[acq]] <- conditionMessage(ing)
+        .reconfort_avertir_repli_sen2cor(causes_voies)
+        voie_sen2cor <- TRUE
+        extracted <- NULL
+      } else {
+        extracted <- ing$extracted
+      }
     }
+    if (!voie_sen2cor) {
     # Chunk by rows — the only lever that caps the classification's peak
     # memory (a single chunk goes past 20 GB on a 930x952 AOI and gets the R
     # session killed by systemd-oomd). Safe only on an iota2 patched for
@@ -1065,9 +1141,35 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       ))
     }
 
+    }  # fin de la voie IOTA2 (stage + mapprod)
+
+    # Voie Sen2Cor : modele SharkRF en R, pile de 134 caracteristiques, sorties de
+    # la voie IOTA2. INDICATIF, NON VALIDE (mission 095).
+    rasters_sc <- NULL
+    if (voie_sen2cor) {
+      if (is.null(aoi)) {
+        cli::cli_abort("{.code acquisition = \"sen2cor\"} needs the zone AOI (zone {.val {zone_id}} has none).")
+      }
+      begin("stage")
+      modele_rf <- reconfort_sharkrf_lire(model_path,
+                                          cache_dir = file.path(cache_dir, "reconfort", "sharkrf"))
+      begin("mapprod")
+      cli::cli_alert_warning(.RECONFORT_SEN2COR_MENTION)
+      rasters_sc <- .reconfort_carte_sen2cor(
+        aoi = aoi, modele = modele_rf, s2_year = s2_year,
+        final_dir = file.path(workdir, "results",
+                              sprintf("iota2_results_classif_labels-%s-S2_%s", label, s2_year),
+                              "final"),
+        mask_path = if (do_mask) mask_path else NULL, tiles = tiles,
+        v_model = v_model,
+        s2_cache_dir = s2_cache_dir %||% .reconfort_s2_cache_defaut(cache_dir),
+        work_dir = file.path(workdir, "sen2cor"),
+        correction = correction_sen2cor, quiet = quiet)
+    }
+
     # PHASE 8 — collect outputs ------------------------------------
     begin("collect")
-    rasters <- .reconfort_collect_outputs(workdir, label, s2_year)
+    rasters <- rasters_sc %||% .reconfort_collect_outputs(workdir, label, s2_year)
     # The upstream driver does not check the IOTA2 subprocess return
     # code; verify the continuous score actually landed.
     if (is.na(rasters$continuous_score)) {
@@ -1150,7 +1252,7 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
     }, error = function(e)
       cli::cli_warn("RECONFORT persist (cache layers) failed: {conditionMessage(e)}"))
 
-    features_bundle <- tryCatch({
+    features_bundle <- if (voie_sen2cor) NA_character_ else tryCatch({
       scenes <- .enumerate_reconfort_s2_scenes(file.path(workdir, "S2_data"))
       if (!length(scenes)) {
         cli::cli_warn("RECONFORT persist: no S2 scene enumerable under {.path {file.path(workdir, 'S2_data')}} \u2014 pixel diagnostic skipped.")
@@ -1191,6 +1293,13 @@ run_reconfort_dieback <- function(con, zone_id, cache_dir,
       features_bundle = features_bundle, elapsed_sec = elapsed,
       generated_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z")
     )
+    if (voie_sen2cor) {
+      meta$source_reflectances <- "sen2cor"
+      meta$validee <- FALSE
+      meta$mention <- .RECONFORT_SEN2COR_MENTION
+      meta$correction_sen2cor <- correction_sen2cor
+      meta$causes_repli <- causes_voies
+    }
     meta_path <- .reconfort_write_run_meta(
       file.path(rasters$final_dir, "run_meta.json"), meta)
 

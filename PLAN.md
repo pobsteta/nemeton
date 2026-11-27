@@ -108,6 +108,19 @@ un raccourci.
 
 ---
 
+# Chantier — RECONFORT sur Sen2Cor (mission 095)
+
+Voie `acquisition = "sen2cor"` de `run_reconfort_dieback()` : modele v3 lu et applique en R (noyau Rust), pile de 134
+caracteristiques depuis les scenes Sentinel-2 L2A de Planetary Computer (cache FAST/FORDEAD). **Indicatif, non valide.**
+
+**Journal** — *2026-11-27* : branche locale `reconfort-sen2cor` (partie de `origin/main` 479ba13ab, non poussee ; l'orchestrateur
+la poussera apres la fusion de la #710). Validation sur le run IOTA2 de Couchey (520 591 pixels) : MAJA -> IOTA2 80,20 %
+d'accord de classe ; Sen2Cor -> 25,01 % de pixels qui changent de classe, 70,37 % d'accord avec IOTA2. Reste : la mission
+nemetonshiny (choix de la voie, marquage « indicatif » a l'ecran) ; le repli THEIA -> GEODES (mission 089) ; une validation
+sur un autre site et avec une verite terrain.
+
+---
+
 # Chantier — Modèles de fondation et itinéraires sylvicoles (specs 064, 065)
 
 > Brief de Pascal du 2026-11-05 (« Modèles de fondation et raisonnement

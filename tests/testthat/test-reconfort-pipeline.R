@@ -761,3 +761,138 @@ test_that("aoi_crop = FALSE : voie archive, meme avec cles et 'fenetre' explicit
   expect_identical(calls$ingest_acq, "archive")
   expect_null(calls$ingest_aoi)
 })
+
+# --- Voie Sen2Cor (mission 095) : aucun appel conda, THEIA ni GEODES --------
+
+.aoi_sen2cor <- function() {
+  sf::st_sfc(sf::st_polygon(list(rbind(c(4.93, 47.21), c(4.97, 47.21), c(4.97, 47.25),
+                                       c(4.93, 47.25), c(4.93, 47.21)))), crs = 4326)
+}
+
+mock_sen2cor <- function(calls_env) {
+  bindings <- list(
+    .get_zone_aoi = function(...) .aoi_sen2cor(),
+    reconfort_sharkrf_lire = function(...) structure(list(), class = "reconfort_sharkrf"),
+    .reconfort_carte_sen2cor = function(aoi, modele, s2_year, final_dir, ...) {
+      calls_env$sen2cor <- TRUE
+      calls_env$sen2cor_args <- list(...)
+      dir.create(final_dir, recursive = TRUE, showWarnings = FALSE)
+      f <- function(n) { p <- file.path(final_dir, n); writeLines("x", p); p }
+      list(final_dir = final_dir, classif = f("Classif_Seed_0.tif"),
+           classif_masked = f(sprintf("Final_Classif_masked_%s.tif", s2_year)),
+           probability = f("ProbabilityMap_seed_0.tif"),
+           probability_masked = f(sprintf("Final_Proba_map_masked%s.tif", s2_year)),
+           continuous_score = f(sprintf("Final_continuous_score_masked%s.tif", s2_year)))
+    },
+    .postprocess_reconfort_rasters = function(...) NULL,
+    .insert_reconfort_alerts = function(...) 0L)
+  do.call(testthat::local_mocked_bindings, c(bindings, list(.env = calls_env$env)))
+}
+
+test_that("acquisition = 'sen2cor' n'appelle ni conda, ni THEIA, ni GEODES, et marque la sortie", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  testthat::local_mocked_bindings(
+    .ensure_reconfort_python = function(...) stop("conda appele"),
+    .reconfort_run_py = function(...) stop("IOTA2 appele"),
+    reconfort_ingest_s2 = function(...) stop("ingestion THEIA/GEODES appelee"))
+  mock_sen2cor(calls)
+  res <- run_reconfort_dieback(con = con, zone_id = 3L, cache_dir = cache,
+                               s2_year = 2024L, tiles = "T31TFN", quiet = TRUE,
+                               acquisition = "sen2cor")
+  expect_equal(res$status, "completed")
+  expect_true(isTRUE(calls$sen2cor))
+  expect_identical(calls$sen2cor_args$correction, "aucune")
+  meta <- jsonlite::read_json(res$meta)
+  expect_identical(meta$source_reflectances, "sen2cor")
+  expect_false(meta$validee)
+  expect_identical(meta$mention, nemeton:::.RECONFORT_SEN2COR_MENTION)
+})
+
+test_that("correction_sen2cor = 'biais' est transmise, jamais par defaut", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  mock_sen2cor(calls)
+  run_reconfort_dieback(con = con, zone_id = 3L, cache_dir = cache, s2_year = 2024L,
+                        tiles = "T31TFN", quiet = TRUE, acquisition = "sen2cor",
+                        correction_sen2cor = "biais")
+  expect_identical(calls$sen2cor_args$correction, "biais")
+})
+
+.lancer_capturant <- function(expr) {
+  ws <- list()
+  val <- withCallingHandlers(expr, warning = function(w) {
+    ws[[length(ws) + 1L]] <<- w
+    invokeRestart("muffleWarning")
+  })
+  list(val = val, warnings = ws)
+}
+
+test_that("fenetre indisponible ET archive en echec : repli Sen2Cor avec les deux causes", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  withr::local_envvar(TLD_ACCESS_KEY = "", TLD_SECRET_KEY = "")
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  testthat::local_mocked_bindings(
+    reconfort_ingest_s2 = function(...) stop("GEODES : compte absent"),
+    .reconfort_run_py = function(...) stop("IOTA2 appele"))
+  mock_sen2cor(calls)
+  out <- .lancer_capturant(run_reconfort_dieback(
+    con = con, zone_id = 3L, cache_dir = cache, s2_year = 2024L,
+    tiles = "T31TFN", quiet = TRUE))
+  expect_true(isTRUE(calls$sen2cor))
+  repli <- Filter(function(w) inherits(w, "nemeton_reconfort_repli_sen2cor"), out$warnings)
+  expect_length(repli, 1L)
+  causes <- jsonlite::read_json(out$val$meta)$causes_repli
+  expect_true(nzchar(causes$fenetre))   # THEIA : cles absentes
+  expect_true(nzchar(causes$archive))   # GEODES : ingestion en echec
+  expect_identical(jsonlite::read_json(out$val$meta)$source_reflectances, "sen2cor")
+})
+
+test_that("une seule voie en echec : pas de repli Sen2Cor", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  mock_sen2cor(calls)
+  # Fenetre indisponible (pas de cles), archive qui marche : on reste sur IOTA2.
+  withr::local_envvar(TLD_ACCESS_KEY = "", TLD_SECRET_KEY = "")
+  out <- .lancer_capturant(run_reconfort_dieback(
+    con = con, zone_id = 3L, cache_dir = cache, s2_year = 2024L,
+    tiles = "T31TFN", quiet = TRUE))
+  expect_null(calls$sen2cor)
+  expect_true(calls$ingest)
+  expect_false(any(vapply(out$warnings, inherits, NA, "nemeton_reconfort_repli_sen2cor")))
+  # Fenetre en echec avec des cles presentes : aucun repli (la 089 s'y raccordera).
+  withr::local_envvar(TLD_ACCESS_KEY = "a", TLD_SECRET_KEY = "b")
+  testthat::local_mocked_bindings(
+    reconfort_ingest_s2 = function(...) stop("THEIA injoignable"))
+  expect_error(suppressWarnings(run_reconfort_dieback(
+    con = con, zone_id = 4L, cache_dir = cache, s2_year = 2024L,
+    tiles = "T31TFN", quiet = TRUE)))
+  expect_null(calls$sen2cor)
+})
+
+test_that("sans environnement conda, la voie par defaut se replie sur Sen2Cor, la voie imposee echoue", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  testthat::local_mocked_bindings(.ensure_reconfort_python = function(...) stop("no conda"))
+  mock_sen2cor(calls)
+  out <- .lancer_capturant(run_reconfort_dieback(
+    con = con, zone_id = 3L, cache_dir = cache, s2_year = 2024L,
+    tiles = "T31TFN", quiet = TRUE))
+  expect_true(isTRUE(calls$sen2cor))
+  expect_true(any(vapply(out$warnings, inherits, NA, "nemeton_reconfort_repli_sen2cor")))
+  calls$sen2cor <- NULL
+  expect_error(run_reconfort_dieback(con = con, zone_id = 5L, cache_dir = cache,
+                                     s2_year = 2024L, tiles = "T31TFN", quiet = TRUE,
+                                     acquisition = "archive"))
+  expect_null(calls$sen2cor)
+})
