@@ -75,3 +75,12 @@ Rscript data-raw/comparaison_reconfort/carte_spike.R \
 
 `run_reconfort_dieback(..., acquisition = "fenetre")` (défaut ; sans clés THEIA et
 sans argument explicite, repli sur `"archive"` avec un avertissement).
+
+## Voie Sen2Cor (mission 095)
+
+`valider_sen2cor.R <output_zone_N> <travail> maja|sen2cor [fin]` rejoue la validation de la voie
+`acquisition = "sen2cor"` contre un vrai run IOTA2 : en mode `maja`, les scenes MAJA du run alimentent
+le predicteur R (accord de classe pixel a pixel sur tout le masque feuillus) ; en mode `sen2cor`, les scenes
+Planetary Computier (reseau requis, lecture par le cache de FAST/FORDEAD) alimentent le meme predicteur et
+le script donne le taux de changement de classe contre le mode `maja`. Duree sur Couchey : environ 15 min de
+classification par mode, plus la lecture des scenes (~30 min pour Sen2Cor).
