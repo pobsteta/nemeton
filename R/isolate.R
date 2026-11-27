@@ -363,9 +363,9 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
   # `supervise = TRUE` demarre, au premier appel de la session R, le superviseur
   # global de processx, qui garde deux fifos (`supervisor_stdin`,
   # `supervisor_stdout`) ouverts pour toute la vie du processus. Dans un worker
-  # `future`, le paquet signale ces connexions « ajoutees » a chaque run
+  # `future`, le paquet signale ces connexions "ajoutees" a chaque run
   # (mission 089). Si c'est nous qui le demarrons, nous le rendons en sortant.
-  sup_avant <- length(.capped_supervisor_fifos())
+  .capped_supervisor_entrer()
 
   if (!is.null(log_path)) {
     dir.create(dirname(log_path), recursive = TRUE, showWarnings = FALSE)
@@ -380,7 +380,7 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
   on.exit(if (px$is_alive()) px$kill(), add = TRUE)
   # Apres l'arret du fils (ordre des on.exit) : la garde mort du parent
   # ne vaut que tant que le fils tourne, elle n'a plus d'objet ensuite.
-  if (sup_avant == 0L) on.exit(.capped_supervisor_liberer(), add = TRUE)
+  on.exit(.capped_supervisor_sortir(), add = TRUE)
   if (!is.null(marker_path)) {
     .capped_marker_write(marker_path, unit = cmd$unit, pid = px$get_pid(),
                          fun = fun, package = package)
@@ -417,6 +417,33 @@ run_memory_capped <- function(fun, args = list(), package = "nemeton",
   if (is.null(cx) || !NROW(cx)) return(character())
   d <- as.character(cx[, "description"])
   d[grepl("supervisor_std(in|out)", d)]
+}
+
+# Appels de `run_memory_capped()` en cours dans cette session R (imbriques ou
+# concurrents) et propriete du superviseur : `processx::supervisor_kill()` tue
+# TOUS les enfants supervises de la session, on ne le rend donc qu'a la sortie du
+# dernier appel, et seulement si c'est le premier appel qui l'a demarre.
+.capped_supervisor_etat <- new.env(parent = emptyenv())
+.capped_supervisor_etat$actifs <- 0L
+.capped_supervisor_etat$possede <- FALSE
+
+# A appeler AVANT de creer le processus supervise.
+.capped_supervisor_entrer <- function() {
+  e <- .capped_supervisor_etat
+  if (e$actifs == 0L) e$possede <- length(.capped_supervisor_fifos()) == 0L
+  e$actifs <- e$actifs + 1L
+  invisible(NULL)
+}
+
+# A appeler apres l'arret du fils.
+.capped_supervisor_sortir <- function() {
+  e <- .capped_supervisor_etat
+  e$actifs <- max(0L, e$actifs - 1L)
+  if (e$actifs == 0L && isTRUE(e$possede)) {
+    e$possede <- FALSE
+    .capped_supervisor_liberer()
+  }
+  invisible(NULL)
 }
 
 # Rend le superviseur de processx (exporte : `processx::supervisor_kill()`), ce

@@ -161,14 +161,14 @@ call. A `reconfort:cancelled` progress event is emitted.}
   missing, the run falls back to `"archive"` with a warning; an explicit
   `"fenetre"` without keys aborts. Without an AOI (`aoi_crop = FALSE`) the
   archive route is used. When left unset and the THEIA STAC catalogue does
-not answer (timeout, connection error, HTTP 5xx), the run also falls back
-to `"archive"`, with a warning of class `nemeton_reconfort_repli_archive`;
-an explicit `"fenetre"` then aborts with class
-`nemeton_reconfort_stac_indisponible`, and an HTTP 401/403 from the
-catalogue aborts with `nemeton_reconfort_stac_refuse` (never a silent
-fallback). The route taken is recorded as `acquisition` in
-`run_meta.json`, with the `causes_repli` of each fallback. IOTA2 is
-unchanged either way.}
+  not answer (timeout, connection error, HTTP 5xx), the run also falls back
+  to `"archive"`, with a warning of class `nemeton_reconfort_repli_archive`;
+  an explicit `"fenetre"` then aborts with class
+  `nemeton_reconfort_stac_indisponible`, and an HTTP 401/403 from the
+  catalogue aborts with `nemeton_reconfort_stac_refuse` (never a silent
+  fallback). The route taken is recorded as `acquisition` in
+  `run_meta.json`, with the `causes_repli` of each fallback. IOTA2 is
+  unchanged either way.}
 
 \item{correction_sen2cor}{Only for the Sen2Cor route. `"aucune"` (default)
 uses the Sen2Cor reflectances as they are; `"biais"` subtracts the mean

@@ -376,3 +376,29 @@ test_that("l'arret du fils sur mort du parent survit a la liberation du supervis
   for (i in 1:50) { if (!vivant(enfant)) break; Sys.sleep(0.2) }
   expect_false(vivant(enfant))
 })
+
+test_that("le superviseur n'est rendu qu'a la sortie du dernier appel (imbriques / concurrents)", {
+  skip_on_cran()
+  skip_if_not_installed("processx")
+  skip_on_os("windows")
+  processx::supervisor_kill()
+  .capped_supervisor_etat$actifs <- 0L
+  .capped_supervisor_etat$possede <- FALSE
+  vivant <- function(p) p$is_alive()
+
+  .capped_supervisor_entrer()                       # appel A (demarre le superviseur)
+  a <- processx::process$new("sleep", "60", supervise = TRUE)
+  .capped_supervisor_entrer()                       # appel B, imbrique
+  b <- processx::process$new("sleep", "60", supervise = TRUE)
+  withr::defer({ if (a$is_alive()) a$kill(); if (b$is_alive()) b$kill(); processx::supervisor_kill() })
+  expect_length(.capped_supervisor_fifos(), 2L)
+
+  .capped_supervisor_sortir()                       # sortie de A : B tourne encore
+  a$kill()
+  expect_true(vivant(b))
+  expect_length(.capped_supervisor_fifos(), 2L)
+
+  b$kill()
+  .capped_supervisor_sortir()                       # dernier : liberation
+  expect_length(.capped_supervisor_fifos(), 0L)
+})

@@ -5,8 +5,8 @@
   la reponse : **indisponible** (delai depasse, connexion impossible, HTTP 5xx, 408, 429) -> repli ; **refus** (HTTP 401 / 403)
   -> erreur de classe `nemeton_reconfort_stac_refuse`, jamais de repli silencieux (les cles sont en cause, une autre voie
   n'y changerait rien) ; sinon voie fenetre inchangee, sans avertissement. Le repli n'a lieu que si `acquisition` n'a pas ete
-  donnee : avertissement de classe `nemeton_reconfort_repli_archive` (« catalogue THEIA indisponible (cause) : passage par
-  les archives GEODES (~2 Go par scene) »). `acquisition = "fenetre"` explicite avec un catalogue en panne : erreur de classe
+  donnee : avertissement de classe `nemeton_reconfort_repli_archive` ("THEIA STAC catalogue unavailable (cause): falling back to
+  GEODES archives (~2 GB per scene)"). `acquisition = "fenetre"` explicite avec un catalogue en panne : erreur de classe
   `nemeton_reconfort_stac_indisponible` (hote et cause). Meme traitement quand le catalogue lache en cours d'ingest, sonde
   passee (erreur `httr2` de connexion ou 5xx). L'ordre de repli est THEIA -> GEODES -> Sen2Cor (`.reconfort_voie_suivante()`) ;
   le repli Sen2Cor « conda absent » est inchange. La voie retenue est inscrite dans `run_meta.json` (`acquisition`) et dans la
@@ -17,7 +17,7 @@
   `supervisor_stdin` / `supervisor_stdout` ouverts toute la vie du processus ; dans un worker `future`, ils sortaient en
   avertissement « added connections » a chaque run RECONFORT. Quand c'est `run_memory_capped()` qui demarre le superviseur,
   il le rend en sortie (`processx::supervisor_kill()`), apres l'arret du fils ; l'arret du fils sur mort du parent reste
-  garanti tant qu'il tourne (mission 075, teste). Un superviseur deja demarre par un autre usager n'est pas touche.
+  garanti tant qu'il tourne (mission 075, teste). Un superviseur deja demarre par un autre usager n'est pas touche, et avec plusieurs `run_memory_capped()` simultanes ou imbriques (compteur d'appels en cours) il n'est rendu qu'a la sortie du dernier. Limite : `supervisor_kill()` tue tous les enfants supervises de la session ; un processus supervise par du code tiers, demarre pendant le run, est donc tue a cette liberation finale.
 
 # nemeton 2026.11.46.9000 (development)
 

@@ -926,7 +926,7 @@ test_that("STAC en delai depasse : avertissement de repli, ingest en archive (08
   repli <- Filter(function(w) inherits(w, "nemeton_reconfort_repli_archive"), out$warnings)
   expect_length(repli, 1L)
   expect_match(conditionMessage(repli[[1]]), "Timeout was reached", fixed = TRUE)
-  expect_match(conditionMessage(repli[[1]]), "archives GEODES", fixed = TRUE)
+  expect_match(conditionMessage(repli[[1]]), "GEODES archives", fixed = TRUE)
   meta <- jsonlite::read_json(out$val$meta)
   expect_identical(meta$acquisition, "archive")
   expect_match(meta$causes_repli$fenetre, "unavailable")

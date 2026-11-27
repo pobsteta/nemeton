@@ -45,7 +45,7 @@
 # `nemeton_reconfort_repli_archive`.
 .reconfort_avertir_repli_archive <- function(cause) {
   cli::cli_warn(
-    "catalogue THEIA indisponible ({cause}) : passage par les archives GEODES (~2 Go par sc\u00e8ne)",
+    "THEIA STAC catalogue unavailable ({cause}): falling back to GEODES archives (~2 GB per scene)",
     class = "nemeton_reconfort_repli_archive")
 }
 
