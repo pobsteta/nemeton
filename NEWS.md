@@ -1,4 +1,17 @@
-# nemeton 2026.11.45.9001 (development)
+# nemeton 2026.11.46 (2026-11-27)
+
+Release du coeur qui porte l'indicateur composite de decoloration (ICD, spec 071) pour que l'application puisse
+l'offrir : ICD en quatrieme methode du suivi sanitaire, RECONFORT par fenetres de bandes THEIA, spike de
+re-entrainement RECONFORT et sa carte de classes (premier noyau Rust, optionnel), tournee DEPERIS avec Ramulus,
+mosaique de dalles unique (un SRS reellement different est refuse) et dalles IGN avant les produits derives du nuage.
+
+**Comportements devenus plus stricts** (aucun retrait ni changement de signature d'une fonction exportee stable) :
+une mosaique de dalles refuse par une erreur nommee toute dalle au SRS reellement different au lieu de l'ignorer en
+silence ; le CVAT de l'inventaire video est ecrit au codage exact de Groma et un autre codage est refuse ;
+`reconfort_carte_spike()` refuse par defaut une grille d'un autre CRS, d'une autre resolution ou decalee ;
+un NetCDF ERA5 `timeseries` incomplet est efface et redemande au lieu d'etre pris pour un cache.
+Le paquet declare desormais du code compile optionnel (Cargo, rustc) : sans eux, il s'installe sur des replis R purs.
+
 
 - **fix : regression de la #708 sur un projet reel : dalles MNH IGN + `chm.tif` melanges** (mission 085).
   Sur un projet reel (Couchey), `resolve_project_chm()` levait `nemeton_mosaique_srs` : `cache/layers/lidar_mnh/`
@@ -166,6 +179,13 @@
   et redemandé ; si la réponse reste incomplète, `rsen_era5ts_echec`. Limite : un
   reste non écrit dont la valeur est plausible (0 pour `tcc`, `ssrd`, `fdir`,
   `tp`) n'est pas détectable. Signatures inchangées.
+
+- **fix : ERA5 `timeseries`, une liste d'annees vide est nommee comme telle** (mission 049). Le refus avant tout appel
+  au CDS disait « the requested year is missing (NA) » ; il dit maintenant qu'aucune annee n'a ete demandee. Classe
+  d'erreur et cas NA, annee ouverte et annee close inchanges.
+
+- **docs : `ingest_sentinel2_timeseries()`, `skip_cached = FALSE` ne force pas de retelechargement** (mission 047).
+  Documentation et tests seulement.
 
 # nemeton 2026.11.45 (2026-11-24)
 
