@@ -165,11 +165,12 @@
 #'   terra::plot(r)
 #' }
 #'
-#' @param source_s2 Sentinel-2 reflectance source (mission 096): `NULL` (the
-#'   method's default: Sen2Cor; read from the cache folder when `NULL`), `"theia"` (MAJA, THEIA STAC catalogue, cache
-#'   `<cache_dir>_theia`) or `"sen2cor"` (Planetary Computer). A method running
+#' @param source_s2 Sentinel-2 reflectance source (mission 096): `NULL`
+#'   (default: nothing changes, `cache_dir` is read as given), `"theia"` (MAJA,
+#'   THEIA STAC catalogue, cache `<cache_dir>_theia`) or `"sen2cor"`
+#'   (Planetary Computer). A method running
 #'   off its calibration source warns (class `nemeton_s2_source_non_calee`) and
-#'   records `calee_sur` and `validee = FALSE`; THEIA unavailable switches the
+#'   records `calee_sur` and `mention_source`; THEIA unavailable switches the
 #'   WHOLE series to Sen2Cor (class `nemeton_s2_repli_sen2cor`); a 401/403 or
 #'   missing keys is an error. The effective source is written in the outputs
 #'   as `source_s2`. See [s2_source_resoudre()].
@@ -193,16 +194,19 @@ read_fast_alert_raster <- function(con, zone_id,
                                    parallel         = FALSE,
                                    source_s2        = NULL) {
   mode  <- match.arg(mode)
-  # Source Sentinel-2 (mission 096) : sans `source_s2`, elle se lit sur le
-  # dossier de cache (`<cache>_theia` = THEIA, sinon Sen2Cor) ; avec, le dossier
-  # de la source demandee est lu. Aucun reseau ici.
+  # Source Sentinel-2 (mission 096). Sans `source_s2` : rien ne change (meme
+  # dossier de cache, aucun attribut, aucun tag, aucun avertissement). Avec, le
+  # dossier de la source demandee est lu (aucun reseau ici) ; hors calage, un
+  # seul avertissement par session et par cache.
   source_s2 <- .s2_source_valider(source_s2)
-  if (is.null(source_s2)) {
-    source_s2 <- if (missing(cache_dir)) "sen2cor" else .s2_source_du_cache(cache_dir)
-  } else if (!missing(cache_dir)) {
-    cache_dir <- .s2_cache_dir_source(cache_dir, source_s2)
+  if (!is.null(source_s2)) {
+    if (!missing(cache_dir) && is.character(cache_dir) &&
+        length(cache_dir) == 1L) {
+      cache_dir <- .s2_cache_dir_source(cache_dir, source_s2)
+    }
+    .s2_avertir_non_calee("fast", source_s2,
+                          cle = if (!missing(cache_dir)) cache_dir else "")
   }
-  .s2_avertir_non_calee("fast", source_s2)
   # Mode-dependent default index: NDVI for count/rolling (back-compat),
   # NDMI for trend (moisture decouples first under chronic stress). An
   # explicit `index` always wins.
@@ -353,7 +357,7 @@ read_fast_alert_raster <- function(con, zone_id,
       attr(cached, "mode")  <- mode
       attr(cached, "index") <- index
       attr(cached, "cached") <- TRUE
-      attr(cached, "source_s2") <- source_s2
+      if (!is.null(source_s2)) attr(cached, "source_s2") <- source_s2
       return(cached)
     }
   }
@@ -432,7 +436,7 @@ read_fast_alert_raster <- function(con, zone_id,
   names(out)         <- .fast_layer_name(mode)
   attr(out, "mode")  <- mode
   attr(out, "index") <- index
-  attr(out, "source_s2") <- source_s2
+  if (!is.null(source_s2)) attr(out, "source_s2") <- source_s2
 
   # spec 016 (v0.49.0) — apply the UGF zone mask (resolved above). Pixels
   # outside the UGFs become NA, so downstream counts / displays reflect

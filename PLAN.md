@@ -180,6 +180,10 @@ FORDEAD ICD sen2cor, decision de Pascal apres les etudes 092/093). Fichier `R/so
 repli de serie, metadonnees) ; branchements dans `R/monitoring.R`, `R/sentinel2_cache.R`, `R/fast_alert_raster.R`,
 `R/fordead_pipeline.R`, `R/icd_pipeline.R`, `R/reconfort_pipeline.R`. Tests : `tests/testthat/test-source-s2.R`.
 Non fait : comparaison Couchey FAST/FORDEAD/ICD entre sources (pas de cache Sen2Cor, pas de PostGIS ni de Python fordead ici).
+Corrections apres relecture (meme jour) : sans `source_s2`, l'appel historique `stac_search_s2()` (MUSCATE compris) et aucune
+cle nouvelle dans les sorties ; `validee` supprime partout (decision de Pascal) ; mention en anglais et ASCII ; detection de
+panne en cours de lecture bornee, 401/403 en cours de serie -> `nemeton_s2_theia_refuse` ; recherche THEIA en echec -> repli de
+la serie ; meta.json de l'ICD a plat et fidele apres repli ; resultats FORDEAD par source.
 
 ### 2026-11-27 — Mission 089 : repli automatique THEIA -> GEODES quand le catalogue STAC est indisponible (mission 089 de nemetonplateforme), cycle dev `2026.11.46.9001`
 

@@ -106,7 +106,8 @@ test_that("ecriture des sorties : memes noms que la voie IOTA2, tags 'non valide
   # terra >= 1.8 rend un data.frame (name, value) ; avant, un vecteur nomme.
   if (is.data.frame(tg)) tg <- stats::setNames(tg$value, tg$name)
   expect_identical(unname(tg[["SOURCE_REFLECTANCES"]]), "sen2cor")
-  expect_identical(unname(tg[["VALIDEE"]]), "FALSE")
+  expect_false("VALIDEE" %in% names(tg))
+  expect_match(unname(tg[["MENTION"]]), "indicatif")   # l'encodage relu depend de terra
 })
 
 test_that("repli : la voie suivante apres 'archive' est Sen2Cor, apres 'fenetre' rien (089)", {

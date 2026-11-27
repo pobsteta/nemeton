@@ -80,14 +80,16 @@ database connection.}
 
 \item{aoi}{Optional `sf` zone polygon, instead of reading it from `con`.}
 
-\item{source_s2}{Sentinel-2 reflectance source (mission 096): `NULL` (the
-method's default: Sen2Cor; THEIA results go to `<result_dir>_theia`), `"theia"` (MAJA, THEIA STAC catalogue, cache
-`<cache_dir>_theia`) or `"sen2cor"` (Planetary Computer). A method running
-off its calibration source warns (class `nemeton_s2_source_non_calee`) and
-records `calee_sur` and `validee = FALSE`; THEIA unavailable switches the
-WHOLE series to Sen2Cor (class `nemeton_s2_repli_sen2cor`); a 401/403 or
-missing keys is an error. The effective source is written in the outputs
-as `source_s2`. See [s2_source_resoudre()].}
+\item{source_s2}{Sentinel-2 reflectance source (mission 096): `NULL`
+(default: nothing changes, same search, same cache, same outputs as before),
+`"theia"` (MAJA, THEIA STAC catalogue, cache `<cache_dir>_theia`) or
+`"sen2cor"` (CDSE then Planetary Computer, without the MUSCATE fallback).
+This method is calibrated on Sen2Cor: `"theia"` warns (class
+`nemeton_s2_source_non_calee`) and records `calee_sur` and `mention_source`.
+THEIA unavailable switches the WHOLE series to Sen2Cor (class
+`nemeton_s2_repli_sen2cor`); a 401/403 or missing keys is an error. The
+effective source is written in the outputs as `source_s2` only when this
+argument is given. THEIA results go to `<result_dir>_theia`. See [s2_source_resoudre()].}
 }
 \value{
 A list with `status` (`"success"`, `"cancelled"`, `"error"`),

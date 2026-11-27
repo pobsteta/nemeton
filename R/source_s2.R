@@ -17,7 +17,10 @@
 #     avertissement de classe `nemeton_s2_repli_sen2cor` ;
 #   * THEIA qui repond 401/403 ou cles absentes -> erreur claire, pas de repli ;
 #   * une methode qui tourne sur une source ou elle n'est pas calee le dit
-#     (`nemeton_s2_source_non_calee`, `calee_sur`, `validee = FALSE`).
+#     (`nemeton_s2_source_non_calee`, `calee_sur`, `mention_source`) ; l'appelant
+#     en deduit « indicatif » en comparant `calee_sur` a la source effective ;
+#   * SANS `source_s2`, rien ne change : memes appels, memes caches, memes cles
+#     de sortie qu'avant la mission 096 (aucune sonde, aucun avertissement).
 
 #' @noRd
 NULL
@@ -56,13 +59,13 @@ NULL
 #'   catalogue) or `"sen2cor"` (Planetary Computer).
 #' @return A list: `source_s2` (the source to use), `defaut` (the method's
 #'   default source), `calee_sur` (the source the method is calibrated on),
-#'   `validee` (`TRUE` only when `source_s2` is the calibration source),
 #'   `mention` (a short note when the method runs off its calibration source,
-#'   `NA` otherwise).
+#'   `NA` otherwise). Comparing `calee_sur` with `source_s2` tells whether the
+#'   run is indicative.
 #' @export
 #' @examples
 #' s2_source_resoudre("fast")
-#' s2_source_resoudre("fast", "theia")$validee
+#' s2_source_resoudre("fast", "theia")$mention
 s2_source_resoudre <- function(methode = c("reconfort", "fast", "fordead", "icd"),
                                source_s2 = NULL) {
   methode <- match.arg(methode)
@@ -70,7 +73,6 @@ s2_source_resoudre <- function(methode = c("reconfort", "fast", "fordead", "icd"
   calee <- unname(.S2_CALEE_SUR[[methode]])
   src <- source_s2 %||% calee
   list(source_s2 = src, defaut = calee, calee_sur = calee,
-       validee = identical(src, calee),
        mention = .s2_mention(methode, src))
 }
 
@@ -79,15 +81,25 @@ s2_source_resoudre <- function(methode = c("reconfort", "fast", "fordead", "icd"
 .s2_mention <- function(methode, source) {
   calee <- unname(.S2_CALEE_SUR[[methode]])
   if (identical(source, calee)) return(NA_character_)
-  sprintf(paste0("%s calibrée sur %s, exécutée sur %s : ",
-                 "seuils à revoir (études 092 et 093), non validé, indicatif"),
+  sprintf(paste0("%s is calibrated on %s but ran on %s: thresholds to be ",
+                 "revisited (platform studies 092 and 093), indicative only"),
           toupper(methode), calee, source)
 }
 
-# Avertissement : methode lancee hors de sa source de calage.
-.s2_avertir_non_calee <- function(methode, source) {
+# Memoire des avertissements deja donnes (une fois par session et par `cle`).
+.s2_avertis <- new.env(parent = emptyenv())
+
+# Avertissement : methode lancee hors de sa source de calage. Avec `cle` (par
+# exemple le dossier de cache lu), il n'est donne qu'une fois par session et par
+# cle : une lecture repetee ne reprend pas le meme avertissement.
+.s2_avertir_non_calee <- function(methode, source, cle = NULL) {
   calee <- unname(.S2_CALEE_SUR[[methode]])
   if (identical(source, calee)) return(invisible(FALSE))
+  if (!is.null(cle)) {
+    k <- paste(methode, source, cle, sep = "|")
+    if (isTRUE(.s2_avertis[[k]])) return(invisible(FALSE))
+    assign(k, TRUE, envir = .s2_avertis)
+  }
   cli::cli_warn(c(
     "{toupper(methode)} is calibrated on {.val {calee}} reflectances but runs on {.val {source}}.",
     i = "Thresholds were not re-fitted for this source: results are indicative and NOT validated (platform studies 092 and 093)."),
@@ -104,14 +116,6 @@ s2_source_resoudre <- function(methode = c("reconfort", "fast", "fordead", "icd"
   base <- sub("/+$", "", cache_dir)
   if (endsWith(base, .S2_SUFFIXE_CACHE_THEIA)) return(base)
   paste0(base, .S2_SUFFIXE_CACHE_THEIA)
-}
-
-# Source d'un dossier de cache (inverse de ce qui precede).
-.s2_source_du_cache <- function(cache_dir) {
-  if (!is.null(cache_dir) && nzchar(cache_dir) &&
-      endsWith(sub("/+$", "", cache_dir), .S2_SUFFIXE_CACHE_THEIA)) {
-    "theia"
-  } else "sen2cor"
 }
 
 # Choisit la source EFFECTIVE d'un lancement qui va chercher des scenes (reseau).
@@ -159,13 +163,39 @@ s2_source_resoudre <- function(methode = c("reconfort", "fast", "fordead", "icd"
     class = "nemeton_s2_repli_sen2cor")
 }
 
-# Une erreur de lecture THEIA est-elle une PANNE (reseau, delai, 5xx) ? Les
-# erreurs GDAL ne portent pas de classe httr2 : on regarde aussi le message.
+# Classe une erreur de lecture THEIA : "refuse" (401/403, cles a verifier),
+# "panne" (reseau, delai, 5xx, 408, 429) ou "autre" (donnee, bug : pas de repli).
+# Les erreurs GDAL ne portent pas de classe httr2 : on lit aussi le message, avec
+# des motifs BORNES (un nombre de trois chiffres isole n'est pas un code HTTP, un
+# mot « timeout » dans une phrase anodine n'est pas un delai).
+.s2_classer_erreur_theia <- function(e) {
+  cl <- .reconfort_stac_classer_erreur(e)
+  if (identical(cl, "refuse")) return("refuse")
+  if (identical(cl, "indisponible")) return("panne")
+  msg <- conditionMessage(e)
+  # Un code HTTP est lu apres « HTTP response code ... : » (forme GDAL, l'URL
+  # peut contenir des « : ») ou apres HTTP / status / code / error.
+  code <- function(re) {
+    grepl(sprintf("HTTP response code.{0,400}?: *(%s)\\b", re), msg,
+          ignore.case = TRUE, perl = TRUE) ||
+      grepl(sprintf("\\b(http(/[0-9.]+)?|status|code|error)\\b[^0-9]{0,15}\\b(%s)\\b",
+                    re), msg, ignore.case = TRUE, perl = TRUE)
+  }
+  if (code("40[13]") || grepl("\\b(unauthori[sz]ed|forbidden)\\b", msg,
+                              ignore.case = TRUE, perl = TRUE)) return("refuse")
+  panne <- code("5[0-9]{2}|408|429") ||
+    grepl(paste0("bad gateway|gateway time-?out|service unavailable|",
+                 "network is unreachable|failed to connect|could not resolve|",
+                 "couldn't connect|connection (reset|refused)|",
+                 "timed out|timeout was reached"),
+          msg, ignore.case = TRUE, perl = TRUE) ||
+    grepl("\\bSSL\\b", msg, perl = TRUE)
+  if (isTRUE(panne)) "panne" else "autre"
+}
+
+# Une erreur de lecture THEIA est-elle une PANNE (reseau, delai, 5xx) ?
 .s2_erreur_panne_theia <- function(e) {
-  if (identical(.reconfort_stac_classer_erreur(e), "indisponible")) return(TRUE)
-  grepl(paste0("timed? ?out|timeout|could not resolve|connection (reset|refused)|",
-               "couldn't connect|HTTP (error )?(5[0-9]{2}|408|429)|status code 5[0-9]{2}"),
-        conditionMessage(e), ignore.case = TRUE)
+  identical(.s2_classer_erreur_theia(e), "panne")
 }
 
 # Signale la panne THEIA en cours de serie : attrapee par `.s2_avec_repli()`.
@@ -176,34 +206,62 @@ s2_source_resoudre <- function(methode = c("reconfort", "fast", "fordead", "icd"
     class = "nemeton_s2_theia_panne", parent = e)
 }
 
-# Execute `f(source)` sur la source choisie ; si THEIA tombe en cours de serie,
-# jette tout ce que la serie avait fait sur THEIA et la refait ENTIEREMENT sur
-# Sen2Cor (avertissement `nemeton_s2_repli_sen2cor`). Rend `list(valeur,
-# source, repli, cause)`.
+# Refus (401/403) en cours de serie : erreur claire, jamais de repli.
+.s2_signaler_refus_theia <- function(e) {
+  cli::cli_abort(c(
+    "THEIA refused the request during the series: {sub('\\n.*$', '', conditionMessage(e))}",
+    i = "Check {.envvar TLD_ACCESS_KEY} / {.envvar TLD_SECRET_KEY}; falling back to Sen2Cor would hide a key problem."),
+    class = "nemeton_s2_theia_refuse", parent = e)
+}
+
+# Traite une erreur survenue pendant une serie lue sur THEIA : refus -> erreur
+# `nemeton_s2_theia_refuse`, panne -> `nemeton_s2_theia_panne` (repli de la
+# serie) ; autre erreur : ne fait rien (l'appelant garde son comportement).
+.s2_traiter_erreur_serie <- function(e, source_effective) {
+  if (!identical(source_effective, "theia")) return(invisible(NULL))
+  cl <- .s2_classer_erreur_theia(e)
+  if (identical(cl, "refuse")) .s2_signaler_refus_theia(e)
+  if (identical(cl, "panne")) .s2_signaler_panne_theia(e)
+  invisible(NULL)
+}
+
+# Appelle `f(source, info)` ; `info` (repli, cause) n'est passe que si `f` a un
+# second argument (les fonctions a un seul argument restent valides).
+.s2_appeler <- function(f, source, info) {
+  if (length(formals(f)) >= 2L) f(source, info) else f(source)
+}
+
+# Execute `f(source, info)` sur la source choisie ; si THEIA tombe en cours de
+# serie, jette tout ce que la serie avait fait sur THEIA et la refait
+# ENTIEREMENT sur Sen2Cor (avertissement `nemeton_s2_repli_sen2cor`). Rend
+# `list(valeur, source, repli, cause)`. `info` dit a `f` si la passe courante est
+# un repli (pour que ses metadonnees disent vrai).
 .s2_avec_repli <- function(methode, source, f) {
+  sans_repli <- list(repli = FALSE, cause = NA_character_)
   if (!identical(source, "theia")) {
-    return(list(valeur = f(source), source = source, repli = FALSE,
-                cause = NA_character_))
+    return(c(list(valeur = .s2_appeler(f, source, sans_repli), source = source),
+             sans_repli))
   }
-  essai <- tryCatch(list(valeur = f("theia")),
+  essai <- tryCatch(list(valeur = .s2_appeler(f, "theia", sans_repli)),
                     nemeton_s2_theia_panne = function(e) e)
   if (!inherits(essai, "error")) {
-    return(list(valeur = essai$valeur, source = "theia", repli = FALSE,
-                cause = NA_character_))
+    return(c(list(valeur = essai$valeur, source = "theia"), sans_repli))
   }
   cause <- sub("\n.*$", "", conditionMessage(essai$parent %||% essai))
   .s2_avertir_repli_sen2cor(methode, cause)
-  list(valeur = f("sen2cor"), source = "sen2cor", repli = TRUE, cause = cause)
+  list(valeur = .s2_appeler(f, "sen2cor", list(repli = TRUE, cause = cause)),
+       source = "sen2cor", repli = TRUE, cause = cause)
 }
 
 # Bloc de metadonnees commun a toutes les sorties (run_meta, meta.json, tags).
+# N'est ecrit que lorsque l'appelant a donne `source_s2`. Pas de champ
+# « validee » : l'appelant compare `calee_sur` a la source effective.
 .s2_meta_source <- function(methode, source, demandee = NULL, repli = FALSE,
                             cause = NA_character_) {
   info <- s2_source_resoudre(methode, source)
   out <- list(source_s2 = source,
               source_s2_demandee = demandee %||% source,
               calee_sur = info$calee_sur,
-              validee = info$validee,
               repli_sen2cor = isTRUE(repli))
   if (isTRUE(repli) && !is.na(cause)) out$cause_repli <- cause
   if (!is.na(info$mention)) out$mention_source <- info$mention
@@ -214,16 +272,42 @@ s2_source_resoudre <- function(methode = c("reconfort", "fast", "fordead", "icd"
 
 # Cherche les scenes d'une source sur une emprise et une periode, au format
 # commun (`scene_id`, `obs_date`, `cloud_pct`, `href_<bande>`, `source`).
-# "sen2cor" : CDSE puis Planetary Computer, JAMAIS le repli MUSCATE de
-# `stac_search_s2()` (il melangerait les sources dans le cache Sen2Cor).
-# "theia"   : catalogue THEIA seul (MAJA).
+# NULL      : appel historique `stac_search_s2()` avec ses sources par defaut
+#             (`c("cdse", "pc", "muscate")`) : SANS `source_s2`, rien ne change.
+# "sen2cor" : CDSE puis Planetary Computer, JAMAIS le repli MUSCATE (il
+#             melangerait les sources dans le cache Sen2Cor).
+# "theia"   : catalogue THEIA seul (MAJA). Un echec de la recherche (que
+#             `stac_search_s2()` avale en avertissement et en table vide) n'est
+#             PAS « aucune scene » : refus -> `nemeton_s2_theia_refuse`, sinon
+#             panne -> `nemeton_s2_theia_panne` (repli de la serie entiere).
 .s2_chercher_scenes <- function(source, bbox, start, end, max_cloud = 20) {
-  if (identical(source, "theia")) {
-    return(stac_search_s2(bbox, start, end, max_cloud = max_cloud,
-                          source = "muscate"))
+  if (is.null(source)) {
+    return(stac_search_s2(bbox, start, end, max_cloud = max_cloud))
   }
-  stac_search_s2(bbox, start, end, max_cloud = max_cloud,
-                 source = c("cdse", "pc"))
+  if (!identical(source, "theia")) {
+    return(stac_search_s2(bbox, start, end, max_cloud = max_cloud,
+                          source = c("cdse", "pc")))
+  }
+  echecs <- character(0)
+  op <- options(nemeton.s2_muscate_clm = TRUE)
+  on.exit(options(op), add = TRUE)
+  scenes <- withCallingHandlers(
+    stac_search_s2(bbox, start, end, max_cloud = max_cloud, source = "muscate"),
+    warning = function(w) {
+      m <- conditionMessage(w)
+      if (grepl("STAC backends? .*failed", m)) {
+        echecs <<- c(echecs, m)
+        invokeRestart("muffleWarning")
+      }
+    })
+  if (length(echecs) && !NROW(scenes)) {
+    m <- gsub("\033\\[[0-9;]*m", "", echecs[[1L]])
+    m <- sub("^STAC backend[^:]*failed: *", "", sub("\n.*$", "", m))
+    e <- simpleError(m)
+    if (identical(.s2_classer_erreur_theia(e), "refuse")) .s2_signaler_refus_theia(e)
+    .s2_signaler_panne_theia(e)
+  }
+  scenes
 }
 
 # Masque MAJA (CLM : 0 = clair, bits non nuls = nuage, ombre...) -> convention

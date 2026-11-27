@@ -184,14 +184,15 @@ FAST / FORDEAD, `<project>/cache/layers/sentinel2`). Default: `<cache_dir>/layer
 when `cache_dir` is the project `cache` folder or already holds that folder,
 otherwise `<cache_dir>/s2_bands` (a separate cache, not shared with FAST/FORDEAD).}
 
-\item{source_s2}{Sentinel-2 reflectance source (mission 096): `NULL` (the
-method's default: THEIA/MAJA), `"theia"` (MAJA, THEIA STAC catalogue, cache
-`<cache_dir>_theia`) or `"sen2cor"` (Planetary Computer). A method running
-off its calibration source warns (class `nemeton_s2_source_non_calee`) and
-records `calee_sur` and `validee = FALSE`; THEIA unavailable switches the
-WHOLE series to Sen2Cor (class `nemeton_s2_repli_sen2cor`); a 401/403 or
-missing keys is an error. The effective source is written in the outputs
-as `source_s2`. See [s2_source_resoudre()].}
+\item{source_s2}{Sentinel-2 reflectance source (mission 096): `NULL` (default:
+nothing changes, `acquisition` decides), `"theia"` (MAJA: the `"fenetre"` /
+`"archive"` routes) or `"sen2cor"` (Planetary Computer, same as
+`acquisition = "sen2cor"`). Contradicting `acquisition` is an error of class
+`nemeton_s2_source_incoherente`. When given, `source_s2 = "sen2cor"` warns
+(class `nemeton_s2_source_non_calee`: RECONFORT is calibrated on MAJA) and
+`run_meta.json` records `source_s2`, `source_s2_demandee`, `calee_sur`,
+`repli_sen2cor` and `mention_source`. Without `source_s2` none of these keys
+is written. See [s2_source_resoudre()].}
 }
 \value{
 Invisibly, a list: `status` (`"completed"` or
@@ -232,8 +233,8 @@ FAST/FORDEAD band cache, a 134-feature stack (CRswir then CRre over 67
 dates) is built and the v3 forest is applied in R
 ([reconfort_sharkrf_lire()], [reconfort_caracteristiques_v3()]). Outputs have
 the names and formats of the IOTA2 route; `run_meta.json` carries
-`source_reflectances = "sen2cor"` and `validee = false`, and the GeoTIFFs carry
-the tags `SOURCE_REFLECTANCES` and `VALIDEE`. The model was trained on MAJA
+`source_reflectances = "sen2cor"` and the indicative `mention`, and the GeoTIFFs
+carry the tags `SOURCE_REFLECTANCES` and `MENTION`. The model was trained on MAJA
 reflectances: with Sen2Cor about 24 % of pixels change class on the test
 site (study 093), mostly towards class 3. The route is also the last resort,
 with a warning of class `nemeton_reconfort_repli_sen2cor`, when `acquisition`

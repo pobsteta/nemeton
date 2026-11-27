@@ -809,7 +809,7 @@ test_that("acquisition = 'sen2cor' n'appelle ni conda, ni THEIA, ni GEODES, et m
   expect_identical(calls$sen2cor_args$correction, "aucune")
   meta <- jsonlite::read_json(res$meta)
   expect_identical(meta$source_reflectances, "sen2cor")
-  expect_false(meta$validee)
+  expect_null(meta$validee)
   expect_identical(meta$mention, nemeton:::.RECONFORT_SEN2COR_MENTION)
 })
 
@@ -1064,4 +1064,94 @@ test_that("la classification des erreurs d'une recherche STAC", {
   emb <- structure(class = c("rlang_error", "error", "condition"),
                    list(message = "wrap", parent = ef))
   expect_identical(.reconfort_stac_classer_erreur(emb), "indisponible")
+})
+
+# --- Retrocompatibilite (mission 096) : sans `source_s2`, rien ne bouge ------
+
+# Cles de `run_meta.json` d'un run sans `source_s2`, telles qu'origin/main
+# (2fae116, 089 et 095 comprises) les ecrit. `acquisition` et `causes_repli`
+# viennent de la 089 ; aucune cle de la 096. Seul ecart voulu avec origin/main :
+# `validee` (095) est supprime, decision de Pascal du 2026-11-27.
+.cles_run_meta_main <- c(
+  "tool", "status", "zone_id", "run_id", "tiles", "s2_year", "date_from",
+  "date_to", "v_model", "species", "n_classes", "masked", "mask", "env",
+  "scheduler_type", "rasters", "n_alerts", "features_bundle", "elapsed_sec",
+  "generated_at", "acquisition")
+.cles_096 <- c("source_s2", "source_s2_demandee", "calee_sur", "repli_sen2cor",
+               "cause_repli", "mention_source", "validee")
+
+# Lance `f()` en notant tous les avertissements (classes et messages).
+.noter_avertissements <- function(f) {
+  cl <- character(0); msgs <- character(0)
+  res <- withCallingHandlers(f(),
+    warning = function(w) {
+      cl <<- c(cl, class(w)); msgs <<- c(msgs, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    })
+  list(res = res, classes = cl, messages = msgs)
+}
+
+test_that("RECONFORT sans source_s2 (voie fenetre) : memes cles qu'origin/main, aucun avertissement 096", {
+  skip_if_terra_write_broken()
+  withr::local_envvar(TLD_ACCESS_KEY = "a", TLD_SECRET_KEY = "b")
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  out <- .noter_avertissements(function() run_acq(calls))
+  expect_identical(calls$ingest_acq, "fenetre")
+  expect_false(any(grepl("^nemeton_s2_", out$classes)))
+  meta <- jsonlite::read_json(out$res$meta)
+  expect_setequal(names(meta), .cles_run_meta_main)
+  expect_false(any(.cles_096 %in% names(meta)))
+  expect_identical(meta$acquisition, "fenetre")
+  expect_identical(meta$tool, "reconfort")
+})
+
+test_that("RECONFORT acquisition = 'sen2cor' explicite, sans source_s2 : le comportement d'origin/main", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  mock_sen2cor(calls)
+  msgs <- character(0)
+  out <- .noter_avertissements(function() {
+    withCallingHandlers(
+      run_reconfort_dieback(con = con, zone_id = 3L, cache_dir = cache,
+                            s2_year = 2024L, tiles = "T31TFN", quiet = TRUE,
+                            acquisition = "sen2cor"),
+      message = function(m) {
+        msgs <<- c(msgs, conditionMessage(m)); invokeRestart("muffleMessage")
+      })
+  })
+  # Un seul cli_alert_warning (un message), aucune condition `warning` de la 096.
+  expect_false(any(grepl("^nemeton_s2_", out$classes)))
+  expect_false(any(grepl("calibrated", out$messages)))
+  expect_equal(sum(grepl("indicative|not validated|Sen2Cor", msgs, ignore.case = TRUE)), 1L)
+  meta <- jsonlite::read_json(out$res$meta)
+  expect_setequal(names(meta), c(.cles_run_meta_main, "source_reflectances",
+                                 "mention", "correction_sen2cor"))
+  expect_false(any(.cles_096 %in% names(meta)))
+  expect_identical(meta$source_reflectances, "sen2cor")
+  expect_identical(meta$mention, nemeton:::.RECONFORT_SEN2COR_MENTION)
+  expect_identical(meta$acquisition, "sen2cor")
+})
+
+test_that("RECONFORT : source_s2 explicite avertit et inscrit la source ; `demandee` ne dit jamais theia sans demande", {
+  con <- local_con()
+  cache <- withr::local_tempdir()
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  mock_sen2cor(calls)
+  out <- NULL
+  expect_warning(
+    out <- run_reconfort_dieback(con = con, zone_id = 3L, cache_dir = cache,
+                                 s2_year = 2024L, tiles = "T31TFN", quiet = TRUE,
+                                 source_s2 = "sen2cor"),
+    class = "nemeton_s2_source_non_calee")
+  meta <- jsonlite::read_json(out$meta)
+  expect_identical(meta$source_s2, "sen2cor")
+  expect_identical(meta$source_s2_demandee, "sen2cor")
+  expect_identical(meta$calee_sur, "theia")
+  expect_false(isTRUE(meta$repli_sen2cor))
+  expect_null(meta$validee)
+  expect_false(is.null(meta$mention_source))
 })

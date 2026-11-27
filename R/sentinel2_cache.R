@@ -69,7 +69,7 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
                                          max_cloud = 20,
                                          progress_callback = NULL,
                                          cancel_path = NULL,
-                                         source_effective = "sen2cor") {
+                                         source_effective = NULL) {
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
@@ -222,9 +222,7 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
         TRUE
       }, error = function(e) {
         # Panne THEIA : la serie entiere sera refaite sur Sen2Cor.
-        if (identical(source_effective, "theia") && .s2_erreur_panne_theia(e)) {
-          .s2_signaler_panne_theia(e)
-        }
+        .s2_traiter_erreur_serie(e, source_effective)
         cli::cli_warn("Scene {.val {sc$scene_id}} band {.val {b}} skipped: {conditionMessage(e)}")
         emit(list(current       = "s2:scene_skipped",
                   completed     = as.integer(i - 1L),
@@ -252,7 +250,7 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
               n_bands_cached  = as.integer(n_bands_cached)))
   }
 
-  list(cancelled = was_cancelled,
+  out <- list(cancelled = was_cancelled,
     scenes_df       = scenes[, intersect(c("scene_id", "obs_date",
                                            "cloud_pct", "source"),
                                          names(scenes)),
@@ -260,9 +258,11 @@ ingest_s2_raw_bands_to_cache <- function(con, zone_id, bands,
     n_scenes        = as.integer(total_scenes),
     n_bands_fetched = as.integer(n_bands_fetched),
     n_bands_cached  = as.integer(n_bands_cached),
-    n_scenes_skipped = as.integer(n_skipped),
-    source_s2        = source_effective
+    n_scenes_skipped = as.integer(n_skipped)
   )
+  # Source inscrite seulement quand l'appelant en a choisi une (mission 096).
+  if (!is.null(source_effective)) out$source_s2 <- source_effective
+  out
 }
 
 

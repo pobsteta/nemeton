@@ -688,3 +688,64 @@ test_that(".s2_mgrs_tile lit la tuile, pas l'orbite, sur les identifiants CDSE (
     "T31UFQ")
   expect_true(is.na(nemeton:::.s2_mgrs_tile("pas_un_identifiant")))
 })
+
+
+# ---- source_s2 (mission 096) -----------------------------------------
+
+test_that("FAST sans source_s2 : aucun attribut, aucun tag, aucun avertissement (retro 096)", {
+  skip_if_terra_write_broken()
+  skip_if_not_installed("terra")
+  cache  <- withr::local_tempdir()
+  rcache <- withr::local_tempdir()
+  .write_one_ndvi_scene(cache)
+  con <- structure(list(), class = c("FakeConn", "DBIConnection"))
+  args <- list(con, 1L, index = "NDVI", date_from = "2025-05-01",
+               date_to = "2025-06-01", mode = "count", cache_dir = cache,
+               apply_zone_mask = FALSE, result_cache_dir = rcache)
+  expect_no_warning(r1 <- suppressMessages(do.call(read_fast_alert_raster, args)))
+  expect_null(attr(r1, "source_s2"))
+  expect_identical(attr(r1, "mode"), "count")
+  expect_identical(attr(r1, "index"), "NDVI")
+  # ni tag GeoTIFF nouveau dans le COG ecrit, ni attribut a la relecture
+  cog <- list.files(file.path(rcache, "zone_1"), "\\.tif$", full.names = TRUE)
+  expect_length(cog, 1L)
+  mt <- terra::metags(terra::rast(cog))
+  noms <- if (is.data.frame(mt)) mt$name else names(mt)
+  expect_false(any(tolower(noms) %in% c("source_s2", "calee_sur", "validee")))
+  expect_no_warning(r2 <- suppressMessages(do.call(read_fast_alert_raster, args)))
+  expect_true(isTRUE(attr(r2, "cached")))
+  expect_null(attr(r2, "source_s2"))
+})
+
+test_that("FAST avec source_s2 : attribut et tag ; hors calage, un seul avertissement par session et par cache", {
+  skip_if_terra_write_broken()
+  skip_if_not_installed("terra")
+  rm(list = ls(nemeton:::.s2_avertis), envir = nemeton:::.s2_avertis)
+  base <- withr::local_tempdir()
+  cache <- file.path(base, "sentinel2")
+  dir.create(cache); dir.create(paste0(cache, "_theia"))
+  .write_one_ndvi_scene(cache); .write_one_ndvi_scene(paste0(cache, "_theia"))
+  rcache <- withr::local_tempdir()
+  con <- structure(list(), class = c("FakeConn", "DBIConnection"))
+  args <- list(con, 1L, index = "NDVI", date_from = "2025-05-01",
+               date_to = "2025-06-01", mode = "count", cache_dir = cache,
+               apply_zone_mask = FALSE, result_cache_dir = rcache)
+  # Sen2Cor : calee, aucun avertissement, source inscrite
+  expect_no_warning(r0 <- suppressMessages(do.call(read_fast_alert_raster,
+                                                   c(args, list(source_s2 = "sen2cor")))))
+  expect_identical(attr(r0, "source_s2"), "sen2cor")
+  # THEIA : un avertissement la premiere fois, aucun ensuite
+  a <- c(args, list(source_s2 = "theia"))
+  a$result_cache_dir <- withr::local_tempdir()
+  expect_warning(r1 <- suppressMessages(do.call(read_fast_alert_raster, a)),
+                 class = "nemeton_s2_source_non_calee")
+  expect_identical(attr(r1, "source_s2"), "theia")
+  expect_no_warning(suppressMessages(do.call(read_fast_alert_raster, a)))
+  expect_no_warning(suppressMessages(do.call(read_fast_alert_raster, a)))
+  # un autre cache : l'avertissement est redonne
+  a2 <- a; a2$cache_dir <- file.path(base, "autre"); dir.create(a2$cache_dir)
+  dir.create(paste0(a2$cache_dir, "_theia"))
+  .write_one_ndvi_scene(paste0(a2$cache_dir, "_theia"))
+  expect_warning(suppressMessages(do.call(read_fast_alert_raster, a2)),
+                 class = "nemeton_s2_source_non_calee")
+})

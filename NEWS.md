@@ -3,21 +3,32 @@
 - **feat : une source Sentinel-2 choisie pour FAST, FORDEAD, RECONFORT et l'ICD** (mission 096). Nouveau parametre `source_s2`
   (`NULL`, `"theia"` ou `"sen2cor"`) sur `ingest_sentinel2_timeseries()`, `read_fast_alert_raster()`, `run_fordead_dieback()`,
   `run_icd_decoloration()` et `run_reconfort_dieback()`, et `s2_source_resoudre()` (exportee) qui dit la source et son calage.
-  **Le defaut est propre a chaque methode** (decision de Pascal du 2026-11-27, apres les etudes 092 et 093) : RECONFORT =
-  `"theia"` (MAJA), FAST, FORDEAD et ICD = `"sen2cor"`. Sans `source_s2`, FAST, FORDEAD et l'ICD rendent les memes resultats
-  qu'avant (meme cache, aucune sonde reseau). `"theia"` = scenes MAJA du catalogue STAC THEIA, cache frere
-  `<cache_dir>_theia` (le cache Sen2Cor ne bouge pas), masque CLM range comme une SCL (9 nuage, 4 clair, 0 absent) pour l'ICD ;
-  `"sen2cor"` = Planetary Computer (CDSE avant lui), **sans** le repli MUSCATE de `stac_search_s2()` (il aurait mele deux
-  sources dans un cache). L'ICD ecrit ses resultats THEIA dans `<result_dir>_theia`.
+  **Chaque methode garde la source sur laquelle elle est calee** (decision de Pascal du 2026-11-27, apres les etudes 092 et
+  093) : RECONFORT = `"theia"` (MAJA), FAST, FORDEAD et ICD = `"sen2cor"`. **Sans `source_s2`, rien ne change** : memes appels
+  (`stac_search_s2()` avec ses sources par defaut `c("cdse", "pc", "muscate")`, repli MUSCATE compris), memes caches, memes
+  dossiers de resultats, aucune sonde reseau, aucun avertissement, et aucune cle nouvelle dans `run_meta.json` (FORDEAD,
+  RECONFORT), `meta.json` (ICD), le retour de FORDEAD et de l'ICD, l'attribut `source_s2` de `read_fast_alert_raster()` ni le
+  tag du COG FAST. Seules exceptions, deja livrees par la 089 : `acquisition` et `causes_repli` de RECONFORT.
+  Avec `source_s2` : `"theia"` = scenes MAJA du catalogue STAC THEIA, cache frere `<cache_dir>_theia` (le cache Sen2Cor ne
+  bouge pas), masque CLM range comme une SCL (9 nuage, 4 clair, 0 absent) pour l'ICD ; resultats de l'ICD dans
+  `<result_dir>_theia` et de FORDEAD dans `<mask_cache_dir>_theia` (un run THEIA n'efface pas un resultat Sen2Cor) ;
+  `"sen2cor"` = CDSE puis Planetary Computer, **sans** le repli MUSCATE (il aurait mele deux sources dans un cache).
   **Attention, calage** : FAST, FORDEAD et l'ICD sont calibres sur Sen2Cor ; lances sur `"theia"`, et RECONFORT sur `"sen2cor"`,
-  ils avertissent (classe `nemeton_s2_source_non_calee`) et inscrivent `calee_sur`, `validee = FALSE` et `mention_source`
-  (seuils a revoir, etudes 092 et 093).
-  Jamais deux sources dans une meme serie : THEIA indisponible (sonde `.reconfort_stac_sonde()`) ou en panne en cours de serie
-  -> la serie ENTIERE est refaite sur Sen2Cor, avertissement `nemeton_s2_repli_sen2cor`. 401/403 -> erreur
-  `nemeton_s2_theia_refuse` ; cles absentes -> `nemeton_s2_theia_sans_cles` ; `source_s2` contraire a `acquisition` ->
+  ils avertissent (classe `nemeton_s2_source_non_calee`, une seule fois par session et par cache pour FAST) et inscrivent
+  `calee_sur` et `mention_source` (seuils a revoir, etudes 092 et 093). **Il n'y a pas de champ `validee`** : l'appelant
+  compare `calee_sur` a la source effective (`source_s2`, ou `source_reflectances` pour la voie Sen2Cor de RECONFORT).
+  Jamais deux sources dans une meme serie : THEIA indisponible (sonde `.reconfort_stac_sonde()`), en panne en cours de lecture
+  (reseau, delai, 5xx, 408, 429, SSL, motifs bornes) ou **recherche THEIA en echec** (que `stac_search_s2()` avale en
+  avertissement et table vide, comportement inchange pour ses autres appelants) -> la serie ENTIERE est refaite sur Sen2Cor,
+  avertissement `nemeton_s2_repli_sen2cor`, et les metadonnees disent le repli. 401/403, y compris en cours de serie ->
+  erreur `nemeton_s2_theia_refuse` ; cles absentes -> `nemeton_s2_theia_sans_cles` ; `source_s2` contraire a `acquisition` ->
   `nemeton_s2_source_incoherente`. Le repli de RECONFORT (THEIA -> GEODES -> Sen2Cor, 089) ne change pas. La source effective
-  est inscrite : `run_meta.json` (FORDEAD, RECONFORT), `meta.json` (ICD), tag GeoTIFF `source_s2` (cache FAST, RECONFORT
-  Sen2Cor), colonne `source_s2` du resume d'ingestion FAST (sur demande seulement), champ `source_s2` des resultats.
+  est inscrite, a plat, dans `run_meta.json` (FORDEAD, RECONFORT), `meta.json` (ICD, comme les deux autres), tag GeoTIFF
+  `source_s2` (cache FAST), colonne `source_s2` du resume d'ingestion FAST et champ `source_s2` des resultats, **seulement
+  quand `source_s2` est donne**.
+- **Changement de la 095 (non publiee) : `validee` disparait de la sortie Sen2Cor de RECONFORT.** `run_meta.json` ne porte plus
+  `validee`, les GeoTIFF plus le tag `VALIDEE` ; restent `source_reflectances = "sen2cor"`, `mention` (indicative),
+  `correction_sen2cor` et le tag `MENTION`.
 
 # nemeton 2026.11.46.9001 (development)
 
@@ -52,8 +63,8 @@
   (arbre puis pixels) a ete essayee puis **retiree** : sur le vrai v3, 134 variables, elle n'etait que 2,6 fois plus rapide
   que le R (5 000 lignes : 1,3 s contre 3,3 s ; 20 000 lignes : 6,5 s contre 13,8 s ; 3 mesures Rust, 2 mesures R), sous le
   seuil de 3 fois retenu. Compter ~15 min de classification pour 520 000 pixels. Sorties aux noms et formats
-  de la voie IOTA2 ; `run_meta.json` porte `source_reflectances = "sen2cor"` et `validee = false`, les GeoTIFF les tags
-  `SOURCE_REFLECTANCES` et `VALIDEE`. Voie choisie explicitement, ou **en dernier recours** (avertissement de classe
+  de la voie IOTA2 ; `run_meta.json` porte `source_reflectances = "sen2cor"` et `mention` (indicative), les GeoTIFF les tags
+  `SOURCE_REFLECTANCES` et `MENTION` (le champ `validee` a disparu avec la 096). Voie choisie explicitement, ou **en dernier recours** (avertissement de classe
   `nemeton_reconfort_repli_sen2cor`, qui dit les causes THEIA et GEODES) quand `acquisition` est laisse par defaut et que
   la voie GEODES echoue ou que l'environnement conda manque ; une seule voie en echec ne declenche pas le repli. Le repli
   THEIA -> GEODES sur indisponibilite du catalogue est livre par la mission 089 (voir ci-dessus). Parametre

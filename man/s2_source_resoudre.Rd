@@ -18,9 +18,9 @@ catalogue) or `"sen2cor"` (Planetary Computer).}
 \value{
 A list: `source_s2` (the source to use), `defaut` (the method's
   default source), `calee_sur` (the source the method is calibrated on),
-  `validee` (`TRUE` only when `source_s2` is the calibration source),
   `mention` (a short note when the method runs off its calibration source,
-  `NA` otherwise).
+  `NA` otherwise). Comparing `calee_sur` with `source_s2` tells whether the
+  run is indicative.
 }
 \description{
 Resolves which Sentinel-2 reflectance source a method uses, and whether
@@ -32,5 +32,5 @@ own default (`NULL`): RECONFORT is calibrated on MAJA reflectances
 }
 \examples{
 s2_source_resoudre("fast")
-s2_source_resoudre("fast", "theia")$validee
+s2_source_resoudre("fast", "theia")$mention
 }

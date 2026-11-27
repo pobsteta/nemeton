@@ -294,14 +294,16 @@ register_monitoring_zone <- function(con, zone_name, zone_polygon,
 #' )
 #' }
 #'
-#' @param source_s2 Sentinel-2 reflectance source (mission 096): `NULL` (the
-#'   method's default: Sen2Cor), `"theia"` (MAJA, THEIA STAC catalogue, cache
-#'   `<cache_dir>_theia`) or `"sen2cor"` (Planetary Computer). A method running
-#'   off its calibration source warns (class `nemeton_s2_source_non_calee`) and
-#'   records `calee_sur` and `validee = FALSE`; THEIA unavailable switches the
-#'   WHOLE series to Sen2Cor (class `nemeton_s2_repli_sen2cor`); a 401/403 or
-#'   missing keys is an error. The effective source is written in the outputs
-#'   as `source_s2`. See [s2_source_resoudre()].
+#' @param source_s2 Sentinel-2 reflectance source (mission 096): `NULL`
+#'   (default: nothing changes, same search, same cache, same outputs as before),
+#'   `"theia"` (MAJA, THEIA STAC catalogue, cache `<cache_dir>_theia`) or
+#'   `"sen2cor"` (CDSE then Planetary Computer, without the MUSCATE fallback).
+#'   This method is calibrated on Sen2Cor: `"theia"` warns (class
+#'   `nemeton_s2_source_non_calee`) and records `calee_sur` and `mention_source`.
+#'   THEIA unavailable switches the WHOLE series to Sen2Cor (class
+#'   `nemeton_s2_repli_sen2cor`); a 401/403 or missing keys is an error. The
+#'   effective source is written in the outputs as `source_s2` only when this
+#'   argument is given. See [s2_source_resoudre()].
 #' @export
 ingest_sentinel2_timeseries <- function(con, zone_id,
                                         start, end,
@@ -315,14 +317,15 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
                                         prewarm_mask_cache_dir = NULL,
                                         source_s2 = NULL) {
   source_s2 <- .s2_source_valider(source_s2)
-  # Sans `source_s2` : source par defaut de FAST (Sen2Cor), aucune sonde,
-  # aucun avertissement, comportement inchange.
+  # Sans `source_s2` : l'appel d'avant, tel quel (recherche `stac_search_s2()`
+  # par defaut, cache inchange, aucune sonde, aucun avertissement).
   if (is.null(source_s2)) {
-    sel <- list(demandee = "sen2cor", effective = "sen2cor", repli = FALSE,
-                cause = NA_character_)
-  } else {
-    sel <- .s2_choisir_source("fast", source_s2)
+    return(.ingest_sentinel2_timeseries_src(
+      con, zone_id, start, end, bands, max_cloud, skip_cached, cache_dir,
+      progress_callback, cancel_path, prewarm_alerts, prewarm_mask_cache_dir,
+      source_effective = NULL))
   }
+  sel <- .s2_choisir_source("fast", source_s2)
   .s2_avertir_non_calee("fast", sel$effective)
   r <- .s2_avec_repli("fast", sel$effective, function(src) {
     .ingest_sentinel2_timeseries_src(
@@ -331,12 +334,8 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
       prewarm_alerts, prewarm_mask_cache_dir, source_effective = src)
   })
   out <- r$valeur
-  # Colonnes ajoutees seulement sur demande : sans `source_s2`, le resume est
-  # strictement celui d'avant.
-  if (!is.null(source_s2)) {
-    out$source_s2 <- r$source
-    out$repli_sen2cor <- isTRUE(sel$repli) || isTRUE(r$repli)
-  }
+  out$source_s2 <- r$source
+  out$repli_sen2cor <- isTRUE(sel$repli) || isTRUE(r$repli)
   out
 }
 
@@ -350,7 +349,7 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
                                         cancel_path,
                                         prewarm_alerts,
                                         prewarm_mask_cache_dir,
-                                        source_effective = "sen2cor") {
+                                        source_effective = NULL) {
   .assert_db_pkgs()
   if (!requireNamespace("terra", quietly = TRUE)) {
     cli::cli_abort("Package {.pkg terra} required.")
@@ -522,9 +521,7 @@ ingest_sentinel2_timeseries <- function(con, zone_id,
                          optional_bands = c("B11", "B05", "B8A")),
       error = function(e) {
         # Panne THEIA : la serie entiere sera refaite sur Sen2Cor (jamais deux sources).
-        if (identical(source_effective, "theia") && .s2_erreur_panne_theia(e)) {
-          .s2_signaler_panne_theia(e)
-        }
+        .s2_traiter_erreur_serie(e, source_effective)
         cli::cli_warn("Scene {.val {sc$scene_id}} skipped: {conditionMessage(e)}")
         emit(list(current       = "s2:scene_skipped",
                   completed     = as.integer(i - 1L),

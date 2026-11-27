@@ -127,11 +127,12 @@ when `TRUE` and \pkg{furrr} is installed, the per-scene raster
 compute fans across cores (set a `future::plan()` first). Default
 `FALSE`; results are identical to sequential.}
 
-\item{source_s2}{Sentinel-2 reflectance source (mission 096): `NULL` (the
-method's default: Sen2Cor; read from the cache folder when `NULL`), `"theia"` (MAJA, THEIA STAC catalogue, cache
-`<cache_dir>_theia`) or `"sen2cor"` (Planetary Computer). A method running
+\item{source_s2}{Sentinel-2 reflectance source (mission 096): `NULL`
+(default: nothing changes, `cache_dir` is read as given), `"theia"` (MAJA,
+THEIA STAC catalogue, cache `<cache_dir>_theia`) or `"sen2cor"`
+(Planetary Computer). A method running
 off its calibration source warns (class `nemeton_s2_source_non_calee`) and
-records `calee_sur` and `validee = FALSE`; THEIA unavailable switches the
+records `calee_sur` and `mention_source`; THEIA unavailable switches the
 WHOLE series to Sen2Cor (class `nemeton_s2_repli_sen2cor`); a 401/403 or
 missing keys is an error. The effective source is written in the outputs
 as `source_s2`. See [s2_source_resoudre()].}
