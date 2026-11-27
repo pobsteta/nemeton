@@ -880,6 +880,8 @@ Ingestion des scenes, series par pixel, zones et caches de suivi
   : Sentinel-2 Time Series Ingestion (E6 monitoring)
 - [`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md)
   : Ingest a Sentinel-2 time series for the plots of a monitoring zone
+- [`s2_source_resoudre()`](https://pobsteta.github.io/nemeton/reference/s2_source_resoudre.md)
+  : Sentinel-2 source of a health-monitoring method
 - [`build_ndvi_season_composite()`](https://pobsteta.github.io/nemeton/reference/build_ndvi_season_composite.md)
   : Season NDVI composite from cached Sentinel-2 scenes
 - [`build_index_stack()`](https://pobsteta.github.io/nemeton/reference/build_index_stack.md)

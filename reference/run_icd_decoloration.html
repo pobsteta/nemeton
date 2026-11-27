@@ -67,7 +67,7 @@ persistence and months are those of the note."><meta property="og:image" content
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.46.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.46.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -234,7 +234,8 @@ persistence and months are those of the note.</p>
 <span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cancel_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  today <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  aoi <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  aoi <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  source_s2 <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -328,6 +329,19 @@ database connection.</p></dd>
 
 <dt id="arg-aoi">aoi<a class="anchor" aria-label="anchor" href="#arg-aoi"></a></dt>
 <dd><p>Optional `sf` zone polygon, instead of reading it from `con`.</p></dd>
+
+
+<dt id="arg-source-s-">source_s2<a class="anchor" aria-label="anchor" href="#arg-source-s-"></a></dt>
+<dd><p>Sentinel-2 reflectance source (mission 096): `NULL`
+(default: nothing changes, same search, same cache, same outputs as before),
+`"theia"` (MAJA, THEIA STAC catalogue, cache `&lt;cache_dir&gt;_theia`) or
+`"sen2cor"` (CDSE then Planetary Computer, without the MUSCATE fallback).
+This method is calibrated on Sen2Cor: `"theia"` warns (class
+`nemeton_s2_source_non_calee`) and records `calee_sur` and `mention_source`.
+THEIA unavailable switches the WHOLE series to Sen2Cor (class
+`nemeton_s2_repli_sen2cor`); a 401/403 or missing keys is an error. The
+effective source is written in the outputs as `source_s2` only when this
+argument is given. THEIA results go to `&lt;result_dir&gt;_theia`. See [s2_source_resoudre()].</p></dd>
 
 </dl></div>
     <div class="section level2">

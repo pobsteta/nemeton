@@ -2,13 +2,13 @@
 
 Orchestrates a full RECONFORT run for one monitoring zone: validate the
 conda/IOTA2 environment, fetch the Random-Forest model
-(`ensure_reconfort_model()`) and the broadleaf mask
-(`ensure_reconfort_oso_mask()`), resolve the AOI to Sentinel-2 MGRS
-tile(s) (`reconfort_aoi_tiles()`), ingest the S2 archives
-(`reconfort_ingest_s2()`), then drive the vendored IOTA2 map-production
-(sampling + classification + OSO masking + continuous score). Produces
-the classification, probability and continuous-score rasters (EPSG:2154)
-plus a \`run_meta.json\`.
+(\`ensure_reconfort_model()\`) and the broadleaf mask
+(\`ensure_reconfort_oso_mask()\`), resolve the AOI to Sentinel-2 MGRS
+tile(s) (\`reconfort_aoi_tiles()\`), ingest the S2 archives
+(\`reconfort_ingest_s2()\`), then drive the vendored IOTA2
+map-production (sampling + classification + OSO masking + continuous
+score). Produces the classification, probability and continuous-score
+rasters (EPSG:2154) plus a \`run_meta.json\`.
 
 ## Usage
 
@@ -39,7 +39,8 @@ run_reconfort_dieback(
   cancel_path = NULL,
   acquisition = c("fenetre", "archive", "sen2cor"),
   correction_sen2cor = c("aucune", "biais"),
-  s2_cache_dir = NULL
+  s2_cache_dir = NULL,
+  source_s2 = NULL
 )
 ```
 
@@ -51,8 +52,9 @@ run_reconfort_dieback(
 
 - zone_id:
 
-  Scalar monitoring-zone id (resolved to an AOI via the
-  \`monitoring_zone\` table). Must be a strictly positive integer.
+  Scalar monitoring-zone id (see \[\`.get_zone_aoi\`\]\[nemeton\]
+  resolution via \`monitoring_zone\`). Must be a strictly positive
+  integer.
 
 - cache_dir:
 
@@ -62,29 +64,28 @@ run_reconfort_dieback(
 
 - s2_year:
 
-  Integer, the **last** year of the two-year Sentinel-2 series – the
+  Integer, the \*\*last\*\* year of the two-year Sentinel-2 series — the
   single temporal control of a run (the app exposes only this, as a year
   picker). Default the current year. The download window, the analysis
-  window and the output names all derive from it; see *Temporal window*
-  below. A future year is refused; a year whose model analysis window
-  has not yet elapsed (see
-  [`reconfort_latest_complete_year()`](https://pobsteta.github.io/nemeton/reference/reconfort_latest_complete_year.md))
+  window and the output names all derive from it; see \*Temporal
+  window\* below. A future year is refused; a year whose model analysis
+  window has not yet elapsed (see \[reconfort_latest_complete_year()\])
   runs with a warning (truncated last season). The alert trigger date
   never lies after the day of the run.
 
 - date_from, date_to:
 
-  Sentinel-2 **download** window (\`"YYYY-MM-DD"\`). \`NULL\` (default)
-  derives a two-calendar-year window from \`s2_year\`: \`date_from =
-  (s2_year-1)-01-01\`, \`date_to = s2_year-12-31\`. This only bounds
-  what is fetched from Theia; IOTA2 then re-clips to the model's
-  seasonal *analysis* window (\`S2_start\`/\`S2_end\`), so a custom
-  download window cannot widen the analysis beyond what the pre-trained
-  model expects. See *Temporal window*.
+  Sentinel-2 \*\*download\*\* window (\`"YYYY-MM-DD"\`). \`NULL\`
+  (default) derives a two-calendar-year window from \`s2_year\`:
+  \`date_from = (s2_year-1)-01-01\`, \`date_to = s2_year-12-31\`. This
+  only bounds what is fetched from Theia; IOTA2 then re-clips to the
+  model's seasonal \*analysis\* window (\`S2_start\`/\`S2_end\`), so a
+  custom download window cannot widen the analysis beyond what the
+  pre-trained model expects. See \*Temporal window\*.
 
 - v_model:
 
-  RF model version (see `RECONFORT_MODELS`). Default \`"v3"\` (oak,
+  RF model version (see \`RECONFORT_MODELS\`). Default \`"v3"\` (oak,
   2-year series).
 
 - binary_mask:
@@ -100,11 +101,11 @@ run_reconfort_dieback(
   Logical. When \`TRUE\` (default) the Sentinel-2 scenes are streamed
   and clipped + reprojected to the zone AOI (+ buffer) in the output
   projection during ingestion (spec 021) — each archive is downloaded,
-  extracted, cropped and deleted in turn: a multi-hour full-tile run
-  becomes minutes, IOTA2's reference-grid handling is fixed, the
-  broadleaf mask + ground truth are AOI-local, and peak disk stays near
-  a single archive. All operations are per-pixel, so clipping does not
-  change the result for the kept pixels.
+  extracted, cropped and deleted in turn. This turns a multi-hour
+  full-tile run into minutes, fixes IOTA2's reference-grid handling,
+  makes the broadleaf mask + ground truth AOI-local, and caps peak disk
+  near a single archive. All operations are per-pixel, so clipping does
+  not change the result for the kept pixels.
 
 - oso_national:
 
@@ -153,7 +154,7 @@ run_reconfort_dieback(
 
 - geodes_config:
 
-  Path to \`pygeodes-config.json\` (see `reconfort_ingest_s2()`).
+  Path to \`pygeodes-config.json\` (see \`reconfort_ingest_s2()\`).
   Default resolves the option / user dir.
 
 - model_cache_dir, mask_cache_dir:
@@ -208,7 +209,7 @@ run_reconfort_dieback(
 
 - acquisition:
 
-  w the Sentinel-2 scenes are acquired. \`"sen2cor"\` (see the Sen2Cor
+  How the Sentinel-2 scenes are acquired. \`"sen2cor"\` (see the Sen2Cor
   section) needs neither conda nor THEIA nor GEODES. \`"fenetre"\`
   (default) reads only the AOI window of each band and mask from the
   THEIA STAC catalogue (needs \`TLD_ACCESS_KEY\` / \`TLD_SECRET_KEY\`;
@@ -242,6 +243,20 @@ run_reconfort_dieback(
   \`\<cache_dir\>/s2_bands\` (a separate cache, not shared with
   FAST/FORDEAD).
 
+- source_s2:
+
+  Sentinel-2 reflectance source (mission 096): \`NULL\` (default:
+  nothing changes, \`acquisition\` decides), \`"theia"\` (MAJA: the
+  \`"fenetre"\` / \`"archive"\` routes) or \`"sen2cor"\` (Planetary
+  Computer, same as \`acquisition = "sen2cor"\`). Contradicting
+  \`acquisition\` is an error of class
+  \`nemeton_s2_source_incoherente\`. When given, \`source_s2 =
+  "sen2cor"\` warns (class \`nemeton_s2_source_non_calee\`: RECONFORT is
+  calibrated on MAJA) and \`run_meta.json\` records \`source_s2\`,
+  \`source_s2_demandee\`, \`calee_sur\`, \`repli_sen2cor\` and
+  \`mention_source\`. Without \`source_s2\` none of these keys is
+  written. See \[s2_source_resoudre()\].
+
 ## Value
 
 Invisibly, a list: \`status\` (\`"completed"\` or \`"cancelled"\`),
@@ -256,12 +271,12 @@ produced. A genuine failure still aborts rather than returning a status.
 
 The downstream conversion of these rasters into \`alert\` rows (patch
 centroids, \`confidence_class\`, \`stress_index\`) is lot L3 and is
-**not** performed here.
+\*\*not\*\* performed here.
 
-**Heavy and opt-in.** A real run needs the \`nemeton-reconfort\` conda
-environment, a GEODES account, tens of GB of Sentinel-2 and an OTB/Shark
-batch execution. It is never exercised in CI; unit tests mock every
-external step.
+\*\*Heavy and opt-in.\*\* A real run needs the \`nemeton-reconfort\`
+conda environment, a GEODES account, tens of GB of Sentinel-2 and an
+OTB/Shark batch execution. It is never exercised in CI; unit tests mock
+every external step.
 
 ## Sen2Cor route (indicative, not validated)
 
@@ -269,18 +284,17 @@ external step.
 Sentinel-2 L2A (Sen2Cor) scenes of Planetary Computer are read through
 the FAST/FORDEAD band cache, a 134-feature stack (CRswir then CRre over
 67 dates) is built and the v3 forest is applied in R
-([`reconfort_sharkrf_lire()`](https://pobsteta.github.io/nemeton/reference/reconfort_sharkrf_lire.md),
-[`reconfort_caracteristiques_v3()`](https://pobsteta.github.io/nemeton/reference/reconfort_caracteristiques_v3.md)).
+(\[reconfort_sharkrf_lire()\], \[reconfort_caracteristiques_v3()\]).
 Outputs have the names and formats of the IOTA2 route; \`run_meta.json\`
-carries \`source_reflectances = "sen2cor"\` and \`validee = false\`, and
-the GeoTIFFs carry the tags \`SOURCE_REFLECTANCES\` and \`VALIDEE\`. The
-model was trained on MAJA reflectances: with Sen2Cor about 24 % of
-pixels change class on the test site (study 093), mostly towards class
-3. The route is also the last resort, with a warning of class
+carries \`source_reflectances = "sen2cor"\` and the indicative
+\`mention\`, and the GeoTIFFs carry the tags \`SOURCE_REFLECTANCES\` and
+\`MENTION\`. The model was trained on MAJA reflectances: with Sen2Cor
+about 24 site (study 093), mostly towards class 3. The route is also the
+last resort, with a warning of class
 \`nemeton_reconfort_repli_sen2cor\`, when \`acquisition\` is left at its
 default and the IOTA2 routes are unavailable or fail.
 
-## Temporal window (`s2_year` -\> analysis dates)
+## Temporal window (\`s2_year\` -\> analysis dates)
 
 RECONFORT does not diff two dates: it classifies a pixel's ~2-year index
 trajectory with a pre-trained model. One run is driven entirely by

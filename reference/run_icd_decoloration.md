@@ -64,7 +64,8 @@ run_icd_decoloration(
   progress_callback = NULL,
   cancel_path = NULL,
   today = Sys.Date(),
-  aoi = NULL
+  aoi = NULL,
+  source_s2 = NULL
 )
 ```
 
@@ -156,6 +157,21 @@ run_icd_decoloration(
 - aoi:
 
   Optional \`sf\` zone polygon, instead of reading it from \`con\`.
+
+- source_s2:
+
+  Sentinel-2 reflectance source (mission 096): \`NULL\` (default:
+  nothing changes, same search, same cache, same outputs as before),
+  \`"theia"\` (MAJA, THEIA STAC catalogue, cache
+  \`\<cache_dir\>\_theia\`) or \`"sen2cor"\` (CDSE then Planetary
+  Computer, without the MUSCATE fallback). This method is calibrated on
+  Sen2Cor: \`"theia"\` warns (class \`nemeton_s2_source_non_calee\`) and
+  records \`calee_sur\` and \`mention_source\`. THEIA unavailable
+  switches the WHOLE series to Sen2Cor (class
+  \`nemeton_s2_repli_sen2cor\`); a 401/403 or missing keys is an error.
+  The effective source is written in the outputs as \`source_s2\` only
+  when this argument is given. THEIA results go to
+  \`\<result_dir\>\_theia\`. See \[s2_source_resoudre()\].
 
 ## Value
 

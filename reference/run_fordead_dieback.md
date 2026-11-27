@@ -2,7 +2,7 @@
 
 Orchestrates fordead 2.x via reticulate. The pipeline derives its AOI
 from \`monitoring_zone.zone_wkt\`, ensures the Sentinel-2 COG cache
-contains every required band (\[FORDEAD_BANDS\]), assembles a STAC
+contains every required band (\`FORDEAD_BANDS\`), assembles a STAC
 \`ItemCollection\` over local hrefs, and runs FORDEAD \`fit()\` +
 \`predict()\` on top. Six phases :
 
@@ -28,7 +28,8 @@ run_fordead_dieback(
   connectivity = 8L,
   verbose = TRUE,
   progress_callback = NULL,
-  cancel_path = NULL
+  cancel_path = NULL,
+  source_s2 = NULL
 )
 ```
 
@@ -72,7 +73,8 @@ run_fordead_dieback(
 
 - vegetation_index:
 
-  One of \`"CRSWIR"\`, \`"NDVI"\`, \`"NDWI"\`. Default \`"CRSWIR"\`.
+  Only \`"CRSWIR"\` (calibrated ONF/DSF 2024). FORDEAD is mono-index;
+  any other value is rejected. Default \`"CRSWIR"\`.
 
 - threshold_anomaly:
 
@@ -148,7 +150,7 @@ run_fordead_dieback(
   \`completed\`, \`total\`, \`phase_name\`. Phases emitted, in order:
   \`"ingest"\`, \`"stac_assembly"\`, \`"fit"\`, \`"predict"\`,
   \`"postprocess"\`, \`"persist"\`. During \`"ingest"\` the \`s2:\*\`
-  events from \[ingest_s2_raw_bands_to_cache()\] also pass through
+  events from \`ingest_s2_raw_bands_to_cache()\` also pass through
   verbatim (search / scene / band_cached / band_fetched / complete).
   Exceptions raised inside the callback are swallowed so a buggy UI
   never aborts the pipeline. Default \`NULL\` (silent).
@@ -165,6 +167,21 @@ run_fordead_dieback(
   reliable interrupt). A flag already present at entry is ignored as a
   stale leftover — the caller must delete it before each call. A
   \`fordead:cancelled\` progress event is emitted.
+
+- source_s2:
+
+  Sentinel-2 reflectance source (mission 096): \`NULL\` (default:
+  nothing changes, same search, same cache, same outputs as before),
+  \`"theia"\` (MAJA, THEIA STAC catalogue, cache
+  \`\<cache_dir\>\_theia\`) or \`"sen2cor"\` (CDSE then Planetary
+  Computer, without the MUSCATE fallback). This method is calibrated on
+  Sen2Cor: \`"theia"\` warns (class \`nemeton_s2_source_non_calee\`) and
+  records \`calee_sur\` and \`mention_source\`. THEIA unavailable
+  switches the WHOLE series to Sen2Cor (class
+  \`nemeton_s2_repli_sen2cor\`); a 401/403 or missing keys is an error.
+  The effective source is written in the outputs as \`source_s2\` only
+  when this argument is given. FORDEAD results of a THEIA run go to
+  \`\<mask_cache_dir\>\_theia\`. See \[s2_source_resoudre()\].
 
 ## Value
 
@@ -229,7 +246,7 @@ A list with the following fields:
 
 ## Details
 
-1.  \*\*ingest\*\* (\[ingest_s2_raw_bands_to_cache()\]) — partial-
+1.  \*\*ingest\*\* (\`ingest_s2_raw_bands_to_cache()\`) — partial-
     coverage-aware download of missing raw bands into \`cache_dir\`.
     Re-uses bands already cached by \[ingest_sentinel2_timeseries()\]
     (FAST pipeline) so a zone with FAST already run skips the three
@@ -259,10 +276,10 @@ A list with the following fields:
 6.  \*\*persist\*\* — write the categorical 0-4 dieback mask and the
     diagnostic bundle (\`model\_\<run_id\>/\`: harmonic coefficients,
     masked CRSWIR stack, first-anomaly date, \`run_meta.json\` — spec
-    008 §14.3) to the project cache, then snap centroids to the nearest
-    registered plot of the zone and insert them via
-    \[.insert_fordead_alerts()\] (idempotent \`ON CONFLICT DO
-    NOTHING\`).
+    008 §14.3) to the project cache, then insert the cluster centroids
+    as pixel/zone alert entities via \[.insert_fordead_alerts()\] —
+    idempotent when \`replace = TRUE\` (the zone's prior
+    \`fordead_dieback\` alerts are replaced).
 
 Calibration is frozen on the ONF/DSF reference values (Bernard &
 Doridant 2024) and not exposed to the end user — see ADR-013 for the
