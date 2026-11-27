@@ -1,6 +1,26 @@
 # Changelog
 
-## nemeton 2026.11.45.9001 (development)
+## nemeton 2026.11.46 (2026-11-27)
+
+Release du coeur qui porte l’indicateur composite de decoloration (ICD,
+spec 071) pour que l’application puisse l’offrir : ICD en quatrieme
+methode du suivi sanitaire, RECONFORT par fenetres de bandes THEIA,
+spike de re-entrainement RECONFORT et sa carte de classes (premier noyau
+Rust, optionnel), tournee DEPERIS avec Ramulus, mosaique de dalles
+unique (un SRS reellement different est refuse) et dalles IGN avant les
+produits derives du nuage.
+
+**Comportements devenus plus stricts** (aucun retrait ni changement de
+signature d’une fonction exportee stable) : une mosaique de dalles
+refuse par une erreur nommee toute dalle au SRS reellement different au
+lieu de l’ignorer en silence ; le CVAT de l’inventaire video est ecrit
+au codage exact de Groma et un autre codage est refuse ;
+[`reconfort_carte_spike()`](https://pobsteta.github.io/nemeton/reference/reconfort_carte_spike.md)
+refuse par defaut une grille d’un autre CRS, d’une autre resolution ou
+decalee ; un NetCDF ERA5 `timeseries` incomplet est efface et redemande
+au lieu d’etre pris pour un cache. Le paquet declare desormais du code
+compile optionnel (Cargo, rustc) : sans eux, il s’installe sur des
+replis R purs.
 
 - **fix : regression de la
   [\#708](https://github.com/pobsteta/nemeton/issues/708) sur un projet
@@ -25,9 +45,13 @@
 
   2.  L’equivalence des SRS devient semantique : en plus de
       [`terra::same.crs()`](https://rspatial.github.io/terra/reference/same.crs.html)
-      et de la chaine PROJ, deux SRS sont equivalents si la
-      transformation des coins de l’emprise de la dalle de l’un vers
-      l’autre est l’identite a 1 mm pres (les dalles IGN declarent un
+      et de la chaine PROJ, deux SRS sont equivalents si leurs
+      parametres concordent (meme methode et memes parametres de
+      projection a 1e-9, ellipsoides de meme demi-grand axe a 1 mm et
+      d’aplatissement inverse a 1e-6 relatif, GRS80 et WGS84 confondus,
+      pas de `+towgs84` non nul d’un seul cote), critere independant de
+      la version de PROJ ; une transformation de points qui est
+      l’identite a 1 mm pres suffit aussi (les dalles IGN declarent un
       ellipsoide WGS84 sans datum nomme, le WKT complet GRS80). Les SRS
       reellement differents (2154/27572, 2154/3035, UTM 31/32,
       Lambert-93 a `x_0 = 700001`) restent refuses.
@@ -256,6 +280,17 @@
   incomplète, `rsen_era5ts_echec`. Limite : un reste non écrit dont la
   valeur est plausible (0 pour `tcc`, `ssrd`, `fdir`, `tp`) n’est pas
   détectable. Signatures inchangées.
+
+- **fix : ERA5 `timeseries`, une liste d’annees vide est nommee comme
+  telle** (mission 049). Le refus avant tout appel au CDS disait « the
+  requested year is missing (NA) » ; il dit maintenant qu’aucune annee
+  n’a ete demandee. Classe d’erreur et cas NA, annee ouverte et annee
+  close inchanges.
+
+- **docs :
+  [`ingest_sentinel2_timeseries()`](https://pobsteta.github.io/nemeton/reference/ingest_sentinel2_timeseries.md),
+  `skip_cached = FALSE` ne force pas de retelechargement** (mission
+  047). Documentation et tests seulement.
 
 ## nemeton 2026.11.45 (2026-11-24)
 
