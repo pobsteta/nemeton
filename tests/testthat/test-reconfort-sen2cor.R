@@ -111,10 +111,11 @@ test_that("ecriture des sorties : memes noms que la voie IOTA2, tags 'non valide
 
 test_that("repli : la voie suivante apres 'archive' est Sen2Cor, apres 'fenetre' rien (089)", {
   expect_identical(.reconfort_voie_suivante("archive"), "sen2cor")
-  expect_true(is.na(.reconfort_voie_suivante("fenetre")))
   expect_true(is.na(.reconfort_voie_suivante("sen2cor")))
-  testthat::local_mocked_bindings(.reconfort_repli_fenetre_archive = function() TRUE)
+  # Mission 089 : le repli THEIA -> GEODES est branche.
   expect_identical(.reconfort_voie_suivante("fenetre"), "archive")
+  testthat::local_mocked_bindings(.reconfort_repli_fenetre_archive = function() FALSE)
+  expect_true(is.na(.reconfort_voie_suivante("fenetre")))
 })
 
 test_that("etiquettes de classe ecrites depuis les classes du modele, cache S2 par defaut", {

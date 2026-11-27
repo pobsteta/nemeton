@@ -121,6 +121,99 @@
   nzchar(Sys.getenv("TLD_ACCESS_KEY")) && nzchar(Sys.getenv("TLD_SECRET_KEY"))
 }
 
+# --- Sonde du catalogue STAC THEIA (mission 089) ---------------------------
+# Avant l'ingest par fenetre : une requete legere (racine du catalogue), delai
+# court, une nouvelle tentative. Trois etats :
+#   "ok"           le serveur repond (meme un 404 : il est joignable) ;
+#   "indisponible" delai depasse, connexion impossible, HTTP 5xx, 408 ou 429 ;
+#   "refuse"       HTTP 401 / 403 : les cles ou la requete sont en cause, un
+#                  autre catalogue n'y changerait rien.
+
+# Une requete de la sonde, isolee pour etre simulee en test. Rend
+# `list(statut = <entier ou NA>, cause = <texte ou NA>)` ; ne leve jamais.
+.reconfort_stac_sonde_une <- function(url, timeout = 15L) {
+  .assert_httr2()
+  req <- httr2::request(url) |>
+    httr2::req_timeout(timeout) |>
+    httr2::req_error(is_error = function(resp) FALSE)
+  tryCatch({
+    resp <- httr2::req_perform(req)
+    list(statut = as.integer(httr2::resp_status(resp)), cause = NA_character_)
+  }, error = function(e) {
+    list(statut = NA_integer_,
+         cause = sub("\\n.*$", "", conditionMessage(e)))
+  })
+}
+
+# Hote d'une URL (sans schema, port ni chemin).
+.reconfort_url_hote <- function(url) {
+  sub("^[a-z]+://([^/:?#]+).*$", "\\1", url)
+}
+
+# Classe l'erreur d'une recherche STAC deja lancee : "indisponible" (reseau,
+# delai, 5xx, 408, 429), "refuse" (401/403) ou "autre". Remonte la chaine des
+# erreurs parentes (cli_abort / rlang les emboitent).
+.reconfort_stac_classer_erreur <- function(e) {
+  for (k in 1:6) {
+    if (inherits(e, "httr2_failure")) return("indisponible")
+    if (inherits(e, "httr2_http")) {
+      st <- tryCatch(as.integer(e$resp$status_code), error = function(x) NA_integer_)
+      if (length(st) != 1L || is.na(st)) {
+        st <- tryCatch(as.integer(httr2::resp_status(e$resp)),
+                       error = function(x) NA_integer_)
+      }
+      if (!is.na(st) && (st >= 500L || st %in% c(408L, 429L))) return("indisponible")
+      if (!is.na(st) && st %in% c(401L, 403L)) return("refuse")
+      return("autre")
+    }
+    if (is.null(e$parent)) break
+    e <- e$parent
+  }
+  "autre"
+}
+
+# Attente entre deux essais de la sonde (isolee pour les tests).
+.reconfort_stac_pause <- function(s) Sys.sleep(s)
+
+# Sonde du catalogue THEIA : `list(etat, hote, cause)`. `essais` requetes au
+# plus (une nouvelle tentative par defaut), `pause` secondes entre deux.
+.reconfort_stac_sonde <- function(country = "FR", timeout = 15L, essais = 2L,
+                                  pause = 1) {
+  url  <- sub("/+$", "", .theia_stac_api(country))
+  hote <- .reconfort_url_hote(url)
+  cause <- NA_character_
+  for (i in seq_len(essais)) {
+    r <- .reconfort_stac_sonde_une(url, timeout)
+    st <- r$statut
+    if (!is.na(st) && st %in% c(401L, 403L)) {
+      return(list(etat = "refuse", hote = hote,
+                  cause = sprintf("HTTP %d", st)))
+    }
+    indispo <- is.na(st) || st >= 500L || st %in% c(408L, 429L)
+    if (!indispo) return(list(etat = "ok", hote = hote, cause = NA_character_))
+    cause <- if (is.na(st)) (r$cause %||% "connection failed") else sprintf("HTTP %d", st)
+    if (i < essais) .reconfort_stac_pause(pause)
+  }
+  list(etat = "indisponible", hote = hote, cause = cause)
+}
+
+# Voie fenetre imposee et catalogue en panne : erreur lisible, classe
+# `nemeton_reconfort_stac_indisponible`.
+.reconfort_stac_abort_indisponible <- function(hote, cause) {
+  cli::cli_abort(c(
+    "THEIA STAC catalogue unavailable ({.val {hote}}): {cause}.",
+    i = "Retry later, or pass {.code acquisition = \"archive\"} (full GEODES archives)."),
+    class = "nemeton_reconfort_stac_indisponible")
+}
+
+# Catalogue qui repond 401/403 : pas de repli silencieux.
+.reconfort_stac_abort_refuse <- function(hote, cause) {
+  cli::cli_abort(c(
+    "THEIA STAC catalogue ({.val {hote}}) refused the request: {cause}.",
+    i = "Check {.envvar TLD_ACCESS_KEY} / {.envvar TLD_SECRET_KEY}; falling back to another route would not fix the keys."),
+    class = "nemeton_reconfort_stac_refuse")
+}
+
 # Recupere un petit fichier (metadonnees XML) : copie locale ou GET HTTP(S).
 .reconfort_fenetre_fetch_fichier <- function(src, dest) {
   if (file.exists(src)) {

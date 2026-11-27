@@ -21,6 +21,8 @@ mock_pipeline <- function(calls_env, write_score = TRUE, exit = 0L) {
     .reconfort_probamap_fixed = function(...) TRUE,
     .reconfort_chunk_mask_fixed = function(...) TRUE,
     .reconfort_env_defects = function(...) character(),
+    # Aucun reseau dans les tests : catalogue THEIA joignable par defaut.
+    .reconfort_stac_sonde_une = function(...) list(statut = 200L, cause = NA_character_),
     ensure_reconfort_model   = function(version, cache_dir = NULL, quiet = FALSE) {
       d <- withr::local_tempdir(.local_envir = calls_env$env)
       p <- file.path(d, "model_1_seed_0.txt"); writeLines("model", p); p
@@ -868,7 +870,8 @@ test_that("une seule voie en echec : pas de repli Sen2Cor", {
   expect_null(calls$sen2cor)
   expect_true(calls$ingest)
   expect_false(any(vapply(out$warnings, inherits, NA, "nemeton_reconfort_repli_sen2cor")))
-  # Fenetre en echec avec des cles presentes : aucun repli (la 089 s'y raccordera).
+  # Fenetre en echec (hors indisponibilite du catalogue) avec des cles presentes :
+  # aucun repli.
   withr::local_envvar(TLD_ACCESS_KEY = "a", TLD_SECRET_KEY = "b")
   testthat::local_mocked_bindings(
     reconfort_ingest_s2 = function(...) stop("THEIA injoignable"))
@@ -895,4 +898,170 @@ test_that("sans environnement conda, la voie par defaut se replie sur Sen2Cor, l
                                      s2_year = 2024L, tiles = "T31TFN", quiet = TRUE,
                                      acquisition = "archive"))
   expect_null(calls$sen2cor)
+})
+
+# --- Repli THEIA -> GEODES (mission 089) ------------------------------------
+
+# Simule la sonde du catalogue : `statut` HTTP (NA = delai/connexion), sans reseau
+# et sans attente entre les deux essais.
+mock_sonde <- function(calls_env, statut, cause = NA_character_) {
+  testthat::local_mocked_bindings(
+    .reconfort_stac_sonde_une = function(url, timeout = 15L) {
+      calls_env$sondes <- (calls_env$sondes %||% 0L) + 1L
+      list(statut = statut, cause = cause)
+    },
+    .reconfort_stac_pause = function(...) invisible(NULL),
+    .env = calls_env$env)
+}
+
+test_that("STAC en delai depasse : avertissement de repli, ingest en archive (089 cas 1)", {
+  skip_if_terra_write_broken()
+  withr::local_envvar(TLD_ACCESS_KEY = "a", TLD_SECRET_KEY = "b")
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  mock_sonde(calls, NA_integer_, "Timeout was reached [api.stac.teledetection.fr]")
+  out <- .lancer_capturant(run_acq(calls))
+  expect_identical(calls$ingest_acq, "archive")
+  expect_identical(calls$sondes, 2L)  # une nouvelle tentative
+  repli <- Filter(function(w) inherits(w, "nemeton_reconfort_repli_archive"), out$warnings)
+  expect_length(repli, 1L)
+  expect_match(conditionMessage(repli[[1]]), "Timeout was reached", fixed = TRUE)
+  expect_match(conditionMessage(repli[[1]]), "GEODES archives", fixed = TRUE)
+  meta <- jsonlite::read_json(out$val$meta)
+  expect_identical(meta$acquisition, "archive")
+  expect_match(meta$causes_repli$fenetre, "unavailable")
+})
+
+test_that("STAC en 503 : repli sur l'archive (089 cas 2)", {
+  skip_if_terra_write_broken()
+  withr::local_envvar(TLD_ACCESS_KEY = "a", TLD_SECRET_KEY = "b")
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  mock_sonde(calls, 503L)
+  out <- .lancer_capturant(run_acq(calls))
+  expect_identical(calls$ingest_acq, "archive")
+  repli <- Filter(function(w) inherits(w, "nemeton_reconfort_repli_archive"), out$warnings)
+  expect_length(repli, 1L)
+  expect_match(conditionMessage(repli[[1]]), "HTTP 503", fixed = TRUE)
+})
+
+test_that("STAC en 401/403 : erreur claire, pas de repli, ingest jamais appele (089 cas 3)", {
+  skip_if_terra_write_broken()
+  withr::local_envvar(TLD_ACCESS_KEY = "a", TLD_SECRET_KEY = "b")
+  for (st in c(401L, 403L)) {
+    calls <- new.env(); calls$env <- environment()
+    mock_pipeline(calls)
+    mock_sonde(calls, st)
+    expect_error(run_acq(calls), class = "nemeton_reconfort_stac_refuse")
+    expect_null(calls$ingest_acq)
+    expect_identical(calls$sondes, 1L)  # pas de nouvelle tentative sur un refus
+  }
+})
+
+test_that("voie fenetre imposee + STAC injoignable : erreur nemeton_reconfort_stac_indisponible (089 cas 4)", {
+  skip_if_terra_write_broken()
+  withr::local_envvar(TLD_ACCESS_KEY = "a", TLD_SECRET_KEY = "b")
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  mock_sonde(calls, NA_integer_, "Timeout was reached")
+  expect_error(run_acq(calls, acquisition = "fenetre"),
+               class = "nemeton_reconfort_stac_indisponible")
+  expect_null(calls$ingest_acq)
+})
+
+test_that("STAC joignable : voie fenetre, aucun avertissement de repli (089 cas 5)", {
+  skip_if_terra_write_broken()
+  withr::local_envvar(TLD_ACCESS_KEY = "a", TLD_SECRET_KEY = "b")
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  mock_sonde(calls, 200L)
+  out <- .lancer_capturant(run_acq(calls))
+  expect_identical(calls$ingest_acq, "fenetre")
+  expect_identical(calls$sondes, 1L)
+  expect_false(any(vapply(out$warnings, inherits, NA, "nemeton_reconfort_repli_archive")))
+  meta <- jsonlite::read_json(out$val$meta)
+  expect_identical(meta$acquisition, "fenetre")
+  expect_null(meta$causes_repli)
+})
+
+test_that("catalogue lache en cours d'ingest : repli archive, ou erreur lisible si fenetre imposee", {
+  skip_if_terra_write_broken()
+  withr::local_envvar(TLD_ACCESS_KEY = "a", TLD_SECRET_KEY = "b")
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  vus <- character()
+  testthat::local_mocked_bindings(
+    reconfort_ingest_s2 = function(aoi = NULL, tiles = NULL, s2_root, acquisition = NA_character_, ...) {
+      vus <<- c(vus, acquisition)
+      if (identical(acquisition, "fenetre")) {
+        rlang::abort("search failed", class = "httr2_failure")
+      }
+      ex <- file.path(s2_root, "extracted", tiles)
+      for (e in ex) dir.create(e, recursive = TRUE, showWarnings = FALSE)
+      list(tiles = tiles, s2_root = s2_root, extracted = ex)
+    })
+  out <- .lancer_capturant(run_acq(calls))
+  expect_identical(vus, c("fenetre", "archive"))
+  expect_true(any(vapply(out$warnings, inherits, NA, "nemeton_reconfort_repli_archive")))
+  expect_identical(jsonlite::read_json(out$val$meta)$acquisition, "archive")
+  expect_error(run_acq(calls, acquisition = "fenetre"),
+               class = "nemeton_reconfort_stac_indisponible")
+})
+
+test_that("THEIA indisponible puis GEODES en echec : Sen2Cor, causes dans l'ordre THEIA puis GEODES", {
+  skip_if_terra_write_broken()
+  withr::local_envvar(TLD_ACCESS_KEY = "a", TLD_SECRET_KEY = "b")
+  calls <- new.env(); calls$env <- environment()
+  mock_pipeline(calls)
+  mock_sen2cor(calls)
+  mock_sonde(calls, 503L)
+  testthat::local_mocked_bindings(
+    reconfort_ingest_s2 = function(...) stop("GEODES : compte absent"))
+  out <- .lancer_capturant(run_reconfort_dieback(
+    con = local_con(), zone_id = 3L, cache_dir = withr::local_tempdir(),
+    s2_year = 2024L, tiles = "T31TFN", quiet = TRUE))
+  expect_true(isTRUE(calls$sen2cor))
+  expect_true(any(vapply(out$warnings, inherits, NA, "nemeton_reconfort_repli_archive")))
+  expect_true(any(vapply(out$warnings, inherits, NA, "nemeton_reconfort_repli_sen2cor")))
+  meta <- jsonlite::read_json(out$val$meta)
+  expect_identical(names(meta$causes_repli), c("fenetre", "archive"))
+  expect_identical(meta$acquisition, "sen2cor")
+})
+
+test_that("la sonde STAC distingue delai, 5xx, 401/403 et reponse normale (httr2 simule)", {
+  testthat::local_mocked_bindings(.theia_stac_api = function(...) "https://stac.exemple.test/api/")
+  sonde_avec <- function(rep) {
+    httr2::with_mocked_responses(function(req) rep, 
+      .reconfort_stac_sonde(timeout = 1L, essais = 2L, pause = 0))
+  }
+  r <- sonde_avec(httr2::response(status_code = 200L))
+  expect_identical(r$etat, "ok"); expect_identical(r$hote, "stac.exemple.test")
+  expect_identical(sonde_avec(httr2::response(status_code = 503L))$etat, "indisponible")
+  expect_identical(sonde_avec(httr2::response(status_code = 429L))$etat, "indisponible")
+  expect_identical(sonde_avec(httr2::response(status_code = 401L))$etat, "refuse")
+  expect_identical(sonde_avec(httr2::response(status_code = 403L))$etat, "refuse")
+  expect_identical(sonde_avec(httr2::response(status_code = 404L))$etat, "ok")
+  # Delai depasse : la requete simulee leve une erreur de connexion.
+  to <- httr2::with_mocked_responses(
+    function(req) rlang::abort("Timeout was reached [stac.exemple.test]"),
+    .reconfort_stac_sonde(timeout = 1L, essais = 2L, pause = 0))
+  expect_identical(to$etat, "indisponible")
+  expect_match(to$cause, "Timeout was reached")
+})
+
+test_that("la classification des erreurs d'une recherche STAC", {
+  e5 <- structure(class = c("httr2_http_503", "httr2_http", "httr2_error", "rlang_error", "error", "condition"),
+                  list(message = "HTTP 503", resp = httr2::response(status_code = 503L)))
+  e4 <- structure(class = c("httr2_http_403", "httr2_http", "httr2_error", "rlang_error", "error", "condition"),
+                  list(message = "HTTP 403", resp = httr2::response(status_code = 403L)))
+  ef <- structure(class = c("httr2_failure", "httr2_error", "rlang_error", "error", "condition"),
+                  list(message = "Timeout was reached"))
+  expect_identical(.reconfort_stac_classer_erreur(e5), "indisponible")
+  expect_identical(.reconfort_stac_classer_erreur(e4), "refuse")
+  expect_identical(.reconfort_stac_classer_erreur(ef), "indisponible")
+  expect_identical(.reconfort_stac_classer_erreur(simpleError("autre")), "autre")
+  # Erreur emboitee (cli_abort(parent = )).
+  emb <- structure(class = c("rlang_error", "error", "condition"),
+                   list(message = "wrap", parent = ef))
+  expect_identical(.reconfort_stac_classer_erreur(emb), "indisponible")
 })

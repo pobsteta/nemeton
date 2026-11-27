@@ -116,8 +116,8 @@ caracteristiques depuis les scenes Sentinel-2 L2A de Planetary Computer (cache F
 **Journal** — *2026-11-27* : branche locale `reconfort-sen2cor` (partie de `origin/main` 479ba13ab, non poussee ; l'orchestrateur
 la poussera apres la fusion de la #710). Validation sur le run IOTA2 de Couchey (520 591 pixels) : MAJA -> IOTA2 80,20 %
 d'accord de classe ; Sen2Cor -> 25,01 % de pixels qui changent de classe, 70,37 % d'accord avec IOTA2. Reste : la mission
-nemetonshiny (choix de la voie, marquage « indicatif » a l'ecran) ; le repli THEIA -> GEODES (mission 089) ; une validation
-sur un autre site et avec une verite terrain.
+nemetonshiny (choix de la voie, marquage « indicatif » a l'ecran) ; une validation sur un autre site et avec une verite
+terrain. (Le repli THEIA -> GEODES est livre par la mission 089, voir le journal du 2026-11-27 ci-dessous.)
 
 ---
 
@@ -172,6 +172,20 @@ Spec 068, étape 2 : prototype FINN (`data-raw/prototype_finn.R`), **D-2
 tient** (reprise pas à pas par `return_cohorts` / `init_cohort`, éclaircie
 binomiale entre deux pas), 100 sites × 100 placettes × 50 ans en 21 s de CPU.
 Reste l'étape 3 (calibration sur placettes IFN, D-7).
+
+### 2026-11-27 — Mission 089 : repli automatique THEIA -> GEODES quand le catalogue STAC est indisponible (mission 089 de nemetonplateforme), cycle dev `2026.11.46.9001`
+
+Premier essai reel de la voie fenetre (Couchey, T31TFN, 2026) en echec : `api.stac.teledetection.fr` injoignable (« Timeout was
+reached » dans `.stac_search_paginate()`). `run_reconfort_dieback()` sonde maintenant le catalogue (`.reconfort_stac_sonde()`,
+`R/reconfort_fenetre.R`) avant l'ingest par fenetre : indisponible -> avertissement `nemeton_reconfort_repli_archive` et voie
+archive GEODES (si `acquisition` n'est pas imposee ; sinon erreur `nemeton_reconfort_stac_indisponible`) ; 401/403 -> erreur
+`nemeton_reconfort_stac_refuse`, sans repli. Repli aussi si le catalogue lache en cours d'ingest. Chaine THEIA -> GEODES ->
+Sen2Cor via `.reconfort_voie_suivante()` ; repli Sen2Cor « conda absent » inchange (decision de Pascal). Voie retenue et
+`causes_repli` dans `run_meta.json` et la progression. Point 4 : les fifos `supervisor_stdin` / `supervisor_stdout` viennent du
+superviseur global de `processx` (`supervise = TRUE` dans `run_memory_capped()`) ; ils sont rendus en sortie quand c'est
+`run_memory_capped()` qui l'a demarre. Non rejoue ici : l'avertissement `future` lui-meme (le `future` installe, 1.33.1, ne le
+produit pas). Tests : `test-reconfort-pipeline.R` (repli, refus, voie imposee, non-regression), `test-isolate.R` (fifos, arret
+du fils sur mort du parent).
 
 ### 2026-11-27 — Release 2026.11.46 (mission 087 de nemetonplateforme), version stable posee
 
