@@ -103,6 +103,8 @@ test_that("ecriture des sorties : memes noms que la voie IOTA2, tags 'non valide
   expect_equal(sc[1:2], c(1, 100))                   # (1001 - 1000)/30 -> borne a 1 ; (1001 + 2000)/30 = 100
   expect_equal(sc[c(4, 6)], c(0, 0))
   tg <- terra::metags(terra::rast(out$classif_masked))
+  # terra >= 1.8 rend un data.frame (name, value) ; avant, un vecteur nomme.
+  if (is.data.frame(tg)) tg <- stats::setNames(tg$value, tg$name)
   expect_identical(unname(tg[["SOURCE_REFLECTANCES"]]), "sen2cor")
   expect_identical(unname(tg[["VALIDEE"]]), "FALSE")
 })
