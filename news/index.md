@@ -1,5 +1,56 @@
 # Changelog
 
+## nemeton 2026.11.46.9000 (development)
+
+- **feat : RECONFORT sur reflectances Sen2Cor, voie
+  `acquisition = "sen2cor"` (INDICATIF, NON VALIDE)** (mission 095).
+  Troisieme voie de
+  [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md),
+  sans IOTA2, conda, THEIA ni GEODES : les scenes Sentinel-2 L2A de
+  Planetary Computer sont lues par le cache de FAST/FORDEAD
+  (`.get_s2_band_raster()`, offset BOA, masque SCL 4 et 5), mises sur
+  une grille de 10 m (plus proche voisin), interpolees sur les 67 dates
+  du modele (pas de 10 jours depuis le 1er janvier de N-1,
+  [`reconfort_caracteristiques_v3()`](https://pobsteta.github.io/nemeton/reference/reconfort_caracteristiques_v3.md)
+  : bandes interpolees puis CRswir_1..67 et CRre_1..67, bords
+  constants), puis classees par le modele v3 lu en R
+  ([`reconfort_sharkrf_lire()`](https://pobsteta.github.io/nemeton/reference/reconfort_sharkrf_lire.md)
+  /
+  [`reconfort_sharkrf_predire()`](https://pobsteta.github.io/nemeton/reference/reconfort_sharkrf_predire.md),
+  R vectorise ; le lecteur refuse par une erreur de classe
+  `nemeton_sharkrf_format` tout fichier tronque, mal forme, cyclique ou
+  a classe de feuille hors 0..K-1). Une routine Rust (arbre puis pixels)
+  a ete essayee puis **retiree** : sur le vrai v3, 134 variables, elle
+  n’etait que 2,6 fois plus rapide que le R (5 000 lignes : 1,3 s contre
+  3,3 s ; 20 000 lignes : 6,5 s contre 13,8 s ; 3 mesures Rust, 2
+  mesures R), sous le seuil de 3 fois retenu. Compter ~15 min de
+  classification pour 520 000 pixels. Sorties aux noms et formats de la
+  voie IOTA2 ; `run_meta.json` porte `source_reflectances = "sen2cor"`
+  et `validee = false`, les GeoTIFF les tags `SOURCE_REFLECTANCES` et
+  `VALIDEE`. Voie choisie explicitement, ou **en dernier recours**
+  (avertissement de classe `nemeton_reconfort_repli_sen2cor`, qui dit
+  les causes THEIA et GEODES) quand `acquisition` est laisse par defaut
+  et que la voie GEODES echoue ou que l’environnement conda manque ; une
+  seule voie en echec ne declenche pas le repli. Le repli THEIA -\>
+  GEODES sur indisponibilite reste a faire (mission 089,
+  `.reconfort_repli_fenetre_archive()`). Parametre
+  `correction_sen2cor = c("aucune", "biais")` : `"aucune"` par defaut ;
+  `"biais"` retire les biais moyens de l’etude 092 (CRswir 0,0112, CRre
+  0,0258), **ajustes sur un seul site (Couchey)**. **Validation sur le
+  vrai run IOTA2 de Couchey (zone 63, v3, 2025, T31TFN, 520 591 pixels
+  feuillus, tout le masque, pixel a pixel)** : avec les 192 scenes MAJA
+  du run, le predicteur R reproduit la classe IOTA2 sur **80,20 %** des
+  pixels (ecart absolu moyen des votes 65,0 sur 1000) ; avec Sen2Cor
+  (150 scenes), **25,01 % des pixels changent de classe** par rapport a
+  MAJA (surtout vers la classe 3 : 47 774 pixels de classe 2 passent en
+  3), et l’accord avec IOTA2 tombe a **70,37 %** (ecart des votes 96,3).
+  Meme ordre de grandeur que l’etude 093 (24,3 % et 69,7 % sur 1 000
+  pixels). Le modele a ete entraine sur MAJA : les cartes Sen2Cor sont
+  **indicatives, non validees**, sur un seul site. Les 20 % de desaccord
+  avec IOTA2 meme sur MAJA viennent du gap-filling d’IOTA2, non
+  reproduit exactement (091 section 7). Rejouer :
+  `data-raw/comparaison_reconfort/valider_sen2cor.R`.
+
 ## nemeton 2026.11.46 (2026-11-27)
 
 Release du coeur qui porte l’indicateur composite de decoloration (ICD,

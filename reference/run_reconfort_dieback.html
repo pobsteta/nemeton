@@ -23,7 +23,7 @@ continuous-score rasters (EPSG:2154) plus a `run_meta.json`."><meta property="og
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.46</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.46.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -172,7 +172,9 @@ continuous-score rasters (EPSG:2154) plus a `run_meta.json`.</p>
 <span>  quiet <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  progress_callback <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cancel_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  acquisition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fenetre"</span>, <span class="st">"archive"</span><span class="op">)</span></span>
+<span>  acquisition <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fenetre"</span>, <span class="st">"archive"</span>, <span class="st">"sen2cor"</span><span class="op">)</span>,</span>
+<span>  correction_sen2cor <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"aucune"</span>, <span class="st">"biais"</span><span class="op">)</span>,</span>
+<span>  s2_cache_dir <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -341,7 +343,8 @@ call. A `reconfort:cancelled` progress event is emitted.</p></dd>
 
 
 <dt id="arg-acquisition">acquisition<a class="anchor" aria-label="anchor" href="#arg-acquisition"></a></dt>
-<dd><p>w the Sentinel-2 scenes are acquired. `"fenetre"`
+<dd><p>w the Sentinel-2 scenes are acquired. `"sen2cor"`
+  (see the Sen2Cor section) needs neither conda nor THEIA nor GEODES. `"fenetre"`
   (default) reads only the AOI window of each band and mask from the THEIA
   STAC catalogue (needs `TLD_ACCESS_KEY` / `TLD_SECRET_KEY`; no GEODES
   download) and writes the same files as `"archive"`, which downloads each
@@ -349,6 +352,20 @@ call. A `reconfort:cancelled` progress event is emitted.</p></dd>
   missing, the run falls back to `"archive"` with a warning; an explicit
   `"fenetre"` without keys aborts. Without an AOI (`aoi_crop = FALSE`) the
   archive route is used. IOTA2 is unchanged either way.</p></dd>
+
+
+<dt id="arg-correction-sen-cor">correction_sen2cor<a class="anchor" aria-label="anchor" href="#arg-correction-sen-cor"></a></dt>
+<dd><p>Only for the Sen2Cor route. `"aucune"` (default)
+uses the Sen2Cor reflectances as they are; `"biais"` subtracts the mean
+Sen2Cor - MAJA biases of CRswir and CRre measured on a single site
+(Couchey, study 092): not validated elsewhere.</p></dd>
+
+
+<dt id="arg-s-cache-dir">s2_cache_dir<a class="anchor" aria-label="anchor" href="#arg-s-cache-dir"></a></dt>
+<dd><p>Sentinel-2 band cache of the Sen2Cor route (the one of
+FAST / FORDEAD, `&lt;project&gt;/cache/layers/sentinel2`). Default: `&lt;cache_dir&gt;/layers/sentinel2`
+when `cache_dir` is the project `cache` folder or already holds that folder,
+otherwise `&lt;cache_dir&gt;/s2_bands` (a separate cache, not shared with FAST/FORDEAD).</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -371,6 +388,23 @@ centroids, `confidence_class`, `stress_index`) is lot L3 and is
 conda environment, a GEODES account, tens of GB of Sentinel-2 and an
 OTB/Shark batch execution. It is never exercised in CI; unit tests
 mock every external step.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="sen-cor-route-indicative-not-validated-">Sen2Cor route (indicative, not validated)<a class="anchor" aria-label="anchor" href="#sen-cor-route-indicative-not-validated-"></a></h2>
+
+
+<p>`acquisition = "sen2cor"` skips conda, IOTA2, THEIA and GEODES: the
+Sentinel-2 L2A (Sen2Cor) scenes of Planetary Computer are read through the
+FAST/FORDEAD band cache, a 134-feature stack (CRswir then CRre over 67
+dates) is built and the v3 forest is applied in R
+(<code><a href="reconfort_sharkrf_lire.html">reconfort_sharkrf_lire()</a></code>, <code><a href="reconfort_caracteristiques_v3.html">reconfort_caracteristiques_v3()</a></code>). Outputs have
+the names and formats of the IOTA2 route; `run_meta.json` carries
+`source_reflectances = "sen2cor"` and `validee = false`, and the GeoTIFFs carry
+the tags `SOURCE_REFLECTANCES` and `VALIDEE`. The model was trained on MAJA
+reflectances: with Sen2Cor about 24 % of pixels change class on the test
+site (study 093), mostly towards class 3. The route is also the last resort,
+with a warning of class `nemeton_reconfort_repli_sen2cor`, when `acquisition`
+is left at its default and the IOTA2 routes are unavailable or fail.</p>
     </div>
     <div class="section level2">
     <h2 id="temporal-window-s-year-gt-analysis-dates-">Temporal window (<code>s2_year</code> -&gt; analysis dates)<a class="anchor" aria-label="anchor" href="#temporal-window-s-year-gt-analysis-dates-"></a></h2>

@@ -995,6 +995,12 @@ ranger en validation croisee spatiale. Essai, hors production.
   map
 - [`reconfort_carte_spike()`](https://pobsteta.github.io/nemeton/reference/reconfort_carte_spike.md)
   : Class map of the RECONFORT spike model on the grid of a template map
+- [`reconfort_sharkrf_lire()`](https://pobsteta.github.io/nemeton/reference/reconfort_sharkrf_lire.md)
+  : Read a SharkRF random-forest model file (RECONFORT)
+- [`reconfort_sharkrf_predire()`](https://pobsteta.github.io/nemeton/reference/reconfort_sharkrf_predire.md)
+  : Apply a SharkRF model: votes per class
+- [`reconfort_caracteristiques_v3()`](https://pobsteta.github.io/nemeton/reference/reconfort_caracteristiques_v3.md)
+  : RECONFORT v3 feature stack (CRswir then CRre over a date grid)
 
 ### Suivi sanitaire - indicateur composite de decoloration ICD (spec 071)
 

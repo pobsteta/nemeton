@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.46</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.46.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -378,6 +378,11 @@
 <code>foretaccess</code> <strong>2.6.1</strong> puis <strong>2.6.2</strong> (tentatives WFS), app <strong>v2026.11.3</strong> (<code>1ba3417b</code>)</td>
 <td>Plancher <code>DESCRIPTION:15</code> : <code>foretaccess (&gt;= 2.6.3)</code> ; mission 040 (PR n° 311) : « rien à typer » avant le bloc volume, vrai motif dans le rapport du pipeline ; PR n° 308 : <code>detail</code> remonté. Vérifié en réel le 2026-11-22 sur la Colombière (<code>run_20261122095434_xumf</code>) : <code>desserte</code> <code>ok</code>, <code>desserte_typage</code> « rien à typer »</td>
 </tr></tbody></table><p><strong>Ce que l’écart n° 1 aura coûté et rapporté.</strong> Ouvert le 2026-08-15 comme « non consommé, et désormais bloquant », il l’était : la copie de la table dans <code>app_config.R</code> déclarait 40 indicateurs contre 41, A5 était calculé puis filtré à l’affichage, et une troisième copie des libellés (les clés i18n <code>indicator_&lt;CODE&gt;</code>) avait F1 et F2 inversés — la carte d’érosion sortait « F1 - Fertilité des sols ». Le dé-fork a retiré la <strong>classe</strong> de bug : quatre jours plus tard, la correction du sens de la famille R (v0.181.0) puis le décroisement de F (v0.182.0) ont traversé l’app <strong>sans une ligne de table à toucher</strong>. C’est l’argument à opposer au prochain fork qui se présentera comme un raccourci.</p>
+<hr></div>
+<div class="section level1">
+<h1 id="chantier--reconfort-sur-sen2cor-mission-095">Chantier — RECONFORT sur Sen2Cor (mission 095)<a class="anchor" aria-label="anchor" href="#chantier--reconfort-sur-sen2cor-mission-095"></a></h1>
+<p>Voie <code>acquisition = "sen2cor"</code> de <code><a href="reference/run_reconfort_dieback.html">run_reconfort_dieback()</a></code> : modele v3 lu et applique en R (noyau Rust), pile de 134 caracteristiques depuis les scenes Sentinel-2 L2A de Planetary Computer (cache FAST/FORDEAD). <strong>Indicatif, non valide.</strong></p>
+<p><strong>Journal</strong> — <em>2026-11-27</em> : branche locale <code>reconfort-sen2cor</code> (partie de <code>origin/main</code> 479ba13ab, non poussee ; l’orchestrateur la poussera apres la fusion de la #710). Validation sur le run IOTA2 de Couchey (520 591 pixels) : MAJA -&gt; IOTA2 80,20 % d’accord de classe ; Sen2Cor -&gt; 25,01 % de pixels qui changent de classe, 70,37 % d’accord avec IOTA2. Reste : la mission nemetonshiny (choix de la voie, marquage « indicatif » a l’ecran) ; le repli THEIA -&gt; GEODES (mission 089) ; une validation sur un autre site et avec une verite terrain.</p>
 <hr></div>
 <div class="section level1">
 <h1 id="chantier--modèles-de-fondation-et-itinéraires-sylvicoles-specs-064-065">Chantier — Modèles de fondation et itinéraires sylvicoles (specs 064, 065)<a class="anchor" aria-label="anchor" href="#chantier--mod%C3%A8les-de-fondation-et-itin%C3%A9raires-sylvicoles-specs-064-065"></a></h1>
