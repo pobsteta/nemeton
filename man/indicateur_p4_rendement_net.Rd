@@ -63,8 +63,12 @@ ecart            = rendement_net - taux_exige[vocation]
 }\if{html}{\out{</div>}}
 
 The R scores are read in their \strong{normalised} form (\code{R1_norm} ... \code{R4_norm},
-0-100, high = good, spec 048). A raw column \code{R1} without \code{R1_norm} is
-refused (class \code{nemeton_p4_colonne_brute}). The drought and health hazard
+0-100, high = good, spec 048). A raw column \code{Ri} (any of R1 to R5) without
+\code{Ri_norm} is refused (class \code{nemeton_p4_colonne_brute}). When the raw column
+sits next to \code{Ri_norm}, the latter must equal \code{normalize_indicator("Ri", Ri)}
+to 1e-6 on non-missing rows, otherwise the call fails with class
+\code{nemeton_p4_norm_incoherent}: per-batch \code{\link[=normalize_indicators]{normalize_indicators()}} does not
+invert the risk scores (decision of 2026-11-28). The drought and health hazard
 reads \code{min(R3_norm, R5_norm)} when \code{R5_norm} is present.
 }
 \section{Lifecycle}{

@@ -6,15 +6,28 @@
 # ligne (min des colonnes presentes), NA si aucune valeur.
 .p4_score_alea <- function(units, codes) {
   cols <- paste0(codes, "_norm")
-  # Garde contre la colonne brute (haut = risque) : refus net
+  # Garde contre la colonne brute (haut = risque) : refus net, pour TOUS les
+  # codes lus (R5 compris), des qu'une brute `Ri` n'a pas son `Ri_norm`.
   brutes <- codes[!cols %in% names(units) & codes %in% names(units)]
-  # R5 est optionnel (min seulement s'il est present) : on ne garde que le 1er code obligatoire
-  brutes <- intersect(brutes, codes[1L])
   if (length(brutes)) {
     cli::cli_abort(c(
       "Column {.field {brutes}} found without {.field {paste0(brutes, '_norm')}}.",
       "i" = "Raw R scores are 'high = risk'; P4 only reads the normalised 'high = good' columns (spec 048)."
     ), class = "nemeton_p4_colonne_brute")
+  }
+  # Coherence : quand la brute accompagne sa `_norm`, la `_norm` doit etre celle
+  # de normalize_indicator() (decision de Pascal, 2026-11-28).
+  for (cd in codes) {
+    if (!(cd %in% names(units) && paste0(cd, "_norm") %in% names(units))) next
+    brute <- as.numeric(units[[cd]]); nrm <- as.numeric(units[[paste0(cd, "_norm")]])
+    ok <- !is.na(brute) & !is.na(nrm)
+    if (any(ok) && any(abs(nrm[ok] - normalize_indicator(cd, brute[ok])) > 1e-6)) {
+      cli::cli_abort(c(
+        "Column {.field {paste0(cd, '_norm')}} ({.val {cd}}) does not match {.fn normalize_indicator} applied to {.field {cd}}.",
+        "i" = "The {.field _norm} columns must come from {.fn normalize_indicator}.",
+        "i" = "{.fn normalize_indicators} (per batch) does not invert the risk scores."
+      ), class = "nemeton_p4_norm_incoherent")
+    }
   }
   if (!cols[1L] %in% names(units)) return(NULL)
   m <- vapply(intersect(cols, names(units)), function(cl) as.numeric(units[[cl]]), numeric(nrow(units)))
@@ -71,8 +84,12 @@
 #' ```
 #'
 #' The R scores are read in their **normalised** form (`R1_norm` ... `R4_norm`,
-#' 0-100, high = good, spec 048). A raw column `R1` without `R1_norm` is
-#' refused (class `nemeton_p4_colonne_brute`). The drought and health hazard
+#' 0-100, high = good, spec 048). A raw column `Ri` (any of R1 to R5) without
+#' `Ri_norm` is refused (class `nemeton_p4_colonne_brute`). When the raw column
+#' sits next to `Ri_norm`, the latter must equal `normalize_indicator("Ri", Ri)`
+#' to 1e-6 on non-missing rows, otherwise the call fails with class
+#' `nemeton_p4_norm_incoherent`: per-batch [normalize_indicators()] does not
+#' invert the risk scores (decision of 2026-11-28). The drought and health hazard
 #' reads `min(R3_norm, R5_norm)` when `R5_norm` is present.
 #'
 #' @param units Data frame or `sf` of management units.

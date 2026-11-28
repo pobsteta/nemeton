@@ -12,6 +12,7 @@ economiques sont provisoires** (`inst/extdata/p4_parametres.yml`, aucun prix liv
   Sans colonne `vocation` (ou sans capital et gain calculables), P4 est `NA` avec `p4_status = "skipped_no_p4_source"` : aucun
   score `famille_production` existant ne change, `massif_demo_units` est inchange (il ne porte pas P4).
 - `normalize_indicator("P4", ...)` : regle dediee, `arrondi(100 x P4 / plafond_score)` bornee a [0, 100].
+- Deux erreurs a connaitre : `nemeton_p4_norm_incoherent` (une colonne `Ri_norm` qui n'est pas celle de `normalize_indicator()` a cote de `Ri`, typiquement issue de `normalize_indicators()` par lot, qui n'inverse pas les scores de risque) et `nemeton_p4_colonne_brute` (une brute `Ri`, R5 compris, sans `Ri_norm`).
 - `yaml` passe en `Imports`, `FactoMineR` en `Suggests`.
 
 # nemeton 2026.11.47 (2026-11-28)

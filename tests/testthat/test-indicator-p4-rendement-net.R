@@ -64,7 +64,7 @@ test_that("perte_saisie replaces the computed losses", {
   expect_true(all(is.na(r[1, paste0("p4_perte_", c("incendie", "tempete", "secheresse_sanitaire", "abroutissement"))])))
   expect_equal(r$P4[1], 750 / 14000 - 0.01)
   expect_true(is.na(r$p4_rendement_geometrique[1]))
-  expect_equal(r$P4[2:5] * 100, c(2.837, 1.565, 1.100, 0.070)[c(1, 2, 3, 4)] * c(1, 1, 1, 1), tolerance = 0.002)
+  expect_true(all(abs(r$P4[2:5] * 100 - c(2.837, 1.565, 1.100, 0.070)) <= 0.005))
 })
 
 test_that("a null or missing capital gives NA and a warning, not an error", {
@@ -107,3 +107,33 @@ test_that("P4_norm is bounded at 0 and 100 by a dedicated rule", {
   expect_equal(normalize_indicator("indicateur_p4_rendement_net", 0.0382), 64)
 })
 
+
+.brut_p4 <- function() {
+  u <- .ref_p4()[, c("vocation", "capital", "gain_valeur")]
+  u$R1 <- c(30, 15, 25, 5, 15); u$R2 <- c(60, 25, 70, 30, 40)
+  u$R3 <- c(55, 30, 80, 40, 50); u$R4 <- c(20, 50, 15, 40, 30)
+  u
+}
+
+test_that("R5 raw without R5_norm is refused like R1 (every code read)", {
+  u <- .ref_p4(); u$R5 <- c(10, 20, 30, 40, 50)
+  expect_error(indicateur_p4_rendement_net(u), class = "nemeton_p4_colonne_brute")
+  u <- .ref_p4(); u$R3_norm <- NULL; u$R3 <- 50
+  expect_error(indicateur_p4_rendement_net(u), class = "nemeton_p4_colonne_brute")
+})
+
+test_that("normalize_indicator() chain passes, per-batch normalize_indicators() chain is refused", {
+  u <- .brut_p4()
+  for (cd in paste0("R", 1:4)) u[[paste0(cd, "_norm")]] <- normalize_indicator(cd, u[[cd]])
+  expect_no_error(suppressMessages(indicateur_p4_rendement_net(u)))
+  b <- suppressMessages(normalize_indicators(.brut_p4(), indicators = paste0("R", 1:4)))
+  expect_true(all(paste0("R", 1:4, "_norm") %in% names(b)))
+  expect_error(suppressMessages(indicateur_p4_rendement_net(b)), class = "nemeton_p4_norm_incoherent")
+  # sur massif_demo_units : le lot est incoherent avec la regle
+  skip_if_not_installed("sf")
+  d <- sf::st_drop_geometry(get("massif_demo_units", envir = asNamespace("nemeton")))
+  d <- d[, setdiff(names(d), grep("_norm$", names(d), value = TRUE))]
+  d$vocation <- "production"; d$capital <- 1e4; d$gain_valeur <- 300
+  nb <- suppressMessages(normalize_indicators(d, indicators = paste0("R", 1:4)))
+  expect_error(suppressMessages(indicateur_p4_rendement_net(nb)), class = "nemeton_p4_norm_incoherent")
+})

@@ -57,6 +57,8 @@ P4_norm          = min(100, max(0, arrondi(100 × rendement_net / plafond_score)
 
 **Les scores R entrent sous leur forme normalisée.** Les colonnes brutes `R1` à `R4` sont orientées « haut = risque » ; seules les colonnes `_norm` suivent la convention de la spec 048, confirmée par Pascal le 2026-11-28 pour P4 : un score élevé signifie un risque faible. Lire la colonne brute inverserait le calcul.
 
+**Cohérence exigée** (décision de Pascal du 2026-11-28). Quand la colonne brute `Ri` est présente à côté de `Ri_norm`, `Ri_norm` doit égaler `normalize_indicator("Ri", Ri)` à 1e-6 près sur les lignes non `NA` ; sinon `indicateur_p4_rendement_net()` s'arrête (classe `nemeton_p4_norm_incoherent`), car `normalize_indicators()` (par lot) est un min-max qui n'inverse pas les scores de risque. Une brute `Ri` (R1 à R5) sans `Ri_norm` est refusée (classe `nemeton_p4_colonne_brute`). Brute absente : rien n'est vérifié.
+
 **Risque sanitaire.** L'aléa « sécheresse et sanitaire » lit `min(R3_norm, R5_norm)` quand R5 (dépérissement, conditionné à FORDEAD) est disponible, et `R3_norm` seul sinon.
 
 Décision, avec `seuil` = 0,005 (0,5 point) par défaut :
@@ -251,6 +253,8 @@ Rendement géométrique par UGF, en % : 3,505 ; 2,757 ; 1,131 ; 1,015 ; −0,062
 - Score R normalisé manquant sans `perte_saisie` : `NA` et avertissement.
 - R5 présent : l'aléa sécheresse et sanitaire lit le minimum de `R3_norm` et `R5_norm`.
 - Garde contre la colonne brute : le calcul refuse `R1` sans `R1_norm`.
+- Même garde pour tout code lu, `R5` compris.
+- Cohérence : une `Ri_norm` issue de `normalize_indicators()` (lot) à côté de `Ri` est refusée (`nemeton_p4_norm_incoherent`) ; issue de `normalize_indicator()`, elle passe. (Décision de Pascal du 2026-11-28.)
 - `P4_norm` borné à 0 pour un rendement net négatif et à 100 au-dessus du plafond.
 - Risque de ruine : tableau de référence exact ; somme pour un aléa systémique, maximum pour un aléa localisé ; dépassement du plafond et UGF concentrante ; rendement géométrique toujours inférieur ou égal au rendement net à 0,05 point près sur le jeu de référence.
 - Sélection d'axes : repli quand l'effectif est insuffisant ou la dépendance absente.
