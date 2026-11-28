@@ -1,7 +1,7 @@
 # Spec 072 — P4 : rendement net du risque
 
-**Version** : 0.1.0
-**Date**    : 2026-11-28
+**Version** : 0.2.0
+**Date**    : 2026-11-28 (§ 7 bis ajouté le même jour)
 **Statut**  : **Proposée**, à valider par Pascal. Aucune ligne de code n'est écrite.
 **Cible**   : `nemeton` (cœur). Suite côté app : `brief-nemetonshiny.md` (même dossier).
 
@@ -55,7 +55,7 @@ P4_norm          = min(100, max(0, arrondi(100 × rendement_net / plafond_score)
 | `p_max_i` | probabilité annuelle de l'aléa quand le score vaut 0 | proportion/an |
 | `part_perdue_i` | part de la valeur détruite si l'aléa survient | proportion |
 
-**Les scores R entrent sous leur forme normalisée.** Les colonnes brutes `R1` à `R4` sont orientées « haut = risque » ; seules les colonnes `_norm` suivent la convention de la spec 048. Lire la colonne brute inverserait le calcul.
+**Les scores R entrent sous leur forme normalisée.** Les colonnes brutes `R1` à `R4` sont orientées « haut = risque » ; seules les colonnes `_norm` suivent la convention de la spec 048, confirmée par Pascal le 2026-11-28 pour P4 : un score élevé signifie un risque faible. Lire la colonne brute inverserait le calcul.
 
 **Risque sanitaire.** L'aléa « sécheresse et sanitaire » lit `min(R3_norm, R5_norm)` quand R5 (dépérissement, conditionné à FORDEAD) est disponible, et `R3_norm` seul sinon.
 
@@ -103,11 +103,13 @@ version: 1
 provisoire: true
 plafond_score: 0.06
 seuil_decision: 0.005
+horizon_ans: 20
+plafond_exposition: 0.20
 aleas:
-  incendie:              {score: R1, p_max: 0.01, part_perdue: 0.80}
-  tempete:               {score: R2, p_max: 0.02, part_perdue: 0.50}
-  secheresse_sanitaire:  {score: [R3, R5], p_max: 0.03, part_perdue: 0.40}
-  abroutissement:        {score: R4, p_max: 0.02, part_perdue: 0.10}
+  incendie:              {score: R1, p_max: 0.01, part_perdue: 0.80, portee: localisee}
+  tempete:               {score: R2, p_max: 0.02, part_perdue: 0.50, portee: systemique}
+  secheresse_sanitaire:  {score: [R3, R5], p_max: 0.03, part_perdue: 0.40, portee: systemique}
+  abroutissement:        {score: R4, p_max: 0.02, part_perdue: 0.10, portee: localisee}
 vocations:
   production: {taux_exige: 0.03, si_ecart_negatif: recolter}
   mixte:      {taux_exige: 0.02, si_ecart_negatif: recolter}
@@ -131,6 +133,7 @@ Toutes ces valeurs sont des valeurs de départ non calibrées.
 | `p4_rendement_brut` | proportion/an |
 | `p4_perte_incendie`, `_tempete`, `_secheresse_sanitaire`, `_abroutissement` | proportion/an, `NA` si perte saisie |
 | `p4_pertes_attendues` | proportion/an |
+| `p4_rendement_geometrique` | proportion/an, croissance de long terme du capital (§ 7 bis) |
 | `p4_taux_exige`, `p4_ecart` | proportion, points |
 | `p4_decision` | `capitaliser`, `equilibre`, `recolter`, `surveiller` |
 | `p4_alea_dominant` | aléa de plus forte perte |
@@ -149,6 +152,38 @@ Le score repose sur le rendement net absolu, pas sur l'écart : le radar décrit
 - `pertes_attendues_eur_an` = Σ(surface × capital × pertes_attendues) ;
 - `alea_dominant_foret` : aléa de plus forte perte en €/an.
 
+## 7 bis. Risque de ruine
+
+Le rendement net est une espérance : il multiplie une probabilité par une perte et masque ce qui arrive le jour où l'aléa frappe. Quatre mesures le complètent. Aucune n'entre dans `P4` ni dans `P4_norm`.
+
+### Dommage en cas de sinistre
+
+```
+dommage_i      = part_perdue_i × (1 − Ri_norm / 100)          par UGF et par aléa
+perte_sinistre = dommage_i × capital × surface                en €
+```
+
+L'espérance du § 2 s'écrit alors `p_max_i × dommage_i` : les deux lectures sont cohérentes.
+
+### Les quatre mesures
+
+| Mesure | Définition | Sortie |
+|---|---|---|
+| Perte en cas de sinistre majeur | par aléa : **somme** des `perte_sinistre` des UGF si l'aléa est `systemique`, **maximum** s'il est `localisee` | en €, en part du capital, en années de gain net de la forêt |
+| Probabilité sur l'horizon | `1 − (1 − p_max_i)^horizon_ans` | proportion |
+| Concentration | part de la perte de sinistre portée par la première UGF, et nombre effectif d'UGF `1 / Σ part²` | proportion, nombre |
+| Rendement géométrique | `exp(ln(1 + rendement_brut) + Σ p_max_i × ln(1 − dommage_i)) − 1`, par UGF | proportion/an |
+
+La portée d'un aléa est une hypothèse de paramétrage : une tempête ou une sécheresse touche toutes les UGF exposées en même temps, un incendie ou l'abroutissement une seule.
+
+### Usage
+
+- **Plafond d'exposition** : `p4_ruine_foret()` marque `exposition_depassee = TRUE` pour tout aléa dont la perte de sinistre dépasse `plafond_exposition` du capital. C'est une contrainte, pas un terme de la moyenne.
+- **UGF concentrante** : l'UGF qui porte la plus grande part de la perte d'un aléa en dépassement est signalée, quelle que soit sa décision P4.
+- **Pareto** : la perte de sinistre peut entrer comme objectif à minimiser, à côté de `P4` (§ 8).
+
+Le rendement géométrique suppose des aléas indépendants entre eux et un sinistre au plus par an ; c'est une approximation, pas une simulation de la distribution des pertes.
+
 ## 8. Pareto et sélection des axes
 
 1. **Entrée de Pareto** : `P4` (rendement net), jamais `P4_norm` plafonné ni la décision. Appel de `identify_pareto_optimal()` avec `maximize = TRUE` sur tous les objectifs.
@@ -159,7 +194,8 @@ Le score repose sur le rendement net absolu, pas sur l'écart : le radar décrit
    - un axe imposé par la vocation remplace le moins contributif.
 4. **Garde sur l'effectif** : sous un nombre minimal d'UGF (paramètre, 30 par défaut), pas d'analyse factorielle ; repli sur les axes de la vocation, avec un avertissement. L'analyse se calcule à l'échelle d'un massif ou d'un ensemble de forêts.
 5. **Sortie** : statut `domine` ou `non_domine` par UGF, et prix implicite entre deux UGF voisines du front (points de rendement par point de score).
-6. Le front construit sur des UGF existantes décrit la forêt. Le front de décision, sur des options de gestion d'une même UGF, relève du brief app.
+6. **Front rendement-risque** : variante où l'on croise `P4` avec la perte de sinistre de l'aléa dominant (`maximize = FALSE` pour celle-ci), au lieu de fondre le risque dans le rendement net.
+7. Le front construit sur des UGF existantes décrit la forêt. Le front de décision, sur des options de gestion d'une même UGF, relève du brief app.
 
 Dépendance factorielle en `Suggests`, avec repli propre si elle est absente.
 
@@ -193,6 +229,19 @@ Forêt : capital 468 000 €, rendement net 2,610 %, part du capital à écart n
 
 Pareto sur P4, B, N avec les scores fictifs B = 35, 65, 30, 80, 90 et N = 25, 55, 20, 70, 92 : seule l'UGF 3 est dominée.
 
+Risque de ruine (§ 7 bis), horizon 20 ans, gain net de la forêt 12 214,8 €/an :
+
+| Aléa | Portée | Perte de sinistre | Part du capital | Années de gain net | Probabilité à 20 ans | Première UGF | Nombre effectif |
+|---|---|---|---|---|---|---|---|
+| incendie | localisée | 40 320 € | 8,62 % | 3,30 | 18,2 % | UGF 1, 50,0 % | 2,92 |
+| tempête | systémique | 107 550 € | 22,98 % | 8,80 | 33,2 % | UGF 1, 46,9 % | 3,19 |
+| sécheresse et sanitaire | systémique | 91 440 € | 19,54 % | 7,49 | 45,6 % | UGF 1, 40,4 % | 3,58 |
+| abroutissement | localisée | 8 100 € | 1,73 % | 0,66 | 33,2 % | UGF 2, 55,0 % | 2,67 |
+
+Seule la tempête dépasse le plafond de 20 % ; l'UGF 1, pourtant classée `capitaliser`, est l'UGF concentrante.
+
+Rendement géométrique par UGF, en % : 3,505 ; 2,757 ; 1,131 ; 1,015 ; −0,062.
+
 ## 11. Tests
 
 - Jeu de référence : toutes les colonnes et la synthèse forêt.
@@ -203,6 +252,7 @@ Pareto sur P4, B, N avec les scores fictifs B = 35, 65, 30, 80, 90 et N = 25, 55
 - R5 présent : l'aléa sécheresse et sanitaire lit le minimum de `R3_norm` et `R5_norm`.
 - Garde contre la colonne brute : le calcul refuse `R1` sans `R1_norm`.
 - `P4_norm` borné à 0 pour un rendement net négatif et à 100 au-dessus du plafond.
+- Risque de ruine : tableau de référence exact ; somme pour un aléa systémique, maximum pour un aléa localisé ; dépassement du plafond et UGF concentrante ; rendement géométrique toujours inférieur ou égal au rendement net à 0,05 point près sur le jeu de référence.
 - Sélection d'axes : repli quand l'effectif est insuffisant ou la dépendance absente.
 - Non-régression : sans les sources de P4, `famille_production` est inchangée sur `massif_demo_units`.
 
@@ -212,7 +262,7 @@ Pareto sur P4, B, N avec les scores fictifs B = 35, 65, 30, 80, 90 et N = 25, 55
 |---|---|---|
 | M0 | lecture du code de la famille P, de la normalisation et de Pareto ; fichier de paramètres et son validateur | note d'alignement relue ; validateur vert |
 | M1 | `indicateur_p4_rendement_net()`, capital et gain fournis | jeu de référence exact, tests du § 11 verts |
-| M2 | `p4_synthese_foret()`, branchement Pareto, `p4_selectionner_axes()` | synthèse et statut Pareto du jeu de référence exacts |
+| M2 | `p4_synthese_foret()`, `p4_ruine_foret()`, branchement Pareto, `p4_selectionner_axes()` | synthèse, risque de ruine et statut Pareto du jeu de référence exacts |
 | M3 | capital et gain calculés depuis `P1`, `P2` et les prix ; déclaration dans `INDICATOR_FAMILIES` | non-régression verte ; drapeau de précision correct |
 | M4 | côté app | selon `brief-nemetonshiny.md` |
 
@@ -225,6 +275,8 @@ Pareto sur P4, B, N avec les scores fictifs B = 35, 65, 30, 80, 90 et N = 25, 55
 5. Poids de P4 dans `famille_production` face à P1, P2, P3.
 6. R6 (sensibilité microclimatique) et R7 (gel tardif) doivent-ils devenir des aléas de P4 ?
 7. La règle `min(R3_norm, R5_norm)` pour le sanitaire convient-elle, ou faut-il deux aléas distincts ?
+8. Portée de chaque aléa (systémique ou localisée), horizon (20 ans) et plafond d'exposition (20 % du capital) : valeurs à arrêter.
+9. Faut-il une simulation de la distribution des pertes, avec corrélations entre aléas, au-delà des quatre mesures du § 7 bis ?
 
 ## 14. Références
 

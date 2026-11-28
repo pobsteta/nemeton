@@ -31,6 +31,7 @@ Deux champs nouveaux : `vocation` (liste fermée : production, mixte, protection
 - **Détail de la famille P** : le rendement brut partagé entre rendement net et pertes attendues, le taux exigé de la vocation, la décision, l'aléa dominant, le drapeau de précision.
 - **Synthèse** : rendement net de la forêt, part du capital à écart négatif, pertes attendues en €/an, aléa dominant.
 - **Pareto** : statut dominé ou non dominé par UGF, sur P4 et les axes retenus.
+- **Risque de ruine** (spec 072 § 7 bis) : par aléa, la perte en cas de sinistre majeur en part du capital et en années de gain net, la probabilité sur l'horizon, l'UGF concentrante, et le dépassement du plafond d'exposition. Le rendement géométrique s'affiche à côté du rendement net.
 - Un P4 marqué « signal seulement » s'affiche comme tel, sans décision de coupe.
 
 ### A3. i18n et export
@@ -50,6 +51,7 @@ Faire en sorte que le plan d'actions généré par l'IA tienne compte du résult
 | Statut Pareto | distingue l'UGF qui paie d'autres services de celle qui est réellement inefficace |
 | Manque à gagner en €/an | classe les priorités sur une base objective |
 | Précision NDP | dit si l'on peut agir ou s'il faut d'abord mesurer |
+| Risque de ruine | signale l'UGF qui concentre la perte potentielle, même si son rendement est bon |
 
 ### B2. Architecture en quatre étages
 
@@ -79,6 +81,7 @@ Valeurs de départ, à faire relire. Fichier `p4_regles_actions.yml`, côté cœ
 | recolter | non dominée | **pas de coupe automatique** : signaler l'arbitrage, proposer de revoir le taux exigé ou une intervention légère | aucun, note d'arbitrage |
 | surveiller | indifférent | suivi sanitaire renforcé, aucune coupe motivée par P4 | Travaux (suivi) |
 | toute | signal seulement | acquisition de données : inventaire de terrain avant toute décision de coupe | Travaux (étude) |
+| toute | UGF concentrante d'un aléa en dépassement | réduction d'exposition : diversification des essences et des classes de hauteur, étalement des récoltes, sans récolte motivée par ce seul signal hors vocation production ou mixte | Travaux, note d'arbitrage |
 
 **Selon l'aléa dominant**
 
@@ -110,7 +113,7 @@ manque_a_gagner = max(0, −ecart − seuil) × capital × surface      en €/a
 priorite        = manque_a_gagner × confiance_ndp
 ```
 
-À manque à gagner égal, l'UGF dominée passe devant. Les actions d'acquisition de données sont classées à part, en tête quand elles conditionnent une décision de coupe.
+À manque à gagner égal, l'UGF dominée passe devant. Les UGF concentrantes d'un aléa en dépassement forment une seconde liste, classée par perte de sinistre décroissante : elle n'est pas fondue dans la première, car elle répond à une autre question. Les actions d'acquisition de données sont classées à part, en tête quand elles conditionnent une décision de coupe.
 
 ### B6. Garde-fous
 
@@ -188,7 +191,7 @@ Sur la forêt de référence de la spec 072 (§ 10), LLM simulé :
 
 | UGF | Attendu de l'étage 2 |
 |---|---|
-| 1 Douglasaie | capitaliser : travaux d'amélioration, pas de coupe au-delà de l'accroissement |
+| 1 Douglasaie | capitaliser : travaux d'amélioration, pas de coupe au-delà de l'accroissement ; **UGF concentrante** pour la tempête (46,9 % d'une perte de 22,98 % du capital) : action de réduction d'exposition |
 | 2 Chênaie irrégulière | équilibre : coupe d'accroissement, priorité nulle |
 | 3 Pessière | récolter et dominée : rang 1, manque à gagner 617 €/an (0,935 point × 66 000 €), trois options, actions d'aléa sécheresse et tempête |
 | 4 Ripisylve | équilibre, vocation protection : aucune coupe motivée par P4 |
