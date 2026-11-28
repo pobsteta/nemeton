@@ -1,4 +1,16 @@
-# nemeton 2026.11.46.9002 (development)
+# nemeton 2026.11.47 (2026-11-28)
+
+Release du coeur qui permet a l'application de regler et d'afficher la source Sentinel-2 : RECONFORT sur reflectances
+Sen2Cor (voie `acquisition = "sen2cor"`, INDICATIVE, non validee) avec le modele v3 lu en R, hors IOTA2 ; repli
+automatique THEIA -> GEODES -> Sen2Cor ; source Sentinel-2 au choix (`source_s2`) pour FAST, FORDEAD, RECONFORT et l'ICD,
+avec un defaut propre a chaque methode ; liberation des fifos du superviseur `processx`.
+
+**Aucun retrait ni changement de signature d'une fonction exportee stable** (NAMESPACE : seulement des ajouts,
+`reconfort_caracteristiques_v3()`, `reconfort_sharkrf_lire()`, `reconfort_sharkrf_predire()`, `s2_source_resoudre()`).
+**Comportements nouveaux a connaitre** : `run_reconfort_dieback()` bascule seul, sans `acquisition` donne, de THEIA vers
+GEODES puis Sen2Cor (avertissements nommes) et fait une sonde reseau du catalogue STAC avant l'ingest ; `run_meta.json`
+de RECONFORT gagne `acquisition` et `causes_repli` ; la sortie Sen2Cor est indicative et ne porte pas de champ `validee`
+(jamais publie). Sans `source_s2`, FAST, FORDEAD et l'ICD ne changent pas.
 
 - **feat : une source Sentinel-2 choisie pour FAST, FORDEAD, RECONFORT et l'ICD** (mission 096). Nouveau parametre `source_s2`
   (`NULL`, `"theia"` ou `"sen2cor"`) sur `ingest_sentinel2_timeseries()`, `read_fast_alert_raster()`, `run_fordead_dieback()`,
@@ -30,8 +42,6 @@
   `validee`, les GeoTIFF plus le tag `VALIDEE` ; restent `source_reflectances = "sen2cor"`, `mention` (indicative),
   `correction_sen2cor` et le tag `MENTION`.
 
-# nemeton 2026.11.46.9001 (development)
-
 - **feat : `run_reconfort_dieback()` bascule sur les archives GEODES quand le catalogue STAC THEIA est indisponible** (mission 089).
   Avant l'ingest par fenetre, une sonde legere du catalogue (racine de l'API, delai de 15 s, une nouvelle tentative) classe
   la reponse : **indisponible** (delai depasse, connexion impossible, HTTP 5xx, 408, 429) -> repli ; **refus** (HTTP 401 / 403)
@@ -50,8 +60,6 @@
   avertissement « added connections » a chaque run RECONFORT. Quand c'est `run_memory_capped()` qui demarre le superviseur,
   il le rend en sortie (`processx::supervisor_kill()`), apres l'arret du fils ; l'arret du fils sur mort du parent reste
   garanti tant qu'il tourne (mission 075, teste). Un superviseur deja demarre par un autre usager n'est pas touche, et avec plusieurs `run_memory_capped()` simultanes ou imbriques (compteur d'appels en cours) il n'est rendu qu'a la sortie du dernier. Limite : `supervisor_kill()` tue tous les enfants supervises de la session ; un processus supervise par du code tiers, demarre pendant le run, est donc tue a cette liberation finale.
-
-# nemeton 2026.11.46.9000 (development)
 
 - **feat : RECONFORT sur reflectances Sen2Cor, voie `acquisition = "sen2cor"` (INDICATIF, NON VALIDE)** (mission 095).
   Troisieme voie de `run_reconfort_dieback()`, sans IOTA2, conda, THEIA ni GEODES : les scenes Sentinel-2 L2A de
