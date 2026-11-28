@@ -1,5 +1,48 @@
 # Changelog
 
+## nemeton 2026.11.48.9000 (development)
+
+### P4 : actions candidates, options et priorite (spec 072, section 15, mission 104)
+
+Etage 2 du plan d’actions pilote par P4 : un moteur de regles
+**deterministe, sans LLM**, qui produit pour chaque UGF des actions
+candidates, au plus trois options chiffrees (conserver, intervenir,
+convertir) et une priorite. **La matrice signal-action est provisoire**
+(`inst/extdata/p4_regles_actions.yml`, `provisoire: true`) : un
+forestier doit la relire avant toute mise en service, et cette relecture
+n’est pas faite. Aucune fonction existante n’est modifiee.
+
+- Ajouts exportes :
+  [`p4_regles_actions()`](https://pobsteta.github.io/nemeton/reference/p4_regles_actions.md)
+  et
+  [`p4_valider_regles_actions()`](https://pobsteta.github.io/nemeton/reference/p4_valider_regles_actions.md)
+  (classe d’erreur `nemeton_p4_regles_invalides`),
+  [`p4_actions_candidates()`](https://pobsteta.github.io/nemeton/reference/p4_actions_candidates.md),
+  [`p4_options()`](https://pobsteta.github.io/nemeton/reference/p4_options.md)
+  (`p4_net_apres` recalcule par
+  [`indicateur_p4_rendement_net()`](https://pobsteta.github.io/nemeton/reference/indicateur_p4_rendement_net.md),
+  effets qualitatifs, options dominees marquees),
+  [`p4_prioriser()`](https://pobsteta.github.io/nemeton/reference/p4_prioriser.md)
+  (`manque_a_gagner = max(0, -ecart - seuil) x capital x surface`,
+  `priorite = manque x confiance NDP`, a priorite egale l’UGF dominee
+  d’abord ; listes a part : UGF concentrantes, acquisitions) et
+  [`p4_contexte_llm()`](https://pobsteta.github.io/nemeton/reference/p4_contexte_llm.md)
+  (objet structure de B7, sans texte libre issu des donnees).
+- Garde-fous : vocation, axes proteges, precision (sous NDP 3 :
+  acquisition seule), ampleur (pas de coupe rase, prelevement borne),
+  tracabilite (regle, valeurs P4, versions). Les seuils d’alerte des
+  profils sont un parametre (`garde_profil`) fourni par l’application.
+- Invariants du code, non surchargeables par le YAML : `recolte` \<=\>
+  `prelevement_capital > 0` \<=\> tableau `coupes` ; hors production et
+  mixte, ou pour une UGF a capitaliser, toute option qui preleve prend
+  sa variante sans recolte ; plancher NDP de decision a 3 ; `conserver`
+  toujours presente (marquee `dominee`, jamais ecartee).
+  [`p4_contexte_llm()`](https://pobsteta.github.io/nemeton/reference/p4_contexte_llm.md)
+  n’emploie que des identifiants `ugf_<n>`, la correspondance etant
+  rendue dans l’attribut `correspondance`.
+- Specification : `specs/072-p4-rendement-net-risque/actions.md`
+  (section 15 de la spec 072).
+
 ## nemeton 2026.11.48 (2026-11-28)
 
 Release du coeur qui permet a l’application d’exposer P4 : nouvel

@@ -413,24 +413,60 @@ Volume bois, productivite station et qualite bois d’oeuvre
 
 - [`indicateur_p1_volume()`](https://pobsteta.github.io/nemeton/reference/indicateur_p1_volume.md)
   : P1: Standing Timber Volume Indicator
+
 - [`indicateur_p2_station()`](https://pobsteta.github.io/nemeton/reference/indicateur_p2_station.md)
   : P2: Site Productivity Index Indicator
+
 - [`indicateur_p3_qualite_bois()`](https://pobsteta.github.io/nemeton/reference/indicateur_p3_qualite_bois.md)
   : P3: Timber Quality Score Indicator
+
 - [`indicateur_p4_rendement_net()`](https://pobsteta.github.io/nemeton/reference/indicateur_p4_rendement_net.md)
   : P4 - net yield after hazards (spec 072)
+
 - [`p4_parametres()`](https://pobsteta.github.io/nemeton/reference/p4_parametres.md)
   : Read and validate the P4 parameter file
+
 - [`p4_valider_parametres()`](https://pobsteta.github.io/nemeton/reference/p4_valider_parametres.md)
   : Validate a P4 parameter list
+
 - [`p4_synthese_foret()`](https://pobsteta.github.io/nemeton/reference/p4_synthese_foret.md)
   : P4 summary at forest scale (spec 072, section 7)
+
 - [`p4_ruine_foret()`](https://pobsteta.github.io/nemeton/reference/p4_ruine_foret.md)
   : Ruin risk at forest scale (spec 072, section 7 bis)
+
 - [`p4_pareto()`](https://pobsteta.github.io/nemeton/reference/p4_pareto.md)
   : Pareto status of units on P4 and chosen axes (spec 072, section 8)
+
 - [`p4_selectionner_axes()`](https://pobsteta.github.io/nemeton/reference/p4_selectionner_axes.md)
   : Choose the axes to cross with P4 (spec 072, section 8)
+
+- [`p4_regles_actions()`](https://pobsteta.github.io/nemeton/reference/p4_regles_actions.md)
+  : Read and validate the P4 action rules
+
+- [`p4_valider_regles_actions()`](https://pobsteta.github.io/nemeton/reference/p4_valider_regles_actions.md)
+  : Validate a P4 rules list
+
+- [`p4_actions_candidates()`](https://pobsteta.github.io/nemeton/reference/p4_actions_candidates.md)
+  :
+
+  Candidate actions per unit from the P4 diagnosis (spec 072,
+  `actions.md`)
+
+- [`p4_options()`](https://pobsteta.github.io/nemeton/reference/p4_options.md)
+  :
+
+  Costed options per unit: keep, intervene, convert (spec 072,
+  `actions.md`)
+
+- [`p4_prioriser()`](https://pobsteta.github.io/nemeton/reference/p4_prioriser.md)
+  :
+
+  Deterministic priority of the units (spec 072, `actions.md`, brief B5)
+
+- [`p4_contexte_llm()`](https://pobsteta.github.io/nemeton/reference/p4_contexte_llm.md)
+  : Structured context for the language-model stage (spec 072, brief B7)
+
 - [`volume_mobilisable()`](https://pobsteta.github.io/nemeton/reference/volume_mobilisable.md)
   : Mobilisable timber volume for road-network sizing
 
