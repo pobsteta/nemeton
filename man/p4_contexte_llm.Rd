@@ -38,6 +38,11 @@ columns: vocation, capital, gain, \verb{R*_norm}, area).}
 
 \item{parametres}{P4 parameters, default \code{\link[=p4_parametres]{p4_parametres()}}.}
 
+\item{id_field}{Unit identifier column (default: row position). Never sent
+to the LLM: units are renamed \verb{ugf_<n>}.}
+
+\item{vocation_field}{Vocation column.}
+
 \item{priorisation, candidates, options}{Outputs of \code{\link[=p4_prioriser]{p4_prioriser()}},
 \code{\link[=p4_actions_candidates]{p4_actions_candidates()}} and \code{\link[=p4_options]{p4_options()}}; computed when \code{NULL}.}
 

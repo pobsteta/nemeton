@@ -752,6 +752,9 @@ p4_prioriser <- function(ugf_p4, pareto = NULL, ruine = NULL, parametres = NULL,
 #'
 #' @inheritParams p4_options
 #' @param pareto Output of [p4_pareto()] or one status per unit.
+#' @param id_field Unit identifier column (default: row position). Never sent
+#'   to the LLM: units are renamed `ugf_<n>`.
+#' @param vocation_field Vocation column.
 #' @param priorisation,candidates,options Outputs of [p4_prioriser()],
 #'   [p4_actions_candidates()] and [p4_options()]; computed when `NULL`.
 #' @param garde_profil Passed to [p4_actions_candidates()] and [p4_options()]
