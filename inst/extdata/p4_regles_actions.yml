@@ -1,0 +1,145 @@
+# Regles de la matrice signal-action de P4 (spec 072, extension actions.md, brief B3 a B6).
+# TOUTES ces regles sont des valeurs de depart PROVISOIRES : elles doivent etre relues par un forestier
+# avant toute mise en service (relecture a la charge de Pascal, non faite). Les effets qualitatifs et les
+# modifications d'entrees des options sont des hypotheses d'expert, jamais des mesures.
+# Surchargeable par projet : p4_regles_actions(fichier = "...") ou p4_regles_actions(surcharge = list(...)).
+# `provisoire` ne passe a false qu'apres relecture de cette matrice par un forestier (relecture a la charge de Pascal).
+version: 1
+provisoire: true
+seuil_alea: 0.005          # une action d'alea n'est ajoutee que si la perte de cet alea depasse 0,5 point
+ndp_min_decision: 3        # sous ce NDP : acquisition seulement (garde 4). Plancher du code : 3, non abaissable (le validateur refuse moins)
+vocations_recolte: [production, mixte]   # seules vocations ou P4 peut motiver une coupe (garde 1) ; le validateur refuse toute autre
+
+# Garde 5 : ampleur. Aucune coupe rase issue de ces regles ; prelevements bornes.
+bornes_prelevement:
+  coupe_rase: false                       # doit rester false (le validateur refuse true)
+  prelevement_max_part_capital: 0.25      # part maximale du capital prelevee par passage
+
+# Les lettres de famille sont entre guillemets (en YAML 1.1, N seul vaut faux).
+# Garde 2 : axes (familles) proteges par vocation. Une option notee "-" sur l'un d'eux n'est jamais retenue en silence.
+axes_proteges_vocation:
+  production: []
+  mixte: []
+  protection: ["B", "W", "N"]
+  accueil: ["S", "L", "B"]
+  naturalite: ["B", "N"]
+axes_proteges_mode: ecarter               # ecarter | arbitrage (l'option reste alors presentee comme arbitrage explicite)
+
+# Regles selon la decision P4 et le statut Pareto (brief B3, premier tableau).
+# `pareto` : domine | non_domine | indifferent ; un statut Pareto inconnu est traite comme non_domine (prudence).
+regles_decision:
+  - id: D1
+    decision: capitaliser
+    pareto: indifferent
+    actions:
+      - {id: pas_de_coupe_au_dela_accroissement, tableau: travaux, recolte: false,
+         libelle: "Pas de coupe au-dela de l'accroissement ; travaux d'amelioration au profit des tiges d'avenir"}
+  - id: D2
+    decision: equilibre
+    pareto: indifferent
+    actions:
+      - {id: coupe_accroissement, tableau: coupes, recolte: true,
+         libelle: "Coupe prelevant l'accroissement a la rotation prevue"}
+  - id: D3a
+    decision: recolter
+    pareto: domine
+    actions:
+      - {id: coupe_decapitalisation_ciblee, tableau: coupes, recolte: true,
+         libelle: "Coupe de decapitalisation ciblee sur les tiges exposees et peu dynamiques"}
+      - {id: conversion_diversification, tableau: travaux, recolte: false,
+         libelle: "Option de conversion ou de diversification des essences"}
+  - id: D3b
+    decision: recolter
+    pareto: non_domine
+    actions:
+      - {id: note_arbitrage_taux_exige, tableau: aucun, recolte: false,
+         libelle: "Pas de coupe automatique : arbitrage a signaler, revoir le taux exige ou une intervention legere"}
+  - id: D4
+    decision: surveiller
+    pareto: indifferent
+    actions:
+      - {id: suivi_sanitaire_renforce, tableau: travaux, recolte: false,
+         libelle: "Suivi sanitaire renforce, aucune coupe motivee par P4"}
+
+# Signal seulement (NDP sous le minimum) : acquisition de donnees, rien d'autre.
+acquisition:
+  id: S1
+  actions:
+    - {id: inventaire_terrain, tableau: travaux, recolte: false,
+       libelle: "Acquisition de donnees : inventaire de terrain avant toute decision de coupe"}
+
+# UGF concentrante d'un alea en depassement du plafond d'exposition (brief B3, premier tableau, derniere ligne).
+concentrante:
+  id: C1
+  actions:
+    - {id: reduction_exposition_diversification, tableau: travaux, recolte: false,
+       libelle: "Reduction d'exposition : diversification des essences et des classes de hauteur"}
+    - {id: etalement_recoltes, tableau: coupes, recolte: true,
+       libelle: "Etalement des recoltes dans le temps"}
+    - {id: note_arbitrage_exposition, tableau: aucun, recolte: false,
+       libelle: "Note d'arbitrage : UGF concentrante d'un alea en depassement"}
+
+# Regles selon l'alea (brief B3, second tableau), appliquees a chaque alea dont la perte depasse `seuil_alea`.
+regles_alea:
+  tempete:
+    id: A_tempete
+    actions:
+      - {id: eclaircie_precoce_rapport_hd, tableau: coupes, recolte: true,
+         libelle: "Eclaircies precoces pour abaisser le rapport H/D"}
+      - {id: traitement_lisieres, tableau: travaux, recolte: false, libelle: "Traitement des lisieres"}
+      - {id: recolte_anticipee_peuplements_hauts, tableau: coupes, recolte: true,
+         libelle: "Recolte anticipee des peuplements hauts et instables"}
+  secheresse_sanitaire:
+    id: A_secheresse
+    actions:
+      - {id: diversification_essences, tableau: travaux, recolte: false, libelle: "Diversification des essences"}
+      - {id: recolte_sanitaire, tableau: coupes, recolte: true, libelle: "Recolte sanitaire"}
+      - {id: suivi_sanitaire_spec008, tableau: travaux, recolte: false, libelle: "Suivi sanitaire (spec 008)"}
+      - {id: adaptation_densite, tableau: coupes, recolte: true, libelle: "Adaptation de la densite"}
+  incendie:
+    id: A_incendie
+    actions:
+      - {id: travaux_defense_incendie, tableau: travaux, recolte: false, libelle: "Travaux de defense contre l'incendie"}
+      - {id: entretien_acces_coupures, tableau: travaux, recolte: false, libelle: "Entretien des acces et des coupures"}
+  abroutissement:
+    id: A_abroutissement
+    actions:
+      - {id: protections_plants, tableau: travaux, recolte: false, libelle: "Protections contre l'abroutissement"}
+      - {id: suivi_regeneration, tableau: travaux, recolte: false, libelle: "Suivi de la regeneration"}
+      - {id: concertation_plan_chasse, tableau: aucun, recolte: false,
+         libelle: "Concertation sur le plan de chasse (profil chasseur)"}
+
+# Options (brief B4). Au plus trois par UGF. `entrees` : modifications des entrees de P4, recalculees par
+# indicateur_p4_rendement_net() :
+#   delta_score_alea_dominant : points ajoutes a R*_norm de l'alea dominant (plafonne a 100) ;
+#   prelevement_capital       : part du capital prelevee (bornee par bornes_prelevement) ;
+#   facteur_gain              : multiplicateur de gain_valeur.
+# `effets` : effet qualitatif par famille (+, 0, -), hypothese d'expert provisoire.
+# `sans_recolte` : entrees de repli quand la garde de vocation ou de precision interdit la recolte.
+options:
+  declencheurs:
+    decisions: [recolter, surveiller]   # une UGF sous le seuil recoit des options ; ainsi que toute UGF
+    alea: true                          # marquee par un alea (perte > seuil_alea)
+    concentrante: true                  # ou concentrante d'un alea en depassement
+  conserver:
+    libelle: "Conserver : aucune intervention motivee par P4"
+    tableau: aucun
+    recolte: false
+    entrees: {delta_score_alea_dominant: 0, prelevement_capital: 0, facteur_gain: 1.0}
+    effets: {"P": "0", "C": "0", "B": "0", "W": "0", "A": "0", "F": "0", "L": "0", "T": "0", "R": "0", "S": "0", "E": "0", "N": "0"}
+  intervenir:
+    libelle: "Intervenir : prelevement leger cible et travaux de reduction du risque"
+    tableau: coupes
+    recolte: true
+    entrees: {delta_score_alea_dominant: 10, prelevement_capital: 0.10, facteur_gain: 0.97}
+    sans_recolte:
+      libelle: "Intervenir sans recolte : travaux de reduction du risque"
+      tableau: travaux
+      entrees: {delta_score_alea_dominant: 10, prelevement_capital: 0, facteur_gain: 1.0}
+    effets: {"P": "+", "C": "-", "B": "0", "W": "0", "A": "0", "F": "0", "L": "0", "T": "0", "R": "+", "S": "0", "E": "+", "N": "-"}
+  convertir:
+    libelle: "Convertir : diversification ou conversion des essences"
+    tableau: travaux
+    recolte: false
+    entrees: {delta_score_alea_dominant: 25, prelevement_capital: 0, facteur_gain: 0.92}
+    effets: {"P": "-", "C": "0", "B": "+", "W": "0", "A": "0", "F": "0", "L": "0", "T": "0", "R": "+", "S": "0", "E": "0", "N": "+"}

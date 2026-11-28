@@ -199,6 +199,15 @@ superviseur global de `processx` (`supervise = TRUE` dans `run_memory_capped()`)
 produit pas). Tests : `test-reconfort-pipeline.R` (repli, refus, voie imposee, non-regression), `test-isolate.R` (fifos, arret
 du fils sur mort du parent).
 
+### 2026-11-28 — Mission 104 : P4, actions candidates, options et priorite (spec 072 section 15), cycle dev `2026.11.48.9000`
+
+- Branche `travail-104` (partie d'`origin/main` e036f3aca ; a fusionner avec `main` apres la release 2026.11.48). Cote coeur de la partie B
+  du brief app : `specs/072-p4-rendement-net-risque/actions.md`, `inst/extdata/p4_regles_actions.yml` (provisoire), `R/p4_actions.R`
+  (`p4_regles_actions()`, `p4_valider_regles_actions()`, `p4_actions_candidates()`, `p4_options()`, `p4_prioriser()`, `p4_contexte_llm()`).
+- Tableau de tests du brief reproduit sur la foret de reference (NDP 3) : UGF 3 rang 1, manque a gagner 617,4 EUR/an (le brief lit 617,1 :
+  il arrondit 0,9355 a 0,935), UGF 1 concentrante de la tempete. Tests : `test-indicator-p4-actions.R`.
+- Non fait : relecture de la matrice par un forestier ; etages 3 et 4 (mission 105, cote app) ; aucune release.
+
 ### 2026-11-28 — Mission 101 : P4 rendement net du risque, spec 072 jalons M0 a M3, cycle dev `2026.11.47.9001`
 
 - Branche `travail-101` (partie d'`origin/main` e7eea9076 + spec 072 fusionnee). M0 : `inst/extdata/p4_parametres.yml`, `p4_parametres()`,
