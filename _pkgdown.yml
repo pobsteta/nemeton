@@ -283,6 +283,12 @@ reference:
     - p4_ruine_foret
     - p4_pareto
     - p4_selectionner_axes
+    - p4_regles_actions
+    - p4_valider_regles_actions
+    - p4_actions_candidates
+    - p4_options
+    - p4_prioriser
+    - p4_contexte_llm
     - volume_mobilisable
 
   - subtitle: "References IFN par essence x sylvoecoregion (spec 040)"

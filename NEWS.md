@@ -1,3 +1,21 @@
+# nemeton 2026.11.48.9000 (development)
+
+## P4 : actions candidates, options et priorite (spec 072, section 15, mission 104)
+
+Etage 2 du plan d'actions pilote par P4 : un moteur de regles **deterministe, sans LLM**, qui produit pour chaque UGF des actions
+candidates, au plus trois options chiffrees (conserver, intervenir, convertir) et une priorite. **La matrice signal-action est
+provisoire** (`inst/extdata/p4_regles_actions.yml`, `provisoire: true`) : un forestier doit la relire avant toute mise en service,
+et cette relecture n'est pas faite. Aucune fonction existante n'est modifiee.
+
+- Ajouts exportes : `p4_regles_actions()` et `p4_valider_regles_actions()` (classe d'erreur `nemeton_p4_regles_invalides`),
+  `p4_actions_candidates()`, `p4_options()` (`p4_net_apres` recalcule par `indicateur_p4_rendement_net()`, effets qualitatifs,
+  options dominees marquees), `p4_prioriser()` (`manque_a_gagner = max(0, -ecart - seuil) x capital x surface`, `priorite = manque x
+  confiance NDP`, a priorite egale l'UGF dominee d'abord ; listes a part : UGF concentrantes, acquisitions) et `p4_contexte_llm()`
+  (objet structure de B7, sans texte libre issu des donnees).
+- Garde-fous : vocation, axes proteges, precision (sous NDP 3 : acquisition seule), ampleur (pas de coupe rase, prelevement borne),
+  tracabilite (regle, valeurs P4, versions). Les seuils d'alerte des profils sont un parametre (`garde_profil`) fourni par l'application.
+- Specification : `specs/072-p4-rendement-net-risque/actions.md` (section 15 de la spec 072).
+
 # nemeton (development version)
 
 ## P4 : rendement net du risque (spec 072, mission 101)
