@@ -209,6 +209,14 @@ du fils sur mort du parent).
   `massif_demo_units` identique, `list_indicators(conditionnels = FALSE)` = 31.
 - Non fait : M4 (brief app), valeurs economiques (provisoires, sect. 13), aucune release.
 
+### 2026-11-28 — Release 2026.11.48 (mission 102 de nemetonplateforme), version stable posee
+
+DESCRIPTION, NEWS.md (`# nemeton 2026.11.48 (2026-11-28)`) et CITATION.cff alignes sur `2026.11.48` ; le tag et la
+release sont poses par `release.yml` a la fusion sur `main`, le passage en `.9000` suit la release. Contenu depuis
+`v2026.11.47` (PR #715 et #717) : indicateur conditionnel P4, rendement net du risque (spec 072, mission 101), avec synthese
+foret, risque de ruine, Pareto et selection des axes. Aucun retrait d'export (7 ajouts) ; 45 indicateurs dont 14
+conditionnels, `yaml` en Imports et erreurs `nemeton_p4_*` listes en tete de NEWS. Aucun chantier clos par cette release.
+
 ### 2026-11-28 — Release 2026.11.47 (mission 098 de nemetonplateforme), version stable posee
 
 DESCRIPTION, NEWS.md (`# nemeton 2026.11.47 (2026-11-28)`) et CITATION.cff alignes sur `2026.11.47` ; le tag et la
