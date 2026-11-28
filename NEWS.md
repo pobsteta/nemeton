@@ -1,4 +1,11 @@
-# nemeton 2026.11.48.9000 (development)
+# nemeton 2026.11.49 (2026-11-28)
+
+Release du coeur qui permet a l'application de lancer l'arbitrage par le LLM : etage 2 du plan d'actions P4 (actions candidates,
+options chiffrees, priorite, contexte structure pour le LLM). La matrice signal-action est provisoire (relecture par un forestier
+non faite).
+
+**Aucun retrait ni changement de signature d'une fonction exportee stable** (ajouts seuls : `p4_regles_actions()`,
+`p4_valider_regles_actions()`, `p4_actions_candidates()`, `p4_options()`, `p4_prioriser()`, `p4_contexte_llm()`).
 
 ## P4 : actions candidates, options et priorite (spec 072, section 15, mission 104)
 
