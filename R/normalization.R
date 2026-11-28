@@ -577,7 +577,7 @@ invert_indicator <- function(data,
   "indicateur_c1_biomasse", "indicateur_c2_ndvi",
   "indicateur_w1_reseau", "indicateur_w2_zones_humides", "indicateur_w3_humidite",
   "indicateur_s1_routes", "indicateur_s2_bati", "indicateur_s3_population",
-  "indicateur_p1_volume", "indicateur_p2_station",
+  "indicateur_p1_volume", "indicateur_p2_station", "indicateur_p4_rendement_net",
   "indicateur_e1_bois_energie", "indicateur_e2_evitement",
   "indicateur_r1_feu", "indicateur_r2_tempete", "indicateur_r3_secheresse",
   "indicateur_r4_abroutissement",
@@ -793,6 +793,14 @@ normalize_indicator <- function(indicator, values, statut = NULL) {
   if (indicator %in% c("indicateur_l1_effet_lisiere", "L1",
                        "indicateur_l2_fragmentation")) {
     return(pmin(100, pmax(0, 100 - values)))
+  }
+
+  # P4 rendement net du risque (spec 072) : regle DEDIEE et bornee. Le brut est
+  # une proportion/an (peut etre negative) ; le score radar est
+  # arrondi(100 x P4 / plafond_score) borne a [0, 100] (plafond du fichier de
+  # parametres, 6 % par defaut). Haut = bon, pas d'inversion.
+  if (indicator %in% c("indicateur_p4_rendement_net", "P4")) {
+    return(.p4_norme(values, .p4_plafond_score()))
   }
 
   # R6 microclimate sensitivity: indicateur_r6_sensibilite() and the reGénération
