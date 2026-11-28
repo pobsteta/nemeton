@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">nemeton</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.47.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">2026.11.48</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,9 +118,11 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="nemeton-development-version">nemeton (development version)<a class="anchor" aria-label="anchor" href="#nemeton-development-version"></a></h2>
+<h2 class="pkg-version" data-toc-text="2026.11.48" id="nemeton-20261148-2026-11-28">nemeton 2026.11.48 (2026-11-28)<a class="anchor" aria-label="anchor" href="#nemeton-20261148-2026-11-28"></a></h2>
+<p>Release du coeur qui permet a l’application d’exposer P4 : nouvel indicateur conditionnel P4, rendement net du risque (spec 072), avec sa synthese a l’echelle de la foret, son risque de ruine, son front de Pareto et la selection des axes, et le refus des <code>R*_norm</code> incoherents.</p>
+<p><strong>Aucun retrait ni changement de signature d’une fonction exportee stable</strong> (NAMESPACE : sept ajouts <code><a href="../reference/indicateur_p4_rendement_net.html">indicateur_p4_rendement_net()</a></code>, <code><a href="../reference/p4_parametres.html">p4_parametres()</a></code>, <code><a href="../reference/p4_valider_parametres.html">p4_valider_parametres()</a></code>, <code><a href="../reference/p4_synthese_foret.html">p4_synthese_foret()</a></code>, <code><a href="../reference/p4_ruine_foret.html">p4_ruine_foret()</a></code>, <code><a href="../reference/p4_pareto.html">p4_pareto()</a></code>, <code><a href="../reference/p4_selectionner_axes.html">p4_selectionner_axes()</a></code>). <strong>Comportements nouveaux a connaitre</strong> : <code><a href="../reference/list_indicators.html">list_indicators()</a></code> rend 45 indicateurs dont 14 conditionnels (31 de base inchanges) ; <code>yaml</code> passe en <code>Imports</code> ; nouvelles erreurs <code>nemeton_p4_norm_incoherent</code> et <code>nemeton_p4_colonne_brute</code> ; sans colonne <code>vocation</code>, P4 est <code>NA</code> et aucun score existant ne change.</p>
 <div class="section level3">
-<h3 id="p4--rendement-net-du-risque-spec-mission-development-version">P4 : rendement net du risque (spec 072, mission 101)<a class="anchor" aria-label="anchor" href="#p4--rendement-net-du-risque-spec-mission-development-version"></a></h3>
+<h3 id="p4--rendement-net-du-risque-spec-mission-2026-11-48">P4 : rendement net du risque (spec 072, mission 101)<a class="anchor" aria-label="anchor" href="#p4--rendement-net-du-risque-spec-mission-2026-11-48"></a></h3>
 <p>Nouvel indicateur <strong>conditionnel</strong> P4 (famille P) : rendement annuel du capital sur pied net des pertes attendues dues aux aleas (incendie, tempete, secheresse et sanitaire, abroutissement), compare au taux exige de la vocation de l’UGF. <strong>Toutes les valeurs economiques sont provisoires</strong> (<code>inst/extdata/p4_parametres.yml</code>, aucun prix livre).</p>
 <ul><li>Ajouts exportes : <code><a href="../reference/indicateur_p4_rendement_net.html">indicateur_p4_rendement_net()</a></code>, <code><a href="../reference/p4_parametres.html">p4_parametres()</a></code>, <code><a href="../reference/p4_valider_parametres.html">p4_valider_parametres()</a></code>, <code><a href="../reference/p4_synthese_foret.html">p4_synthese_foret()</a></code>, <code><a href="../reference/p4_ruine_foret.html">p4_ruine_foret()</a></code>, <code><a href="../reference/p4_pareto.html">p4_pareto()</a></code>, <code><a href="../reference/p4_selectionner_axes.html">p4_selectionner_axes()</a></code>.</li>
 <li>

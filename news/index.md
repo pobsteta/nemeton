@@ -1,6 +1,27 @@
 # Changelog
 
-## nemeton (development version)
+## nemeton 2026.11.48 (2026-11-28)
+
+Release du coeur qui permet a l’application d’exposer P4 : nouvel
+indicateur conditionnel P4, rendement net du risque (spec 072), avec sa
+synthese a l’echelle de la foret, son risque de ruine, son front de
+Pareto et la selection des axes, et le refus des `R*_norm` incoherents.
+
+**Aucun retrait ni changement de signature d’une fonction exportee
+stable** (NAMESPACE : sept ajouts
+[`indicateur_p4_rendement_net()`](https://pobsteta.github.io/nemeton/reference/indicateur_p4_rendement_net.md),
+[`p4_parametres()`](https://pobsteta.github.io/nemeton/reference/p4_parametres.md),
+[`p4_valider_parametres()`](https://pobsteta.github.io/nemeton/reference/p4_valider_parametres.md),
+[`p4_synthese_foret()`](https://pobsteta.github.io/nemeton/reference/p4_synthese_foret.md),
+[`p4_ruine_foret()`](https://pobsteta.github.io/nemeton/reference/p4_ruine_foret.md),
+[`p4_pareto()`](https://pobsteta.github.io/nemeton/reference/p4_pareto.md),
+[`p4_selectionner_axes()`](https://pobsteta.github.io/nemeton/reference/p4_selectionner_axes.md)).
+**Comportements nouveaux a connaitre** :
+[`list_indicators()`](https://pobsteta.github.io/nemeton/reference/list_indicators.md)
+rend 45 indicateurs dont 14 conditionnels (31 de base inchanges) ;
+`yaml` passe en `Imports` ; nouvelles erreurs
+`nemeton_p4_norm_incoherent` et `nemeton_p4_colonne_brute` ; sans
+colonne `vocation`, P4 est `NA` et aucun score existant ne change.
 
 ### P4 : rendement net du risque (spec 072, mission 101)
 
