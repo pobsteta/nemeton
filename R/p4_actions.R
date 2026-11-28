@@ -5,6 +5,10 @@
 
 .P4_DECISIONS <- c("capitaliser", "equilibre", "recolter", "surveiller")
 .P4_OPTIONS <- c("conserver", "intervenir", "convertir")
+# Invariants du code, non surchargeables par le YAML ni par projet (decision de l'orchestrateur, prudence) :
+# plancher NDP de decision, vocations ou une recolte motivee par P4 est possible.
+.P4_NDP_PLANCHER <- 3
+.P4_VOCATIONS_RECOLTE <- c("production", "mixte")
 .P4_TABLEAUX <- c("coupes", "travaux", "aucun")
 .P4_LETTRES <- c("P", "C", "B", "W", "A", "F", "L", "T", "R", "S", "E", "N")
 .P4_FAMILLE_LETTRE <- c(
@@ -77,8 +81,8 @@ p4_valider_regles_actions <- function(r) {
         add(ou, ": action `", a$id, "`: `tableau` must be one of coupes, travaux, aucun")
       if (!(is.logical(a$recolte) && length(a$recolte) == 1L && !is.na(a$recolte)))
         add(ou, ": action `", a$id, "`: `recolte` must be TRUE or FALSE")
-      else if (isTRUE(a$recolte) && identical(a$tableau, "aucun") || isTRUE(a$recolte) && identical(a$tableau, "travaux"))
-        add(ou, ": action `", a$id, "`: a harvest must be in the `coupes` tableau")
+      else if (isTRUE(a$recolte) != identical(a$tableau, "coupes"))
+        add(ou, ": action `", a$id, "`: `recolte` must be TRUE exactly when the tableau is `coupes`")
       if (!(is.character(a$libelle) && length(a$libelle) == 1L && nzchar(a$libelle)))
         add(ou, ": action `", a$id, "`: `libelle` is missing")
     }
@@ -88,10 +92,11 @@ p4_valider_regles_actions <- function(r) {
     if (!num(r$version, 0, Inf)) add("`version` must be a number")
     if (!(is.logical(r$provisoire) && length(r$provisoire) == 1L)) add("`provisoire` must be TRUE or FALSE")
     if (!num(r$seuil_alea, 0, 1, TRUE, FALSE)) add("`seuil_alea` must be in [0, 1[")
-    if (!(num(r$ndp_min_decision, 0, 4) && r$ndp_min_decision == round(r$ndp_min_decision)))
-      add("`ndp_min_decision` must be an integer in 0..4")
-    if (!(is.character(unlist(r$vocations_recolte)) && all(unlist(r$vocations_recolte) %in% .P4_VOCATIONS)))
-      add("`vocations_recolte` must list known vocations")
+    if (!(num(r$ndp_min_decision, .P4_NDP_PLANCHER, 4) && r$ndp_min_decision == round(r$ndp_min_decision)))
+      add("`ndp_min_decision` must be an integer in 3..4 (the floor of 3 cannot be lowered)")
+    if (!(is.character(unlist(r$vocations_recolte)) && length(unlist(r$vocations_recolte)) > 0L &&
+          all(unlist(r$vocations_recolte) %in% .P4_VOCATIONS_RECOLTE)))
+      add("`vocations_recolte` can only contain production and mixte")
     b <- r$bornes_prelevement
     if (!(is.list(b) && identical(b$coupe_rase, FALSE)))
       add("`bornes_prelevement$coupe_rase` must be FALSE (no clear-cut from P4 rules)")
@@ -111,9 +116,13 @@ p4_valider_regles_actions <- function(r) {
     else {
       couv <- matrix(0L, length(.P4_DECISIONS), 2L, dimnames = list(.P4_DECISIONS, c("domine", "non_domine")))
       for (x in rd) {
-        if (!(is.character(x$id) && length(x$id) == 1L)) { add("a decision rule has no `id`"); next }
-        if (!(x$decision %in% .P4_DECISIONS)) { add("rule `", x$id, "`: unknown `decision`"); next }
-        if (!(x$pareto %in% c("domine", "non_domine", "indifferent"))) { add("rule `", x$id, "`: unknown `pareto`"); next }
+        if (!(is.list(x) && is.character(x$id) && length(x$id) == 1L)) { add("a decision rule has no `id`"); next }
+        if (!(is.character(x$decision) && length(x$decision) == 1L && x$decision %in% .P4_DECISIONS)) {
+          add("rule `", x$id, "`: missing or unknown `decision`"); next
+        }
+        if (!(is.character(x$pareto) && length(x$pareto) == 1L && x$pareto %in% c("domine", "non_domine", "indifferent"))) {
+          add("rule `", x$id, "`: missing or unknown `pareto`"); next
+        }
         cols <- if (identical(x$pareto, "indifferent")) c("domine", "non_domine") else x$pareto
         couv[x$decision, cols] <- couv[x$decision, cols] + 1L
         verifier_actions(x$actions, paste0("rule `", x$id, "`"))
@@ -149,22 +158,39 @@ p4_valider_regles_actions <- function(r) {
         x <- o[[id]]
         ou <- paste0("option `", id, "`")
         ent(x$entrees, ou)
-        if (!(is.list(x$effets) && setequal(names(x$effets), .P4_LETTRES) && all(unlist(x$effets) %in% c("+", "0", "-"))))
+        ef <- unlist(x$effets)
+        if (!(is.list(x$effets) && setequal(names(x$effets), .P4_LETTRES) &&
+              all(as.character(ef) %in% c("+", "0", "-"))))
           add(ou, ": `effets` must give +, 0 or - for each of the 12 families")
         if (!(is.character(x$tableau) && x$tableau %in% .P4_TABLEAUX)) add(ou, ": `tableau` is invalid")
-        if (!is.logical(x$recolte)) add(ou, ": `recolte` must be TRUE or FALSE")
+        if (!(is.logical(x$recolte) && length(x$recolte) == 1L && !is.na(x$recolte))) add(ou, ": `recolte` must be TRUE or FALSE")
+        else {
+          pre <- suppressWarnings(as.numeric(x$entrees$prelevement_capital))
+          # invariant : recolte <=> prelevement > 0 <=> tableau coupes
+          if (length(pre) == 1L && !is.na(pre) && x$recolte != (pre > 0))
+            add(ou, ": `recolte` must be TRUE exactly when `prelevement_capital` > 0")
+          if (x$recolte != identical(x$tableau, "coupes"))
+            add(ou, ": `recolte` must be TRUE exactly when the tableau is `coupes`")
+          sr <- x$sans_recolte
+          if (isTRUE(x$recolte) && !is.list(sr)) add(ou, ": `sans_recolte` is required for an option that harvests")
+          if (is.list(sr)) {
+            ent(sr$entrees, paste0(ou, " (sans_recolte)"))
+            if (!identical(as.numeric(sr$entrees$prelevement_capital), 0))
+              add(ou, " (sans_recolte): no harvest allowed")
+            if (!(is.character(sr$tableau) && sr$tableau %in% c("travaux", "aucun")) ||
+                !(is.character(sr$libelle) && nzchar(sr$libelle)))
+              add(ou, " (sans_recolte): `tableau` must be travaux or aucun, and `libelle` is required")
+          }
+        }
       }
       e0 <- o$conserver$entrees
       if (!(identical(as.numeric(e0$delta_score_alea_dominant), 0) && identical(as.numeric(e0$prelevement_capital), 0) &&
             identical(as.numeric(e0$facteur_gain), 1)))
         add("option `conserver` must leave the P4 inputs unchanged (status quo)")
-      sr <- o$intervenir$sans_recolte
-      if (!is.list(sr)) add("option `intervenir`: `sans_recolte` is missing")
-      else {
-        ent(sr$entrees, "option `intervenir` (sans_recolte)")
-        if (!identical(as.numeric(sr$entrees$prelevement_capital), 0)) add("option `intervenir` (sans_recolte): no harvest allowed")
-      }
     }
+  }
+  if (!length(err) && is.list(r$options)) {
+    for (id in .P4_OPTIONS) r$options[[id]]$effets <- lapply(r$options[[id]]$effets, as.character)
   }
   if (length(err)) {
     cli::cli_abort(c("Invalid P4 action rules.", stats::setNames(err, rep("x", length(err)))),
@@ -288,7 +314,9 @@ p4_valider_regles_actions <- function(r) {
 #'   `tableau` (`coupes`, `travaux`, `aucun`), `recolte`, `libelle`, the P4
 #'   values used (`p4_rendement_net`, `p4_ecart`, `p4_decision`, `p4_ndp`,
 #'   `p4_signal_seulement`, `pareto_statut`, `perte_alea`), `version_parametres`,
-#'   `version_regles` and `regles_provisoires`. Attribute `ecartees`: the
+#'   `version_regles`, `regles_provisoires` and `prelevement_max_part_capital`
+#'   (the bound of the rules file carried by every harvesting action, guard 5).
+#'   Attribute `ecartees`: the
 #'   removed candidates with their `garde`.
 #' @examples
 #' u <- data.frame(vocation = "production", capital = 14000, gain_valeur = 750,
@@ -309,7 +337,7 @@ p4_actions_candidates <- function(ugf_p4, pareto = NULL, ruine = NULL, regles = 
   par <- .p4_statut_pareto(pareto, n)
   conc <- .p4_concentrantes(ruine)
   voc <- as.character(ugf_p4[[vocation_field]])
-  ndp_min <- r$ndp_min_decision
+  ndp_min <- max(.P4_NDP_PLANCHER, r$ndp_min_decision)
 
   lignes <- list()
   absents <- character()
@@ -351,6 +379,8 @@ p4_actions_candidates <- function(ugf_p4, pareto = NULL, ruine = NULL, regles = 
     if (length(liste)) lignes[[length(lignes) + 1L]] <- do.call(rbind, liste)
   }
   tout <- if (length(lignes)) do.call(rbind, lignes) else .p4_candidates_vide()[, setdiff(names(.p4_candidates_vide()), "garde")]
+  # B6.5 : une action de coupe porte la borne de prelevement du fichier de regles
+  tout$prelevement_max_part_capital <- ifelse(tout$recolte, r$bornes_prelevement$prelevement_max_part_capital, NA_real_)
   tout$version_parametres <- rep(p$version, nrow(tout))
   tout$version_regles <- rep(r$version, nrow(tout))
   tout$regles_provisoires <- rep(isTRUE(r$provisoire) || isTRUE(p$provisoire), nrow(tout))
@@ -358,7 +388,7 @@ p4_actions_candidates <- function(ugf_p4, pareto = NULL, ruine = NULL, regles = 
   # Gardes : vocation (1), precision (4), profil (3, fourni par l'application)
   voc_ligne <- voc[match(tout$ugf, ids)]
   g <- rep(NA_character_, nrow(tout))
-  g[is.na(g) & tout$recolte & !(voc_ligne %in% unlist(r$vocations_recolte))] <- "vocation"
+  g[is.na(g) & tout$recolte & !(voc_ligne %in% intersect(unlist(r$vocations_recolte), .P4_VOCATIONS_RECOLTE))] <- "vocation"
   g[is.na(g) & tout$origine != "signal" & tout$recolte & !is.na(tout$p4_ndp) & tout$p4_ndp < ndp_min] <- "precision"
   reste <- is.na(g)
   g[reste] <- ifelse(.p4_appliquer_profil(tout[reste, , drop = FALSE], garde_profil), NA_character_, "profil")
@@ -377,6 +407,7 @@ p4_actions_candidates <- function(ugf_p4, pareto = NULL, ruine = NULL, regles = 
   d <- .p4_candidates_vide()
   d[1L, "ugf"] <- id
   d$garde <- garde
+  d$prelevement_max_part_capital <- NA_real_
   d$version_parametres <- NA_real_; d$version_regles <- NA_real_; d$regles_provisoires <- NA
   d
 }
@@ -412,15 +443,24 @@ p4_actions_candidates <- function(ugf_p4, pareto = NULL, ruine = NULL, regles = 
 #' axes, and the mark of dominated options (at least as good on `p4_net_apres`
 #' and on every axis, strictly better on one).
 #'
-#' Guards: **1 vocation** and **4 precision** (outside the harvest vocations the
-#' option `intervenir` falls back on its `sans_recolte` variant), **5 extent**
+#' Guards, which are invariants of the code that no rules file can lower:
+#' **1 vocation** (outside production and mixed, or for a unit to capitalise,
+#' any option that harvests falls back on its `sans_recolte` variant, so that
+#' `recolte` holds exactly when `prelevement_capital > 0` and the tableau is
+#' `coupes`) and **4 precision** (NDP floor of 3), **5 extent**
 #' (the harvest is capped by `prelevement_max_part_capital`, never a clear-cut),
 #' **2 protected axes** (an option rated `-` on an axis protected by the
 #' vocation or by `axes_proteges_profil` is `ecartee_axe_protege`, or, with
 #' `axes_proteges_mode: arbitrage`, kept with the axes listed in
-#' `arbitrage_axes`), **3** through `garde_profil`. The effects are expert
-#' hypotheses, never measures; a unit with `perte_saisie` keeps its entered loss
-#' (the hazard score change has no effect on it).
+#' `arbitrage_axes`), **3** through `garde_profil`. The option `conserver` is
+#' the reference status quo: it is always presented, and marked `dominee = TRUE`
+#' when it is dominated, but never discarded. The effects are expert
+#' hypotheses, never measures. The gain on the dominant hazard is added to every
+#' score the hazard reads (`R3_norm` and `R5_norm` for the drought and health
+#' hazard), so it raises the minimum; it has no effect on a unit with
+#' `perte_saisie` (its entered loss is kept) or on a score already at 100.
+#' Lowering the capital raises the gross yield without counting the income of
+#' the harvest (model hypothesis, to be reviewed).
 #'
 #' @param ugf_p4 Output of [indicateur_p4_rendement_net()] (with its input
 #'   columns: vocation, capital, gain, `R*_norm`, area).
@@ -472,18 +512,24 @@ p4_options <- function(ugf_p4, regles = NULL, ruine = NULL, axes = c("B", "N"),
     x <- .p4_alea_perte(ugf_p4, a); !is.na(x) & x > r$seuil_alea
   }))
   eligible <- !is.na(ugf_p4$p4_decision) & !is.na(ugf_p4$P4) & !is.na(ugf_p4$p4_ndp) &
-    !ugf_p4$p4_signal_seulement & ugf_p4$p4_ndp >= r$ndp_min_decision &
+    !ugf_p4$p4_signal_seulement & ugf_p4$p4_ndp >= max(.P4_NDP_PLANCHER, r$ndp_min_decision) &
     (ugf_p4$p4_decision %in% unlist(d$decisions) | (isTRUE(d$alea) & alea_marque) |
        (isTRUE(d$concentrante) & ids %in% conc$ugf))
   idx <- which(eligible)
   if (!length(idx)) return(.p4_options_vide(lettres))
 
-  sans_recolte <- !(voc[idx] %in% unlist(r$vocations_recolte))
+  # Invariants : hors production et mixte, ou pour une UGF a capitaliser (regle D1), toute option qui
+  # preleve retombe sur sa variante sans recolte.
+  hors_voc <- !(voc[idx] %in% .P4_VOCATIONS_RECOLTE) | !(voc[idx] %in% intersect(unlist(r$vocations_recolte), .P4_VOCATIONS_RECOLTE))
+  capit <- ugf_p4$p4_decision[idx] == "capitaliser"
+  sans_recolte <- hors_voc | capit
   pmax_ <- r$bornes_prelevement$prelevement_max_part_capital
   blocs <- lapply(.P4_OPTIONS, function(o) {
     x <- r$options[[o]]
+    preleve <- x$entrees$prelevement_capital > 0
+    repli <- preleve & sans_recolte                 # variante sans recolte
     ent <- lapply(seq_along(idx), function(k) {
-      e <- if (o == "intervenir" && sans_recolte[k]) x$sans_recolte$entrees else x$entrees
+      e <- if (repli[k]) x$sans_recolte$entrees else x$entrees
       e$prelevement_capital <- min(e$prelevement_capital, pmax_)  # garde 5 : ampleur
       e
     })
@@ -510,9 +556,11 @@ p4_options <- function(ugf_p4, regles = NULL, ruine = NULL, axes = c("B", "N"),
     apres <- suppressMessages(indicateur_p4_rendement_net(
       fr, vocation_field = vocation_field, capital_field = capital_field, gain_field = gain_field,
       perte_saisie_field = perte_saisie_field, parametres = p))
-    tab <- if (o == "intervenir") ifelse(sans_recolte, x$sans_recolte$tableau, x$tableau) else rep(x$tableau, length(idx))
-    rec <- if (o == "intervenir") !sans_recolte else rep(isTRUE(x$recolte), length(idx))
-    lib <- if (o == "intervenir") ifelse(sans_recolte, x$sans_recolte$libelle, x$libelle) else rep(x$libelle, length(idx))
+    # recolte <=> prelevement > 0 <=> tableau coupes (invariant du code)
+    rec <- pre > 0
+    tab <- ifelse(rec, "coupes", ifelse(repli, x$sans_recolte$tableau, x$tableau))
+    lib <- if (preleve) ifelse(repli, x$sans_recolte$libelle, x$libelle) else rep(x$libelle, length(idx))
+    gd <- ifelse(repli, ifelse(capit, "capitaliser_sans_recolte", "vocation_sans_recolte"), NA_character_)
     b <- data.frame(
       ugf = ids[idx], option = o, libelle = lib, tableau = tab, recolte = rec,
       delta_score = delta, prelevement_capital = pre, facteur_gain = fg,
@@ -521,7 +569,7 @@ p4_options <- function(ugf_p4, regles = NULL, ruine = NULL, axes = c("B", "N"),
     b$delta_p4 <- b$p4_net_apres - b$p4_net_avant
     b$p4_ecart_apres <- apres$p4_ecart
     for (l in lettres) b[[paste0("effet_", l)]] <- x$effets[[l]]
-    b$garde <- ifelse(o == "intervenir" & sans_recolte, "vocation_sans_recolte", NA_character_)
+    b$garde <- gd
     b
   })
   res <- do.call(rbind, blocs)
@@ -553,14 +601,16 @@ p4_options <- function(ugf_p4, regles = NULL, ruine = NULL, axes = c("B", "N"),
       for (a in seq_along(ok)) {
         par_qui <- res$option[ok][dm[a, ]]
         if (length(par_qui)) {
-          res$dominee[ok[a]] <- TRUE; res$statut[ok[a]] <- "dominee"
+          # le statu quo reste toujours presente (reference) : marque dominee, jamais ecarte
+          res$dominee[ok[a]] <- TRUE
+          if (res$option[ok[a]] != "conserver") res$statut[ok[a]] <- "dominee"
           res$dominee_par[ok[a]] <- paste(par_qui, collapse = ",")
         }
       }
     }
   }
   kp <- .p4_appliquer_profil(res, garde_profil)
-  res$statut[!kp & res$statut == "retenable"] <- "ecartee_profil"
+  res$statut[!kp & res$statut == "retenable" & res$option != "conserver"] <- "ecartee_profil"
   res$version_parametres <- p$version
   res$version_regles <- r$version
   res$regles_provisoires <- isTRUE(r$provisoire) || isTRUE(p$provisoire)
@@ -669,7 +719,7 @@ p4_prioriser <- function(ugf_p4, pareto = NULL, ruine = NULL, parametres = NULL,
 
 # --- Contexte structure pour l'etage 3 (LLM, cote application) ---------------
 
-.p4_id_sur <- function(x, i) if (grepl("^[A-Za-z0-9 _.-]{1,40}$", x)) x else paste0("ugf_", i)
+.p4_id_sur <- function(i) paste0("ugf_", i)
 
 # Unites qui dominent chaque unite sur P4 et les colonnes d'axes (toutes maximisees).
 .p4_dominateurs <- function(ugf_p4, cols, ids) {
@@ -694,7 +744,9 @@ p4_prioriser <- function(ugf_p4, pareto = NULL, ruine = NULL, parametres = NULL,
 #' `p4_net_apres` and qualitative effects. **No free text coming from external
 #' data**: only numbers, fixed identifiers of the rules, the closed lists of
 #' vocations, decisions and hazards, and the unit identifier, which is replaced
-#' by `ugf_<n>` when it is not a short plain label. Missing pieces
+#' by `ugf_<n>` (`n` = row position) **always**, also in `dominee_par`; the
+#' true identifiers are returned apart in the attribute `correspondance` (data
+#' frame `ugf_contexte`, `ugf`). Missing pieces
 #' (`priorisation`, `candidates`, `options`) are computed with the functions of
 #' the same family.
 #'
@@ -706,7 +758,8 @@ p4_prioriser <- function(ugf_p4, pareto = NULL, ruine = NULL, parametres = NULL,
 #'   when those are computed here.
 #'
 #' @return An unnamed list with one element per unit (`ugf`, `vocation`, `p4`,
-#'   `pareto`, `priorite`, `concentrante`, `actions`, `options`, `regles`).
+#'   `pareto`, `priorite`, `concentrante`, `actions`, `options`, `regles`),
+#'   with the attribute `correspondance`.
 #' @examples
 #' u <- data.frame(vocation = "production", capital = 11000, gain_valeur = 380,
 #'                 surface_ha = 6, R1_norm = 75, R2_norm = 30, R3_norm = 20, R4_norm = 85,
@@ -740,12 +793,12 @@ p4_contexte_llm <- function(ugf_p4, pareto = NULL, ruine = NULL, regles = NULL, 
   brut <- num_ou_na("p4_rendement_brut"); pertes <- num_ou_na("p4_pertes_attendues")
   taux <- num_ou_na("p4_taux_exige")
   voc <- as.character(ugf_p4[[vocation_field]])
-  lapply(seq_len(n), function(i) {
+  res <- lapply(seq_len(n), function(i) {
     pr <- priorisation$ugf[priorisation$ugf$ugf == ids[i], , drop = FALSE]
     op <- options[options$ugf == ids[i] & options$statut == "retenable", , drop = FALSE]
     ac <- candidates[candidates$ugf == ids[i], , drop = FALSE]
     list(
-      ugf = .p4_id_sur(ids[i], i),
+      ugf = .p4_id_sur(i),
       vocation = if (voc[i] %in% names(p$vocations)) voc[i] else NA_character_,
       p4 = list(rendement_brut = brut[i], pertes_attendues = pertes[i], rendement_net = num(ugf_p4$P4[i]),
                 taux_exige = taux[i], ecart = num(ugf_p4$p4_ecart[i]),
@@ -753,7 +806,7 @@ p4_contexte_llm <- function(ugf_p4, pareto = NULL, ruine = NULL, regles = NULL, 
                 alea_dominant = if (ugf_p4$p4_alea_dominant[i] %in% .P4_ALEAS) ugf_p4$p4_alea_dominant[i] else NA_character_,
                 ndp = num(ugf_p4$p4_ndp[i]), signal_seulement = isTRUE(ugf_p4$p4_signal_seulement[i])),
       pareto = list(statut = par[i], axes = lettres,
-                    dominee_par = vapply(domine_par[[i]], function(d) .p4_id_sur(d, match(d, ids)), character(1), USE.NAMES = FALSE)),
+                    dominee_par = vapply(domine_par[[i]], function(d) .p4_id_sur(match(d, ids)), character(1), USE.NAMES = FALSE)),
       priorite = list(rang = if (nrow(pr)) pr$rang else NA_integer_,
                       manque_a_gagner_eur_an = if (nrow(pr)) pr$manque_a_gagner_eur_an else NA_real_),
       concentrante = conc$alea[conc$ugf == ids[i]],
@@ -766,4 +819,6 @@ p4_contexte_llm <- function(ugf_p4, pareto = NULL, ruine = NULL, regles = NULL, 
                     provisoire = isTRUE(r$provisoire) || isTRUE(p$provisoire))
     )
   })
+  attr(res, "correspondance") <- data.frame(ugf_contexte = .p4_id_sur(seq_len(n)), ugf = ids, stringsAsFactors = FALSE)
+  res
 }

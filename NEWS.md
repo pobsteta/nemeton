@@ -14,6 +14,10 @@ et cette relecture n'est pas faite. Aucune fonction existante n'est modifiee.
   (objet structure de B7, sans texte libre issu des donnees).
 - Garde-fous : vocation, axes proteges, precision (sous NDP 3 : acquisition seule), ampleur (pas de coupe rase, prelevement borne),
   tracabilite (regle, valeurs P4, versions). Les seuils d'alerte des profils sont un parametre (`garde_profil`) fourni par l'application.
+- Invariants du code, non surchargeables par le YAML : `recolte` <=> `prelevement_capital > 0` <=> tableau `coupes` ; hors production et
+  mixte, ou pour une UGF a capitaliser, toute option qui preleve prend sa variante sans recolte ; plancher NDP de decision a 3 ;
+  `conserver` toujours presente (marquee `dominee`, jamais ecartee). `p4_contexte_llm()` n'emploie que des identifiants `ugf_<n>`, la
+  correspondance etant rendue dans l'attribut `correspondance`.
 - Specification : `specs/072-p4-rendement-net-risque/actions.md` (section 15 de la spec 072).
 
 # nemeton (development version)

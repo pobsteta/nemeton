@@ -45,7 +45,9 @@ A data frame, one row per unit and action: \code{ugf}, \code{action_id},
 \code{tableau} (\code{coupes}, \code{travaux}, \code{aucun}), \code{recolte}, \code{libelle}, the P4
 values used (\code{p4_rendement_net}, \code{p4_ecart}, \code{p4_decision}, \code{p4_ndp},
 \code{p4_signal_seulement}, \code{pareto_statut}, \code{perte_alea}), \code{version_parametres},
-\code{version_regles} and \code{regles_provisoires}. Attribute \code{ecartees}: the
+\code{version_regles}, \code{regles_provisoires} and \code{prelevement_max_part_capital}
+(the bound of the rules file carried by every harvesting action, guard 5).
+Attribute \code{ecartees}: the
 removed candidates with their \code{garde}.
 }
 \description{

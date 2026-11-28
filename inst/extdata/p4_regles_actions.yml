@@ -3,11 +3,12 @@
 # avant toute mise en service (relecture a la charge de Pascal, non faite). Les effets qualitatifs et les
 # modifications d'entrees des options sont des hypotheses d'expert, jamais des mesures.
 # Surchargeable par projet : p4_regles_actions(fichier = "...") ou p4_regles_actions(surcharge = list(...)).
+# `provisoire` ne passe a false qu'apres relecture de cette matrice par un forestier (relecture a la charge de Pascal).
 version: 1
 provisoire: true
 seuil_alea: 0.005          # une action d'alea n'est ajoutee que si la perte de cet alea depasse 0,5 point
-ndp_min_decision: 3        # sous ce NDP : acquisition de donnees seulement (garde 4)
-vocations_recolte: [production, mixte]   # seules vocations ou P4 peut motiver une coupe (garde 1)
+ndp_min_decision: 3        # sous ce NDP : acquisition seulement (garde 4). Plancher du code : 3, non abaissable (le validateur refuse moins)
+vocations_recolte: [production, mixte]   # seules vocations ou P4 peut motiver une coupe (garde 1) ; le validateur refuse toute autre
 
 # Garde 5 : ampleur. Aucune coupe rase issue de ces regles ; prelevements bornes.
 bornes_prelevement:

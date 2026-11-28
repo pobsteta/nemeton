@@ -46,7 +46,8 @@ when those are computed here.}
 }
 \value{
 An unnamed list with one element per unit (\code{ugf}, \code{vocation}, \code{p4},
-\code{pareto}, \code{priorite}, \code{concentrante}, \code{actions}, \code{options}, \code{regles}).
+\code{pareto}, \code{priorite}, \code{concentrante}, \code{actions}, \code{options}, \code{regles}),
+with the attribute \code{correspondance}.
 }
 \description{
 Builds, per unit, the object the application hands to the LLM: the P4
@@ -55,7 +56,9 @@ candidate action identifiers and the non-dominated options with their
 \code{p4_net_apres} and qualitative effects. \strong{No free text coming from external
 data}: only numbers, fixed identifiers of the rules, the closed lists of
 vocations, decisions and hazards, and the unit identifier, which is replaced
-by \verb{ugf_<n>} when it is not a short plain label. Missing pieces
+by \verb{ugf_<n>} (\code{n} = row position) \strong{always}, also in \code{dominee_par}; the
+true identifiers are returned apart in the attribute \code{correspondance} (data
+frame \code{ugf_contexte}, \code{ugf}). Missing pieces
 (\code{priorisation}, \code{candidates}, \code{options}) are computed with the functions of
 the same family.
 }

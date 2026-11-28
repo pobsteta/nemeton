@@ -61,15 +61,24 @@ axes, and the mark of dominated options (at least as good on \code{p4_net_apres}
 and on every axis, strictly better on one).
 }
 \details{
-Guards: \strong{1 vocation} and \strong{4 precision} (outside the harvest vocations the
-option \code{intervenir} falls back on its \code{sans_recolte} variant), \strong{5 extent}
+Guards, which are invariants of the code that no rules file can lower:
+\strong{1 vocation} (outside production and mixed, or for a unit to capitalise,
+any option that harvests falls back on its \code{sans_recolte} variant, so that
+\code{recolte} holds exactly when \code{prelevement_capital > 0} and the tableau is
+\code{coupes}) and \strong{4 precision} (NDP floor of 3), \strong{5 extent}
 (the harvest is capped by \code{prelevement_max_part_capital}, never a clear-cut),
 \strong{2 protected axes} (an option rated \code{-} on an axis protected by the
 vocation or by \code{axes_proteges_profil} is \code{ecartee_axe_protege}, or, with
 \code{axes_proteges_mode: arbitrage}, kept with the axes listed in
-\code{arbitrage_axes}), \strong{3} through \code{garde_profil}. The effects are expert
-hypotheses, never measures; a unit with \code{perte_saisie} keeps its entered loss
-(the hazard score change has no effect on it).
+\code{arbitrage_axes}), \strong{3} through \code{garde_profil}. The option \code{conserver} is
+the reference status quo: it is always presented, and marked \code{dominee = TRUE}
+when it is dominated, but never discarded. The effects are expert
+hypotheses, never measures. The gain on the dominant hazard is added to every
+score the hazard reads (\code{R3_norm} and \code{R5_norm} for the drought and health
+hazard), so it raises the minimum; it has no effect on a unit with
+\code{perte_saisie} (its entered loss is kept) or on a score already at 100.
+Lowering the capital raises the gross yield without counting the income of
+the harvest (model hypothesis, to be reviewed).
 }
 \examples{
 u <- data.frame(vocation = "production", capital = 11000, gain_valeur = 380,
