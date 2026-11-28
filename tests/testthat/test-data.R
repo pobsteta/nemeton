@@ -18,7 +18,10 @@ test_that("massif_demo_units carries the 44 indicators and their _norm", {
 
   data("massif_demo_units", package = "nemeton")
   codes <- indicator_labels()$code
-  expect_length(codes, 44)
+  expect_length(codes, 45)
+  # P4 (spec 072) est posterieur au jeu : le jeu reste STRICTEMENT inchange
+  # (non-regression), il porte les 44 autres indicateurs.
+  codes <- setdiff(codes, "P4")
 
   expect_length(setdiff(codes, names(massif_demo_units)), 0)
   expect_length(setdiff(paste0(codes, "_norm"), names(massif_demo_units)), 0)
@@ -49,7 +52,8 @@ test_that("massif_demo_units _norm columns follow normalize_indicator()", {
   skip_if_not_installed("sf")
 
   data("massif_demo_units", package = "nemeton")
-  for (ind in indicator_labels()$code) {
+  # P4 (spec 072) est posterieur au jeu, qui reste inchange
+  for (ind in setdiff(indicator_labels()$code, "P4")) {
     st_col <- paste0(tolower(ind), "_status")
     st <- if (st_col %in% names(massif_demo_units)) massif_demo_units[[st_col]]
     expect_equal(
