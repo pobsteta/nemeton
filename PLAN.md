@@ -199,6 +199,14 @@ superviseur global de `processx` (`supervise = TRUE` dans `run_memory_capped()`)
 produit pas). Tests : `test-reconfort-pipeline.R` (repli, refus, voie imposee, non-regression), `test-isolate.R` (fifos, arret
 du fils sur mort du parent).
 
+### 2026-11-28 — Release 2026.11.49 (mission 106 de nemetonplateforme), version stable posee
+
+DESCRIPTION, NEWS.md (`# nemeton 2026.11.49 (2026-11-28)`) et CITATION.cff alignes sur `2026.11.49` ; le tag et la
+release sont poses par `release.yml` a la fusion sur `main`, le passage en `.9000` suit la release. Contenu depuis
+`v2026.11.48` (PR #719 seule) : actions candidates P4, options et priorite (spec 072 section 15, mission 104), pour que
+l'app lance la mission 105. Ajouts seuls (6 fonctions exportees), aucun retrait ni changement de signature. Matrice
+signal-action provisoire. Aucun chantier clos par cette release.
+
 ### 2026-11-28 — Mission 104 : P4, actions candidates, options et priorite (spec 072 section 15), cycle dev `2026.11.48.9000`
 
 - Branche `travail-104` (partie d'`origin/main` e036f3aca ; a fusionner avec `main` apres la release 2026.11.48). Cote coeur de la partie B
