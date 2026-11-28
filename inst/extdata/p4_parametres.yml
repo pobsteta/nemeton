@@ -1,0 +1,25 @@
+# Parametres de l'indicateur P4 (rendement net du risque), spec 072 section 5.
+# TOUTES ces valeurs sont des valeurs de depart NON calibrees (provisoire: true).
+# Surchargeable par projet : p4_parametres(fichier = "...") ou p4_parametres(surcharge = list(...)).
+version: 1
+provisoire: true
+plafond_score: 0.06        # rendement net (proportion/an) qui vaut 100 sur le radar
+seuil_decision: 0.005      # 0,5 point
+horizon_ans: 20
+plafond_exposition: 0.20   # part du capital au-dela de laquelle un sinistre majeur est signale
+aleas:
+  incendie:              {score: R1, p_max: 0.01, part_perdue: 0.80, portee: localisee}
+  tempete:               {score: R2, p_max: 0.02, part_perdue: 0.50, portee: systemique}
+  secheresse_sanitaire:  {score: [R3, R5], p_max: 0.03, part_perdue: 0.40, portee: systemique}
+  abroutissement:        {score: R4, p_max: 0.02, part_perdue: 0.10, portee: localisee}
+vocations:
+  production: {taux_exige: 0.03, si_ecart_negatif: recolter}
+  mixte:      {taux_exige: 0.02, si_ecart_negatif: recolter}
+  protection: {taux_exige: 0.01, si_ecart_negatif: surveiller}
+  accueil:    {taux_exige: 0.01, si_ecart_negatif: surveiller}
+  naturalite: {taux_exige: 0.00, si_ecart_negatif: surveiller}
+# Prix en EUR/m3 par essence : AUCUN prix n'est invente ici (spec 072 section 0.3).
+# Un projet les fournit en surcharge : prix: {provisoire: true, par_essence: {douglas: 0}}
+prix:
+  provisoire: true
+  par_essence: {}

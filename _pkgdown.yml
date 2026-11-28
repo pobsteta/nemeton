@@ -276,6 +276,13 @@ reference:
     - indicateur_p1_volume
     - indicateur_p2_station
     - indicateur_p3_qualite_bois
+    - indicateur_p4_rendement_net
+    - p4_parametres
+    - p4_valider_parametres
+    - p4_synthese_foret
+    - p4_ruine_foret
+    - p4_pareto
+    - p4_selectionner_axes
     - volume_mobilisable
 
   - subtitle: "References IFN par essence x sylvoecoregion (spec 040)"

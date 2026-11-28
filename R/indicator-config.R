@@ -401,12 +401,13 @@ INDICATOR_FAMILIES <- list(
     description_en = "Timber volume, site productivity and timber quality",
     icon = "box-seam-fill",
     color = "#006400",
-    indicators = c("P1", "P2", "P3"),
-    column_names = c("indicateur_p1_volume", "indicateur_p2_station", "indicateur_p3_qualite_bois"),
+    indicators = c("P1", "P2", "P3", "P4"),
+    column_names = c("indicateur_p1_volume", "indicateur_p2_station", "indicateur_p3_qualite_bois", "indicateur_p4_rendement_net"),
     indicator_labels = list(
       P1 = list(fr = "Volume de bois (m\u00b3/ha)", en = "Timber Volume (m\u00b3/ha)"),
       P2 = list(fr = "Productivit\u00e9", en = "Productivity"),
-      P3 = list(fr = "Qualit\u00e9 du bois", en = "Timber Quality")
+      P3 = list(fr = "Qualit\u00e9 du bois", en = "Timber Quality"),
+      P4 = list(fr = "Rendement net du risque", en = "Net yield after hazards")
     ),
     indicator_tooltips = list(
       P1 = list(
@@ -420,12 +421,17 @@ INDICATOR_FAMILIES <- list(
       P3 = list(
         fr = "Qualit\u00e9 potentielle du bois bas\u00e9e sur les essences pr\u00e9sentes et les conditions de croissance.",
         en = "Potential timber quality based on species present and growing conditions."
+      ),
+      P4 = list(
+        fr = "Rendement annuel du capital sur pied, net des pertes attendues dues aux al\u00e9as (incendie, temp\u00eate, s\u00e9cheresse et sanitaire, abroutissement), en proportion par an. Conditionnel : calcul\u00e9 seulement avec une vocation et des prix. Score \u00e9lev\u00e9 = bon rendement net (spec 072, valeurs provisoires).",
+        en = "Yearly yield of the standing capital net of the expected losses due to hazards (fire, storm, drought and health, browsing), as a proportion per year. Conditional: computed only with a vocation and prices. High score = good net yield (spec 072, provisional values)."
       )
     ),
     indicator_docs = list(
       P1 = list(fr = "articles/fiche-p1-volume_fr.html"),
       P2 = list(fr = "articles/fiche-p2-station_fr.html"),
       P3 = list(fr = "articles/fiche-p3-qualite-bois_fr.html")
+      # P4 n'a pas encore de fiche : pas de cle, doc_url sort a NA
     )
   ),
 

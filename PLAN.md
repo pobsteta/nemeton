@@ -199,6 +199,16 @@ superviseur global de `processx` (`supervise = TRUE` dans `run_memory_capped()`)
 produit pas). Tests : `test-reconfort-pipeline.R` (repli, refus, voie imposee, non-regression), `test-isolate.R` (fifos, arret
 du fils sur mort du parent).
 
+### 2026-11-28 — Mission 101 : P4 rendement net du risque, spec 072 jalons M0 a M3, cycle dev `2026.11.47.9001`
+
+- Branche `travail-101` (partie d'`origin/main` e7eea9076 + spec 072 fusionnee). M0 : `inst/extdata/p4_parametres.yml`, `p4_parametres()`,
+  `p4_valider_parametres()`, note `specs/072-p4-rendement-net-risque/alignement.md`. M1 : `indicateur_p4_rendement_net()` + regle de normalisation
+  dediee. M2 : `p4_synthese_foret()`, `p4_ruine_foret()`, `p4_pareto()`, `p4_selectionner_axes()`. M3 : capital et gain depuis P1, P2 et les
+  prix, drapeau `p4_signal_seulement`, declaration dans `INDICATOR_FAMILIES` et `.INDICATOR_META` (45 indicateurs, 14 conditionnels).
+- Jeu de reference du sect. 10 reproduit a 0,005 point (tests `test-indicator-p4-*.R`). Non-regression : `famille_production` de
+  `massif_demo_units` identique, `list_indicators(conditionnels = FALSE)` = 31.
+- Non fait : M4 (brief app), valeurs economiques (provisoires, sect. 13), aucune release.
+
 ### 2026-11-28 — Release 2026.11.47 (mission 098 de nemetonplateforme), version stable posee
 
 DESCRIPTION, NEWS.md (`# nemeton 2026.11.47 (2026-11-28)`) et CITATION.cff alignes sur `2026.11.47` ; le tag et la

@@ -1,3 +1,20 @@
+# nemeton (development version)
+
+## P4 : rendement net du risque (spec 072, mission 101)
+
+Nouvel indicateur **conditionnel** P4 (famille P) : rendement annuel du capital sur pied net des pertes attendues dues aux aleas
+(incendie, tempete, secheresse et sanitaire, abroutissement), compare au taux exige de la vocation de l'UGF. **Toutes les valeurs
+economiques sont provisoires** (`inst/extdata/p4_parametres.yml`, aucun prix livre).
+
+- Ajouts exportes : `indicateur_p4_rendement_net()`, `p4_parametres()`, `p4_valider_parametres()`, `p4_synthese_foret()`,
+  `p4_ruine_foret()`, `p4_pareto()`, `p4_selectionner_axes()`.
+- `list_indicators()` rend 45 indicateurs (14 conditionnels) ; `list_indicators(conditionnels = FALSE)` rend toujours 31.
+  Sans colonne `vocation` (ou sans capital et gain calculables), P4 est `NA` avec `p4_status = "skipped_no_p4_source"` : aucun
+  score `famille_production` existant ne change, `massif_demo_units` est inchange (il ne porte pas P4).
+- `normalize_indicator("P4", ...)` : regle dediee, `arrondi(100 x P4 / plafond_score)` bornee a [0, 100].
+- Deux erreurs a connaitre : `nemeton_p4_norm_incoherent` (une colonne `Ri_norm` qui n'est pas celle de `normalize_indicator()` a cote de `Ri`, typiquement issue de `normalize_indicators()` par lot, qui n'inverse pas les scores de risque) et `nemeton_p4_colonne_brute` (une brute `Ri`, R5 compris, sans `Ri_norm`).
+- `yaml` passe en `Imports`, `FactoMineR` en `Suggests`.
+
 # nemeton 2026.11.47 (2026-11-28)
 
 Release du coeur qui permet a l'application de regler et d'afficher la source Sentinel-2 : RECONFORT sur reflectances
