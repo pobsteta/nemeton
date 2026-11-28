@@ -1,6 +1,6 @@
 # List available indicators
 
-Returns the indicators of the 12-family framework: the **44 indicators**
+Returns the indicators of the 12-family framework: the **45 indicators**
 of
 [`indicator_families()`](https://pobsteta.github.io/nemeton/reference/indicator_families.md),
 in the same order, including the source-conditional ones.
@@ -30,8 +30,8 @@ list_indicators(
 
 - conditionnels:
 
-  Logical. Include the thirteen source-conditional indicators? Default
-  `TRUE` (all 44).
+  Logical. Include the fourteen source-conditional indicators? Default
+  `TRUE` (all 45).
 
 ## Value
 
@@ -42,28 +42,29 @@ the indicator `NA`, `NA` for the base indicators).
 
 ## Details
 
-Thirteen indicators are **conditional**: they need a source that the
+Fourteen indicators are **conditional**: they need a source that the
 public NDP 0 layers do not provide, and return `NA` (with a
 `<code>_status` column such as `"skipped_no_micro"`) when it is absent,
 never an error. They are B4 and L3 (Sentinel-2 spectral diversity), B5
 (LiDAR point cloud, spec 067), W4, A3, A4 and R6 (precomputed
 microclimate), A5 (land-surface temperature), R5 (FORDEAD or RECONFORT
 dieback), R7 (daily minimum temperature), T3 (SUFOSAT clear-cuts), T4
-(FORMS-T dynamic vitality, spec 068) and N5 (foundation-model embedding,
-spec 064). `conditionnels = FALSE` keeps only the 31 indicators that the
-base layers can compute.
+(FORMS-T dynamic vitality, spec 068), N5 (foundation-model embedding,
+spec 064) and P4 (net yield after hazards, spec 072: needs a declared
+vocation and prices). `conditionnels = FALSE` keeps only the 31
+indicators that the base layers can compute.
 
 ## Lifecycle
 
 Stable: covered by the 1.0 API contract (spec 057). Since 1.0.0 the list
 holds all the indicators (31 before; 41 in 1.0.0, 42 since N5, spec 064;
-43 since B5, spec 067; 44 since T4, spec 068) and the details carry
-`code`, `conditionnel` and `source_conditionnelle`.
+43 since B5, spec 067; 44 since T4, spec 068; 45 since P4, spec 072) and
+the details carry `code`, `conditionnel` and `source_conditionnelle`.
 
 ## Examples
 
 ``` r
-# All 44 indicator names
+# All 45 indicator names
 list_indicators()
 #>  [1] "indicateur_c1_biomasse"           "indicateur_c2_ndvi"              
 #>  [3] "indicateur_b1_protection"         "indicateur_b2_structure"         
@@ -84,9 +85,10 @@ list_indicators()
 #> [33] "indicateur_s1_routes"             "indicateur_s2_bati"              
 #> [35] "indicateur_s3_population"         "indicateur_p1_volume"            
 #> [37] "indicateur_p2_station"            "indicateur_p3_qualite_bois"      
-#> [39] "indicateur_e1_bois_energie"       "indicateur_e2_evitement"         
-#> [41] "indicateur_n1_distance"           "indicateur_n2_continuite"        
-#> [43] "indicateur_n3_naturalite"         "indicateur_n5_distance_reference"
+#> [39] "indicateur_p4_rendement_net"      "indicateur_e1_bois_energie"      
+#> [41] "indicateur_e2_evitement"          "indicateur_n1_distance"          
+#> [43] "indicateur_n2_continuite"         "indicateur_n3_naturalite"        
+#> [45] "indicateur_n5_distance_reference"
 
 # Only those computable from the base layers
 list_indicators(conditionnels = FALSE)

@@ -168,6 +168,20 @@ Volume bois, productivite station et qualite bois d’oeuvre
   : P2: Site Productivity Index Indicator
 - [`indicateur_p3_qualite_bois()`](https://pobsteta.github.io/nemeton/reference/indicateur_p3_qualite_bois.md)
   : P3: Timber Quality Score Indicator
+- [`indicateur_p4_rendement_net()`](https://pobsteta.github.io/nemeton/reference/indicateur_p4_rendement_net.md)
+  : P4 - net yield after hazards (spec 072)
+- [`p4_parametres()`](https://pobsteta.github.io/nemeton/reference/p4_parametres.md)
+  : Read and validate the P4 parameter file
+- [`p4_valider_parametres()`](https://pobsteta.github.io/nemeton/reference/p4_valider_parametres.md)
+  : Validate a P4 parameter list
+- [`p4_synthese_foret()`](https://pobsteta.github.io/nemeton/reference/p4_synthese_foret.md)
+  : P4 summary at forest scale (spec 072, section 7)
+- [`p4_ruine_foret()`](https://pobsteta.github.io/nemeton/reference/p4_ruine_foret.md)
+  : Ruin risk at forest scale (spec 072, section 7 bis)
+- [`p4_pareto()`](https://pobsteta.github.io/nemeton/reference/p4_pareto.md)
+  : Pareto status of units on P4 and chosen axes (spec 072, section 8)
+- [`p4_selectionner_axes()`](https://pobsteta.github.io/nemeton/reference/p4_selectionner_axes.md)
+  : Choose the axes to cross with P4 (spec 072, section 8)
 - [`volume_mobilisable()`](https://pobsteta.github.io/nemeton/reference/volume_mobilisable.md)
   : Mobilisable timber volume for road-network sizing
 
