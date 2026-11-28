@@ -257,6 +257,18 @@ qui l’a demarre. Non rejoue ici : l’avertissement `future` lui-meme (le
 non-regression), `test-isolate.R` (fifos, arret du fils sur mort du
 parent).
 
+### 2026-11-28 — Release 2026.11.47 (mission 098 de nemetonplateforme), version stable posee
+
+DESCRIPTION, NEWS.md (`# nemeton 2026.11.47 (2026-11-28)`) et
+CITATION.cff alignes sur `2026.11.47` ; le tag et la release sont poses
+par `release.yml` a la fusion sur `main`, le passage en `.9000` suit la
+release. Contenu depuis `v2026.11.46` (PR \#711 a \#713) : RECONFORT sur
+Sen2Cor, indicatif, modele v3 lu en R (mission 095) ; repli THEIA -\>
+GEODES -\> Sen2Cor et fifos du superviseur processx (mission 089) ;
+source Sentinel-2 au choix `source_s2` (mission 096). Aucun retrait
+d’export (4 ajouts) ; comportements nouveaux listes en tete de NEWS.
+Aucun chantier clos par cette release.
+
 ### 2026-11-27 — Release 2026.11.46 (mission 087 de nemetonplateforme), version stable posee
 
 DESCRIPTION, NEWS.md (`# nemeton 2026.11.46 (2026-11-27)`) et

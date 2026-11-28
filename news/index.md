@@ -1,6 +1,29 @@
 # Changelog
 
-## nemeton 2026.11.46.9002 (development)
+## nemeton 2026.11.47 (2026-11-28)
+
+Release du coeur qui permet a l’application de regler et d’afficher la
+source Sentinel-2 : RECONFORT sur reflectances Sen2Cor (voie
+`acquisition = "sen2cor"`, INDICATIVE, non validee) avec le modele v3 lu
+en R, hors IOTA2 ; repli automatique THEIA -\> GEODES -\> Sen2Cor ;
+source Sentinel-2 au choix (`source_s2`) pour FAST, FORDEAD, RECONFORT
+et l’ICD, avec un defaut propre a chaque methode ; liberation des fifos
+du superviseur `processx`.
+
+**Aucun retrait ni changement de signature d’une fonction exportee
+stable** (NAMESPACE : seulement des ajouts,
+[`reconfort_caracteristiques_v3()`](https://pobsteta.github.io/nemeton/reference/reconfort_caracteristiques_v3.md),
+[`reconfort_sharkrf_lire()`](https://pobsteta.github.io/nemeton/reference/reconfort_sharkrf_lire.md),
+[`reconfort_sharkrf_predire()`](https://pobsteta.github.io/nemeton/reference/reconfort_sharkrf_predire.md),
+[`s2_source_resoudre()`](https://pobsteta.github.io/nemeton/reference/s2_source_resoudre.md)).
+**Comportements nouveaux a connaitre** :
+[`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
+bascule seul, sans `acquisition` donne, de THEIA vers GEODES puis
+Sen2Cor (avertissements nommes) et fait une sonde reseau du catalogue
+STAC avant l’ingest ; `run_meta.json` de RECONFORT gagne `acquisition`
+et `causes_repli` ; la sortie Sen2Cor est indicative et ne porte pas de
+champ `validee` (jamais publie). Sans `source_s2`, FAST, FORDEAD et
+l’ICD ne changent pas.
 
 - **feat : une source Sentinel-2 choisie pour FAST, FORDEAD, RECONFORT
   et l’ICD** (mission 096). Nouveau parametre `source_s2` (`NULL`,
@@ -16,6 +39,7 @@
   (exportee) qui dit la source et son calage. **Chaque methode garde la
   source sur laquelle elle est calee** (decision de Pascal du
   2026-11-27, apres les etudes 092 et
+
   93. : RECONFORT = `"theia"` (MAJA), FAST, FORDEAD et ICD =
       `"sen2cor"`. **Sans `source_s2`, rien ne change** : memes appels
       ([`stac_search_s2()`](https://pobsteta.github.io/nemeton/reference/stac_search_s2.md)
@@ -59,13 +83,12 @@
       tag GeoTIFF `source_s2` (cache FAST), colonne `source_s2` du
       resume d’ingestion FAST et champ `source_s2` des resultats,
       **seulement quand `source_s2` est donne**.
+
 - **Changement de la 095 (non publiee) : `validee` disparait de la
   sortie Sen2Cor de RECONFORT.** `run_meta.json` ne porte plus
   `validee`, les GeoTIFF plus le tag `VALIDEE` ; restent
   `source_reflectances = "sen2cor"`, `mention` (indicative),
   `correction_sen2cor` et le tag `MENTION`.
-
-## nemeton 2026.11.46.9001 (development)
 
 - **feat :
   [`run_reconfort_dieback()`](https://pobsteta.github.io/nemeton/reference/run_reconfort_dieback.md)
@@ -90,6 +113,7 @@
   (`current = "reconfort:voie"`) ; `causes_repli` porte desormais chaque
   cause de repli, dans l’ordre (THEIA puis GEODES), pour toutes les
   voies et plus seulement pour Sen2Cor.
+
 - **fix :
   [`run_memory_capped()`](https://pobsteta.github.io/nemeton/reference/run_memory_capped.md)
   ne laisse plus ouverts les deux fifos du superviseur `processx`**
@@ -109,8 +133,6 @@
   qu’a la sortie du dernier. Limite : `supervisor_kill()` tue tous les
   enfants supervises de la session ; un processus supervise par du code
   tiers, demarre pendant le run, est donc tue a cette liberation finale.
-
-## nemeton 2026.11.46.9000 (development)
 
 - **feat : RECONFORT sur reflectances Sen2Cor, voie
   `acquisition = "sen2cor"` (INDICATIF, NON VALIDE)** (mission 095).
